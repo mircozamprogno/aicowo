@@ -1,0 +1,9 @@
+/* ===== src/styles/pages/users.css ===== */
+.users-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}

@@ -1,0 +1,83 @@
+/* ===== src/styles/pages/dashboard.css ===== */
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.stat-card {
+  background-color: white;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+}
+
+.stat-card-content {
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.stat-icon {
+  flex-shrink: 0;
+}
+
+.stat-info {
+  margin-left: 1.25rem;
+  width: 0;
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-value {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.dashboard-chart {
+  background-color: white;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.chart-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+.chart-container {
+  height: 16rem;
+}
+

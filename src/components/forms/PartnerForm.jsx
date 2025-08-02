@@ -1,0 +1,328 @@
+import { X } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from '../../contexts/LanguageContext';
+import { supabase } from '../../services/supabase';
+import { toast } from '../common/ToastContainer';
+
+const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
+  const { t } = useTranslation();
+  const isEditing = !!partner;
+  
+  const [formData, setFormData] = useState({
+    partner_name: partner?.partner_name || '',
+    company_name: partner?.company_name || '',
+    email: partner?.email || '',
+    phone: partner?.phone || '',
+    address: partner?.address || '',
+    zip: partner?.zip || '',
+    city: partner?.city || '',
+    country: partner?.country || '',
+    partner_type: partner?.partner_type || 'company',
+    partner_status: partner?.partner_status || 'active',
+    piva: partner?.piva || '',
+    pec: partner?.pec || '',
+    website: partner?.website || ''
+  });
+  
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      let result;
+      
+      if (isEditing) {
+        // Update existing partner
+        result = await supabase
+          .from('partners')
+          .update(formData)
+          .eq('id', partner.id)
+          .select();
+      } else {
+        // Create new partner
+        result = await supabase
+          .from('partners')
+          .insert([formData])
+          .select();
+      }
+
+      const { data, error } = result;
+
+      if (error) throw error;
+
+      toast.success(
+        isEditing 
+          ? t('messages.partnerUpdatedSuccessfully') 
+          : t('messages.partnerCreatedSuccessfully')
+      );
+      
+      onSuccess(data[0]);
+      onClose();
+    } catch (error) {
+      console.error('Error saving partner:', error);
+      toast.error(error.message || t('messages.errorSavingPartner'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-container">
+        <div className="modal-header">
+          <h2 className="modal-title">
+            {isEditing ? t('partners.editPartner') : t('partners.addPartner')}
+          </h2>
+          <button onClick={onClose} className="modal-close-btn">
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="partner_name" className="form-label">
+                {t('partners.partnerName')} *
+              </label>
+              <input
+                id="partner_name"
+                name="partner_name"
+                type="text"
+                required
+                className="form-input"
+                placeholder={t('placeholders.partnerNamePlaceholder')}
+                value={formData.partner_name}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="company_name" className="form-label">
+                {t('partners.companyName')}
+              </label>
+              <input
+                id="company_name"
+                name="company_name"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.companyNamePlaceholder')}
+                value={formData.company_name}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">
+                {t('auth.email')} *
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="form-input"
+                placeholder={t('placeholders.emailPlaceholder')}
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="phone" className="form-label">
+                {t('partners.phone')}
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                className="form-input"
+                placeholder={t('placeholders.phonePlaceholder')}
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address" className="form-label">
+              {t('partners.address')}
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              className="form-input"
+              placeholder={t('placeholders.addressPlaceholder')}
+              value={formData.address}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="zip" className="form-label">
+                {t('partners.zip')}
+              </label>
+              <input
+                id="zip"
+                name="zip"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.zipPlaceholder')}
+                value={formData.zip}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="city" className="form-label">
+                {t('partners.city')}
+              </label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.cityPlaceholder')}
+                value={formData.city}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="country" className="form-label">
+                {t('partners.country')}
+              </label>
+              <input
+                id="country"
+                name="country"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.countryPlaceholder')}
+                value={formData.country}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="partner_type" className="form-label">
+                {t('partners.type')} *
+              </label>
+              <select
+                id="partner_type"
+                name="partner_type"
+                required
+                className="form-select"
+                value={formData.partner_type}
+                onChange={handleChange}
+              >
+                <option value="company">{t('partners.company')}</option>
+                <option value="individual">{t('partners.individual')}</option>
+                <option value="organization">{t('partners.organization')}</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="partner_status" className="form-label">
+                {t('partners.status')} *
+              </label>
+              <select
+                id="partner_status"
+                name="partner_status"
+                required
+                className="form-select"
+                value={formData.partner_status}
+                onChange={handleChange}
+              >
+                <option value="active">{t('partners.active')}</option>
+                <option value="inactive">{t('partners.inactive')}</option>
+                <option value="pending">{t('partners.pending')}</option>
+                <option value="suspended">{t('partners.suspended')}</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="piva" className="form-label">
+                {t('partners.piva')}
+              </label>
+              <input
+                id="piva"
+                name="piva"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.pivaPlaceholder')}
+                value={formData.piva}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="pec" className="form-label">
+                {t('partners.pec')}
+              </label>
+              <input
+                id="pec"
+                name="pec"
+                type="email"
+                className="form-input"
+                placeholder={t('placeholders.pecPlaceholder')}
+                value={formData.pec}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="website" className="form-label">
+              {t('partners.website')}
+            </label>
+            <input
+              id="website"
+              name="website"
+              type="url"
+              className="form-input"
+              placeholder={t('placeholders.websitePlaceholder')}
+              value={formData.website}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="modal-actions">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary"
+              disabled={loading}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading}
+            >
+              {loading 
+                ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
+                : (isEditing ? t('common.save') : t('common.create'))
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default PartnerForm;
