@@ -1,10 +1,8 @@
-import { MapPin, Send, UserPlus } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import PartnerForm from '../components/forms/PartnerForm';
-import SendInvitationModal from '../components/invitations/SendInvitationModal';
 import LocationsList from '../components/partners/LocationsList';
-import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
@@ -15,9 +13,6 @@ const Partners = () => {
   const [editingPartner, setEditingPartner] = useState(null);
   const [showLocations, setShowLocations] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState(null);
-  const [showInvitation, setShowInvitation] = useState(false);
-  const [invitationPartner, setInvitationPartner] = useState(null);
-  const { profile } = useAuth();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -27,14 +22,10 @@ const Partners = () => {
   const fetchPartners = async () => {
     console.log('Starting to fetch partners...');
     try {
-      let query = supabase.from('partners').select('*');
-      
-      // If user is not superadmin, only show their partner
-      if (profile?.role !== 'superadmin' && profile?.partner_uuid) {
-        query = query.eq('partner_uuid', profile.partner_uuid);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('partners')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       console.log('Supabase response:', { data, error });
 
@@ -71,6 +62,7 @@ const Partners = () => {
     } catch (error) {
       console.error('Error fetching partners:', error);
       toast.error(t('messages.errorLoadingPartners'));
+      // Set empty array so loading stops
       setPartners([]);
     } finally {
       console.log('Setting loading to false');
@@ -95,10 +87,12 @@ const Partners = () => {
 
   const handleFormSuccess = (savedPartner) => {
     if (editingPartner) {
+      // Update existing partner in the list
       setPartners(prev => 
         prev.map(p => p.id === savedPartner.id ? savedPartner : p)
       );
     } else {
+      // Add new partner to the list
       setPartners(prev => [savedPartner, ...prev]);
     }
   };
@@ -113,20 +107,6 @@ const Partners = () => {
     setSelectedPartner(null);
   };
 
-  const handleSendInvitation = (partner) => {
-    setInvitationPartner(partner);
-    setShowInvitation(true);
-  };
-
-  const handleCloseInvitation = () => {
-    setShowInvitation(false);
-    setInvitationPartner(null);
-  };
-
-  // Check if user can invite (superadmin can invite partner admins, partner admins can invite users)
-  const canInvite = profile?.role === 'superadmin' || profile?.role === 'admin';
-  const canManagePartners = profile?.role === 'superadmin';
-
   if (loading) {
     return <div className="partners-loading">{t('common.loading')}</div>;
   }
@@ -137,18 +117,13 @@ const Partners = () => {
         <div className="partners-header-content">
           <h1 className="partners-title">{t('partners.title')}</h1>
           <p className="partners-description">
-            {canManagePartners 
-              ? t('partners.managePartners')
-              : t('partners.viewPartnerInfo')
-            }
+            {t('partners.managePartners')}
           </p>
         </div>
         <div className="partners-header-actions">
-          {canManagePartners && (
-            <button className="add-partner-btn" onClick={handleAddPartner}>
-              {t('partners.addPartner')}
-            </button>
-          )}
+          <button className="add-partner-btn" onClick={handleAddPartner}>
+            {t('partners.addPartner')}
+          </button>
         </div>
       </div>
 
@@ -198,14 +173,12 @@ const Partners = () => {
                   </td>
                   <td className="partners-table-cell">
                     <div className="partner-actions">
-                      {canManagePartners && (
-                        <button 
-                          className="edit-btn"
-                          onClick={() => handleEditPartner(partner)}
-                        >
-                          {t('partners.edit')}
-                        </button>
-                      )}
+                      <button 
+                        className="edit-btn"
+                        onClick={() => handleEditPartner(partner)}
+                      >
+                        {t('partners.edit')}
+                      </button>
                       <button 
                         className="locations-btn"
                         onClick={() => handleViewLocations(partner)}
@@ -213,23 +186,6 @@ const Partners = () => {
                       >
                         <MapPin size={16} />
                       </button>
-                      {canInvite && (
-                        <button 
-                          className="invite-btn"
-                          onClick={() => handleSendInvitation(partner)}
-                          title={
-                            profile?.role === 'superadmin' 
-                              ? t('invitations.invitePartnerAdmin')
-                              : t('invitations.inviteUser')
-                          }
-                        >
-                          {profile?.role === 'superadmin' ? (
-                            <UserPlus size={16} />
-                          ) : (
-                            <Send size={16} />
-                          )}
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>
@@ -238,43 +194,24 @@ const Partners = () => {
           </table>
           {partners.length === 0 && (
             <div className="partners-empty">
-              <p>
-                {canManagePartners 
-                  ? t('partners.noPartnersFound')
-                  : t('partners.noPartnerAssigned')
-                }
-              </p>
+              <p>{t('partners.noPartnersFound')}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Partner Form Modal */}
-      {canManagePartners && (
-        <PartnerForm
-          isOpen={showForm}
-          onClose={handleFormClose}
-          onSuccess={handleFormSuccess}
-          partner={editingPartner}
-        />
-      )}
+      <PartnerForm
+        isOpen={showForm}
+        onClose={handleFormClose}
+        onSuccess={handleFormSuccess}
+        partner={editingPartner}
+      />
 
-      {/* Locations Modal */}
       <LocationsList
         partner={selectedPartner}
         isOpen={showLocations}
         onClose={handleCloseLocations}
       />
-
-      {/* Send Invitation Modal */}
-      {canInvite && (
-        <SendInvitationModal
-          isOpen={showInvitation}
-          onClose={handleCloseInvitation}
-          partner={invitationPartner}
-          currentUserRole={profile?.role}
-        />
-      )}
     </div>
   );
 };

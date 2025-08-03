@@ -124,4 +124,4 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   );
 };
 
-export default LocationForm;
+export default LocationForm;    

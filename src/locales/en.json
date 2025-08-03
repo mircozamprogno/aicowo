@@ -2,7 +2,14 @@
   "navigation": {
     "dashboard": "Dashboard",
     "partners": "Partners",
-    "users": "Users"
+    "users": "Users",
+    "partnerInfo": "Partner Info",
+    "teamMembers": "Team Members",
+    "myBookings": "My Bookings",
+    "partnerMember": "Partner Member",
+    "systemAdmin": "System Administrator",
+    "partnerAdmin": "Partner Administrator",
+    "member": "Member"
   },
   "locations": {
     "addLocation": "Add Location",
@@ -30,7 +37,14 @@
     "alreadyHaveAccount": "Already have an account?",
     "loginInstructions": "Use email: any@email.com and password: password",
     "resetPasswordInstructions": "Enter your email address and we'll send you a link to reset your password.",
-    "checkEmailInstructions": "We've sent a password reset link to"
+    "checkEmailInstructions": "We've sent a password reset link to",
+    "completeRegistration": "Complete Your Registration",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating Account",
+    "invalidInvitation": "Invalid Invitation",
+    "invalidInvitationMessage": "This invitation link is invalid or has expired. Please contact your administrator for a new invitation.",
+    "invitedAsPartnerAdmin": "You've been invited to become an administrator for {{partnerName}}",
+    "invitedAsUser": "You've been invited to join {{partnerName}} as a user"
   },
   "roles": {
     "superadmin": "Super Admin",
@@ -47,6 +61,7 @@
   "partners": {
     "title": "Partners",
     "managePartners": "Manage all partners in the system",
+    "viewPartnerInfo": "View your partner information and locations",
     "addPartner": "Add Partner",
     "editPartner": "Edit Partner",
     "partner": "Partner",
@@ -64,6 +79,7 @@
     "individual": "Individual",
     "organization": "Organization",
     "noPartnersFound": "No partners found. Create your first partner to get started.",
+    "noPartnerAssigned": "No partner assigned to your account.",
     "phone": "Phone",
     "address": "Address",
     "zip": "ZIP Code",
@@ -72,6 +88,19 @@
     "piva": "VAT Number",
     "pec": "Certified Email",
     "website": "Website"
+  },
+  "invitations": {
+    "invitePartnerAdmin": "Invite Partner Administrator",
+    "inviteUser": "Invite User",
+    "invitingAdminFor": "Inviting Administrator for",
+    "invitingUserFor": "Inviting User for",
+    "customMessage": "Custom Message",
+    "emailPreview": "Email Preview",
+    "subject": "Subject",
+    "recipient": "Recipient",
+    "sendInvitation": "Send Invitation",
+    "sending": "Sending",
+    "emailSubject": "Invitation to join {{partnerName}} as {{role}}"
   },
   "common": {
     "loading": "Loading...",
@@ -86,10 +115,12 @@
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
-    "createdAt": "Created"
+    "createdAt": "Created",
+    "optional": "optional"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
+    "signedOutSuccessfully": "Signed out successfully",
     "accountCreatedSuccessfully": "Account created successfully! Please check your email to verify your account.",
     "passwordResetEmailSent": "Password reset email sent! Check your inbox.",
     "passwordsDoNotMatch": "Passwords do not match",
@@ -104,7 +135,15 @@
     "errorSavingLocation": "Error saving location",
     "errorLoadingLocations": "Error loading locations",
     "errorDeletingLocation": "Error deleting location",
-    "confirmDeleteLocation": "Are you sure you want to delete this location?"
+    "confirmDeleteLocation": "Are you sure you want to delete this location?",
+    "invalidInvitationLink": "Invalid invitation link",
+    "invitationExpiredOrInvalid": "This invitation has expired or is invalid",
+    "errorValidatingInvitation": "Error validating invitation",
+    "errorCreatingAccount": "Error creating account",
+    "invitationSentSuccessfully": "Invitation sent successfully",
+    "partnerAdminInvitationSent": "Partner administrator invitation sent successfully",
+    "userInvitationSent": "User invitation sent successfully",
+    "errorSendingInvitation": "Error sending invitation"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -121,10 +160,11 @@
     "pivaPlaceholder": "VAT number",
     "pecPlaceholder": "Certified email address",
     "websitePlaceholder": "https://example.com",
-    "locationNamePlaceholder": "Enter location name"
+    "locationNamePlaceholder": "Enter location name",
+    "customMessagePlaceholder": "Add a personal message to the invitation (optional)"
   },
   "app": {
     "appName": "Coworking Management",
-    "appShortName": "CoWork"
+    "appShortName": "PowerCowo"
   }
 }

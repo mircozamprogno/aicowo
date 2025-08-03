@@ -15,8 +15,9 @@ const Layout = ({ children }) => {
     try {
       await signOut();
       window.location.hash = '/login';
-      toast.success(t('messages.signedInSuccessfully'));
+      toast.success(t('messages.signedOutSuccessfully'));
     } catch (error) {
+      console.error('Sign out error:', error);
       toast.error(t('messages.errorSigningOut'));
     }
   };

@@ -2,7 +2,14 @@
   "navigation": {
     "dashboard": "Dashboard",
     "partners": "Partner",
-    "users": "Utenti"
+    "users": "Utenti",
+    "partnerInfo": "Info Partner",
+    "teamMembers": "Membri del Team",
+    "myBookings": "Le Mie Prenotazioni",
+    "partnerMember": "Membro Partner",
+    "systemAdmin": "Amministratore di Sistema",
+    "partnerAdmin": "Amministratore Partner",
+    "member": "Membro"
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
@@ -30,7 +37,14 @@
     "alreadyHaveAccount": "Hai già un account?",
     "loginInstructions": "Usa email: qualsiasi@email.com e password: password",
     "resetPasswordInstructions": "Inserisci il tuo indirizzo email e ti invieremo un link per reimpostare la password.",
-    "checkEmailInstructions": "Abbiamo inviato un link di reimpostazione password a"
+    "checkEmailInstructions": "Abbiamo inviato un link di reimpostazione password a",
+    "completeRegistration": "Completa la tua Registrazione",
+    "createAccount": "Crea Account",
+    "creatingAccount": "Creazione Account",
+    "invalidInvitation": "Invito Non Valido",
+    "invalidInvitationMessage": "Questo link di invito non è valido o è scaduto. Contatta il tuo amministratore per un nuovo invito.",
+    "invitedAsPartnerAdmin": "Sei stato invitato a diventare amministratore per {{partnerName}}",
+    "invitedAsUser": "Sei stato invitato a unirti a {{partnerName}} come utente"
   },
   "roles": {
     "superadmin": "Super Amministratore",
@@ -47,6 +61,7 @@
   "partners": {
     "title": "Partner",
     "managePartners": "Gestisci tutti i partner nel sistema",
+    "viewPartnerInfo": "Visualizza le informazioni del tuo partner e le sedi",
     "addPartner": "Aggiungi Partner",
     "editPartner": "Modifica Partner",
     "partner": "Partner",
@@ -64,6 +79,7 @@
     "individual": "Individuale",
     "organization": "Organizzazione",
     "noPartnersFound": "Nessun partner trovato. Crea il tuo primo partner per iniziare.",
+    "noPartnerAssigned": "Nessun partner assegnato al tuo account.",
     "phone": "Telefono",
     "address": "Indirizzo",
     "zip": "CAP",
@@ -72,6 +88,19 @@
     "piva": "Partita IVA",
     "pec": "PEC",
     "website": "Sito Web"
+  },
+  "invitations": {
+    "invitePartnerAdmin": "Invita Amministratore Partner",
+    "inviteUser": "Invita Utente",
+    "invitingAdminFor": "Invitando Amministratore per",
+    "invitingUserFor": "Invitando Utente per",
+    "customMessage": "Messaggio Personalizzato",
+    "emailPreview": "Anteprima Email",
+    "subject": "Oggetto",
+    "recipient": "Destinatario",
+    "sendInvitation": "Invia Invito",
+    "sending": "Invio",
+    "emailSubject": "Invito a unirti a {{partnerName}} come {{role}}"
   },
   "common": {
     "loading": "Caricamento...",
@@ -86,10 +115,12 @@
     "search": "Cerca",
     "filter": "Filtra",
     "export": "Esporta",
-    "createdAt": "Creato"
+    "createdAt": "Creato",
+    "optional": "opzionale"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
+    "signedOutSuccessfully": "Disconnesso con successo",
     "accountCreatedSuccessfully": "Account creato con successo! Controlla la tua email per verificare il tuo account.",
     "passwordResetEmailSent": "Email di reimpostazione password inviata! Controlla la tua casella di posta.",
     "passwordsDoNotMatch": "Le password non corrispondono",
@@ -104,7 +135,15 @@
     "errorSavingLocation": "Errore nel salvataggio della sede",
     "errorLoadingLocations": "Errore nel caricamento delle sedi",
     "errorDeletingLocation": "Errore nell'eliminazione della sede",
-    "confirmDeleteLocation": "Sei sicuro di voler eliminare questa sede?"
+    "confirmDeleteLocation": "Sei sicuro di voler eliminare questa sede?",
+    "invalidInvitationLink": "Link di invito non valido",
+    "invitationExpiredOrInvalid": "Questo invito è scaduto o non è valido",
+    "errorValidatingInvitation": "Errore nella validazione dell'invito",
+    "errorCreatingAccount": "Errore nella creazione dell'account",
+    "invitationSentSuccessfully": "Invito inviato con successo",
+    "partnerAdminInvitationSent": "Invito amministratore partner inviato con successo",
+    "userInvitationSent": "Invito utente inviato con successo",
+    "errorSendingInvitation": "Errore nell'invio dell'invito"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",
@@ -121,10 +160,11 @@
     "pivaPlaceholder": "Partita IVA",
     "pecPlaceholder": "Indirizzo PEC",
     "websitePlaceholder": "https://esempio.it",
-    "locationNamePlaceholder": "Inserisci nome sede"
+    "locationNamePlaceholder": "Inserisci nome sede",
+    "customMessagePlaceholder": "Aggiungi un messaggio personale all'invito (opzionale)"
   },
   "app": {
     "appName": "Gestione Coworking",
-    "appShortName": "CoWork"
+    "appShortName": "PowerCowo"
   }
 }

@@ -4,7 +4,6 @@ import Dashboard from '../../pages/Dashboard';
 import Partners from '../../pages/Partners';
 import Users from '../../pages/Users';
 import ForgotPassword from '../auth/ForgotPassword';
-import InvitationRegister from '../auth/InvitationRegister';
 import Login from '../auth/Login';
 import Register from '../auth/Register';
 import ProtectedRoute from './ProtectedRoute';
@@ -33,11 +32,6 @@ const Router = () => {
 
     console.log('Router: Checking redirects - User:', !!user, 'Path:', currentPath);
 
-    // Special handling for invitation registration - don't redirect if user is on this page
-    if (currentPath.startsWith('/invitation-register')) {
-      return; // Let the InvitationRegister component handle the logic
-    }
-
     // If user is logged in but on auth pages, redirect to dashboard
     if (user && ['/login', '/register', '/forgot-password'].includes(currentPath)) {
       console.log('Router: User logged in, redirecting to dashboard');
@@ -63,11 +57,6 @@ const Router = () => {
   }
 
   console.log('Router: Rendering page - User:', !!user, 'Path:', currentPath);
-
-  // Handle invitation registration route (can include query parameters)
-  if (currentPath.startsWith('/invitation-register')) {
-    return <InvitationRegister />;
-  }
 
   // Render the appropriate component based on current path
   switch (currentPath) {

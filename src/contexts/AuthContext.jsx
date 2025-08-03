@@ -9,60 +9,62 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+    console.log('AuthProvider: Starting auth initialization');
+    
+    let isMounted = true;
 
-    const getSession = async () => {
+    // Simple session check
+    const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Error getting session:', error);
-          if (mounted) {
-            setUser(null);
-            setProfile(null);
-            setLoading(false);
-          }
-          return;
-        }
+        if (!isMounted) return;
 
-        if (mounted) {
-          setUser(session?.user || null);
-          
-          if (session?.user) {
-            await fetchProfile(session.user.id);
-          }
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Session error:', error);
-        if (mounted) {
+        console.log('Session check result:', { hasSession: !!session, error });
+
+        if (error || !session) {
+          console.log('No valid session, clearing auth state');
           setUser(null);
           setProfile(null);
+        } else {
+          console.log('Valid session found, setting user');
+          setUser(session.user);
+          fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.error('Session check error:', err);
+        setUser(null);
+        setProfile(null);
+      } finally {
+        if (isMounted) {
+          console.log('Setting loading to false');
           setLoading(false);
         }
       }
     };
 
-    getSession();
+    checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, !!session);
       
-      if (!mounted) return;
+      if (!isMounted) return;
 
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null);
         setProfile(null);
-      } else if (session?.user) {
+      } else if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
-        await fetchProfile(session.user.id);
+        fetchProfile(session.user.id);
       }
       
       setLoading(false);
     });
 
     return () => {
-      mounted = false;
+      console.log('AuthProvider: Cleanup');
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -75,30 +77,23 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-        // Create a default profile if none exists
-        const defaultProfile = {
-          id: userId,
-          first_name: 'User',
-          last_name: '',
-          role: 'user',
-          email: user?.email
-        };
-        setProfile(defaultProfile);
-        return;
+      if (error) {
+        console.log('Profile fetch error, using default:', error.message);
       }
 
-      setProfile(data);
+      setProfile(data || {
+        id: userId,
+        first_name: 'User',
+        last_name: '',
+        role: 'user'
+      });
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      // Fallback to a default profile
+      console.error('Profile fetch failed:', error);
       setProfile({
         id: userId,
         first_name: 'User',
         last_name: '',
-        role: 'user',
-        email: user?.email
+        role: 'user'
       });
     }
   };
@@ -121,25 +116,18 @@ export const AuthProvider = ({ children }) => {
     
     if (error) throw error;
     
-    // Create profile after successful signup
     if (data.user) {
-      const profileData = {
-        id: data.user.id,
-        email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        username: userData.username,
-        role: userData.role || 'user'
-      };
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([profileData]);
-      
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        // Don't throw error here, let the user continue
-        // The profile will be created with defaults later
+      try {
+        await supabase.from('profiles').insert([{
+          id: data.user.id,
+          email,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          username: userData.username,
+          role: userData.role || 'user'
+        }]);
+      } catch (profileError) {
+        console.error('Profile creation error:', profileError);
       }
     }
     
@@ -147,14 +135,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    console.log('Signing out...');
+    setUser(null);
+    setProfile(null);
+    await supabase.auth.signOut();
   };
 
   const resetPassword = async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) throw error;
   };
+
+  console.log('AuthProvider render - User:', !!user, 'Loading:', loading);
 
   const value = {
     user,

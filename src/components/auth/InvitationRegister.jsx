@@ -1,0 +1,326 @@
+import { Building, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/LanguageContext';
+import { supabase } from '../../services/supabase';
+import LanguageSwitcher from '../common/LanguageSwitcher';
+import Link from '../common/Link';
+import { toast } from '../common/ToastContainer';
+
+const InvitationRegister = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: ''
+  });
+  const [invitation, setInvitation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { signUp } = useAuth();
+  const { t } = useTranslation();
+
+  // Get invitation token from URL - Fixed parsing
+  const getInvitationTokenFromURL = () => {
+    // Check both hash parameters and regular URL parameters
+    const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    const token = hashParams.get('token') || urlParams.get('token');
+    console.log('Invitation token from URL:', {
+      hash: window.location.hash,
+      search: window.location.search,
+      token: token
+    });
+    
+    return token;
+  };
+  
+  const invitationToken = getInvitationTokenFromURL();
+
+  useEffect(() => {
+    if (invitationToken) {
+      validateInvitation();
+    } else {
+      setLoading(false);
+      toast.error(t('messages.invalidInvitationLink'));
+    }
+  }, [invitationToken]);
+
+  const validateInvitation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invitations')
+        .select(`
+          *,
+          partners (
+            partner_name,
+            company_name
+          )
+        `)
+        .eq('invitation_uuid', invitationToken)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        toast.error(t('messages.invitationExpiredOrInvalid'));
+        window.location.hash = '/login';
+        return;
+      }
+
+      setInvitation(data);
+      if (data.invited_email) {
+        setFormData(prev => ({ ...prev, email: data.invited_email }));
+      }
+    } catch (error) {
+      console.error('Error validating invitation:', error);
+      toast.error(t('messages.errorValidatingInvitation'));
+      window.location.hash = '/login';
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast.error(t('messages.passwordsDoNotMatch'));
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await signUp(formData.email, formData.password, {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        role: invitation.invited_role,
+        partner_uuid: invitation.partner_uuid,
+        username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
+      });
+
+      await supabase
+        .from('invitations')
+        .update({ 
+          status: 'used', 
+          used_at: new Date().toISOString() 
+        })
+        .eq('invitation_uuid', invitationToken);
+      
+      toast.success(t('messages.accountCreatedSuccessfully'));
+      window.location.hash = '/login';
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast.error(error.message || t('messages.errorCreatingAccount'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <div className="auth-loading">
+            <div className="loading-spinner"></div>
+            <p>{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!invitation) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <div className="auth-header">
+            <div className="auth-logo">
+              <Building size={48} color="#dc2626" />
+            </div>
+            <h2 className="auth-title auth-title-error">
+              {t('auth.invalidInvitation')}
+            </h2>
+            <p className="auth-instructions">
+              {t('auth.invalidInvitationMessage')}
+            </p>
+          </div>
+          <div className="auth-actions">
+            <Link to="/login" className="auth-submit-btn">
+              {t('auth.backToSignIn')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <Building size={48} color="#4f46e5" />
+          </div>
+          <h2 className="auth-title">
+            {t('auth.completeRegistration')}
+          </h2>
+          <div className="invitation-info">
+            <p className="invitation-text">
+              {invitation.invited_role === 'admin' 
+                ? t('auth.invitedAsPartnerAdmin', { 
+                    partnerName: invitation.partners?.partner_name || invitation.partners?.company_name 
+                  })
+                : t('auth.invitedAsUser', { 
+                    partnerName: invitation.partners?.partner_name || invitation.partners?.company_name 
+                  })
+              }
+            </p>
+            <div className="invitation-badge">
+              <User size={16} />
+              <span>{t(`roles.${invitation.invited_role}`)}</span>
+            </div>
+          </div>
+        </div>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="firstName" className="form-label">
+                {t('auth.firstName')} *
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                className="form-input"
+                placeholder={t('placeholders.firstNamePlaceholder')}
+                value={formData.firstName}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="lastName" className="form-label">
+                {t('auth.lastName')} *
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                className="form-input"
+                placeholder={t('placeholders.lastNamePlaceholder')}
+                value={formData.lastName}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">
+              {t('auth.email')} *
+            </label>
+            <div className="input-group">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="form-input"
+                placeholder={t('placeholders.emailPlaceholder')}
+                value={formData.email}
+                onChange={handleChange}
+                disabled={!!invitation.invited_email}
+              />
+              <Mail size={16} className="input-icon input-icon-left" />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">
+              {t('auth.password')} *
+            </label>
+            <div className="input-group">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                className="form-input"
+                placeholder={t('placeholders.passwordPlaceholder')}
+                value={formData.password}
+                onChange={handleChange}
+              />
+              <Lock size={16} className="input-icon input-icon-left" />
+              <button
+                type="button"
+                className="input-icon input-icon-right"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword" className="form-label">
+              {t('auth.confirmPassword')} *
+            </label>
+            <div className="input-group">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                className="form-input"
+                placeholder={t('auth.confirmPassword')}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+              />
+              <Lock size={16} className="input-icon input-icon-left" />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="auth-submit-btn"
+            >
+              {submitting ? `${t('auth.creatingAccount')}...` : t('auth.createAccount')}
+            </button>
+          </div>
+
+          <div className="auth-switch">
+            <span className="auth-switch-text">
+              {t('auth.alreadyHaveAccount')}{' '}
+              <Link to="/login" className="auth-switch-link">
+                {t('auth.signIn')}
+              </Link>
+            </span>
+          </div>
+        </form>
+      </div>
+      <div className="auth-language-switcher">
+        <LanguageSwitcher />
+      </div>
+    </div>
+  );
+};
+
+export default InvitationRegister;
