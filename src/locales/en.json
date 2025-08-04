@@ -3,6 +3,7 @@
     "dashboard": "Dashboard",
     "partners": "Partners",
     "users": "Users",
+    "invitations": "Invitations",
     "partnerInfo": "Partner Info",
     "teamMembers": "Team Members",
     "myBookings": "My Bookings",
@@ -90,6 +91,9 @@
     "website": "Website"
   },
   "invitations": {
+    "title": "Invitations",
+    "manageAllInvitations": "Manage all invitations in the system",
+    "managePartnerInvitations": "Manage invitations for your partner",
     "invitePartnerAdmin": "Invite Partner Administrator",
     "inviteUser": "Invite User",
     "invitingAdminFor": "Inviting Administrator for",
@@ -100,7 +104,20 @@
     "recipient": "Recipient",
     "sendInvitation": "Send Invitation",
     "sending": "Sending",
-    "emailSubject": "Invitation to join {{partnerName}} as {{role}}"
+    "emailSubject": "Invitation to join {{partnerName}}",
+    "invitee": "Invitee",
+    "status": "Status",
+    "sentAt": "Sent At",
+    "usedAt": "Used At",
+    "totalInvitations": "Total",
+    "pendingInvitations": "Pending",
+    "usedInvitations": "Used",
+    "pending": "Pending",
+    "used": "Used",
+    "expired": "Expired",
+    "cancelled": "Cancelled",
+    "cancelInvitation": "Cancel Invitation",
+    "noInvitationsFound": "No invitations found"
   },
   "common": {
     "loading": "Loading...",
@@ -126,6 +143,7 @@
     "passwordsDoNotMatch": "Passwords do not match",
     "errorSigningOut": "Error signing out",
     "errorLoadingPartners": "Error loading partners",
+    "errorLoadingInvitations": "Error loading invitations",
     "partnerCreatedSuccessfully": "Partner created successfully",
     "partnerUpdatedSuccessfully": "Partner updated successfully",
     "errorSavingPartner": "Error saving partner",
@@ -133,7 +151,6 @@
     "locationUpdatedSuccessfully": "Location updated successfully",
     "locationDeletedSuccessfully": "Location deleted successfully",
     "errorSavingLocation": "Error saving location",
-    "errorLoadingLocations": "Error loading locations",
     "errorDeletingLocation": "Error deleting location",
     "confirmDeleteLocation": "Are you sure you want to delete this location?",
     "invalidInvitationLink": "Invalid invitation link",
@@ -143,7 +160,11 @@
     "invitationSentSuccessfully": "Invitation sent successfully",
     "partnerAdminInvitationSent": "Partner administrator invitation sent successfully",
     "userInvitationSent": "User invitation sent successfully",
-    "errorSendingInvitation": "Error sending invitation"
+    "errorSendingInvitation": "Error sending invitation",
+    "invitationCancelledSuccessfully": "Invitation cancelled successfully",
+    "errorCancellingInvitation": "Error cancelling invitation",
+    "canOnlyCancelPendingInvitations": "You can only cancel pending invitations",
+    "confirmCancelInvitation": "Are you sure you want to cancel this invitation?"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",

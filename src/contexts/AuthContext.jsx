@@ -85,7 +85,8 @@ export const AuthProvider = ({ children }) => {
         id: userId,
         first_name: 'User',
         last_name: '',
-        role: 'user'
+        role: 'user',
+        partner_uuid: null
       });
     } catch (error) {
       console.error('Profile fetch failed:', error);
@@ -93,7 +94,8 @@ export const AuthProvider = ({ children }) => {
         id: userId,
         first_name: 'User',
         last_name: '',
-        role: 'user'
+        role: 'user',
+        partner_uuid: null
       });
     }
   };
@@ -118,16 +120,36 @@ export const AuthProvider = ({ children }) => {
     
     if (data.user) {
       try {
-        await supabase.from('profiles').insert([{
+        // CRITICAL FIX: Ensure partner_uuid is included in the profile creation
+        const profileData = {
           id: data.user.id,
           email,
           first_name: userData.first_name,
           last_name: userData.last_name,
           username: userData.username,
-          role: userData.role || 'user'
-        }]);
+          role: userData.role || 'user',
+          partner_uuid: userData.partner_uuid || null // ← THIS IS THE CRITICAL FIX
+        };
+
+        console.log('Creating profile with data:', profileData);
+
+        const { data: profileResult, error: profileError } = await supabase
+          .from('profiles')
+          .insert([profileData])
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw new Error(`Profile creation failed: ${profileError.message}`);
+        }
+
+        console.log('Profile created successfully:', profileResult);
       } catch (profileError) {
         console.error('Profile creation error:', profileError);
+        // Don't throw here to avoid breaking the signup flow
+        // The user can still sign in, but we should log this error
+        throw new Error(`Account created but profile setup failed: ${profileError.message}`);
       }
     }
     
@@ -146,7 +168,7 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  console.log('AuthProvider render - User:', !!user, 'Loading:', loading);
+  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Partner UUID:', profile?.partner_uuid);
 
   const value = {
     user,

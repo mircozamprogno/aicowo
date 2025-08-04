@@ -11,6 +11,7 @@ import './styles/components/sidebar.css'
 import './styles/components/toast.css'
 import './styles/global.css'
 import './styles/pages/dashboard.css'
+import './styles/pages/invitations.css'
 import './styles/pages/partners.css'
 import './styles/pages/users.css'
 

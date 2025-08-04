@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
@@ -9,22 +9,62 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
   const isEditing = !!partner;
   
   const [formData, setFormData] = useState({
-    partner_name: partner?.partner_name || '',
-    company_name: partner?.company_name || '',
-    email: partner?.email || '',
-    phone: partner?.phone || '',
-    address: partner?.address || '',
-    zip: partner?.zip || '',
-    city: partner?.city || '',
-    country: partner?.country || '',
-    partner_type: partner?.partner_type || 'company',
-    partner_status: partner?.partner_status || 'active',
-    piva: partner?.piva || '',
-    pec: partner?.pec || '',
-    website: partner?.website || ''
+    partner_name: '',
+    company_name: '',
+    email: '',
+    phone: '',
+    address: '',
+    zip: '',
+    city: '',
+    country: '',
+    partner_type: 'company',
+    partner_status: 'active',
+    piva: '',
+    pec: '',
+    website: ''
   });
   
   const [loading, setLoading] = useState(false);
+
+  // Update form data when partner changes
+  useEffect(() => {
+    if (partner) {
+      console.log('Loading partner data for editing:', partner);
+      setFormData({
+        partner_name: partner.partner_name || '',
+        company_name: partner.company_name || '',
+        email: partner.email || '',
+        phone: partner.phone || '',
+        address: partner.address || '',
+        zip: partner.zip || '',
+        city: partner.city || '',
+        country: partner.country || '',
+        partner_type: partner.partner_type || 'company',
+        partner_status: partner.partner_status || 'active',
+        piva: partner.piva || '',
+        pec: partner.pec || '',
+        website: partner.website || ''
+      });
+    } else {
+      // Reset form for new partner
+      console.log('Resetting form for new partner');
+      setFormData({
+        partner_name: '',
+        company_name: '',
+        email: '',
+        phone: '',
+        address: '',
+        zip: '',
+        city: '',
+        country: '',
+        partner_type: 'company',
+        partner_status: 'active',
+        piva: '',
+        pec: '',
+        website: ''
+      });
+    }
+  }, [partner]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

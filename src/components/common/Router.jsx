@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import Dashboard from '../../pages/Dashboard';
+import Invitations from '../../pages/Invitations';
 import Partners from '../../pages/Partners';
 import Users from '../../pages/Users';
 import ForgotPassword from '../auth/ForgotPassword';
@@ -81,6 +82,12 @@ const Router = () => {
       return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
     case '/partners':
       return user ? <ProtectedRoute><Partners /></ProtectedRoute> : <Login />;
+    case '/invitations':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin', 'admin']}>
+          <Invitations />
+        </ProtectedRoute>
+      ) : <Login />;
     case '/users':
       return user ? <ProtectedRoute><Users /></ProtectedRoute> : <Login />;
     default:

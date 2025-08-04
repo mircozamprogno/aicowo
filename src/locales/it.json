@@ -3,6 +3,7 @@
     "dashboard": "Dashboard",
     "partners": "Partner",
     "users": "Utenti",
+    "invitations": "Inviti",
     "partnerInfo": "Info Partner",
     "teamMembers": "Membri del Team",
     "myBookings": "Le Mie Prenotazioni",
@@ -90,6 +91,9 @@
     "website": "Sito Web"
   },
   "invitations": {
+    "title": "Inviti",
+    "manageAllInvitations": "Gestisci tutti gli inviti nel sistema",
+    "managePartnerInvitations": "Gestisci gli inviti per il tuo partner",
     "invitePartnerAdmin": "Invita Amministratore Partner",
     "inviteUser": "Invita Utente",
     "invitingAdminFor": "Invitando Amministratore per",
@@ -100,7 +104,20 @@
     "recipient": "Destinatario",
     "sendInvitation": "Invia Invito",
     "sending": "Invio",
-    "emailSubject": "Invito a unirti a {{partnerName}} come {{role}}"
+    "emailSubject": "Invito a unirti a {{partnerName}}",
+    "invitee": "Invitato",
+    "status": "Stato",
+    "sentAt": "Inviato Il",
+    "usedAt": "Usato Il",
+    "totalInvitations": "Totale",
+    "pendingInvitations": "In Attesa",
+    "usedInvitations": "Usati",
+    "pending": "In Attesa",
+    "used": "Usato",
+    "expired": "Scaduto",
+    "cancelled": "Annullato",
+    "cancelInvitation": "Annulla Invito",
+    "noInvitationsFound": "Nessun invito trovato"
   },
   "common": {
     "loading": "Caricamento...",
@@ -126,6 +143,7 @@
     "passwordsDoNotMatch": "Le password non corrispondono",
     "errorSigningOut": "Errore durante il logout",
     "errorLoadingPartners": "Errore nel caricamento dei partner",
+    "errorLoadingInvitations": "Errore nel caricamento degli inviti",
     "partnerCreatedSuccessfully": "Partner creato con successo",
     "partnerUpdatedSuccessfully": "Partner aggiornato con successo",
     "errorSavingPartner": "Errore nel salvataggio del partner",
@@ -133,7 +151,6 @@
     "locationUpdatedSuccessfully": "Sede aggiornata con successo",
     "locationDeletedSuccessfully": "Sede eliminata con successo",
     "errorSavingLocation": "Errore nel salvataggio della sede",
-    "errorLoadingLocations": "Errore nel caricamento delle sedi",
     "errorDeletingLocation": "Errore nell'eliminazione della sede",
     "confirmDeleteLocation": "Sei sicuro di voler eliminare questa sede?",
     "invalidInvitationLink": "Link di invito non valido",
@@ -143,7 +160,11 @@
     "invitationSentSuccessfully": "Invito inviato con successo",
     "partnerAdminInvitationSent": "Invito amministratore partner inviato con successo",
     "userInvitationSent": "Invito utente inviato con successo",
-    "errorSendingInvitation": "Errore nell'invio dell'invito"
+    "errorSendingInvitation": "Errore nell'invio dell'invito",
+    "invitationCancelledSuccessfully": "Invito annullato con successo",
+    "errorCancellingInvitation": "Errore nell'annullamento dell'invito",
+    "canOnlyCancelPendingInvitations": "Puoi annullare solo gli inviti in attesa",
+    "confirmCancelInvitation": "Sei sicuro di voler annullare questo invito?"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

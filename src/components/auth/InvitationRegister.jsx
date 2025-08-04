@@ -102,14 +102,16 @@ const InvitationRegister = () => {
     setSubmitting(true);
 
     try {
+      // CRITICAL FIX: Include partner_uuid in the user metadata
       await signUp(formData.email, formData.password, {
         first_name: formData.firstName,
         last_name: formData.lastName,
         role: invitation.invited_role,
-        partner_uuid: invitation.partner_uuid,
+        partner_uuid: invitation.partner_uuid, // ← THIS IS THE CRITICAL FIX
         username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
       });
 
+      // Mark invitation as used
       await supabase
         .from('invitations')
         .update({ 

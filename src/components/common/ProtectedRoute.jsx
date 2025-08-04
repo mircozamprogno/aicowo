@@ -2,7 +2,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Layout from './Layout';
 import Navigate from './Navigate';
 
-const ProtectedRoute = ({ children, requiredRole = null }) => {
+const ProtectedRoute = ({ children, requiredRole = null, requiredRoles = null }) => {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
@@ -17,7 +17,13 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/login" />;
   }
 
+  // Check for single required role (backward compatibility)
   if (requiredRole && profile?.role !== requiredRole) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  // Check for multiple required roles
+  if (requiredRoles && !requiredRoles.includes(profile?.role)) {
     return <Navigate to="/dashboard" />;
   }
 
