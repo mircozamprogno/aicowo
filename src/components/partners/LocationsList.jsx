@@ -110,7 +110,10 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         <div className="modal-header">
           <h2 className="modal-title">
             <MapPin size={20} className="inline mr-2" />
-            {t('locations.locationsFor')} {partner?.partner_name}
+            {t('locations.locationsFor')} {partner?.first_name && partner?.second_name 
+              ? `${partner.first_name} ${partner.second_name}`
+              : partner?.first_name || partner?.company_name
+            }
           </h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />

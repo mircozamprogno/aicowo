@@ -9,7 +9,8 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
   const isEditing = !!partner;
   
   const [formData, setFormData] = useState({
-    partner_name: '',
+    first_name: '',
+    second_name: '',
     company_name: '',
     email: '',
     phone: '',
@@ -31,7 +32,8 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
     if (partner) {
       console.log('Loading partner data for editing:', partner);
       setFormData({
-        partner_name: partner.partner_name || '',
+        first_name: partner.first_name || '',
+        second_name: partner.second_name || '',
         company_name: partner.company_name || '',
         email: partner.email || '',
         phone: partner.phone || '',
@@ -49,7 +51,8 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
       // Reset form for new partner
       console.log('Resetting form for new partner');
       setFormData({
-        partner_name: '',
+        first_name: '',
+        second_name: '',
         company_name: '',
         email: '',
         phone: '',
@@ -133,34 +136,49 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="partner_name" className="form-label">
-                {t('partners.partnerName')} *
+              <label htmlFor="first_name" className="form-label">
+                {t('partners.firstName')} *
               </label>
               <input
-                id="partner_name"
-                name="partner_name"
+                id="first_name"
+                name="first_name"
                 type="text"
                 required
                 className="form-input"
-                placeholder={t('placeholders.partnerNamePlaceholder')}
-                value={formData.partner_name}
+                placeholder={t('placeholders.firstNamePlaceholder')}
+                value={formData.first_name}
                 onChange={handleChange}
               />
             </div>
             <div className="form-group">
-              <label htmlFor="company_name" className="form-label">
-                {t('partners.companyName')}
+              <label htmlFor="second_name" className="form-label">
+                {t('partners.secondName')}
               </label>
               <input
-                id="company_name"
-                name="company_name"
+                id="second_name"
+                name="second_name"
                 type="text"
                 className="form-input"
-                placeholder={t('placeholders.companyNamePlaceholder')}
-                value={formData.company_name}
+                placeholder={t('placeholders.secondNamePlaceholder')}
+                value={formData.second_name}
                 onChange={handleChange}
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="company_name" className="form-label">
+              {t('partners.companyName')}
+            </label>
+            <input
+              id="company_name"
+              name="company_name"
+              type="text"
+              className="form-input"
+              placeholder={t('placeholders.companyNamePlaceholder')}
+              value={formData.company_name}
+              onChange={handleChange}
+            />
           </div>
 
           <div className="form-row">

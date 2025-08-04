@@ -142,7 +142,11 @@ class EmailService {
    * Generate email subject
    */
   generateSubject(invitationData) {
-    const partnerName = invitationData.partners?.partner_name || invitationData.partners?.company_name || 'the partner';
+    const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
+                       ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                       : invitationData.partners?.first_name || 
+                         invitationData.partners?.company_name || 
+                         'the partner';
     const role = invitationData.invited_role === 'admin' ? 'Administrator' : 'User';
     return `Invitation to join ${partnerName} as ${role}`;
   }
@@ -151,7 +155,11 @@ class EmailService {
    * Generate HTML email content
    */
   generateEmailHtml(invitationData, invitationLink) {
-    const partnerName = invitationData.partners?.partner_name || invitationData.partners?.company_name || 'the partner';
+    const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
+                       ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                       : invitationData.partners?.first_name || 
+                         invitationData.partners?.company_name || 
+                         'the partner';
     const role = invitationData.invited_role === 'admin' ? 'Administrator' : 'User';
     const firstName = invitationData.invited_first_name || 'there';
 
@@ -210,7 +218,11 @@ class EmailService {
    * Generate plain text email content
    */
   generateEmailText(invitationData, invitationLink) {
-    const partnerName = invitationData.partners?.partner_name || invitationData.partners?.company_name || 'the partner';
+    const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
+                       ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                       : invitationData.partners?.first_name || 
+                         invitationData.partners?.company_name || 
+                         'the partner';
     const role = invitationData.invited_role === 'admin' ? 'Administrator' : 'User';
     const firstName = invitationData.invited_first_name || 'there';
 
@@ -241,7 +253,9 @@ If you weren't expecting this invitation, you can safely ignore this email.
     console.log('To:', invitationData.invited_email);
     console.log('Subject:', this.generateSubject(invitationData));
     console.log('Link:', invitationLink);
-    console.log('Partner:', invitationData.partners?.partner_name || invitationData.partners?.company_name);
+    console.log('Partner:', invitationData.partners?.first_name && invitationData.partners?.second_name 
+                           ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                           : invitationData.partners?.first_name || invitationData.partners?.company_name);
     console.log('Role:', invitationData.invited_role);
     console.log('Custom Message:', invitationData.custom_message || 'None');
     console.log('========================');

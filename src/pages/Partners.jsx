@@ -45,7 +45,9 @@ const Partners = () => {
         setPartners([
           {
             id: 1,
-            partner_name: 'TechHub Milano',
+            first_name: 'TechHub',
+            second_name: 'Milano',
+            company_name: 'TechHub Milano SRL',
             email: 'info@techhub.it',
             partner_status: 'active',
             partner_type: 'company',
@@ -55,7 +57,9 @@ const Partners = () => {
           },
           {
             id: 2,
-            partner_name: 'Startup Space',
+            first_name: 'Startup',
+            second_name: 'Space',
+            company_name: 'Startup Space SRL',
             email: 'hello@startupspace.com',
             partner_status: 'active',
             partner_type: 'organization',
@@ -180,7 +184,10 @@ const Partners = () => {
                   <td className="partners-table-cell">
                     <div className="partner-info">
                       <div className="partner-name">
-                        {partner.partner_name || partner.company_name}
+                        {partner.first_name && partner.second_name 
+                          ? `${partner.first_name} ${partner.second_name}`
+                          : partner.first_name || partner.company_name
+                        }
                       </div>
                       <div className="partner-location">{partner.city}, {partner.country}</div>
                     </div>

@@ -73,9 +73,11 @@ class OneSignalEmailService {
   async sendOneSignalNotification({ email, templateId, substitutions, invitationData }) {
     try {
       // Prepare the exact JSON structure you specified
-      const partnerName = invitationData.partners?.partner_name || 
-                         invitationData.partners?.company_name || 
-                         'the partner';
+      const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
+                         ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                         : invitationData.partners?.first_name || 
+                           invitationData.partners?.company_name || 
+                           'the partner';
       
       const firstName = invitationData.invited_first_name || 'User';
       const lastName = invitationData.invited_last_name || '';
@@ -253,9 +255,11 @@ class OneSignalEmailService {
    * Log email details for development
    */
   logEmailDetails(invitationData, invitationLink) {
-    const partnerName = invitationData.partners?.partner_name || 
-                       invitationData.partners?.company_name || 
-                       'the partner';
+    const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
+                       ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                       : invitationData.partners?.first_name || 
+                         invitationData.partners?.company_name || 
+                         'the partner';
     
     // FIXED: Log the corrected email subject
     const emailSubject = `Invitation to join ${partnerName}`;

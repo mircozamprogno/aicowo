@@ -1,5 +1,5 @@
 import { Mail, Send, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
@@ -18,6 +18,26 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
   const isPartnerAdminInvitation = currentUserRole === 'superadmin';
   const targetRole = isPartnerAdminInvitation ? 'admin' : 'user';
 
+  // Auto-fill partner data when modal opens for superadmin inviting partner admin
+  useEffect(() => {
+    if (isOpen && isPartnerAdminInvitation && partner) {
+      setFormData(prev => ({
+        ...prev,
+        email: partner.email || '',
+        firstName: partner.first_name || '',
+        lastName: partner.second_name || ''
+      }));
+    } else if (isOpen && !isPartnerAdminInvitation) {
+      // Reset form for user invitations
+      setFormData({
+        email: '',
+        firstName: '',
+        lastName: '',
+        customMessage: ''
+      });
+    }
+  }, [isOpen, isPartnerAdminInvitation, partner]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -35,7 +55,8 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
     const invitationWithPartner = {
       ...invitation,
       partners: {
-        partner_name: partner?.partner_name,
+        first_name: partner?.first_name,
+        second_name: partner?.second_name,
         company_name: partner?.company_name
       }
     };
@@ -59,7 +80,9 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       console.log('Fallback - logging invitation details:', {
         to: invitation.invited_email,
         role: invitation.invited_role,
-        partner: partner?.partner_name || partner?.company_name,
+        partner: partner?.first_name && partner?.second_name 
+          ? `${partner.first_name} ${partner.second_name}`
+          : partner?.first_name || partner?.company_name,
         link: invitationLink,
         message: formData.customMessage
       });
@@ -152,7 +175,10 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                 }
               </h3>
               <p className="partner-info-name">
-                {partner?.partner_name || partner?.company_name}
+                {partner?.first_name && partner?.second_name 
+                  ? `${partner.first_name} ${partner.second_name}`
+                  : partner?.first_name || partner?.company_name
+                }
               </p>
               <div className="role-badge">
                 <span className="role-badge-text">
@@ -164,6 +190,14 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
 
           {/* Invitation Form */}
           <div className="modal-form">
+            {isPartnerAdminInvitation && (
+              <div className="auto-fill-notice">
+                <p className="auto-fill-text">
+                  {t('invitations.partnerInfoAutoFilled')}
+                </p>
+              </div>
+            )}
+            
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="firstName" className="form-label">
@@ -236,7 +270,9 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
               <h4 className="preview-title">{t('invitations.emailPreview')}</h4>
               <div className="preview-content">
                 <p><strong>{t('invitations.subject')}:</strong> {t('invitations.emailSubject', { 
-                  partnerName: partner?.partner_name || partner?.company_name,
+                  partnerName: partner?.first_name && partner?.second_name 
+                    ? `${partner.first_name} ${partner.second_name}`
+                    : partner?.first_name || partner?.company_name,
                   role: t(`roles.${targetRole}`)
                 })}</p>
                 <p><strong>{t('invitations.recipient')}:</strong> {formData.firstName} {formData.lastName} ({formData.email})</p>

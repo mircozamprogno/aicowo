@@ -66,7 +66,8 @@
     "addPartner": "Aggiungi Partner",
     "editPartner": "Modifica Partner",
     "partner": "Partner",
-    "partnerName": "Nome Partner",
+    "firstName": "Nome",
+    "secondName": "Secondo Nome",
     "companyName": "Nome Azienda",
     "status": "Stato",
     "type": "Tipo",
@@ -117,7 +118,8 @@
     "expired": "Scaduto",
     "cancelled": "Annullato",
     "cancelInvitation": "Annulla Invito",
-    "noInvitationsFound": "Nessun invito trovato"
+    "noInvitationsFound": "Nessun invito trovato",
+    "partnerInfoAutoFilled": "Le informazioni del partner sono state compilate automaticamente dal profilo partner. Puoi modificare questi campi se necessario."
   },
   "common": {
     "loading": "Caricamento...",
@@ -171,7 +173,7 @@
     "passwordPlaceholder": "Password",
     "firstNamePlaceholder": "Nome",
     "lastNamePlaceholder": "Cognome",
-    "partnerNamePlaceholder": "Inserisci nome partner",
+    "secondNamePlaceholder": "Secondo Nome",
     "companyNamePlaceholder": "Inserisci nome azienda",
     "phonePlaceholder": "Numero di telefono",
     "addressPlaceholder": "Indirizzo",

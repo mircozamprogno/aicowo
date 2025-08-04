@@ -421,3 +421,31 @@
     transform: translateY(0);
   }
 }
+
+
+/* Add these styles to your existing send-invitation-modal.css file */
+
+/* Auto-fill notice styles */
+.auto-fill-notice {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.375rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.auto-fill-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #1e40af;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auto-fill-text::before {
+  content: "ℹ️";
+  font-size: 1rem;
+}

@@ -27,7 +27,8 @@ const Invitations = () => {
         .select(`
           *,
           partners (
-            partner_name,
+            first_name,
+            second_name,
             company_name
           )
         `)
@@ -75,7 +76,8 @@ const Invitations = () => {
             created_at: new Date().toISOString(),
             expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             partners: {
-              partner_name: 'TechHub Milano',
+              first_name: 'TechHub',
+              second_name: 'Milano',
               company_name: 'TechHub Milano SRL'
             }
           },
@@ -91,7 +93,8 @@ const Invitations = () => {
             created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
             expires_at: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
             partners: {
-              partner_name: 'TechHub Milano',
+              first_name: 'TechHub',
+              second_name: 'Milano',
               company_name: 'TechHub Milano SRL'
             }
           },
@@ -107,7 +110,8 @@ const Invitations = () => {
             created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
             expires_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
             partners: {
-              partner_name: 'Startup Space',
+              first_name: 'Startup',
+              second_name: 'Space',
               company_name: 'Startup Space SRL'
             }
           }
@@ -116,7 +120,7 @@ const Invitations = () => {
         // Filter mock data based on user role for development
         if (profile.role === 'admin') {
           setInvitations(mockInvitations.filter(inv => 
-            inv.partners?.partner_name === 'TechHub Milano'
+            inv.partners?.first_name === 'TechHub' && inv.partners?.second_name === 'Milano'
           ));
         } else {
           setInvitations(mockInvitations);
@@ -295,7 +299,10 @@ const Invitations = () => {
                     <td className="invitations-table-cell hide-on-mobile">
                         <div className="partner-info">
                         <div className="partner-name">
-                            {invitation.partners?.partner_name || invitation.partners?.company_name}
+                            {invitation.partners?.first_name && invitation.partners?.second_name 
+                              ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
+                              : invitation.partners?.first_name || invitation.partners?.company_name
+                            }
                         </div>
                         </div>
                     </td>
