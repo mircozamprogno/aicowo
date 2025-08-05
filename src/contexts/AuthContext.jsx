@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { customerService } from '../services/customerService';
 import { supabase } from '../services/supabase';
 
 const AuthContext = createContext({});
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
         } else {
           console.log('Valid session found, setting user');
           setUser(session.user);
-          fetchProfile(session.user.id);
+          await fetchProfile(session.user.id);
         }
       } catch (err) {
         console.error('Session check error:', err);
@@ -46,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     checkSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, !!session);
       
       if (!isMounted) return;
@@ -56,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         setProfile(null);
       } else if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
       }
       
       setLoading(false);
@@ -81,13 +82,31 @@ export const AuthProvider = ({ children }) => {
         console.log('Profile fetch error, using default:', error.message);
       }
 
-      setProfile(data || {
+      const userProfile = data || {
         id: userId,
         first_name: 'User',
         last_name: '',
         role: 'user',
         partner_uuid: null
-      });
+      };
+
+      setProfile(userProfile);
+
+      // Ensure customer record exists for users (not for superadmins)
+      if (userProfile.role === 'user' && userProfile.partner_uuid) {
+        try {
+          await customerService.ensureCustomerRecord(
+            userId, 
+            userProfile.partner_uuid, 
+            userProfile
+          );
+          console.log('Customer record ensured for user');
+        } catch (error) {
+          console.error('Error ensuring customer record:', error);
+          // Don't fail the auth process if customer creation fails
+        }
+      }
+
     } catch (error) {
       console.error('Profile fetch failed:', error);
       setProfile({
@@ -145,6 +164,30 @@ export const AuthProvider = ({ children }) => {
         }
 
         console.log('Profile created successfully:', profileResult);
+
+        // IMPORTANT: Create customer record automatically for regular users
+        if (profileResult.role === 'user' && profileResult.partner_uuid) {
+          try {
+            const customerData = {
+              first_name: userData.first_name,
+              last_name: userData.last_name,
+              email: email
+            };
+
+            await customerService.createCustomerFromRegistration(
+              customerData, 
+              data.user.id, 
+              profileResult.partner_uuid
+            );
+            
+            console.log('Customer record created for new user');
+          } catch (customerError) {
+            console.error('Customer creation error:', customerError);
+            // Don't fail the signup process if customer creation fails
+            // The customer record can be created later
+          }
+        }
+
       } catch (profileError) {
         console.error('Profile creation error:', profileError);
         // Don't throw here to avoid breaking the signup flow

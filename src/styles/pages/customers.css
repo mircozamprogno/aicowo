@@ -1,0 +1,345 @@
+/* ===== Customers Page Styles ===== */
+.customers-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.customers-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .customers-header {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.customers-header-content {
+  flex: 1;
+}
+
+.customers-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.customers-description {
+  font-size: 0.875rem;
+  color: #374151;
+  margin: 0 0 1rem 0;
+}
+
+.customers-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.customers-header-actions {
+  margin-top: 1rem;
+  flex: none;
+}
+
+@media (min-width: 640px) {
+  .customers-header-actions {
+    margin-top: 0;
+    margin-left: 2rem;
+  }
+}
+
+.add-customer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+  background-color: #059669;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-customer-btn:hover {
+  background-color: #047857;
+}
+
+.add-customer-btn:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.customers-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.customers-unauthorized {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.customers-unauthorized h1 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+/* Customer Table Styles */
+.customers-table-container {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.customers-table-wrapper {
+  overflow-x: auto;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+}
+
+.customers-table {
+  min-width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.customers-table-head {
+  background-color: #f9fafb;
+}
+
+.customers-table-header {
+  padding: 0.75rem 1.5rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.customers-table-body {
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.customers-table-row {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.customers-table-row:hover {
+  background-color: #f9fafb;
+}
+
+.customers-table-cell {
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+  color: #111827;
+  vertical-align: top;
+}
+
+/* Customer Info Styles */
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.customer-name {
+  margin-bottom: 0.5rem;
+}
+
+.customer-company {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.customer-person {
+  font-weight: 500;
+  color: #111827;
+}
+
+.customer-location {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.customer-created {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.customer-email {
+  display: flex;
+  flex-direction: column;
+}
+
+.billing-email,
+.billing-phone {
+  margin-top: 0.25rem;
+}
+
+.billing-email small,
+.billing-phone small {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.customer-phone {
+  display: flex;
+  flex-direction: column;
+}
+
+.type-badge {
+  display: inline-flex;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.tax-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.tax-item {
+  font-size: 0.75rem;
+}
+
+.tax-item small {
+  color: #6b7280;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.no-tax-info {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.customer-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.customers-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.empty-icon {
+  margin: 0 auto 1rem auto;
+  color: #d1d5db;
+}
+
+.customers-empty p {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+}
+
+/* Customer Form Modal Styles */
+.customer-form-modal {
+  max-width: 56rem;
+  max-height: 90vh;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.form-section-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .customers-table-cell,
+  .customers-table-header {
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  .customer-company,
+  .customer-person {
+    font-size: 0.875rem;
+  }
+
+  .customer-location,
+  .customer-created {
+    font-size: 0.6875rem;
+  }
+
+  .tax-item small {
+    font-size: 0.6875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .customers-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .customers-header {
+    gap: 1.5rem;
+  }
+
+  .customers-header-actions {
+    margin-left: 0;
+  }
+
+  .add-customer-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Utility classes */
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}

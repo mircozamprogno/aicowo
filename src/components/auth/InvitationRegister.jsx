@@ -1,6 +1,5 @@
 import { Building, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import LanguageSwitcher from '../common/LanguageSwitcher';
@@ -18,8 +17,9 @@ const InvitationRegister = () => {
   const [invitation, setInvitation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { signUp } = useAuth();
   const { t } = useTranslation();
 
   // Get invitation token from URL - Fixed parsing
@@ -104,13 +104,24 @@ const InvitationRegister = () => {
 
     try {
       // CRITICAL FIX: Include partner_uuid in the user metadata
-      await signUp(formData.email, formData.password, {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        role: invitation.invited_role,
-        partner_uuid: invitation.partner_uuid, // ← THIS IS THE CRITICAL FIX
-        username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            role: invitation.invited_role,
+            partner_uuid: invitation.partner_uuid, // ← THIS IS THE CRITICAL FIX
+            username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
+          }
+        }
       });
+
+      if (error) {
+        console.error('Registration error:', error);
+        throw error;
+      }
 
       // Mark invitation as used
       await supabase
@@ -121,8 +132,11 @@ const InvitationRegister = () => {
         })
         .eq('invitation_uuid', invitationToken);
       
-      toast.success(t('messages.accountCreatedSuccessfully'));
-      window.location.hash = '/login';
+      // Show success message instead of auto-login
+      setUserEmail(formData.email);
+      setRegistrationComplete(true);
+      
+      toast.success(t('messages.registrationCompletePleaseVerify'));
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.message || t('messages.errorCreatingAccount'));
@@ -139,6 +153,65 @@ const InvitationRegister = () => {
             <div className="loading-spinner"></div>
             <p>{t('common.loading')}</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (registrationComplete) {
+    return (
+      <div className="auth-page">
+        <div className="auth-container">
+          <div className="auth-header">
+            <Building size={48} color="#10b981" className="auth-logo" />
+            <h2 className="auth-title" style={{ color: '#10b981' }}>
+              {t('auth.registrationComplete')}
+            </h2>
+            <div className="registration-success-content">
+              <p className="auth-instructions">
+                {t('auth.verificationEmailSent')} <strong>{userEmail}</strong>
+              </p>
+              <div className="verification-steps">
+                <div className="verification-step">
+                  <div className="step-number">1</div>
+                  <div className="step-content">
+                    <h4>{t('auth.checkYourEmail')}</h4>
+                    <p>{t('auth.checkEmailInbox')}</p>
+                  </div>
+                </div>
+                <div className="verification-step">
+                  <div className="step-number">2</div>
+                  <div className="step-content">
+                    <h4>{t('auth.clickVerificationLink')}</h4>
+                    <p>{t('auth.clickLinkInEmail')}</p>
+                  </div>
+                </div>
+                <div className="verification-step">
+                  <div className="step-number">3</div>
+                  <div className="step-content">
+                    <h4>{t('auth.loginToAccount')}</h4>
+                    <p>{t('auth.afterVerificationLogin')}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="verification-note">
+                <p className="note-text">
+                  <strong>{t('auth.importantNote')}:</strong> {t('auth.verificationEmailNote')}
+                </p>
+              </div>
+            </div>
+            <div className="auth-back-link">
+              <Link
+                to="/login"
+                className="auth-switch-link"
+              >
+                {t('auth.goToLogin')}
+              </Link>
+            </div>
+          </div>
+        </div>
+        <div className="auth-language-switcher">
+          <LanguageSwitcher />
         </div>
       </div>
     );

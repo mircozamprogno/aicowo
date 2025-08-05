@@ -350,3 +350,110 @@
 .auth-title-error + .auth-instructions {
   color: #ef4444;
 }
+
+
+/* Registration success styles */
+.registration-success-content {
+  text-align: left;
+  margin-top: 1.5rem;
+}
+
+.verification-steps {
+  margin: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.verification-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  border-left: 4px solid #10b981;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background-color: #10b981;
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-content h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.verification-note {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 0.5rem;
+  border-left: 4px solid #f59e0b;
+}
+
+.note-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.note-text strong {
+  font-weight: 600;
+}
+
+/* Responsive design for verification steps */
+@media (max-width: 640px) {
+  .verification-step {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .step-number {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .step-content h4 {
+    font-size: 0.875rem;
+  }
+  
+  .step-content p {
+    font-size: 0.8125rem;
+  }
+  
+  .verification-note {
+    padding: 0.75rem;
+  }
+  
+  .note-text {
+    font-size: 0.8125rem;
+  }
+}

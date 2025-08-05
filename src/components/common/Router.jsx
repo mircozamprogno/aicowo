@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
 import Partners from '../../pages/Partners';
+import Settings from '../../pages/Settings';
 import Users from '../../pages/Users';
 import ForgotPassword from '../auth/ForgotPassword';
 import InvitationRegister from '../auth/InvitationRegister';
@@ -82,6 +84,12 @@ const Router = () => {
       return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
     case '/partners':
       return user ? <ProtectedRoute><Partners /></ProtectedRoute> : <Login />;
+    case '/customers':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <Customers />
+        </ProtectedRoute>
+      ) : <Login />;
     case '/invitations':
       return user ? (
         <ProtectedRoute requiredRoles={['superadmin', 'admin']}>
@@ -90,6 +98,12 @@ const Router = () => {
       ) : <Login />;
     case '/users':
       return user ? <ProtectedRoute><Users /></ProtectedRoute> : <Login />;
+    case '/settings':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin']}>
+          <Settings />
+        </ProtectedRoute>
+      ) : <Login />;
     default:
       // For any unknown path, redirect based on auth status
       if (user) {
