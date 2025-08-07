@@ -1,4 +1,4 @@
-import { Building, Home, Mail, Settings, Users, X } from 'lucide-react';
+import { Building, Cog, Home, Mail, Settings, Users, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import Link from './Link';
@@ -20,8 +20,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.partners'), href: '/partners', icon: Building, roles: ['superadmin'] },
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['superadmin'] },
       
-      // Partner admin can see their partner info, manage customers, and invitations
+      // Partner admin can see their partner info, services, customers, and invitations
       { name: t('navigation.partnerInfo'), href: '/partners', icon: Building, roles: ['admin'] },
+      { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },

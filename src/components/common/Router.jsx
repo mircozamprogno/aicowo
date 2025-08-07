@@ -4,6 +4,7 @@ import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
 import Partners from '../../pages/Partners';
+import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
 import Users from '../../pages/Users';
 import ForgotPassword from '../auth/ForgotPassword';
@@ -84,6 +85,12 @@ const Router = () => {
       return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
     case '/partners':
       return user ? <ProtectedRoute><Partners /></ProtectedRoute> : <Login />;
+    case '/services':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <Services />
+        </ProtectedRoute>
+      ) : <Login />;
     case '/customers':
       return user ? (
         <ProtectedRoute requiredRoles={['admin']}>
