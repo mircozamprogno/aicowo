@@ -278,7 +278,8 @@
     "validCostRequired": "Inserisci un costo valido",
     "validDurationRequired": "Inserisci una durata valida in giorni",
     "validQuantityRequired": "Inserisci una quantità valida (minimo 1)",
-    "validMaxEntriesRequired": "Inserisci un numero valido di ingressi per i servizi pacchetto"
+    "validMaxEntriesRequired": "Inserisci un numero valido di ingressi per i servizi pacchetto",
+    "resourceRequired": "Seleziona una risorsa per questo servizio"
   },
   "services": {
     "title": "Servizi",
@@ -343,7 +344,14 @@
     "autoRenewHelp": "Rinnova automaticamente questo servizio a meno che il cliente non rinunci",
     
     "freeTrialNote": "Prova Gratuita",
-    "freeTrialDescription": "I servizi di prova gratuita non hanno costi e sono tipicamente usati per attirare nuovi clienti"
+    "freeTrialDescription": "I servizi di prova gratuita non hanno costi e sono tipicamente usati per attirare nuovi clienti",
+
+    "locationAndResource": "Sede e Risorsa",
+    "resource": "Risorsa",
+    "selectLocationFirst": "Seleziona prima una sede", 
+    "selectResource": "Seleziona una risorsa",
+    "noResourcesAvailable": "Nessuna risorsa disponibile per questa sede",
+    "availableQuantity": "Quantità disponibile"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

@@ -31,86 +31,44 @@ const Services = () => {
         .eq('partner_uuid', profile.partner_uuid)
         .order('location_name');
 
-      if (locationsError && locationsError.code !== 'PGRST116') {
+      if (locationsError) {
         console.error('Error fetching locations:', locationsError);
-        // Use mock locations for development
-        setLocations([
-          { id: 1, location_name: 'Main Office', partner_uuid: profile.partner_uuid },
-          { id: 2, location_name: 'Co-working Space', partner_uuid: profile.partner_uuid }
-        ]);
+        // Only show error for actual errors, not empty results
+        if (locationsError.code !== 'PGRST116') {
+          toast.error(t('messages.errorLoadingLocations'));
+        }
+        setLocations([]);
       } else {
         setLocations(locationsData || []);
       }
 
-      // Fetch services with location information
+      // Fetch services with location and resource information using the new structure
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select(`
           *,
-          locations (
+          location_resources!fk_services_location_resource (
             id,
-            location_name
+            resource_name,
+            resource_type,
+            quantity,
+            description,
+            locations (
+              id,
+              location_name
+            )
           )
         `)
         .eq('partner_uuid', profile.partner_uuid)
         .order('created_at', { ascending: false });
 
-      if (servicesError && servicesError.code !== 'PGRST116') {
+      if (servicesError) {
         console.error('Error fetching services:', servicesError);
-        // Use mock services for development
-        setServices([
-          {
-            id: 1,
-            service_uuid: 'mock-service-1',
-            service_name: 'Monthly Membership',
-            service_description: 'Full access to coworking space for 30 days',
-            service_type: 'abbonamento',
-            cost: 150.00,
-            currency: 'EUR',
-            duration_days: 30,
-            max_entries: null,
-            quantity: 20,
-            quantity_alert_threshold: 5,
-            service_status: 'active',
-            location_id: 1,
-            locations: { id: 1, location_name: 'Main Office' },
-            created_at: new Date().toISOString()
-          },
-          {
-            id: 2,
-            service_uuid: 'mock-service-2',
-            service_name: '10 Day Passes',
-            service_description: 'Package of 10 day passes for flexible access',
-            service_type: 'pacchetto',
-            cost: 120.00,
-            currency: 'EUR',
-            duration_days: 90,
-            max_entries: 10,
-            quantity: 5,
-            quantity_alert_threshold: 1,
-            service_status: 'active',
-            location_id: 2,
-            locations: { id: 2, location_name: 'Co-working Space' },
-            created_at: new Date(Date.now() - 86400000).toISOString()
-          },
-          {
-            id: 3,
-            service_uuid: 'mock-service-3',
-            service_name: 'Free Trial Week',
-            service_description: 'One week free trial for new customers',
-            service_type: 'free_trial',
-            cost: 0.00,
-            currency: 'EUR',
-            duration_days: 7,
-            max_entries: null,
-            quantity: 3,
-            quantity_alert_threshold: 0,
-            service_status: 'active',
-            location_id: 1,
-            locations: { id: 1, location_name: 'Main Office' },
-            created_at: new Date(Date.now() - 172800000).toISOString()
-          }
-        ]);
+        // Only show error for actual errors, not empty results
+        if (servicesError.code !== 'PGRST116') {
+          toast.error(t('messages.errorLoadingServices'));
+        }
+        setServices([]);
       } else {
         setServices(servicesData || []);
       }
@@ -186,6 +144,14 @@ const Services = () => {
       default:
         return 'status-inactive';
     }
+  };
+
+  const getResourceTypeLabel = (type) => {
+    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+  };
+
+  const getResourceTypeIcon = (type) => {
+    return type === 'scrivania' ? '🪑' : '🏢';
   };
 
   const formatDate = (dateString) => {
@@ -266,10 +232,7 @@ const Services = () => {
                   {t('services.type')}
                 </th>
                 <th className="services-table-header">
-                  {t('services.location')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.quantity')}
+                  {t('services.resource')}
                 </th>
                 <th className="services-table-header">
                   {t('services.cost')}
@@ -310,16 +273,26 @@ const Services = () => {
                     </span>
                   </td>
                   <td className="services-table-cell">
-                    <div className="service-location">
-                      {service.locations?.location_name || t('services.noLocation')}
-                    </div>
-                  </td>
-                  <td className="services-table-cell">
-                    <div className="service-quantity">
-                      <span className="quantity-number">{service.quantity}</span>
-                      <span className="quantity-label">{t('services.available')}</span>
-                      {service.quantity_alert_threshold > 0 && service.quantity <= service.quantity_alert_threshold && (
-                        <span className="quantity-alert">⚠️ {t('services.lowStock')}</span>
+                    <div className="service-resource">
+                      {service.location_resources ? (
+                        <div className="resource-info">
+                          <div className="resource-header">
+                            <span className="resource-icon">
+                              {getResourceTypeIcon(service.location_resources.resource_type)}
+                            </span>
+                            <span className="resource-name">
+                              {service.location_resources.resource_name}
+                            </span>
+                          </div>
+                          <div className="resource-location">
+                            📍 {service.location_resources.locations?.location_name}
+                          </div>
+                          <div className="resource-quantity">
+                            {service.location_resources.quantity} {t('services.available')}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="no-resource">{t('services.noResource')}</span>
                       )}
                     </div>
                   </td>

@@ -277,7 +277,8 @@
     "locationRequired": "Please select a location",
     "validCostRequired": "Please enter a valid cost",
     "validDurationRequired": "Please enter a valid duration in days",
-    "validMaxEntriesRequired": "Please enter a valid number of entries for package services"
+    "validMaxEntriesRequired": "Please enter a valid number of entries for package services",
+    "resourceRequired": "Please select a resource for this service"
   },
   "services": {
     "title": "Services",
@@ -342,7 +343,14 @@
     "autoRenewHelp": "Automatically renew this service unless customer opts out",
     
     "freeTrialNote": "Free Trial",
-    "freeTrialDescription": "Free trial services have no cost and are typically used to attract new customers"
+    "freeTrialDescription": "Free trial services have no cost and are typically used to attract new customers",
+
+    "locationAndResource": "Location & Resource",
+    "resource": "Resource", 
+    "selectLocationFirst": "Select a location first",
+    "selectResource": "Select a resource",
+    "noResourcesAvailable": "No resources available for this location",
+    "availableQuantity": "Available quantity"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",

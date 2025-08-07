@@ -13,18 +13,18 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     service_description: '',
     service_type: 'abbonamento',
     location_id: '',
+    location_resource_id: '',
     cost: '',
     currency: 'EUR',
     duration_days: '30',
     max_entries: '',
-    quantity: '1',
-    quantity_alert_threshold: '0',
     service_status: 'active',
     is_renewable: true,
-    auto_renew: false,
-    grace_period_days: '0'
+    auto_renew: false
   });
   
+  const [locationResources, setLocationResources] = useState([]);
+  const [loadingResources, setLoadingResources] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Update form data when service changes
@@ -36,17 +36,20 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_description: service.service_description || '',
         service_type: service.service_type || 'abbonamento',
         location_id: service.location_id?.toString() || '',
+        location_resource_id: service.location_resource_id?.toString() || '',
         cost: service.cost?.toString() || '',
         currency: service.currency || 'EUR',
         duration_days: service.duration_days?.toString() || '30',
         max_entries: service.max_entries?.toString() || '',
-        quantity: service.quantity?.toString() || '1',
-        quantity_alert_threshold: service.quantity_alert_threshold?.toString() || '0',
         service_status: service.service_status || 'active',
         is_renewable: service.is_renewable !== false,
-        auto_renew: service.auto_renew || false,
-        grace_period_days: service.grace_period_days?.toString() || '0'
+        auto_renew: service.auto_renew || false
       });
+      
+      // If editing and has location_id, load resources for that location
+      if (service.location_id) {
+        fetchLocationResources(service.location_id.toString());
+      }
     } else {
       // Reset form for new service
       console.log('Resetting form for new service');
@@ -55,19 +58,56 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_description: '',
         service_type: 'abbonamento',
         location_id: locations.length > 0 ? locations[0].id.toString() : '',
+        location_resource_id: '',
         cost: '',
         currency: 'EUR',
         duration_days: '30',
         max_entries: '',
-        quantity: '1',
-        quantity_alert_threshold: '0',
         service_status: 'active',
         is_renewable: true,
-        auto_renew: false,
-        grace_period_days: '0'
+        auto_renew: false
       });
+      
+      // Load resources for first location if available
+      if (locations.length > 0) {
+        fetchLocationResources(locations[0].id.toString());
+      }
     }
   }, [service, locations]);
+
+  // Fetch location resources when location changes
+  const fetchLocationResources = async (locationId) => {
+    if (!locationId) {
+      setLocationResources([]);
+      return;
+    }
+
+    setLoadingResources(true);
+    try {
+      const { data, error } = await supabase
+        .from('location_resources')
+        .select('*')
+        .eq('location_id', parseInt(locationId))
+        .eq('partner_uuid', partnerUuid)
+        .order('resource_type', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching location resources:', error);
+        // Only show error for actual errors, not empty results
+        if (error.code !== 'PGRST116') {
+          toast.error('Error loading resources for this location');
+        }
+        setLocationResources([]);
+      } else {
+        setLocationResources(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching location resources:', error);
+      setLocationResources([]);
+    } finally {
+      setLoadingResources(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -83,6 +123,17 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         [name]: value
       }));
     }
+  };
+
+  const handleLocationChange = (e) => {
+    const locationId = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      location_id: locationId,
+      location_resource_id: '' // Reset resource selection when location changes
+    }));
+    
+    fetchLocationResources(locationId);
   };
 
   const handleServiceTypeChange = (e) => {
@@ -106,8 +157,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       toast.error(t('messages.serviceNameRequired'));
       return false;
     }
-    if (!formData.location_id) {
-      toast.error(t('messages.locationRequired'));
+    if (!formData.location_resource_id) {
+      toast.error(t('messages.resourceRequired'));
       return false;
     }
     if (formData.cost === '' || parseFloat(formData.cost) < 0) {
@@ -116,10 +167,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     }
     if (!formData.duration_days || parseInt(formData.duration_days) <= 0) {
       toast.error(t('messages.validDurationRequired'));
-      return false;
-    }
-    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
-      toast.error(t('messages.validQuantityRequired'));
       return false;
     }
     if (formData.service_type === 'pacchetto' && (!formData.max_entries || parseInt(formData.max_entries) <= 0)) {
@@ -145,16 +192,14 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_description: formData.service_description.trim(),
         service_type: formData.service_type,
         location_id: parseInt(formData.location_id),
+        location_resource_id: parseInt(formData.location_resource_id),
         cost: parseFloat(formData.cost),
         currency: formData.currency,
         duration_days: parseInt(formData.duration_days),
         max_entries: formData.service_type === 'pacchetto' ? parseInt(formData.max_entries) || null : null,
-        quantity: parseInt(formData.quantity),
-        quantity_alert_threshold: parseInt(formData.quantity_alert_threshold) || 0,
         service_status: formData.service_status,
         is_renewable: formData.is_renewable,
         auto_renew: formData.auto_renew,
-        grace_period_days: parseInt(formData.grace_period_days) || 0,
         partner_uuid: partnerUuid
       };
 
@@ -168,9 +213,16 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           .eq('id', service.id)
           .select(`
             *,
-            locations (
+            location_resources!fk_services_location_resource (
               id,
-              location_name
+              resource_name,
+              resource_type,
+              quantity,
+              location_id,
+              locations (
+                id,
+                location_name
+              )
             )
           `);
       } else {
@@ -180,9 +232,16 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           .insert([serviceData])
           .select(`
             *,
-            locations (
+            location_resources!fk_services_location_resource (
               id,
-              location_name
+              resource_name,
+              resource_type,
+              quantity,
+              location_id,
+              locations (
+                id,
+                location_name
+              )
             )
           `);
       }
@@ -210,6 +269,14 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     }
   };
 
+  const getResourceTypeLabel = (type) => {
+    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+  };
+
+  const getResourceTypeIcon = (type) => {
+    return type === 'scrivania' ? '🪑' : '🏢';
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -224,7 +291,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <div className="modal-form">
           {/* Basic Information Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('services.basicInformation')}</h3>
@@ -279,6 +346,31 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                 </select>
               </div>
               <div className="form-group">
+                <label htmlFor="service_status" className="form-label">
+                  {t('services.status')} *
+                </label>
+                <select
+                  id="service_status"
+                  name="service_status"
+                  required
+                  className="form-select"
+                  value={formData.service_status}
+                  onChange={handleChange}
+                >
+                  <option value="active">{t('services.active')}</option>
+                  <option value="inactive">{t('services.inactive')}</option>
+                  <option value="draft">{t('services.draft')}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Location and Resource Selection Section */}
+          <div className="form-section">
+            <h3 className="form-section-title">{t('services.locationAndResource')}</h3>
+            
+            <div className="form-row">
+              <div className="form-group">
                 <label htmlFor="location_id" className="form-label">
                   {t('services.location')} *
                 </label>
@@ -288,7 +380,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   required
                   className="form-select"
                   value={formData.location_id}
-                  onChange={handleChange}
+                  onChange={handleLocationChange}
                 >
                   {locations.length === 0 ? (
                     <option value="">{t('services.noLocationsAvailable')}</option>
@@ -304,25 +396,62 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   )}
                 </select>
               </div>
+              <div className="form-group">
+                <label htmlFor="location_resource_id" className="form-label">
+                  {t('services.resource')} *
+                </label>
+                <select
+                  id="location_resource_id"
+                  name="location_resource_id"
+                  required
+                  className="form-select"
+                  value={formData.location_resource_id}
+                  onChange={handleChange}
+                  disabled={!formData.location_id || loadingResources}
+                >
+                  {!formData.location_id ? (
+                    <option value="">{t('services.selectLocationFirst')}</option>
+                  ) : loadingResources ? (
+                    <option value="">{t('common.loading')}...</option>
+                  ) : locationResources.length === 0 ? (
+                    <option value="">{t('services.noResourcesAvailable')}</option>
+                  ) : (
+                    <>
+                      <option value="">{t('services.selectResource')}</option>
+                      {locationResources.map((resource) => (
+                        <option key={resource.id} value={resource.id}>
+                          {getResourceTypeIcon(resource.resource_type)} {resource.resource_name} 
+                          ({resource.quantity} {t('services.available')})
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="service_status" className="form-label">
-                {t('services.status')} *
-              </label>
-              <select
-                id="service_status"
-                name="service_status"
-                required
-                className="form-select"
-                value={formData.service_status}
-                onChange={handleChange}
-              >
-                <option value="active">{t('services.active')}</option>
-                <option value="inactive">{t('services.inactive')}</option>
-                <option value="draft">{t('services.draft')}</option>
-              </select>
-            </div>
+            {formData.location_resource_id && (
+              <div className="resource-info-display">
+                {locationResources
+                  .filter(r => r.id.toString() === formData.location_resource_id)
+                  .map(resource => (
+                    <div key={resource.id} className="selected-resource-info">
+                      <div className="resource-details">
+                        <strong>{getResourceTypeLabel(resource.resource_type)}</strong>: {resource.resource_name}
+                      </div>
+                      <div className="resource-quantity">
+                        {t('services.availableQuantity')}: <strong>{resource.quantity}</strong>
+                      </div>
+                      {resource.description && (
+                        <div className="resource-description">
+                          {resource.description}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                }
+              </div>
+            )}
           </div>
 
           {/* Pricing and Duration Section */}
@@ -412,88 +541,9 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
             )}
           </div>
 
-          {/* Quantity and Availability Section */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('services.quantityAndAvailability')}</h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="quantity" className="form-label">
-                  {t('services.quantity')} *
-                </label>
-                <input
-                  id="quantity"
-                  name="quantity"
-                  type="number"
-                  min="1"
-                  required
-                  className="form-input"
-                  placeholder="1"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                />
-                <p className="form-help-text">
-                  {t('services.quantityHelp')}
-                </p>
-              </div>
-              <div className="form-group">
-                <label htmlFor="quantity_alert_threshold" className="form-label">
-                  {t('services.alertThreshold')}
-                </label>
-                <input
-                  id="quantity_alert_threshold"
-                  name="quantity_alert_threshold"
-                  type="number"
-                  min="0"
-                  className="form-input"
-                  placeholder="0"
-                  value={formData.quantity_alert_threshold}
-                  onChange={handleChange}
-                />
-                <p className="form-help-text">
-                  {t('services.alertThresholdHelp')}
-                </p>
-              </div>
-            </div>
-
-            <div className="quantity-examples">
-              <div className="examples-title">{t('services.quantityExamples')}:</div>
-              <div className="examples-list">
-                <div className="example-item">
-                  <strong>{t('services.exampleDesks')}:</strong> {t('services.exampleDesksDesc')}
-                </div>
-                <div className="example-item">
-                  <strong>{t('services.exampleMeetingRooms')}:</strong> {t('services.exampleMeetingRoomsDesc')}
-                </div>
-                <div className="example-item">
-                  <strong>{t('services.exampleParkingSpots')}:</strong> {t('services.exampleParkingSpotsDesc')}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Advanced Settings Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('services.advancedSettings')}</h3>
-            
-            <div className="form-group">
-              <label htmlFor="grace_period_days" className="form-label">
-                {t('services.gracePeriodDays')}
-              </label>
-              <input
-                id="grace_period_days"
-                name="grace_period_days"
-                type="number"
-                min="0"
-                className="form-input"
-                placeholder="0"
-                value={formData.grace_period_days}
-                onChange={handleChange}
-              />
-              <p className="form-help-text">
-                {t('services.gracePeriodHelp')}
-              </p>
-            </div>
 
             <div className="form-checkboxes">
               <div className="form-checkbox-group">
@@ -549,9 +599,10 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               {t('common.cancel')}
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="btn-primary"
-              disabled={loading || locations.length === 0}
+              disabled={loading || locations.length === 0 || !formData.location_resource_id}
             >
               {loading 
                 ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
@@ -559,7 +610,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               }
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
