@@ -221,6 +221,7 @@ const Contracts = () => {
 
   // Package booking handlers
   const handlePackageBooking = (contract) => {
+    console.log('Opening package booking for contract:', contract);
     setSelectedPackageContract(contract);
     setShowPackageBooking(true);
   };
@@ -230,7 +231,8 @@ const Contracts = () => {
     setSelectedPackageContract(null);
   };
 
-  const handlePackageBookingSuccess = () => {
+  const handlePackageBookingSuccess = (reservation) => {
+    console.log('Package booking successful:', reservation);
     fetchContracts(); // Refresh contracts to update entries_used
     setShowPackageBooking(false);
     setSelectedPackageContract(null);
@@ -249,6 +251,27 @@ const Contracts = () => {
     }
 
     try {
+      // First delete related package reservations
+      const { error: reservationsError } = await supabase
+        .from('package_reservations')
+        .delete()
+        .eq('contract_id', contractToDelete.id);
+
+      if (reservationsError) {
+        console.error('Error deleting package reservations:', reservationsError);
+      }
+
+      // Then delete related bookings
+      const { error: bookingsError } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('contract_id', contractToDelete.id);
+
+      if (bookingsError) {
+        console.error('Error deleting bookings:', bookingsError);
+      }
+
+      // Finally delete the contract
       const { error } = await supabase
         .from('contracts')
         .delete()
@@ -287,7 +310,7 @@ const Contracts = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('it-IT');
   };
 
   const getStatusBadgeClass = (status) => {
@@ -369,6 +392,21 @@ const Contracts = () => {
     return today >= start && today <= end;
   };
 
+  const canBookPackage = (contract) => {
+    // Check if it's a package contract
+    if (contract.service_type !== 'pacchetto') return false;
+    
+    // Check if contract is active
+    if (contract.contract_status !== 'active') return false;
+    
+    // Check if current date is within contract range
+    if (!isDateInContractRange(contract.start_date, contract.end_date)) return false;
+    
+    // Check if there are remaining entries (at least 0.5 for half day)
+    const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
+    return remainingEntries >= 0.5;
+  };
+
   if (loading) {
     return <div className="contracts-loading">{t('common.loading')}</div>;
   }
@@ -444,17 +482,16 @@ const Contracts = () => {
                 <th className="contracts-table-header">
                   {t('contracts.status')}
                 </th>
-                {(canEditContracts || isCustomer) && (
-                  <th className="contracts-table-header">
-                    {t('contracts.actions')}
-                  </th>
-                )}
+                <th className="contracts-table-header">
+                  {t('contracts.actions')}
+                </th>
               </tr>
             </thead>
             <tbody className="contracts-table-body">
               {contracts.map((contract) => {
                 const daysRemaining = calculateDaysRemaining(contract.end_date);
                 const isInRange = isDateInContractRange(contract.start_date, contract.end_date);
+                const canBook = canBookPackage(contract);
                 
                 return (
                   <tr key={contract.id} className="contracts-table-row">
@@ -487,8 +524,15 @@ const Contracts = () => {
                         </div>
                         {contract.service_type === 'pacchetto' && contract.service_max_entries && (
                           <div className="usage-info">
-                            {contract.entries_used || 0} / {contract.service_max_entries} {t('contracts.entriesUsed')}
-                            <div className="remaining-entries">
+                            <div className="usage-display">
+                              <span className="entries-used">{contract.entries_used || 0}</span>
+                              <span className="entries-separator"> / </span>
+                              <span className="entries-total">{contract.service_max_entries}</span>
+                              <span className="entries-label"> {t('contracts.entriesUsed')}</span>
+                            </div>
+                            <div className={`remaining-entries ${
+                              (contract.service_max_entries - (contract.entries_used || 0)) <= 2 ? 'warning' : ''
+                            }`}>
                               {(contract.service_max_entries - (contract.entries_used || 0))} {t('reservations.entriesRemaining')}
                             </div>
                           </div>
@@ -534,45 +578,81 @@ const Contracts = () => {
                         {t(`contracts.${contract.contract_status}`)}
                       </span>
                     </td>
-                    {(canEditContracts || isCustomer) && (
-                      <td className="contracts-table-cell">
-                        <div className="contract-actions">
-                          {canEditContracts && (
-                            <button 
-                              className="edit-btn"
-                              onClick={() => handleEditContract(contract)}
-                              title={t('contracts.editContract')}
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                          )}
-                          
-                          {/* Package booking button */}
-                          {contract.service_type === 'pacchetto' && 
-                           contract.contract_status === 'active' && 
-                           isInRange && 
-                           (contract.service_max_entries - (contract.entries_used || 0)) >= 0.5 && (
-                            <button 
-                              className="package-booking-btn"
-                              onClick={() => handlePackageBooking(contract)}
-                              title={t('reservations.bookReservation')}
-                            >
-                              <Calendar size={16} />
-                            </button>
-                          )}
-                          
-                          {(isPartnerAdmin || isSuperAdmin) && (
-                            <button 
-                              className="delete-btn"
-                              onClick={() => handleDeleteContract(contract)}
-                              title="Elimina Contratto"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    )}
+                    <td className="contracts-table-cell">
+                      <div className="contract-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        {canEditContracts && (
+                          <button 
+                            className="edit-btn"
+                            onClick={() => handleEditContract(contract)}
+                            title={t('contracts.editContract')}
+                            style={{
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              padding: '0.5rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '2.5rem'
+                            }}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        )}
+                        
+                        {/* Package booking button - ALWAYS SHOW FOR PACKAGE CONTRACTS */}
+                        {contract.service_type === 'pacchetto' && (
+                          <button 
+                            className="package-booking-btn"
+                            onClick={() => handlePackageBooking(contract)}
+                            title={canBook ? t('reservations.bookReservation') : 'No entries remaining or contract inactive'}
+                            disabled={!canBook}
+                            style={{
+                              backgroundColor: canBook ? '#16a34a' : '#9ca3af',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              padding: '0.5rem 0.75rem',
+                              cursor: canBook ? 'pointer' : 'not-allowed',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.375rem',
+                              minWidth: '6rem',
+                              fontSize: '0.875rem',
+                              fontWeight: '500'
+                            }}
+                          >
+                            <Calendar size={16} />
+                            {canBook ? 'Book' : 'No Entries'}
+                          </button>
+                        )}
+                        
+                        {(isPartnerAdmin || isSuperAdmin) && (
+                          <button 
+                            className="delete-btn"
+                            onClick={() => handleDeleteContract(contract)}
+                            title="Elimina Contratto"
+                            style={{
+                              backgroundColor: '#dc2626',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '0.375rem',
+                              padding: '0.5rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '2.5rem'
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

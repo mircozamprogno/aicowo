@@ -23,6 +23,7 @@ const PackageBookingForm = ({
   const [availabilityStatus, setAvailabilityStatus] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -33,6 +34,7 @@ const PackageBookingForm = ({
         time_slot: 'morning'
       });
       setAvailabilityStatus(null);
+      setShowConfirmation(false);
     }
   }, [isOpen]);
 
@@ -43,9 +45,11 @@ const PackageBookingForm = ({
     } else {
       setAvailabilityStatus(null);
     }
-  }, [formData.reservation_date, formData.duration_type, formData.time_slot]);
+  }, [formData.reservation_date, formData.duration_type, formData.time_slot, contract]);
 
   const checkAvailability = async () => {
+    if (!contract || !formData.reservation_date) return;
+    
     setCheckingAvailability(true);
     
     try {
@@ -56,91 +60,136 @@ const PackageBookingForm = ({
           location_resources!fk_services_location_resource (
             id,
             resource_name,
-            resource_type
+            resource_type,
+            quantity
           )
         `)
         .eq('id', contract.service_id)
         .single();
 
       if (serviceError) {
+        console.error('Service error:', serviceError);
         setAvailabilityStatus({ available: false, error: 'Error checking availability' });
+        return;
+      }
+
+      const locationResource = serviceData.location_resources;
+      if (!locationResource) {
+        setAvailabilityStatus({ available: false, error: 'No resource found for this service' });
         return;
       }
 
       // Check existing package reservations for this date and resource
       const { data: existingReservations, error: reservationsError } = await supabase
         .from('package_reservations')
-        .select('duration_type, time_slot')
-        .eq('location_resource_id', serviceData.location_resources.id)
+        .select('duration_type, time_slot, entries_used')
+        .eq('location_resource_id', locationResource.id)
         .eq('reservation_date', formData.reservation_date)
         .eq('reservation_status', 'confirmed');
 
       if (reservationsError) {
+        console.error('Reservations error:', reservationsError);
         setAvailabilityStatus({ available: false, error: 'Error checking existing reservations' });
         return;
       }
 
-      // Check for conflicts
+      // Check for conflicts based on resource type and quantity
       let hasConflict = false;
       let conflictReason = '';
+      let usedSlots = 0;
+      const totalQuantity = locationResource.quantity || 1;
 
-      if (formData.duration_type === 'full_day') {
-        // Full day conflicts with any existing reservation
-        if (existingReservations.length > 0) {
-          hasConflict = true;
-          conflictReason = 'Resource already booked for this date';
-        }
-      } else {
-        // Half day - check for conflicts
-        const hasFullDayConflict = existingReservations.some(res => res.duration_type === 'full_day');
-        const hasTimeSlotConflict = existingReservations.some(res => 
-          res.duration_type === 'half_day' && res.time_slot === formData.time_slot
-        );
-        
-        if (hasFullDayConflict) {
-          hasConflict = true;
-          conflictReason = 'Resource booked for full day on this date';
-        } else if (hasTimeSlotConflict) {
-          hasConflict = true;
-          conflictReason = `${formData.time_slot === 'morning' ? 'Morning' : 'Afternoon'} slot already booked`;
+      // Calculate how many slots are currently used
+      if (existingReservations && existingReservations.length > 0) {
+        if (formData.duration_type === 'full_day') {
+          // For full day, count all existing reservations (both full and half day)
+          usedSlots = existingReservations.reduce((total, res) => {
+            return total + (res.duration_type === 'full_day' ? 1 : 0.5);
+          }, 0);
+          
+          if (usedSlots >= totalQuantity) {
+            hasConflict = true;
+            conflictReason = 'Resource fully booked for this date';
+          }
+        } else {
+          // For half day, check specific time slot conflicts
+          const hasFullDayConflict = existingReservations.some(res => res.duration_type === 'full_day');
+          const sameTimeSlotReservations = existingReservations.filter(res => 
+            res.duration_type === 'half_day' && res.time_slot === formData.time_slot
+          );
+          
+          if (hasFullDayConflict) {
+            hasConflict = true;
+            conflictReason = 'Resource booked for full day on this date';
+          } else if (sameTimeSlotReservations.length >= totalQuantity) {
+            hasConflict = true;
+            conflictReason = `${formData.time_slot === 'morning' ? 'Morning' : 'Afternoon'} slot fully booked`;
+          }
         }
       }
 
       setAvailabilityStatus({
         available: !hasConflict,
         conflictReason,
-        resourceName: serviceData.location_resources.resource_name
+        resourceName: locationResource.resource_name,
+        resourceType: locationResource.resource_type,
+        totalQuantity,
+        usedSlots
       });
 
     } catch (error) {
       console.error('Error checking availability:', error);
-      setAvailabilityStatus({ available: false, error: 'Unexpected error' });
+      setAvailabilityStatus({ available: false, error: 'Unexpected error checking availability' });
     } finally {
       setCheckingAvailability(false);
     }
   };
 
+  const validateReservation = () => {
+    const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
+    const remainingEntries = contract.service_max_entries - (contract.entries_used || 0);
+    
+    // Check if enough entries remain
+    if (remainingEntries < entriesNeeded) {
+      toast.error('Insufficient entries remaining in your package');
+      return false;
+    }
+
+    // Check if date is within contract range
+    const reservationDate = new Date(formData.reservation_date);
+    const contractStart = new Date(contract.start_date);
+    const contractEnd = new Date(contract.end_date);
+    
+    if (reservationDate < contractStart || reservationDate > contractEnd) {
+      toast.error('Reservation date must be within contract period');
+      return false;
+    }
+
+    // Check if resource is available
+    if (!availabilityStatus?.available) {
+      toast.error('Resource not available for selected date and time');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!availabilityStatus?.available) {
-      toast.error('Resource not available for selected date and time');
+    if (!validateReservation()) {
       return;
     }
 
-    const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
-    const remainingEntries = contract.service_max_entries - contract.entries_used;
-    
-    if (remainingEntries < entriesNeeded) {
-      toast.error('Insufficient entries remaining in your package');
-      return;
-    }
+    setShowConfirmation(true);
+  };
 
+  const handleConfirmReservation = async () => {
     setLoading(true);
 
     try {
       // Get location resource ID
-      const { data: serviceData } = await supabase
+      const { data: serviceData, error: serviceError } = await supabase
         .from('services')
         .select(`
           location_resources!fk_services_location_resource (
@@ -149,6 +198,12 @@ const PackageBookingForm = ({
         `)
         .eq('id', contract.service_id)
         .single();
+
+      if (serviceError) {
+        throw new Error('Error getting service resource: ' + serviceError.message);
+      }
+
+      const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
 
       const reservationData = {
         contract_id: contract.id,
@@ -159,42 +214,182 @@ const PackageBookingForm = ({
         duration_type: formData.duration_type,
         time_slot: formData.duration_type === 'half_day' ? formData.time_slot : null,
         entries_used: entriesNeeded,
+        reservation_status: 'confirmed',
         created_by: user.id
       };
+
+      console.log('Creating reservation with data:', reservationData);
 
       const { data, error } = await supabase
         .from('package_reservations')
         .insert([reservationData])
-        .select()
+        .select(`
+          *,
+          contracts (
+            contract_number,
+            service_name
+          ),
+          location_resources (
+            resource_name,
+            resource_type,
+            locations (
+              location_name
+            )
+          )
+        `)
         .single();
 
       if (error) {
-        throw error;
+        console.error('Reservation creation error:', error);
+        throw new Error(error.message);
       }
 
-      toast.success('Reservation created successfully!');
+      console.log('Reservation created successfully:', data);
+      toast.success(t('reservations.bookingConfirmed'));
       onSuccess(data);
       onClose();
       
     } catch (error) {
       console.error('Error creating reservation:', error);
-      toast.error('Error creating reservation');
+      toast.error('Error creating reservation: ' + error.message);
     } finally {
       setLoading(false);
+      setShowConfirmation(false);
     }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('it-IT');
+  };
+
+  const formatCurrency = (amount, currency = 'EUR') => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const getResourceTypeIcon = (type) => {
+    return type === 'scrivania' ? '🪑' : '🏢';
   };
 
   if (!isOpen || !contract) return null;
 
-  const remainingEntries = contract.service_max_entries - contract.entries_used;
+  const remainingEntries = contract.service_max_entries - (contract.entries_used || 0);
   const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
+
+  // Confirmation modal
+  if (showConfirmation) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal-container">
+          <div className="modal-header">
+            <h2 className="modal-title">
+              {t('reservations.confirmReservation')}
+            </h2>
+            <button onClick={() => setShowConfirmation(false)} className="modal-close-btn">
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="confirmation-content">
+            <div className="confirmation-warning">
+              <AlertTriangle size={24} className="warning-icon" />
+              <div className="warning-text">
+                <h3>{t('contracts.importantNotice')}</h3>
+                <p>This reservation will use {entriesNeeded} entries from your package. Once confirmed, the reservation cannot be modified.</p>
+              </div>
+            </div>
+
+            <div className="contract-summary">
+              <h4>{t('reservations.bookingSummary')}</h4>
+              
+              <div className="summary-section">
+                <h5>{t('reservations.contractDetails')}</h5>
+                <div className="summary-item">
+                  <span className="summary-label">Contract:</span>
+                  <span className="summary-value">{contract.contract_number}</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">Service:</span>
+                  <span className="summary-value">{contract.service_name}</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">Resource:</span>
+                  <span className="summary-value">
+                    {getResourceTypeIcon(contract.resource_type)} {contract.resource_name}
+                  </span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">Location:</span>
+                  <span className="summary-value">{contract.location_name}</span>
+                </div>
+              </div>
+
+              <div className="summary-section">
+                <h5>{t('reservations.reservationDetails')}</h5>
+                <div className="summary-item">
+                  <span className="summary-label">{t('reservations.dateLabel')}:</span>
+                  <span className="summary-value">{formatDate(formData.reservation_date)}</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">{t('reservations.durationLabel')}:</span>
+                  <span className="summary-value">
+                    {formData.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
+                    {formData.duration_type === 'half_day' && (
+                      <span> - {formData.time_slot === 'morning' ? t('reservations.morningSlot') : t('reservations.afternoonSlot')}</span>
+                    )}
+                  </span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">{t('reservations.entriesToUse')}:</span>
+                  <span className="summary-value">{entriesNeeded}</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">{t('reservations.remainingAfter')}:</span>
+                  <span className="summary-value cost">{remainingEntries - entriesNeeded}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="confirmation-actions">
+              <button
+                type="button"
+                onClick={() => setShowConfirmation(false)}
+                className="btn-secondary"
+                disabled={loading}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReservation}
+                className="btn-primary"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    {t('common.creating')}...
+                  </>
+                ) : (
+                  t('reservations.confirmReservation')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay">
       <div className="modal-container">
         <div className="modal-header">
           <h2 className="modal-title">
-            Book Package Reservation
+            {t('reservations.bookReservation')}
           </h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
@@ -204,7 +399,7 @@ const PackageBookingForm = ({
         <form onSubmit={handleSubmit} className="modal-form">
           {/* Contract Info */}
           <div className="form-section">
-            <h3 className="form-section-title">Contract Details</h3>
+            <h3 className="form-section-title">{t('reservations.contractDetails')}</h3>
             <div style={{ 
               background: '#f9fafb', 
               border: '1px solid #e5e7eb', 
@@ -223,12 +418,22 @@ const PackageBookingForm = ({
                 <div>
                   <span style={{ color: '#6b7280' }}>Resource:</span>
                   <div style={{ fontWeight: '500' }}>
-                    {contract.resource_type === 'scrivania' ? '🪑' : '🏢'} {contract.resource_name}
+                    {getResourceTypeIcon(contract.resource_type)} {contract.resource_name}
+                  </div>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Location:</span>
+                  <div style={{ fontWeight: '500' }}>{contract.location_name}</div>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Contract Period:</span>
+                  <div style={{ fontWeight: '500' }}>
+                    {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
                   </div>
                 </div>
                 <div>
                   <span style={{ color: '#6b7280' }}>Remaining Entries:</span>
-                  <div style={{ fontWeight: '700', color: '#16a34a' }}>
+                  <div style={{ fontWeight: '700', color: remainingEntries > 2 ? '#16a34a' : '#dc2626' }}>
                     {remainingEntries} / {contract.service_max_entries}
                   </div>
                 </div>
@@ -238,28 +443,34 @@ const PackageBookingForm = ({
 
           {/* Reservation Form */}
           <div className="form-section">
-            <h3 className="form-section-title">Reservation Details</h3>
+            <h3 className="form-section-title">{t('reservations.reservationDetails')}</h3>
             
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="reservation_date" className="form-label">
-                  Date *
+                  {t('reservations.reservationDate')} *
                 </label>
                 <input
                   id="reservation_date"
                   type="date"
                   required
-                  min={new Date().toISOString().split('T')[0]}
+                  min={Math.max(
+                    new Date().toISOString().split('T')[0],
+                    contract.start_date
+                  )}
                   max={contract.end_date}
                   value={formData.reservation_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}
                   className="form-input"
                 />
+                <div className="form-help-text">
+                  Available period: {formatDate(contract.start_date)} to {formatDate(contract.end_date)}
+                </div>
               </div>
               
               <div className="form-group">
                 <label htmlFor="duration_type" className="form-label">
-                  Duration *
+                  {t('reservations.duration')} *
                 </label>
                 <select
                   id="duration_type"
@@ -267,8 +478,8 @@ const PackageBookingForm = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, duration_type: e.target.value }))}
                   className="form-select"
                 >
-                  <option value="full_day">Full Day (1 entry)</option>
-                  <option value="half_day">Half Day (0.5 entries)</option>
+                  <option value="full_day">{t('reservations.fullDayEntry')}</option>
+                  <option value="half_day">{t('reservations.halfDayEntry')}</option>
                 </select>
               </div>
             </div>
@@ -276,7 +487,7 @@ const PackageBookingForm = ({
             {/* Time Slot for Half Day */}
             {formData.duration_type === 'half_day' && (
               <div className="form-group">
-                <label className="form-label">Time Slot *</label>
+                <label className="form-label">{t('reservations.timeSlot')} *</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <label style={{ 
                     display: 'flex', 
@@ -286,7 +497,8 @@ const PackageBookingForm = ({
                     border: '1px solid #d1d5db', 
                     borderRadius: '0.375rem', 
                     cursor: 'pointer',
-                    backgroundColor: formData.time_slot === 'morning' ? '#eff6ff' : 'white'
+                    backgroundColor: formData.time_slot === 'morning' ? '#eff6ff' : 'white',
+                    borderColor: formData.time_slot === 'morning' ? '#3b82f6' : '#d1d5db'
                   }}>
                     <input
                       type="radio"
@@ -296,7 +508,7 @@ const PackageBookingForm = ({
                       onChange={(e) => setFormData(prev => ({ ...prev, time_slot: e.target.value }))}
                     />
                     <div>
-                      <div style={{ fontWeight: '500' }}>Morning</div>
+                      <div style={{ fontWeight: '500' }}>{t('reservations.morning')}</div>
                       <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>9:00 - 13:00</div>
                     </div>
                   </label>
@@ -308,7 +520,8 @@ const PackageBookingForm = ({
                     border: '1px solid #d1d5db', 
                     borderRadius: '0.375rem', 
                     cursor: 'pointer',
-                    backgroundColor: formData.time_slot === 'afternoon' ? '#eff6ff' : 'white'
+                    backgroundColor: formData.time_slot === 'afternoon' ? '#eff6ff' : 'white',
+                    borderColor: formData.time_slot === 'afternoon' ? '#3b82f6' : '#d1d5db'
                   }}>
                     <input
                       type="radio"
@@ -318,7 +531,7 @@ const PackageBookingForm = ({
                       onChange={(e) => setFormData(prev => ({ ...prev, time_slot: e.target.value }))}
                     />
                     <div>
-                      <div style={{ fontWeight: '500' }}>Afternoon</div>
+                      <div style={{ fontWeight: '500' }}>{t('reservations.afternoon')}</div>
                       <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>14:00 - 18:00</div>
                     </div>
                   </label>
@@ -330,11 +543,11 @@ const PackageBookingForm = ({
           {/* Availability Check */}
           {formData.reservation_date && (
             <div className="availability-check">
-              <h4>Availability Check</h4>
+              <h4>{t('reservations.availabilityCheck')}</h4>
               {checkingAvailability ? (
                 <div className="availability-loading">
                   <div className="loading-spinner-small"></div>
-                  <span>Checking availability...</span>
+                  <span>{t('reservations.checkingAvailability')}...</span>
                 </div>
               ) : availabilityStatus ? (
                 <div className={`availability-status ${availabilityStatus.available ? 'available' : 'unavailable'}`}>
@@ -342,15 +555,18 @@ const PackageBookingForm = ({
                     <div className="availability-success">
                       <CheckCircle size={20} />
                       <div className="availability-details">
-                        <p><strong>Available</strong></p>
-                        <p>{availabilityStatus.resourceName} is free for your selected time</p>
+                        <p><strong>{t('reservations.resourceAvailable')}</strong></p>
+                        <p>{availabilityStatus.resourceName} is available for your selected time</p>
+                        {availabilityStatus.totalQuantity > 1 && (
+                          <p>Capacity: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} of {availabilityStatus.totalQuantity} available</p>
+                        )}
                       </div>
                     </div>
                   ) : (
                     <div className="availability-error">
                       <AlertTriangle size={20} />
                       <div className="availability-details">
-                        <p><strong>Not Available</strong></p>
+                        <p><strong>{t('reservations.resourceNotAvailable')}</strong></p>
                         <p>{availabilityStatus.conflictReason || availabilityStatus.error}</p>
                       </div>
                     </div>
@@ -360,7 +576,7 @@ const PackageBookingForm = ({
             </div>
           )}
 
-          {/* Summary */}
+          {/* Booking Summary */}
           {formData.reservation_date && availabilityStatus?.available && (
             <div style={{ 
               background: '#eff6ff', 
@@ -369,16 +585,17 @@ const PackageBookingForm = ({
               padding: '1rem',
               borderLeft: '4px solid #3b82f6'
             }}>
-              <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e40af' }}>Booking Summary</h4>
+              <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e40af' }}>{t('reservations.bookingSummary')}</h4>
               <div style={{ fontSize: '0.875rem', color: '#1e40af' }}>
-                <p>Date: <strong>{new Date(formData.reservation_date).toLocaleDateString('it-IT')}</strong></p>
-                <p>Duration: <strong>{formData.duration_type === 'full_day' ? 'Full Day' : 'Half Day'}</strong>
+                <p>{t('reservations.dateLabel')}: <strong>{formatDate(formData.reservation_date)}</strong></p>
+                <p>{t('reservations.durationLabel')}: <strong>
+                  {formData.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
                   {formData.duration_type === 'half_day' && (
-                    <span> - <strong>{formData.time_slot === 'morning' ? 'Morning (9:00-13:00)' : 'Afternoon (14:00-18:00)'}</strong></span>
+                    <span> - <strong>{formData.time_slot === 'morning' ? t('reservations.morningSlot') : t('reservations.afternoonSlot')}</strong></span>
                   )}
-                </p>
-                <p>Entries to use: <strong>{entriesNeeded}</strong></p>
-                <p>Remaining after: <strong>{remainingEntries - entriesNeeded}</strong></p>
+                </strong></p>
+                <p>{t('reservations.entriesToUse')}: <strong>{entriesNeeded}</strong></p>
+                <p>{t('reservations.remainingAfter')}: <strong>{remainingEntries - entriesNeeded}</strong></p>
               </div>
             </div>
           )}
@@ -390,21 +607,14 @@ const PackageBookingForm = ({
               className="btn-secondary"
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               className="btn-primary"
               disabled={loading || !availabilityStatus?.available || remainingEntries < entriesNeeded}
             >
-              {loading ? (
-                <>
-                  <div className="loading-spinner-small"></div>
-                  Creating...
-                </>
-              ) : (
-                'Confirm Reservation'
-              )}
+              {t('reservations.confirmReservation')}
             </button>
           </div>
         </form>

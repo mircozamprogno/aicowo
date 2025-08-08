@@ -9,7 +9,7 @@ const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewType, setViewType] = useState('month'); // 'month', 'week', 'day'
+  const [viewType, setViewType] = useState('month');
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -34,7 +34,7 @@ const Bookings = () => {
         fetchFilterOptions();
       }
     }
-  }, [profile]); // Remove currentDate and viewType dependency
+  }, [profile]);
 
   useEffect(() => {
     applyFilters();
@@ -43,10 +43,14 @@ const Bookings = () => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      let query = supabase
+      // Base queries
+      let bookingsQuery = supabase
         .from('bookings')
         .select(`
-          *,
+          id,
+          start_date,
+          end_date,
+          booking_status,
           contracts (
             id,
             contract_number,
@@ -74,34 +78,85 @@ const Bookings = () => {
         .eq('booking_status', 'active')
         .order('start_date');
 
-      // Apply role-based filtering
+      let packagesQuery = supabase
+        .from('package_reservations')
+        .select(`
+          id,
+          reservation_date,
+          duration_type,
+          time_slot,
+          reservation_status,
+          contracts (
+            id,
+            contract_number,
+            service_name,
+            service_cost,
+            service_currency
+          ),
+          location_resources (
+            id,
+            resource_name,
+            resource_type,
+            locations (
+              id,
+              location_name
+            )
+          ),
+          customers (
+            id,
+            first_name,
+            second_name,
+            email,
+            company_name
+          )
+        `)
+        .eq('reservation_status', 'confirmed')
+        .order('reservation_date');
+
+      // Role-based filters
       if (isCustomer) {
-        // Get customer ID first
         const { data: customerData } = await supabase
           .from('customers')
           .select('id')
           .eq('user_id', user.id)
           .single();
-        
+
         if (customerData) {
-          query = query.eq('customer_id', customerData.id);
+          bookingsQuery = bookingsQuery.eq('customer_id', customerData.id);
+          packagesQuery = packagesQuery.eq('customer_id', customerData.id);
         }
       } else if (isPartnerAdmin) {
-        query = query.eq('partner_uuid', profile.partner_uuid);
+        bookingsQuery = bookingsQuery.eq('partner_uuid', profile.partner_uuid);
+        packagesQuery = packagesQuery.eq('partner_uuid', profile.partner_uuid);
       }
 
-      // Fetch all bookings without date filtering here
-      // Date filtering will be done in the view functions
-      const { data, error } = await query;
+      // Execute both queries in parallel
+      const [
+        { data: bookingsData, error: bookingsError },
+        { data: packagesData, error: packagesError }
+      ] = await Promise.all([bookingsQuery, packagesQuery]);
 
-      if (error) {
-        console.error('Error fetching bookings:', error);
-        toast.error('Error loading bookings');
-        setBookings([]);
-      } else {
-        console.log('Fetched bookings:', data);
-        setBookings(data || []);
-      }
+      if (bookingsError) throw bookingsError;
+      if (packagesError) throw packagesError;
+
+      // Normalize package reservations to match bookings structure
+      const normalizedPackages = (packagesData || []).map(pkg => ({
+        id: `pkg-${pkg.id}`, // Unique ID with prefix
+        start_date: pkg.reservation_date,
+        end_date: pkg.reservation_date,
+        contracts: pkg.contracts,
+        location_resources: pkg.location_resources,
+        customers: pkg.customers,
+        duration_type: pkg.duration_type,   // new
+        time_slot: pkg.time_slot            // new
+      }));
+
+      // Merge and sort all results
+      const combined = [...(bookingsData || []), ...normalizedPackages].sort(
+        (a, b) => new Date(a.start_date) - new Date(b.start_date)
+      );
+
+      setBookings(combined);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast.error('Error loading bookings');
@@ -113,14 +168,12 @@ const Bookings = () => {
 
   const fetchFilterOptions = async () => {
     try {
-      // Fetch customers
       const { data: customersData } = await supabase
         .from('customers')
         .select('id, first_name, second_name, company_name')
         .eq('partner_uuid', profile.partner_uuid)
         .order('first_name');
 
-      // Fetch locations
       const { data: locationsData } = await supabase
         .from('locations')
         .select('id, location_name')
@@ -134,104 +187,17 @@ const Bookings = () => {
     }
   };
 
-  const getMockBookings = () => {
-    const today = new Date();
-    return [
-      {
-        id: 1,
-        booking_uuid: 'mock-1',
-        start_date: formatDate(today),
-        end_date: formatDate(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)),
-        contracts: {
-          contract_number: 'CONT-20250108-0001',
-          service_name: 'Hot Desk Monthly',
-          service_cost: 200,
-          service_currency: 'EUR'
-        },
-        location_resources: {
-          resource_name: 'Hot Desks Area A',
-          resource_type: 'scrivania',
-          locations: { location_name: 'Milano Centro' }
-        },
-        customers: {
-          first_name: 'Mario',
-          second_name: 'Rossi',
-          company_name: null
-        }
-      },
-      {
-        id: 2,
-        booking_uuid: 'mock-2',
-        start_date: formatDate(new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000)),
-        end_date: formatDate(new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000)),
-        contracts: {
-          contract_number: 'CONT-20250108-0002',
-          service_name: 'Meeting Room Package',
-          service_cost: 150,
-          service_currency: 'EUR'
-        },
-        location_resources: {
-          resource_name: 'Small Meeting Room',
-          resource_type: 'sala_riunioni',
-          locations: { location_name: 'Milano Centro' }
-        },
-        customers: {
-          first_name: 'Anna',
-          second_name: 'Verdi',
-          company_name: 'Verdi SRL'
-        }
-      }
-    ];
-  };
-
-  const getDateRange = () => {
-    const start = new Date(currentDate);
-    const end = new Date(currentDate);
-    
-    switch (viewType) {
-      case 'month':
-        start.setDate(1);
-        start.setMonth(start.getMonth() - 1); // Include previous month for better coverage
-        end.setMonth(end.getMonth() + 2);
-        end.setDate(0); // Last day of next month
-        break;
-      case 'week':
-        const dayOfWeek = start.getDay();
-        start.setDate(start.getDate() - dayOfWeek);
-        end.setDate(start.getDate() + 6);
-        break;
-      case 'day':
-        end.setDate(start.getDate());
-        break;
-    }
-    
-    return {
-      start: formatDate(start),
-      end: formatDate(end)
-    };
-  };
-
   const applyFilters = () => {
     let filtered = [...bookings];
-    
     if (filters.customer) {
-      filtered = filtered.filter(booking => 
-        booking.customers?.id.toString() === filters.customer
-      );
+      filtered = filtered.filter(b => b.customers?.id?.toString() === filters.customer);
     }
-    
     if (filters.resourceType) {
-      filtered = filtered.filter(booking => 
-        booking.location_resources?.resource_type === filters.resourceType
-      );
+      filtered = filtered.filter(b => b.location_resources?.resource_type === filters.resourceType);
     }
-    
     if (filters.location) {
-      filtered = filtered.filter(booking => 
-        booking.location_resources?.locations?.id.toString() === filters.location
-      );
+      filtered = filtered.filter(b => b.location_resources?.locations?.id?.toString() === filters.location);
     }
-    
     setFilteredBookings(filtered);
   };
 
@@ -257,199 +223,79 @@ const Bookings = () => {
 
   const navigateDate = (direction) => {
     const newDate = new Date(currentDate);
-    
-    switch (viewType) {
-      case 'month':
-        newDate.setMonth(newDate.getMonth() + direction);
-        break;
-      case 'week':
-        newDate.setDate(newDate.getDate() + (direction * 7));
-        break;
-      case 'day':
-        newDate.setDate(newDate.getDate() + direction);
-        break;
+    if (viewType === 'month') {
+      newDate.setMonth(newDate.getMonth() + direction);
+    } else if (viewType === 'week') {
+      newDate.setDate(newDate.getDate() + (direction * 7));
+    } else if (viewType === 'day') {
+      newDate.setDate(newDate.getDate() + direction);
     }
-    
     setCurrentDate(newDate);
   };
 
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
+  const goToToday = () => setCurrentDate(new Date());
 
-  const getResourceColor = (resourceType) => {
-    const colors = {
-      'scrivania': '#3b82f6', // Blue for desks
-      'sala_riunioni': '#f59e0b' // Orange for meeting rooms
-    };
-    return colors[resourceType] || '#6b7280';
+  const getResourceColor = (type) => {
+    const colors = { scrivania: '#3b82f6', sala_riunioni: '#f59e0b' };
+    return colors[type] || '#6b7280';
   };
 
   const getBookingsForDate = (date) => {
     const dateStr = formatDate(date);
-    console.log('Getting bookings for date:', dateStr, 'Total bookings:', filteredBookings.length);
-    
-    const dayBookings = filteredBookings.filter(booking => {
-      const startDate = new Date(booking.start_date);
-      const endDate = new Date(booking.end_date);
-      const checkDate = new Date(date);
-      
-      // Reset all times to start of day for accurate comparison
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(0, 0, 0, 0);
-      checkDate.setHours(0, 0, 0, 0);
-      
-      const isInRange = checkDate >= startDate && checkDate <= endDate;
-      if (isInRange) {
-        console.log('Booking in range for', dateStr, ':', booking.contracts?.contract_number);
-      }
-      
-      return isInRange;
+    return filteredBookings.filter(b => {
+      const start = new Date(b.start_date);
+      const end = new Date(b.end_date);
+      const check = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      check.setHours(0, 0, 0, 0);
+      return check >= start && check <= end;
     });
-    
-    console.log('Found', dayBookings.length, 'bookings for', dateStr);
-    return dayBookings;
   };
 
-  const handleBookingClick = (booking) => {
-    if (isPartnerAdmin) {
-      // TODO: Open edit contract modal
-      console.log('Edit contract:', booking.contracts?.id);
-    } else {
-      // TODO: Open view contract modal
-      console.log('View contract:', booking.contracts?.id);
-    }
-  };
+  const getResourceTypeIcon = (type) => (type === 'scrivania' ? '🪑' : '🏢');
 
   const renderMonthView = () => {
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
     const days = [];
-    const currentDateForLoop = new Date(startDate);
-    
-    // Generate 42 days (6 weeks)
+    const tempDate = new Date(startDate);
     for (let i = 0; i < 42; i++) {
-      days.push(new Date(currentDateForLoop));
-      currentDateForLoop.setDate(currentDateForLoop.getDate() + 1);
+      days.push(new Date(tempDate));
+      tempDate.setDate(tempDate.getDate() + 1);
     }
-
     return (
       <div className="calendar-month">
         <div className="calendar-weekdays">
-          {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map(day => (
-            <div key={day} className="calendar-weekday">{day}</div>
+          {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map(d => (
+            <div key={d} className="calendar-weekday">{d}</div>
           ))}
         </div>
         <div className="calendar-days">
-          {days.map((day, index) => {
+          {days.map((day, idx) => {
             const isCurrentMonth = day.getMonth() === currentDate.getMonth();
             const isToday = formatDate(day) === formatDate(new Date());
             const dayBookings = getBookingsForDate(day);
-            
             return (
-              <div 
-                key={index} 
+              <div
+                key={idx}
                 className={`calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`}
-                onClick={() => {
-                  setCurrentDate(new Date(day));
-                  setViewType('day');
-                }}
+                onClick={() => { setCurrentDate(new Date(day)); setViewType('day'); }}
               >
                 <div className="calendar-day-number">{day.getDate()}</div>
                 <div className="calendar-day-bookings">
-                  {dayBookings.slice(0, 3).map((booking, idx) => (
+                  {dayBookings.slice(0, 3).map(b => (
                     <div
-                      key={booking.id}
+                      key={b.id}
                       className="calendar-booking-item"
-                      style={{ backgroundColor: getResourceColor(booking.location_resources?.resource_type) }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBookingClick(booking);
-                      }}
-                      title={`${booking.customers?.company_name || 
-                        `${booking.customers?.first_name} ${booking.customers?.second_name}`} - ${booking.location_resources?.resource_name}`}
+                      style={{ backgroundColor: getResourceColor(b.location_resources?.resource_type) }}
+                      title={`${b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`} - ${b.location_resources?.resource_name}`}
                     >
-                      <span className="booking-title">
-                        {booking.customers?.company_name || booking.customers?.first_name}
-                      </span>
+                      <span className="booking-title">{b.customers?.company_name || b.customers?.first_name}</span>
                     </div>
                   ))}
-                  {dayBookings.length > 3 && (
-                    <div className="calendar-more-bookings">
-                      +{dayBookings.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderWeekView = () => {
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-    
-    const weekDays = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      weekDays.push(day);
-    }
-
-    return (
-      <div className="calendar-week">
-        <div className="calendar-week-header">
-          {weekDays.map(day => {
-            const isToday = formatDate(day) === formatDate(new Date());
-            return (
-              <div key={formatDate(day)} className={`calendar-week-day-header ${isToday ? 'today' : ''}`}>
-                <div className="week-day-name">
-                  {day.toLocaleDateString('it-IT', { weekday: 'short' })}
-                </div>
-                <div className="week-day-number">{day.getDate()}</div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="calendar-week-content">
-          {weekDays.map(day => {
-            const dayBookings = getBookingsForDate(day);
-            const isToday = formatDate(day) === formatDate(new Date());
-            
-            return (
-              <div 
-                key={formatDate(day)} 
-                className={`calendar-week-day ${isToday ? 'today' : ''}`}
-                onClick={() => {
-                  setCurrentDate(new Date(day));
-                  setViewType('day');
-                }}
-              >
-                <div className="week-day-bookings">
-                  {dayBookings.map(booking => (
-                    <div
-                      key={booking.id}
-                      className="week-booking-item"
-                      style={{ backgroundColor: getResourceColor(booking.location_resources?.resource_type) }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBookingClick(booking);
-                      }}
-                    >
-                      <div className="week-booking-title">
-                        {booking.customers?.company_name || booking.customers?.first_name}
-                      </div>
-                      <div className="week-booking-resource">
-                        {booking.location_resources?.resource_name}
-                      </div>
-                    </div>
-                  ))}
+                  {dayBookings.length > 3 && <div className="calendar-more-bookings">+{dayBookings.length - 3} more</div>}
                 </div>
               </div>
             );
@@ -461,7 +307,6 @@ const Bookings = () => {
 
   const renderDayView = () => {
     const dayBookings = getBookingsForDate(currentDate);
-    
     return (
       <div className="calendar-day-view">
         <div className="day-view-header">
@@ -476,44 +321,32 @@ const Bookings = () => {
             </div>
           ) : (
             <div className="day-bookings-list">
-              {dayBookings.map(booking => (
-                <div
-                  key={booking.id}
-                  className="day-booking-card"
-                  onClick={() => handleBookingClick(booking)}
-                >
+              {dayBookings.map(b => (
+                <div key={b.id} className="day-booking-card">
                   <div className="day-booking-header">
-                    <div 
-                      className="day-booking-color"
-                      style={{ backgroundColor: getResourceColor(booking.location_resources?.resource_type) }}
-                    />
+                    <div className="day-booking-color" style={{ backgroundColor: getResourceColor(b.location_resources?.resource_type) }} />
                     <div className="day-booking-info">
-                      <h3>{booking.customers?.company_name || 
-                        `${booking.customers?.first_name} ${booking.customers?.second_name}`}
-                      </h3>
-                      <p>{booking.contracts?.contract_number}</p>
+                      <h3>{b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`}</h3>
+                      <p>{b.contracts?.contract_number}</p>
                     </div>
                     <div className="day-booking-cost">
                       {new Intl.NumberFormat('it-IT', {
                         style: 'currency',
-                        currency: booking.contracts?.service_currency || 'EUR'
-                      }).format(booking.contracts?.service_cost || 0)}
+                        currency: b.contracts?.service_currency || 'EUR'
+                      }).format(b.contracts?.service_cost || 0)}
                     </div>
                   </div>
                   <div className="day-booking-details">
-                    <div className="day-booking-service">
-                      <strong>{booking.contracts?.service_name}</strong>
-                    </div>
-                    <div className="day-booking-resource">
-                      {getResourceTypeIcon(booking.location_resources?.resource_type)} {' '}
-                      {booking.location_resources?.resource_name}
-                    </div>
-                    <div className="day-booking-location">
-                      📍 {booking.location_resources?.locations?.location_name}
-                    </div>
-                    <div className="day-booking-period">
-                      📅 {formatDate(new Date(booking.start_date))} - {formatDate(new Date(booking.end_date))}
-                    </div>
+                    <div className="day-booking-service"><strong>{b.contracts?.service_name}</strong></div>
+                    <div className="day-booking-resource">{getResourceTypeIcon(b.location_resources?.resource_type)} {b.location_resources?.resource_name}</div>
+                    <div className="day-booking-location">📍 {b.location_resources?.locations?.location_name}</div>
+                    <div className="day-booking-period">📅 {b.start_date} - {b.end_date}</div>
+                    {b.duration_type && (
+                      <div className="day-booking-duration">
+                        ⏱ {b.duration_type === 'full_day' ? 'Giornata intera' : 'Mezza giornata'}
+                        {b.duration_type === 'half_day' && b.time_slot ? ` (${b.time_slot === 'morning' ? 'Mattina' : 'Pomeriggio'})` : ''}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -524,188 +357,78 @@ const Bookings = () => {
     );
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
-  };
-
-  const getViewTitle = () => {
-    switch (viewType) {
-      case 'month':
-        return formatMonthYear(currentDate);
-      case 'week':
-        const startOfWeek = new Date(currentDate);
-        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return `${startOfWeek.getDate()}-${endOfWeek.getDate()} ${formatMonthYear(currentDate)}`;
-      case 'day':
-        return formatDisplayDate(currentDate);
-      default:
-        return '';
-    }
-  };
-
-  const handleFilterChange = (filterKey, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterKey]: value
-    }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      customer: '',
-      resourceType: '',
-      location: ''
-    });
-  };
-
-  if (loading) {
-    return <div className="bookings-loading">{t('common.loading')}</div>;
-  }
+  if (loading) return <div className="bookings-loading">{t('common.loading')}</div>;
 
   return (
     <div className="bookings-page">
+      {/* Header */}
       <div className="bookings-header">
         <div className="bookings-header-content">
-          <h1 className="bookings-title">
-            <Calendar size={24} className="mr-2" />
-            Calendario Prenotazioni
-          </h1>
+          <h1 className="bookings-title"><Calendar size={24} className="mr-2" />Calendario Prenotazioni</h1>
           <p className="bookings-description">
-            {isCustomer 
-              ? 'Visualizza le tue prenotazioni attive'
-              : 'Gestisci tutte le prenotazioni dei tuoi clienti'
-            }
+            {isCustomer ? 'Visualizza le tue prenotazioni attive' : 'Gestisci tutte le prenotazioni dei tuoi clienti'}
           </p>
         </div>
-        
         <div className="bookings-controls">
-          {/* View Type Selector */}
           <div className="view-selector">
-            <button
-              className={`view-btn ${viewType === 'month' ? 'active' : ''}`}
-              onClick={() => setViewType('month')}
-            >
-              Mese
-            </button>
-            <button
-              className={`view-btn ${viewType === 'week' ? 'active' : ''}`}
-              onClick={() => setViewType('week')}
-            >
-              Settimana
-            </button>
-            <button
-              className={`view-btn ${viewType === 'day' ? 'active' : ''}`}
-              onClick={() => setViewType('day')}
-            >
-              Giorno
-            </button>
+            <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>Mese</button>
+            <button className={`view-btn ${viewType === 'week' ? 'active' : ''}`} onClick={() => setViewType('week')}>Settimana</button>
+            <button className={`view-btn ${viewType === 'day' ? 'active' : ''}`} onClick={() => setViewType('day')}>Giorno</button>
           </div>
-
-          {/* Today Button */}
-          <button className="today-btn" onClick={goToToday}>
-            <Home size={16} />
-            Oggi
-          </button>
-
-          {/* Filters for Partner Admin */}
-          {isPartnerAdmin && (
-            <button 
-              className="filter-btn"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter size={16} />
-              Filtri
-            </button>
-          )}
+          <button className="today-btn" onClick={goToToday}><Home size={16} />Oggi</button>
+          {isPartnerAdmin && <button className="filter-btn" onClick={() => setShowFilters(!showFilters)}><Filter size={16} />Filtri</button>}
         </div>
       </div>
 
-      {/* Filters Panel */}
+      {/* Filters */}
       {showFilters && isPartnerAdmin && (
         <div className="filters-panel">
           <div className="filters-row">
             <div className="filter-group">
               <label>Cliente:</label>
-              <select 
-                value={filters.customer} 
-                onChange={(e) => handleFilterChange('customer', e.target.value)}
-              >
+              <select value={filters.customer} onChange={(e) => setFilters(prev => ({ ...prev, customer: e.target.value }))}>
                 <option value="">Tutti i clienti</option>
-                {customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.company_name || `${customer.first_name} ${customer.second_name}`}
-                  </option>
-                ))}
+                {customers.map(c => <option key={c.id} value={c.id}>{c.company_name || `${c.first_name} ${c.second_name}`}</option>)}
               </select>
             </div>
-            
             <div className="filter-group">
               <label>Tipo Risorsa:</label>
-              <select 
-                value={filters.resourceType} 
-                onChange={(e) => handleFilterChange('resourceType', e.target.value)}
-              >
+              <select value={filters.resourceType} onChange={(e) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}>
                 <option value="">Tutte le risorse</option>
                 <option value="scrivania">🪑 Scrivanie</option>
                 <option value="sala_riunioni">🏢 Sale Riunioni</option>
               </select>
             </div>
-            
             <div className="filter-group">
               <label>Sede:</label>
-              <select 
-                value={filters.location} 
-                onChange={(e) => handleFilterChange('location', e.target.value)}
-              >
+              <select value={filters.location} onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}>
                 <option value="">Tutte le sedi</option>
-                {locations.map(location => (
-                  <option key={location.id} value={location.id}>
-                    {location.location_name}
-                  </option>
-                ))}
+                {locations.map(l => <option key={l.id} value={l.id}>{l.location_name}</option>)}
               </select>
             </div>
-            
-            <button className="clear-filters-btn" onClick={clearFilters}>
-              Pulisci Filtri
-            </button>
+            <button className="clear-filters-btn" onClick={() => setFilters({ customer: '', resourceType: '', location: '' })}>Pulisci Filtri</button>
           </div>
         </div>
       )}
 
-      {/* Calendar Navigation */}
+      {/* Navigation */}
       <div className="calendar-navigation">
-        <button className="nav-btn" onClick={() => navigateDate(-1)}>
-          <ChevronLeft size={20} />
-        </button>
-        
-        <h2 className="calendar-title">{getViewTitle()}</h2>
-        
-        <button className="nav-btn" onClick={() => navigateDate(1)}>
-          <ChevronRight size={20} />
-        </button>
+        <button className="nav-btn" onClick={() => navigateDate(-1)}><ChevronLeft size={20} /></button>
+        <h2 className="calendar-title">{viewType === 'month' ? formatMonthYear(currentDate) : formatDisplayDate(currentDate)}</h2>
+        <button className="nav-btn" onClick={() => navigateDate(1)}><ChevronRight size={20} /></button>
       </div>
 
-      {/* Calendar Content */}
+      {/* Calendar */}
       <div className="calendar-container">
-        {filteredBookings.length === 0 && !loading ? (
+        {filteredBookings.length === 0 ? (
           <div className="day-no-bookings">
             <Calendar size={48} className="empty-icon" />
             <p>Nessuna prenotazione trovata per il periodo selezionato</p>
-            <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: '#9ca3af' }}>
-              Debug: Fetched {bookings.length} bookings, filtered to {filteredBookings.length}
-            </p>
           </div>
         ) : (
           <>
             {viewType === 'month' && renderMonthView()}
-            {viewType === 'week' && renderWeekView()}
             {viewType === 'day' && renderDayView()}
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', padding: '1rem' }}>
-              Debug Info: {bookings.length} total bookings loaded, {filteredBookings.length} after filters
-            </div>
           </>
         )}
       </div>
@@ -714,14 +437,8 @@ const Bookings = () => {
       <div className="calendar-legend">
         <h4>Legenda:</h4>
         <div className="legend-items">
-          <div className="legend-item">
-            <div className="legend-color" style={{ backgroundColor: '#3b82f6' }}></div>
-            <span>🪑 Scrivanie</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div>
-            <span>🏢 Sale Riunioni</span>
-          </div>
+          <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#3b82f6' }}></div><span>🪑 Scrivanie</span></div>
+          <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div><span>🏢 Sale Riunioni</span></div>
         </div>
       </div>
     </div>
