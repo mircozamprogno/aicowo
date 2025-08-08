@@ -51,7 +51,6 @@
     "businessInformation": "Informazioni Aziendali",
     "personalInformation": "Informazioni Personali",
     "addressInformation": "Informazioni Indirizzo",
-    "businessInformation": "Informazioni Aziendali",
     "billingInformation": "Informazioni di Fatturazione",
     "billingEmail": "Email Fatturazione",
     "billingPhone": "Telefono Fatturazione",
@@ -285,10 +284,14 @@
     "contractCreatedSuccessfully": "Contratto creato con successo",
     "errorCreatingContract": "Errore nella creazione del contratto",
     "customerRequired": "Seleziona un cliente",
-    "locationRequired": "Seleziona una sede",
     "serviceRequired": "Seleziona un servizio",
     "startDateRequired": "Seleziona una data di inizio",
-    "startDateCannotBeInPast": "La data di inizio non può essere nel passato"
+    "startDateCannotBeInPast": "La data di inizio non può essere nel passato",
+    "contractUpdatedSuccessfully": "Contratto aggiornato con successo",
+    "errorUpdatingContract": "Errore nell'aggiornamento del contratto",
+    "availabilityCheckInProgress": "Attendere il completamento del controllo disponibilità",
+    "pleaseWaitForAvailabilityCheck": "Attendere il controllo disponibilità",
+    "resourceNotAvailable": "La risorsa selezionata non è disponibile per il periodo scelto"
   },
   "services": {
     "title": "Servizi",
@@ -385,7 +388,6 @@
     "duration": "Durata",
     "days": "giorni",
     "daysRemaining": "giorni rimanenti",
-    "expired": "Scaduto",
     "entriesUsed": "ingressi utilizzati",
     "includedEntries": "Ingressi Inclusi",
     "totalContracts": "Contratti Totali",
@@ -413,7 +415,19 @@
     "active": "Attivo",
     "expired": "Scaduto",
     "cancelled": "Annullato",
-    "suspended": "Sospeso"
+    "suspended": "Sospeso",
+    "confirmUpdate": "Conferma Aggiornamento Contratto",
+    "contractUpdateWarning": "Gli aggiornamenti del contratto modificheranno i termini dell'accordo esistente. Ti preghiamo di rivedere attentamente tutte le modifiche prima di confermare.",
+    "updateSummary": "Riepilogo Aggiornamento",
+    "updating": "Aggiornamento",
+    "confirmAndUpdate": "Conferma e Aggiorna Contratto",
+    "reviewUpdate": "Rivedi Aggiornamento",
+    "resourceAvailability": "Disponibilità Risorsa",
+    "checkingAvailability": "Controllo disponibilità",
+    "resourceAvailable": "Risorsa Disponibile",
+    "resourceNotAvailable": "Risorsa Non Disponibile",
+    "availabilityDetails": "{{available}} di {{total}} {{resource}} disponibili per questo periodo",
+    "resourceFullyBooked": "Tutti i {{total}} {{resource}} sono prenotati per questo periodo"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

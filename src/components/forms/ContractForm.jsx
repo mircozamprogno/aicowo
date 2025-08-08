@@ -12,7 +12,9 @@ const ContractForm = ({
   partnerUuid, 
   isCustomerMode = false,
   customers = [],
-  locations = [] 
+  locations = [],
+  editMode = false,
+  contractToEdit = null
 }) => {
   const { profile, user } = useAuth();
   const { t } = useTranslation();
@@ -31,6 +33,8 @@ const ContractForm = ({
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [customerLocations, setCustomerLocations] = useState([]);
+  const [availabilityStatus, setAvailabilityStatus] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   // Get customer ID for customer mode
   useEffect(() => {
@@ -39,15 +43,19 @@ const ContractForm = ({
     }
   }, [isCustomerMode, user, isOpen]);
 
-  // Reset form when modal opens/closes
+  // Reset form when modal opens/closes or when edit contract changes
   useEffect(() => {
     if (isOpen) {
-      resetForm();
+      if (editMode && contractToEdit) {
+        loadContractForEditing();
+      } else {
+        resetForm();
+      }
       if (isCustomerMode) {
         fetchCustomerLocations();
       }
     }
-  }, [isOpen]);
+  }, [isOpen, editMode, contractToEdit]);
 
   // Fetch services when location changes
   useEffect(() => {
@@ -67,8 +75,63 @@ const ContractForm = ({
       calculateEndDate();
     } else {
       setCalculatedEndDate('');
+      setAvailabilityStatus(null);
     }
   }, [selectedService, formData.start_date]);
+
+  // Check availability when we have service, dates, and it's an abbonamento
+  useEffect(() => {
+    if (selectedService && formData.start_date && calculatedEndDate && 
+        selectedService.service_type === 'abbonamento') {
+      checkResourceAvailability();
+    } else {
+      setAvailabilityStatus(null);
+    }
+  }, [selectedService, formData.start_date, calculatedEndDate]);
+
+  const loadContractForEditing = async () => {
+    if (!contractToEdit) return;
+
+    try {
+      // Set form data from existing contract
+      setFormData({
+        customer_id: contractToEdit.customer_id?.toString() || '',
+        location_id: contractToEdit.location_id?.toString() || '',
+        service_id: contractToEdit.service_id?.toString() || '',
+        start_date: contractToEdit.start_date || ''
+      });
+
+      // Load the service details if we have a service_id
+      if (contractToEdit.service_id) {
+        const { data: serviceData, error } = await supabase
+          .from('services')
+          .select(`
+            *,
+            location_resources!fk_services_location_resource (
+              id,
+              resource_name,
+              resource_type,
+              locations (
+                id,
+                location_name
+              )
+            )
+          `)
+          .eq('id', contractToEdit.service_id)
+          .single();
+
+        if (!error && serviceData) {
+          setSelectedService(serviceData);
+        }
+      }
+
+      // Set calculated end date from existing contract
+      setCalculatedEndDate(contractToEdit.end_date || '');
+    } catch (error) {
+      console.error('Error loading contract for editing:', error);
+      toast.error('Error loading contract data');
+    }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -189,6 +252,91 @@ const ContractForm = ({
     setCalculatedEndDate(endDate.toISOString().split('T')[0]);
   };
 
+  const checkResourceAvailability = async () => {
+    if (!selectedService || !formData.start_date || !calculatedEndDate) return;
+
+    setCheckingAvailability(true);
+    
+    try {
+      // Get the location resource for this service
+      const { data: serviceData, error: serviceError } = await supabase
+        .from('services')
+        .select(`
+          location_resources!fk_services_location_resource (
+            id,
+            resource_name,
+            quantity,
+            resource_type
+          )
+        `)
+        .eq('id', selectedService.id)
+        .single();
+
+      if (serviceError) {
+        console.error('Error fetching service resource:', serviceError);
+        setAvailabilityStatus({ available: false, error: 'Error checking availability' });
+        return;
+      }
+
+      const locationResource = serviceData.location_resources;
+      if (!locationResource) {
+        setAvailabilityStatus({ available: false, error: 'No resource found for this service' });
+        return;
+      }
+
+      // Check existing bookings that overlap with the requested period
+      const { data: existingBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('location_resource_id', locationResource.id)
+        .eq('booking_status', 'active')
+        .or(`and(start_date.lte.${calculatedEndDate},end_date.gte.${formData.start_date})`);
+
+      if (bookingsError) {
+        console.error('Error checking existing bookings:', bookingsError);
+        setAvailabilityStatus({ available: false, error: 'Error checking existing bookings' });
+        return;
+      }
+
+      // Calculate available quantity
+      const totalQuantity = locationResource.quantity;
+      const bookedQuantity = existingBookings ? existingBookings.length : 0;
+      const availableQuantity = totalQuantity - bookedQuantity;
+
+      // If editing, exclude current contract's booking from the count
+      let editExclusion = 0;
+      if (editMode && contractToEdit) {
+        const { data: currentBooking } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('contract_id', contractToEdit.id)
+          .eq('location_resource_id', locationResource.id)
+          .single();
+        
+        if (currentBooking) {
+          editExclusion = 1;
+        }
+      }
+
+      const finalAvailableQuantity = availableQuantity + editExclusion;
+
+      setAvailabilityStatus({
+        available: finalAvailableQuantity > 0,
+        totalQuantity,
+        bookedQuantity: bookedQuantity - editExclusion,
+        availableQuantity: finalAvailableQuantity,
+        resourceName: locationResource.resource_name,
+        resourceType: locationResource.resource_type
+      });
+
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      setAvailabilityStatus({ available: false, error: 'Unexpected error checking availability' });
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -225,9 +373,28 @@ const ContractForm = ({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    if (startDate < today) {
+    // For edit mode, allow past dates if they were already set
+    if (!editMode && startDate < today) {
       toast.error(t('messages.startDateCannotBeInPast'));
       return false;
+    }
+
+    // Check availability for abbonamento services
+    if (selectedService?.service_type === 'abbonamento') {
+      if (checkingAvailability) {
+        toast.error(t('messages.availabilityCheckInProgress'));
+        return false;
+      }
+      
+      if (!availabilityStatus) {
+        toast.error(t('messages.pleaseWaitForAvailabilityCheck'));
+        return false;
+      }
+      
+      if (!availabilityStatus.available) {
+        toast.error(t('messages.resourceNotAvailable'));
+        return false;
+      }
     }
 
     return true;
@@ -247,16 +414,11 @@ const ContractForm = ({
     setLoading(true);
 
     try {
-      // Generate contract number
-      const contractNumber = await generateContractNumber();
-      
-      // Prepare contract data
-      const contractData = {
+      let contractData = {
         customer_id: parseInt(formData.customer_id),
         service_id: parseInt(formData.service_id),
         location_id: parseInt(formData.location_id),
         partner_uuid: partnerUuid,
-        contract_number: contractNumber,
         start_date: formData.start_date,
         end_date: calculatedEndDate,
         
@@ -278,46 +440,104 @@ const ContractForm = ({
         is_renewable: selectedService.is_renewable || false,
         auto_renew: selectedService.auto_renew || false,
         
-        // Audit fields
-        created_by_user_id: user.id,
-        created_by_role: profile.role
+        // Audit fields - only include fields that exist in the database
+        // updated_by_user_id: user.id,
+        // updated_by_role: profile.role,
+        updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
-        .from('contracts')
-        .insert([contractData])
-        .select(`
-          *,
-          customers (
-            id,
-            first_name,
-            second_name,
-            email,
-            company_name
-          ),
-          services (
-            id,
-            service_name,
-            service_type
-          ),
-          locations (
-            id,
-            location_name
-          )
-        `)
-        .single();
+      let result;
+      
+      if (editMode && contractToEdit) {
+        // Update existing contract
+        const { data, error } = await supabase
+          .from('contracts')
+          .update(contractData)
+          .eq('id', contractToEdit.id)
+          .select(`
+            *,
+            customers (
+              id,
+              first_name,
+              second_name,
+              email,
+              company_name
+            ),
+            services (
+              id,
+              service_name,
+              service_type
+            ),
+            locations (
+              id,
+              location_name
+            )
+          `)
+          .single();
 
-      if (error) {
-        console.error('Contract creation error:', error);
-        throw error;
+        if (error) {
+          console.error('Contract update error:', error);
+          throw error;
+        }
+
+        // Update booking if it's an abbonamento
+        if (selectedService.service_type === 'abbonamento') {
+          await updateBookingForContract(contractToEdit.id, formData.start_date, calculatedEndDate);
+        }
+
+        result = data;
+        toast.success(t('messages.contractUpdatedSuccessfully'));
+      } else {
+        // Create new contract
+        const contractNumber = await generateContractNumber();
+        contractData.contract_number = contractNumber;
+        // Only add creation audit fields for new contracts
+        // contractData.created_by_user_id = user.id;
+        // contractData.created_by_role = profile.role;
+
+        const { data, error } = await supabase
+          .from('contracts')
+          .insert([contractData])
+          .select(`
+            *,
+            customers (
+              id,
+              first_name,
+              second_name,
+              email,
+              company_name
+            ),
+            services (
+              id,
+              service_name,
+              service_type
+            ),
+            locations (
+              id,
+              location_name
+            )
+          `)
+          .single();
+
+        if (error) {
+          console.error('Contract creation error:', error);
+          throw error;
+        }
+
+        // Create booking if it's an abbonamento
+        if (selectedService.service_type === 'abbonamento') {
+          await createBookingForContract(data.id, formData.start_date, calculatedEndDate);
+        }
+
+        result = data;
+        toast.success(t('messages.contractCreatedSuccessfully'));
       }
 
-      toast.success(t('messages.contractCreatedSuccessfully'));
-      onSuccess(data);
+      onSuccess(result);
       onClose();
     } catch (error) {
-      console.error('Error creating contract:', error);
-      toast.error(error.message || t('messages.errorCreatingContract'));
+      console.error('Error saving contract:', error);
+      toast.error(error.message || (editMode ? t('messages.errorUpdatingContract') : t('messages.errorCreatingContract')));
     } finally {
       setLoading(false);
       setShowConfirmation(false);
@@ -331,6 +551,86 @@ const ContractForm = ({
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
     const randomNum = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
     return `CONT-${dateStr}-${randomNum}`;
+  };
+
+  const createBookingForContract = async (contractId, startDate, endDate) => {
+    try {
+      // Get the location resource for this service
+      const { data: serviceData } = await supabase
+        .from('services')
+        .select(`
+          location_resources!fk_services_location_resource (
+            id
+          )
+        `)
+        .eq('id', selectedService.id)
+        .single();
+
+      if (!serviceData?.location_resources) {
+        throw new Error('Location resource not found for service');
+      }
+
+      const bookingData = {
+        contract_id: contractId,
+        location_resource_id: serviceData.location_resources.id,
+        partner_uuid: partnerUuid,
+        customer_id: parseInt(formData.customer_id),
+        start_date: startDate,
+        end_date: endDate,
+        booking_status: 'active',
+        created_by: user.id
+      };
+
+      const { error } = await supabase
+        .from('bookings')
+        .insert([bookingData]);
+
+      if (error) {
+        console.error('Error creating booking:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in createBookingForContract:', error);
+      throw error;
+    }
+  };
+
+  const updateBookingForContract = async (contractId, startDate, endDate) => {
+    try {
+      // Get the location resource for this service
+      const { data: serviceData } = await supabase
+        .from('services')
+        .select(`
+          location_resources!fk_services_location_resource (
+            id
+          )
+        `)
+        .eq('id', selectedService.id)
+        .single();
+
+      if (!serviceData?.location_resources) {
+        throw new Error('Location resource not found for service');
+      }
+
+      // Update existing booking
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          location_resource_id: serviceData.location_resources.id,
+          start_date: startDate,
+          end_date: endDate,
+          updated_by: user.id
+        })
+        .eq('contract_id', contractId);
+
+      if (error) {
+        console.error('Error updating booking:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateBookingForContract:', error);
+      throw error;
+    }
   };
 
   const formatCurrency = (amount, currency = 'EUR') => {
@@ -362,7 +662,7 @@ const ContractForm = ({
         <div className="modal-container">
           <div className="modal-header">
             <h2 className="modal-title">
-              {t('contracts.confirmContract')}
+              {editMode ? t('contracts.confirmUpdate') : t('contracts.confirmContract')}
             </h2>
             <button onClick={() => setShowConfirmation(false)} className="modal-close-btn">
               <X size={24} />
@@ -374,12 +674,12 @@ const ContractForm = ({
               <AlertTriangle size={24} className="warning-icon" />
               <div className="warning-text">
                 <h3>{t('contracts.importantNotice')}</h3>
-                <p>{t('contracts.contractImmutableWarning')}</p>
+                <p>{editMode ? t('contracts.contractUpdateWarning') : t('contracts.contractImmutableWarning')}</p>
               </div>
             </div>
 
             <div className="contract-summary">
-              <h4>{t('contracts.contractSummary')}</h4>
+              <h4>{editMode ? t('contracts.updateSummary') : t('contracts.contractSummary')}</h4>
               
               {!isCustomerMode && (
                 <div className="summary-item">
@@ -451,10 +751,10 @@ const ContractForm = ({
                 {loading ? (
                   <>
                     <div className="loading-spinner-small"></div>
-                    {t('contracts.creating')}...
+                    {editMode ? t('contracts.updating') : t('contracts.creating')}...
                   </>
                 ) : (
-                  t('contracts.confirmAndCreate')
+                  editMode ? t('contracts.confirmAndUpdate') : t('contracts.confirmAndCreate')
                 )}
               </button>
             </div>
@@ -469,7 +769,7 @@ const ContractForm = ({
       <div className="modal-container contract-form-modal">
         <div className="modal-header">
           <h2 className="modal-title">
-            {t('contracts.createContract')}
+            {editMode ? t('contracts.editContract') : t('contracts.createContract')}
           </h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
@@ -493,6 +793,7 @@ const ContractForm = ({
                   className="form-select"
                   value={formData.customer_id}
                   onChange={handleChange}
+                  disabled={editMode} // Disable customer change in edit mode
                 >
                   <option value="">{t('contracts.selectCustomer')}</option>
                   {customers.map((customer) => (
@@ -610,7 +911,7 @@ const ContractForm = ({
                   className="form-input"
                   value={formData.start_date}
                   onChange={handleChange}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={editMode ? undefined : new Date().toISOString().split('T')[0]}
                 />
               </div>
               
@@ -637,6 +938,43 @@ const ContractForm = ({
                 </p>
               </div>
             )}
+
+            {/* Availability Check for Abbonamento */}
+            {selectedService?.service_type === 'abbonamento' && calculatedEndDate && (
+              <div className="availability-check">
+                <h4>{t('contracts.resourceAvailability')}</h4>
+                {checkingAvailability ? (
+                  <div className="availability-loading">
+                    <div className="loading-spinner-small"></div>
+                    <span>{t('contracts.checkingAvailability')}...</span>
+                  </div>
+                ) : availabilityStatus ? (
+                  <div className={`availability-status ${availabilityStatus.available ? 'available' : 'unavailable'}`}>
+                    {availabilityStatus.available ? (
+                      <div className="availability-success">
+                        <span className="availability-icon">✅</span>
+                        <div className="availability-details">
+                          <p><strong>{t('contracts.resourceAvailable')}</strong></p>
+                          <p>{availabilityStatus.availableQuantity} di {availabilityStatus.totalQuantity} {availabilityStatus.resourceName} disponibili per questo periodo</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="availability-error">
+                        <span className="availability-icon">❌</span>
+                        <div className="availability-details">
+                          <p><strong>{t('contracts.resourceNotAvailable')}</strong></p>
+                          {availabilityStatus.error ? (
+                            <p>{availabilityStatus.error}</p>
+                          ) : (
+                            <p>Tutti i {availabilityStatus.totalQuantity} {availabilityStatus.resourceName} sono prenotati per questo periodo</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
 
           <div className="modal-actions">
@@ -653,7 +991,7 @@ const ContractForm = ({
               className="btn-primary"
               disabled={loading || !calculatedEndDate}
             >
-              {t('contracts.reviewContract')}
+              {editMode ? t('contracts.reviewUpdate') : t('contracts.reviewContract')}
             </button>
           </div>
         </form>

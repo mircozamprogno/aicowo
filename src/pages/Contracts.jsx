@@ -1,4 +1,4 @@
-import { Edit2, FileText, Plus } from 'lucide-react';
+import { Edit2, FileText, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ContractForm from '../components/forms/ContractForm';
@@ -10,6 +10,11 @@ const Contracts = () => {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingContract, setEditingContract] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [contractToDelete, setContractToDelete] = useState(null);
+  const [deleteStep, setDeleteStep] = useState(1); // 1 = first confirmation, 2 = final confirmation
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
   const { profile } = useAuth();
@@ -20,6 +25,7 @@ const Contracts = () => {
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
   const canCreateContracts = isCustomer || isPartnerAdmin;
+  const canEditContracts = isPartnerAdmin || isSuperAdmin; // Only partner admins and superadmins can edit
 
   useEffect(() => {
     if (profile) {
@@ -184,8 +190,74 @@ const Contracts = () => {
     setShowForm(false);
   };
 
+  const handleEditContract = (contract) => {
+    setEditingContract(contract);
+    setShowEditForm(true);
+  };
+
+  const handleEditFormClose = () => {
+    setShowEditForm(false);
+    setEditingContract(null);
+  };
+
   const handleFormSuccess = (savedContract) => {
     setContracts(prev => [savedContract, ...prev]);
+  };
+
+  const handleEditFormSuccess = (updatedContract) => {
+    setContracts(prev => 
+      prev.map(contract => 
+        contract.id === updatedContract.id ? updatedContract : contract
+      )
+    );
+  };
+
+  const handleDeleteContract = (contract) => {
+    setContractToDelete(contract);
+    setDeleteStep(1);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteStep === 1) {
+      // First confirmation - move to second step
+      setDeleteStep(2);
+      return;
+    }
+
+    // Second confirmation - actually delete
+    try {
+      // Delete the contract (this will cascade delete the booking due to foreign key)
+      const { error } = await supabase
+        .from('contracts')
+        .delete()
+        .eq('id', contractToDelete.id);
+
+      if (error) {
+        console.error('Error deleting contract:', error);
+        toast.error('Errore durante l\'eliminazione del contratto');
+        return;
+      }
+
+      // Remove from local state
+      setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
+      
+      // Close dialog and reset state
+      setShowDeleteConfirm(false);
+      setContractToDelete(null);
+      setDeleteStep(1);
+      
+      toast.success('Contratto eliminato con successo');
+    } catch (error) {
+      console.error('Error deleting contract:', error);
+      toast.error('Errore durante l\'eliminazione del contratto');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setContractToDelete(null);
+    setDeleteStep(1);
   };
 
   const formatCurrency = (amount, currency = 'EUR') => {
@@ -237,12 +309,48 @@ const Contracts = () => {
     return type === 'scrivania' ? '🪑' : '🏢';
   };
 
+  const getResourceDisplayName = (contract) => {
+    // If we have a proper resource name, use it
+    if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
+      return contract.resource_name;
+    }
+    
+    // Otherwise, create a generic display name based on resource type
+    const resourceTypeNames = {
+      'scrivania': t('locations.scrivania'),
+      'sala_riunioni': t('locations.salaRiunioni')
+    };
+    
+    return resourceTypeNames[contract.resource_type] || t('services.resource');
+  };
+
   const calculateDaysRemaining = (endDate) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate calculation
     const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0); // Reset time to start of day
     const diffTime = end - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const calculateContractDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = end - start;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const isDateInContractRange = (startDate, endDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    
+    return today >= start && today <= end;
   };
 
   if (loading) {
@@ -320,14 +428,17 @@ const Contracts = () => {
                 <th className="contracts-table-header">
                   {t('contracts.status')}
                 </th>
-                <th className="contracts-table-header">
-                  {t('contracts.actions')}
-                </th>
+                {canEditContracts && (
+                  <th className="contracts-table-header">
+                    {t('contracts.actions')}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="contracts-table-body">
               {contracts.map((contract) => {
                 const daysRemaining = calculateDaysRemaining(contract.end_date);
+                const isInRange = isDateInContractRange(contract.start_date, contract.end_date);
                 return (
                   <tr key={contract.id} className="contracts-table-row">
                     <td className="contracts-table-cell">
@@ -371,7 +482,7 @@ const Contracts = () => {
                           <span className="resource-icon">
                             {getResourceTypeIcon(contract.resource_type)}
                           </span>
-                          {contract.resource_name}
+                          {getResourceDisplayName(contract)}
                         </div>
                       </div>
                     </td>
@@ -380,7 +491,10 @@ const Contracts = () => {
                         <div className="period-dates">
                           {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
                         </div>
-                        {contract.contract_status === 'active' && (
+                        <div className="duration-info">
+                          {calculateContractDuration(contract.start_date, contract.end_date)} {t('contracts.days')} {t('contracts.duration')}
+                        </div>
+                        {contract.contract_status === 'active' && isInRange && (
                           <div className={`days-remaining ${daysRemaining <= 7 ? 'warning' : ''}`}>
                             {daysRemaining > 0 
                               ? `${daysRemaining} ${t('contracts.daysRemaining')}`
@@ -400,17 +514,28 @@ const Contracts = () => {
                         {t(`contracts.${contract.contract_status}`)}
                       </span>
                     </td>
-                    <td className="contracts-table-cell">
-                      <div className="contract-actions">
-                        <button 
-                          className="view-btn"
-                          onClick={() => {/* TODO: Implement contract details view */}}
-                          title={t('contracts.viewContract')}
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+                    {canEditContracts && (
+                      <td className="contracts-table-cell">
+                        <div className="contract-actions">
+                          <button 
+                            className="edit-btn"
+                            onClick={() => handleEditContract(contract)}
+                            title={t('contracts.editContract')}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          {(isPartnerAdmin || isSuperAdmin) && (
+                            <button 
+                              className="delete-btn"
+                              onClick={() => handleDeleteContract(contract)}
+                              title="Elimina Contratto"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -443,6 +568,106 @@ const Contracts = () => {
         customers={customers}
         locations={locations}
       />
+
+      {/* Contract Edit Form Modal */}
+      <ContractForm
+        isOpen={showEditForm}
+        onClose={handleEditFormClose}
+        onSuccess={handleEditFormSuccess}
+        partnerUuid={profile?.partner_uuid}
+        isCustomerMode={false}
+        customers={customers}
+        locations={locations}
+        editMode={true}
+        contractToEdit={editingContract}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && contractToDelete && (
+        <div className="modal-overlay">
+          <div className="modal-container delete-modal">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {deleteStep === 1 ? 'Conferma Eliminazione' : 'Eliminazione Definitiva'}
+              </h2>
+              <button onClick={handleDeleteCancel} className="modal-close-btn">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="delete-modal-content">
+              {deleteStep === 1 ? (
+                <>
+                  <div className="delete-warning">
+                    <Trash2 size={24} className="warning-icon" />
+                    <div className="warning-text">
+                      <h3>Attenzione!</h3>
+                      <p>Stai per eliminare definitivamente questo contratto:</p>
+                    </div>
+                  </div>
+
+                  <div className="contract-to-delete">
+                    <div className="contract-detail">
+                      <strong>Contratto:</strong> {contractToDelete.contract_number}
+                    </div>
+                    <div className="contract-detail">
+                      <strong>Cliente:</strong> {contractToDelete.customers?.company_name || 
+                        `${contractToDelete.customers?.first_name} ${contractToDelete.customers?.second_name}`}
+                    </div>
+                    <div className="contract-detail">
+                      <strong>Servizio:</strong> {contractToDelete.service_name}
+                    </div>
+                    <div className="contract-detail">
+                      <strong>Periodo:</strong> {formatDate(contractToDelete.start_date)} - {formatDate(contractToDelete.end_date)}
+                    </div>
+                  </div>
+
+                  <div className="delete-consequences">
+                    <h4>Questa azione comporterà:</h4>
+                    <ul>
+                      <li>Eliminazione definitiva del contratto</li>
+                      <li>Cancellazione automatica delle prenotazioni associate</li>
+                      <li>Liberazione immediata delle risorse prenotate</li>
+                      <li><strong>Questa operazione non può essere annullata</strong></li>
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="final-warning">
+                    <Trash2 size={32} className="final-warning-icon" />
+                    <div className="final-warning-text">
+                      <h3>Ultima Conferma</h3>
+                      <p>Sei assolutamente sicuro di voler eliminare questo contratto?</p>
+                      <p className="final-warning-note">
+                        <strong>ATTENZIONE:</strong> Questa azione è irreversibile e eliminerà 
+                        definitivamente il contratto <strong>{contractToDelete.contract_number}</strong>
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="delete-modal-actions">
+                <button
+                  type="button"
+                  onClick={handleDeleteCancel}
+                  className="btn-secondary"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className={deleteStep === 1 ? "btn-warning" : "btn-danger"}
+                >
+                  {deleteStep === 1 ? 'Continua' : 'Elimina Definitivamente'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

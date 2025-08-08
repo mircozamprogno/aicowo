@@ -51,7 +51,6 @@
     "businessInformation": "Business Information",
     "personalInformation": "Personal Information",
     "addressInformation": "Address Information",
-    "businessInformation": "Business Information",
     "billingInformation": "Billing Information",
     "billingEmail": "Billing Email",
     "billingPhone": "Billing Phone",
@@ -284,10 +283,14 @@
     "contractCreatedSuccessfully": "Contract created successfully",
     "errorCreatingContract": "Error creating contract",
     "customerRequired": "Please select a customer",
-    "locationRequired": "Please select a location",
     "serviceRequired": "Please select a service",
     "startDateRequired": "Please select a start date",
-    "startDateCannotBeInPast": "Start date cannot be in the past"
+    "startDateCannotBeInPast": "Start date cannot be in the past",
+    "contractUpdatedSuccessfully": "Contract updated successfully",
+    "errorUpdatingContract": "Error updating contract",
+    "availabilityCheckInProgress": "Please wait for availability check to complete",
+    "pleaseWaitForAvailabilityCheck": "Please wait for availability check",
+    "resourceNotAvailable": "Selected resource is not available for the chosen period"
   },
   "services": {
     "title": "Services",
@@ -410,9 +413,20 @@
     "creating": "Creating",
     
     "active": "Active",
-    "expired": "Expired",
     "cancelled": "Cancelled",
-    "suspended": "Suspended"
+    "suspended": "Suspended",
+    "confirmUpdate": "Confirm Contract Update",
+    "contractUpdateWarning": "Contract updates will modify existing agreement terms. Please review all changes carefully before confirming.",
+    "updateSummary": "Update Summary",
+    "updating": "Updating",
+    "confirmAndUpdate": "Confirm & Update Contract",
+    "reviewUpdate": "Review Update",
+    "resourceAvailability": "Resource Availability",
+    "checkingAvailability": "Checking availability",
+    "resourceAvailable": "Resource Available",
+    "resourceNotAvailable": "Resource Not Available",
+    "availabilityDetails": "{{available}} of {{total}} {{resource}} available for this period",
+    "resourceFullyBooked": "All {{total}} {{resource}} are booked for this period"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
