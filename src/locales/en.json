@@ -290,7 +290,8 @@
     "errorUpdatingContract": "Error updating contract",
     "availabilityCheckInProgress": "Please wait for availability check to complete",
     "pleaseWaitForAvailabilityCheck": "Please wait for availability check",
-    "resourceNotAvailable": "Selected resource is not available for the chosen period"
+    "resourceNotAvailable": "Selected resource is not available for the chosen period",
+    "errorLoadingBookings": "Error loading bookings"
   },
   "services": {
     "title": "Services",
@@ -325,7 +326,7 @@
     "noLocationsAvailable": "No locations available",
     "selectLocation": "Select a location",
     "accessDenied": "Access Denied",
-    "accessDeniedMessage": "Only partner administrators can manage services.",
+    "accessDeniedMessage": "Only partner administrators can access service management.",
     
     "subscription": "Subscription",
     "package": "Package", 
@@ -366,7 +367,7 @@
   },
   "reservations": {
     "title": "Package Reservations",
-    "bookReservation": "Book Reservation",
+    "bookReservation": "Book",
     "reservationDate": "Reservation Date",
     "duration": "Duration",
     "fullDay": "Full Day",
@@ -393,7 +394,9 @@
     "morningSlot": "Morning (9:00-13:00)",
     "afternoonSlot": "Afternoon (14:00-18:00)",
     "fullDayEntry": "Full Day (1 entry)",
-    "halfDayEntry": "Half Day (0.5 entries)"
+    "halfDayEntry": "Half Day (0.5 entries)",
+    "noEntriesRemaining": "No Entries",
+    "notAvailable": "Not Available"
   },
   "contracts": {
     "title": "Contracts",
@@ -457,7 +460,8 @@
     "resourceAvailable": "Resource Available",
     "resourceNotAvailable": "Resource Not Available",
     "availabilityDetails": "{{available}} of {{total}} {{resource}} available for this period",
-    "resourceFullyBooked": "All {{total}} {{resource}} are booked for this period"
+    "resourceFullyBooked": "All {{total}} {{resource}} are booked for this period",
+    "contractNotActive": "Not Active"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -490,8 +494,41 @@
     "resourceNamePlaceholder": "e.g., Hot Desks, Small Meeting Room",
     "resourceDescriptionPlaceholder": "Describe this resource type..."
   },
+  "bookings": {
+    "title": "Bookings Calendar",
+    "viewYourBookings": "View your active bookings",
+    "manageAllBookings": "Manage all your customers' bookings",
+    "month": "Month",
+    "week": "Week", 
+    "day": "Day",
+    "today": "Today",
+    "filters": "Filters",
+    "customer": "Customer",
+    "allCustomers": "All customers",
+    "resourceType": "Resource Type",
+    "allResources": "All resources",
+    "location": "Location",
+    "allLocations": "All locations",
+    "clearFilters": "Clear Filters",
+    "legend": "Legend",
+    "booking": "booking",
+    "bookings": "bookings",
+    "noBookingsForDay": "No bookings for this day",
+    "noBookingsFound": "No bookings found for the selected period",
+    "more": "more"
+  },
+  "calendar": {
+    "sunday": "Sun",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat"
+  },
   "app": {
     "appName": "Coworking Management",
-    "appShortName": "PowerCowo"
+    "appShortName": "PowerCowo",
+    "locale": "en"
   }
 }

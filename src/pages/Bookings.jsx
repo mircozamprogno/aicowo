@@ -55,6 +55,7 @@ const Bookings = () => {
             id,
             contract_number,
             service_name,
+            service_type,
             service_cost,
             service_currency
           ),
@@ -90,6 +91,7 @@ const Bookings = () => {
             id,
             contract_number,
             service_name,
+            service_type,
             service_cost,
             service_currency
           ),
@@ -148,18 +150,25 @@ const Bookings = () => {
         location_resources: pkg.location_resources,
         customers: pkg.customers,
         duration_type: pkg.duration_type,   // new
-        time_slot: pkg.time_slot            // new
+        time_slot: pkg.time_slot,          // new
+        booking_type: 'package'            // to distinguish from regular bookings
+      }));
+
+      // Add booking_type to regular bookings
+      const normalizedBookings = (bookingsData || []).map(booking => ({
+        ...booking,
+        booking_type: 'subscription'
       }));
 
       // Merge and sort all results
-      const combined = [...(bookingsData || []), ...normalizedPackages].sort(
+      const combined = [...normalizedBookings, ...normalizedPackages].sort(
         (a, b) => new Date(a.start_date) - new Date(b.start_date)
       );
 
       setBookings(combined);
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      toast.error('Error loading bookings');
+      toast.error(t('messages.errorLoadingBookings') || 'Error loading bookings');
       setBookings([]);
     } finally {
       setLoading(false);
@@ -206,7 +215,8 @@ const Bookings = () => {
   };
 
   const formatDisplayDate = (date) => {
-    return date.toLocaleDateString('it-IT', {
+    const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
+    return date.toLocaleDateString(locale, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -215,7 +225,8 @@ const Bookings = () => {
   };
 
   const formatMonthYear = (date) => {
-    return date.toLocaleDateString('it-IT', {
+    const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
+    return date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long'
     });
@@ -235,9 +246,19 @@ const Bookings = () => {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  const getResourceColor = (type) => {
-    const colors = { scrivania: '#3b82f6', sala_riunioni: '#f59e0b' };
-    return colors[type] || '#6b7280';
+  // Updated color system for 4 different types
+  const getResourceColor = (booking) => {
+    const serviceType = booking.contracts?.service_type || 'abbonamento';
+    const resourceType = booking.location_resources?.resource_type || 'scrivania';
+    
+    const colors = {
+      'abbonamento_scrivania': '#3b82f6',    // Blue for subscription desk
+      'abbonamento_sala_riunioni': '#8b5cf6', // Purple for subscription meeting room
+      'pacchetto_scrivania': '#10b981',      // Green for package desk
+      'pacchetto_sala_riunioni': '#f59e0b'   // Orange for package meeting room
+    };
+    
+    return colors[`${serviceType}_${resourceType}`] || '#6b7280';
   };
 
   const getBookingsForDate = (date) => {
@@ -253,7 +274,21 @@ const Bookings = () => {
     });
   };
 
-  const getResourceTypeIcon = (type) => (type === 'scrivania' ? '🪑' : '🏢');
+  const getResourceTypeIcon = (type) => (type === 'scrivania' ? '🖥️' : '🏢');
+
+  const getBookingDisplayText = (booking) => {
+    const customerName = booking.customers?.company_name || booking.customers?.first_name;
+    
+    // For package bookings, add duration info
+    if (booking.booking_type === 'package') {
+      const durationText = booking.duration_type === 'full_day' 
+        ? t('reservations.fullDay') 
+        : `${t('reservations.halfDay')} (${booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`;
+      return `${customerName} - ${durationText}`;
+    }
+    
+    return customerName;
+  };
 
   const renderMonthView = () => {
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -268,7 +303,7 @@ const Bookings = () => {
     return (
       <div className="calendar-month">
         <div className="calendar-weekdays">
-          {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map(d => (
+          {[t('calendar.sunday'), t('calendar.monday'), t('calendar.tuesday'), t('calendar.wednesday'), t('calendar.thursday'), t('calendar.friday'), t('calendar.saturday')].map(d => (
             <div key={d} className="calendar-weekday">{d}</div>
           ))}
         </div>
@@ -289,13 +324,77 @@ const Bookings = () => {
                     <div
                       key={b.id}
                       className="calendar-booking-item"
-                      style={{ backgroundColor: getResourceColor(b.location_resources?.resource_type) }}
-                      title={`${b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`} - ${b.location_resources?.resource_name}`}
+                      style={{ backgroundColor: getResourceColor(b) }}
+                      title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
                     >
-                      <span className="booking-title">{b.customers?.company_name || b.customers?.first_name}</span>
+                      <span className="booking-title">{getBookingDisplayText(b)}</span>
                     </div>
                   ))}
-                  {dayBookings.length > 3 && <div className="calendar-more-bookings">+{dayBookings.length - 3} more</div>}
+                  {dayBookings.length > 3 && (
+                    <div className="calendar-more-bookings">
+                      +{dayBookings.length - 3} {t('bookings.more')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWeekView = () => {
+    // Get the start of the week (Sunday)
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    
+    // Generate 7 days starting from Sunday
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      weekDays.push(day);
+    }
+
+    return (
+      <div className="calendar-week">
+        <div className="calendar-week-header">
+          {weekDays.map((day, idx) => {
+            const isToday = formatDate(day) === formatDate(new Date());
+            const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
+            return (
+              <div key={idx} className={`calendar-week-day-header ${isToday ? 'today' : ''}`}>
+                <div className="week-day-name">
+                  {day.toLocaleDateString(locale, { weekday: 'short' })}
+                </div>
+                <div className="week-day-number">{day.getDate()}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="calendar-week-content">
+          {weekDays.map((day, idx) => {
+            const isToday = formatDate(day) === formatDate(new Date());
+            const dayBookings = getBookingsForDate(day);
+            return (
+              <div 
+                key={idx} 
+                className={`calendar-week-day ${isToday ? 'today' : ''}`}
+                onClick={() => { setCurrentDate(new Date(day)); setViewType('day'); }}
+              >
+                <div className="week-day-bookings">
+                  {dayBookings.map(b => (
+                    <div
+                      key={b.id}
+                      className="week-booking-item"
+                      style={{ backgroundColor: getResourceColor(b) }}
+                      title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                    >
+                      <div className="week-booking-title">{getBookingDisplayText(b)}</div>
+                      <div className="week-booking-resource">{b.location_resources?.resource_name}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
@@ -311,20 +410,20 @@ const Bookings = () => {
       <div className="calendar-day-view">
         <div className="day-view-header">
           <h2>{formatDisplayDate(currentDate)}</h2>
-          <p>{dayBookings.length} {dayBookings.length === 1 ? 'prenotazione' : 'prenotazioni'}</p>
+          <p>{dayBookings.length} {dayBookings.length === 1 ? t('bookings.booking') : t('bookings.bookings')}</p>
         </div>
         <div className="day-view-content">
           {dayBookings.length === 0 ? (
             <div className="day-no-bookings">
               <Calendar size={48} className="empty-icon" />
-              <p>Nessuna prenotazione per questo giorno</p>
+              <p>{t('bookings.noBookingsForDay')}</p>
             </div>
           ) : (
             <div className="day-bookings-list">
               {dayBookings.map(b => (
                 <div key={b.id} className="day-booking-card">
                   <div className="day-booking-header">
-                    <div className="day-booking-color" style={{ backgroundColor: getResourceColor(b.location_resources?.resource_type) }} />
+                    <div className="day-booking-color" style={{ backgroundColor: getResourceColor(b) }} />
                     <div className="day-booking-info">
                       <h3>{b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`}</h3>
                       <p>{b.contracts?.contract_number}</p>
@@ -343,8 +442,8 @@ const Bookings = () => {
                     <div className="day-booking-period">📅 {b.start_date} - {b.end_date}</div>
                     {b.duration_type && (
                       <div className="day-booking-duration">
-                        ⏱ {b.duration_type === 'full_day' ? 'Giornata intera' : 'Mezza giornata'}
-                        {b.duration_type === 'half_day' && b.time_slot ? ` (${b.time_slot === 'morning' ? 'Mattina' : 'Pomeriggio'})` : ''}
+                        ⏱ {b.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
+                        {b.duration_type === 'half_day' && b.time_slot ? ` (${b.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})` : ''}
                       </div>
                     )}
                   </div>
@@ -364,19 +463,36 @@ const Bookings = () => {
       {/* Header */}
       <div className="bookings-header">
         <div className="bookings-header-content">
-          <h1 className="bookings-title"><Calendar size={24} className="mr-2" />Calendario Prenotazioni</h1>
+          <h1 className="bookings-title">
+            <Calendar size={24} className="mr-2" />
+            {t('bookings.title')}
+          </h1>
           <p className="bookings-description">
-            {isCustomer ? 'Visualizza le tue prenotazioni attive' : 'Gestisci tutte le prenotazioni dei tuoi clienti'}
+            {isCustomer ? t('bookings.viewYourBookings') : t('bookings.manageAllBookings')}
           </p>
         </div>
         <div className="bookings-controls">
           <div className="view-selector">
-            <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>Mese</button>
-            <button className={`view-btn ${viewType === 'week' ? 'active' : ''}`} onClick={() => setViewType('week')}>Settimana</button>
-            <button className={`view-btn ${viewType === 'day' ? 'active' : ''}`} onClick={() => setViewType('day')}>Giorno</button>
+            <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>
+              {t('bookings.month')}
+            </button>
+            <button className={`view-btn ${viewType === 'week' ? 'active' : ''}`} onClick={() => setViewType('week')}>
+              {t('bookings.week')}
+            </button>
+            <button className={`view-btn ${viewType === 'day' ? 'active' : ''}`} onClick={() => setViewType('day')}>
+              {t('bookings.day')}
+            </button>
           </div>
-          <button className="today-btn" onClick={goToToday}><Home size={16} />Oggi</button>
-          {isPartnerAdmin && <button className="filter-btn" onClick={() => setShowFilters(!showFilters)}><Filter size={16} />Filtri</button>}
+          <button className="today-btn" onClick={goToToday}>
+            <Home size={16} />
+            {t('bookings.today')}
+          </button>
+          {isPartnerAdmin && (
+            <button className="filter-btn" onClick={() => setShowFilters(!showFilters)}>
+              <Filter size={16} />
+              {t('bookings.filters')}
+            </button>
+          )}
         </div>
       </div>
 
@@ -385,37 +501,48 @@ const Bookings = () => {
         <div className="filters-panel">
           <div className="filters-row">
             <div className="filter-group">
-              <label>Cliente:</label>
+              <label>{t('bookings.customer')}:</label>
               <select value={filters.customer} onChange={(e) => setFilters(prev => ({ ...prev, customer: e.target.value }))}>
-                <option value="">Tutti i clienti</option>
+                <option value="">{t('bookings.allCustomers')}</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.company_name || `${c.first_name} ${c.second_name}`}</option>)}
               </select>
             </div>
             <div className="filter-group">
-              <label>Tipo Risorsa:</label>
+              <label>{t('bookings.resourceType')}:</label>
               <select value={filters.resourceType} onChange={(e) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}>
-                <option value="">Tutte le risorse</option>
-                <option value="scrivania">🪑 Scrivanie</option>
-                <option value="sala_riunioni">🏢 Sale Riunioni</option>
+                <option value="">{t('bookings.allResources')}</option>
+                <option value="scrivania">🖥️ {t('locations.scrivania')}</option>
+                <option value="sala_riunioni">🏢 {t('locations.salaRiunioni')}</option>
               </select>
             </div>
             <div className="filter-group">
-              <label>Sede:</label>
+              <label>{t('bookings.location')}:</label>
               <select value={filters.location} onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}>
-                <option value="">Tutte le sedi</option>
+                <option value="">{t('bookings.allLocations')}</option>
                 {locations.map(l => <option key={l.id} value={l.id}>{l.location_name}</option>)}
               </select>
             </div>
-            <button className="clear-filters-btn" onClick={() => setFilters({ customer: '', resourceType: '', location: '' })}>Pulisci Filtri</button>
+            <button 
+              className="clear-filters-btn" 
+              onClick={() => setFilters({ customer: '', resourceType: '', location: '' })}
+            >
+              {t('bookings.clearFilters')}
+            </button>
           </div>
         </div>
       )}
 
       {/* Navigation */}
       <div className="calendar-navigation">
-        <button className="nav-btn" onClick={() => navigateDate(-1)}><ChevronLeft size={20} /></button>
-        <h2 className="calendar-title">{viewType === 'month' ? formatMonthYear(currentDate) : formatDisplayDate(currentDate)}</h2>
-        <button className="nav-btn" onClick={() => navigateDate(1)}><ChevronRight size={20} /></button>
+        <button className="nav-btn" onClick={() => navigateDate(-1)}>
+          <ChevronLeft size={20} />
+        </button>
+        <h2 className="calendar-title">
+          {viewType === 'month' ? formatMonthYear(currentDate) : formatDisplayDate(currentDate)}
+        </h2>
+        <button className="nav-btn" onClick={() => navigateDate(1)}>
+          <ChevronRight size={20} />
+        </button>
       </div>
 
       {/* Calendar */}
@@ -423,11 +550,12 @@ const Bookings = () => {
         {filteredBookings.length === 0 ? (
           <div className="day-no-bookings">
             <Calendar size={48} className="empty-icon" />
-            <p>Nessuna prenotazione trovata per il periodo selezionato</p>
+            <p>{t('bookings.noBookingsFound')}</p>
           </div>
         ) : (
           <>
             {viewType === 'month' && renderMonthView()}
+            {viewType === 'week' && renderWeekView()}
             {viewType === 'day' && renderDayView()}
           </>
         )}
@@ -435,10 +563,24 @@ const Bookings = () => {
 
       {/* Legend */}
       <div className="calendar-legend">
-        <h4>Legenda:</h4>
+        <h4>{t('bookings.legend')}:</h4>
         <div className="legend-items">
-          <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#3b82f6' }}></div><span>🪑 Scrivanie</span></div>
-          <div className="legend-item"><div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div><span>🏢 Sale Riunioni</span></div>
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#3b82f6' }}></div>
+            <span>🖥️ {t('services.subscription')} {t('locations.scrivania')}</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#8b5cf6' }}></div>
+            <span>🏢 {t('services.subscription')} {t('locations.salaRiunioni')}</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#10b981' }}></div>
+            <span>🖥️ {t('services.package')} {t('locations.scrivania')}</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div>
+            <span>🏢 {t('services.package')} {t('locations.salaRiunioni')}</span>
+          </div>
         </div>
       </div>
     </div>

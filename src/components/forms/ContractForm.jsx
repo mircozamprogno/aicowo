@@ -650,8 +650,9 @@ const ContractForm = ({
     return types[type] || type;
   };
 
+  // Updated icon function with desk icon for scrivania
   const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
+    return type === 'scrivania' ? '🖥️' : '🏢';
   };
 
 

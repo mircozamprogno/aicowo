@@ -346,8 +346,9 @@ const Contracts = () => {
     return types[type] || type;
   };
 
+  // Updated icon function with desk icon for scrivania
   const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
+    return type === 'scrivania' ? '🖥️' : '🏢';
   };
 
   const getResourceDisplayName = (contract) => {
@@ -405,6 +406,22 @@ const Contracts = () => {
     // Check if there are remaining entries (at least 0.5 for half day)
     const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
     return remainingEntries >= 0.5;
+  };
+
+  // Get localized book button text
+  const getBookButtonText = (contract) => {
+    const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
+    const canBook = canBookPackage(contract);
+    
+    if (canBook) {
+      return t('reservations.bookReservation');
+    } else if (remainingEntries < 0.5) {
+      return t('reservations.noEntriesRemaining') || 'No Entries';
+    } else if (!isDateInContractRange(contract.start_date, contract.end_date)) {
+      return t('contracts.contractNotActive') || 'Not Active';
+    } else {
+      return t('reservations.notAvailable') || 'Not Available';
+    }
   };
 
   if (loading) {
@@ -602,12 +619,12 @@ const Contracts = () => {
                           </button>
                         )}
                         
-                        {/* Package booking button - ALWAYS SHOW FOR PACKAGE CONTRACTS */}
-                        {contract.service_type === 'pacchetto' && (
+                        {/* Package booking button - Only show for package contracts with remaining entries and active in date range */}
+                        {contract.service_type === 'pacchetto' && isInRange && (
                           <button 
                             className="package-booking-btn"
                             onClick={() => handlePackageBooking(contract)}
-                            title={canBook ? t('reservations.bookReservation') : 'No entries remaining or contract inactive'}
+                            title={canBook ? t('reservations.bookReservation') : getBookButtonText(contract)}
                             disabled={!canBook}
                             style={{
                               backgroundColor: canBook ? '#16a34a' : '#9ca3af',
@@ -626,7 +643,7 @@ const Contracts = () => {
                             }}
                           >
                             <Calendar size={16} />
-                            {canBook ? 'Book' : 'No Entries'}
+                            {getBookButtonText(contract)}
                           </button>
                         )}
                         

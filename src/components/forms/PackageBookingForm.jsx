@@ -270,8 +270,20 @@ const PackageBookingForm = ({
     }).format(amount);
   };
 
+  // Updated icon function with desk icon for scrivania
   const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
+    return type === 'scrivania' ? '🖥️' : '🏢';
+  };
+
+  // Helper function to get the minimum selectable date
+  const getMinSelectableDate = () => {
+    const today = new Date();
+    const contractStart = new Date(contract.start_date);
+    
+    // Return the later of today or contract start date
+    return today > contractStart 
+      ? today.toISOString().split('T')[0]
+      : contract.start_date;
   };
 
   if (!isOpen || !contract) return null;
@@ -454,10 +466,7 @@ const PackageBookingForm = ({
                   id="reservation_date"
                   type="date"
                   required
-                  min={Math.max(
-                    new Date().toISOString().split('T')[0],
-                    contract.start_date
-                  )}
+                  min={getMinSelectableDate()}
                   max={contract.end_date}
                   value={formData.reservation_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}

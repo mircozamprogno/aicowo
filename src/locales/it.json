@@ -291,7 +291,8 @@
     "errorUpdatingContract": "Errore nell'aggiornamento del contratto",
     "availabilityCheckInProgress": "Attendere il completamento del controllo disponibilità",
     "pleaseWaitForAvailabilityCheck": "Attendere il controllo disponibilità",
-    "resourceNotAvailable": "La risorsa selezionata non è disponibile per il periodo scelto"
+    "resourceNotAvailable": "La risorsa selezionata non è disponibile per il periodo scelto",
+    "errorLoadingBookings": "Errore nel caricamento delle prenotazioni"
   },
   "services": {
     "title": "Servizi",
@@ -394,7 +395,9 @@
     "morningSlot": "Mattino (9:00-13:00)",
     "afternoonSlot": "Pomeriggio (14:00-18:00)",
     "fullDayEntry": "Giornata Intera (1 ingresso)",
-    "halfDayEntry": "Mezza Giornata (0.5 ingressi)"
+    "halfDayEntry": "Mezza Giornata (0.5 ingressi)",
+    "noEntriesRemaining": "Nessun Ingresso",
+    "notAvailable": "Non Disponibile"
   },
   "contracts": {
     "title": "Contratti",
@@ -458,7 +461,8 @@
     "resourceAvailable": "Risorsa Disponibile",
     "resourceNotAvailable": "Risorsa Non Disponibile",
     "availabilityDetails": "{{available}} di {{total}} {{resource}} disponibili per questo periodo",
-    "resourceFullyBooked": "Tutti i {{total}} {{resource}} sono prenotati per questo periodo"
+    "resourceFullyBooked": "Tutti i {{total}} {{resource}} sono prenotati per questo periodo",
+    "contractNotActive": "Non Attivo"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",
@@ -491,8 +495,41 @@
     "serviceNamePlaceholder": "Inserisci nome servizio",
     "serviceDescriptionPlaceholder": "Descrivi cosa include questo servizio..."
   },
+  "bookings": {
+    "title": "Calendario Prenotazioni",
+    "viewYourBookings": "Visualizza le tue prenotazioni attive",
+    "manageAllBookings": "Gestisci tutte le prenotazioni dei tuoi clienti",
+    "month": "Mese",
+    "week": "Settimana",
+    "day": "Giorno", 
+    "today": "Oggi",
+    "filters": "Filtri",
+    "customer": "Cliente",
+    "allCustomers": "Tutti i clienti",
+    "resourceType": "Tipo Risorsa",
+    "allResources": "Tutte le risorse",
+    "location": "Sede",
+    "allLocations": "Tutte le sedi",
+    "clearFilters": "Pulisci Filtri",
+    "legend": "Legenda",
+    "booking": "prenotazione",
+    "bookings": "prenotazioni",
+    "noBookingsForDay": "Nessuna prenotazione per questo giorno",
+    "noBookingsFound": "Nessuna prenotazione trovata per il periodo selezionato",
+    "more": "altro"
+  },
+  "calendar": {
+    "sunday": "Dom",
+    "monday": "Lun",
+    "tuesday": "Mar",
+    "wednesday": "Mer",
+    "thursday": "Gio",
+    "friday": "Ven",
+    "saturday": "Sab"
+  },
   "app": {
     "appName": "Gestione Coworking",
-    "appShortName": "PowerCowo"
+    "appShortName": "PowerCowo",
+    "locale": "it"
   }
 }

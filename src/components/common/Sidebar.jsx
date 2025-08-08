@@ -16,10 +16,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
     // Role-specific navigation items
     const roleSpecificItems = [
-      // Superadmin can see everything
+      // Superadmin can see everything EXCEPT contracts
       { name: t('navigation.partners'), href: '/partners', icon: Building, roles: ['superadmin'] },
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['superadmin'] },
-      { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['superadmin'] },
       
       // Partner admin can see their partner info, services, customers, contracts, bookings, and invitations
       { name: t('navigation.partnerInfo'), href: '/partners', icon: Building, roles: ['admin'] },
