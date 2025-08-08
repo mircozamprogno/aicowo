@@ -1,7 +1,8 @@
-import { Edit2, FileText, Plus, Trash2, X } from 'lucide-react';
+import { Calendar, Edit2, FileText, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ContractForm from '../components/forms/ContractForm';
+import PackageBookingForm from '../components/forms/PackageBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
@@ -14,9 +15,14 @@ const Contracts = () => {
   const [editingContract, setEditingContract] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [contractToDelete, setContractToDelete] = useState(null);
-  const [deleteStep, setDeleteStep] = useState(1); // 1 = first confirmation, 2 = final confirmation
+  const [deleteStep, setDeleteStep] = useState(1);
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
+  
+  // Package booking states
+  const [showPackageBooking, setShowPackageBooking] = useState(false);
+  const [selectedPackageContract, setSelectedPackageContract] = useState(null);
+  
   const { profile } = useAuth();
   const { t } = useTranslation();
 
@@ -25,7 +31,7 @@ const Contracts = () => {
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
   const canCreateContracts = isCustomer || isPartnerAdmin;
-  const canEditContracts = isPartnerAdmin || isSuperAdmin; // Only partner admins and superadmins can edit
+  const canEditContracts = isPartnerAdmin || isSuperAdmin;
 
   useEffect(() => {
     if (profile) {
@@ -65,7 +71,6 @@ const Contracts = () => {
 
       // Apply filters based on user role
       if (isCustomer) {
-        // Users see only their own contracts
         const { data: customerData } = await supabase
           .from('customers')
           .select('id')
@@ -76,17 +81,15 @@ const Contracts = () => {
           query = query.eq('customer_id', customerData.id);
         }
       } else if (isPartnerAdmin) {
-        // Partner admins see contracts for their partner
         query = query.eq('partner_uuid', profile.partner_uuid);
       }
-      // Superadmins see all contracts (no additional filter)
 
       const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching contracts:', error);
         
-        // Provide mock data for development
+        // Mock data for development
         const mockContracts = [
           {
             id: 1,
@@ -104,6 +107,9 @@ const Contracts = () => {
             contract_status: 'active',
             entries_used: 0,
             service_max_entries: null,
+            service_id: 1,
+            customer_id: 1,
+            partner_uuid: 'test-partner',
             created_at: new Date().toISOString(),
             customers: {
               first_name: 'Mario',
@@ -128,6 +134,9 @@ const Contracts = () => {
             contract_status: 'active',
             entries_used: 3,
             service_max_entries: 10,
+            service_id: 2,
+            customer_id: 1,
+            partner_uuid: 'test-partner',
             created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
             customers: {
               first_name: 'Anna',
@@ -152,7 +161,6 @@ const Contracts = () => {
 
   const fetchCustomersAndLocations = async () => {
     try {
-      // Fetch customers for partner admin
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('id, first_name, second_name, email, company_name')
@@ -165,7 +173,6 @@ const Contracts = () => {
         setCustomers(customersData || []);
       }
 
-      // Fetch locations
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select('id, location_name')
@@ -212,6 +219,23 @@ const Contracts = () => {
     );
   };
 
+  // Package booking handlers
+  const handlePackageBooking = (contract) => {
+    setSelectedPackageContract(contract);
+    setShowPackageBooking(true);
+  };
+
+  const handlePackageBookingClose = () => {
+    setShowPackageBooking(false);
+    setSelectedPackageContract(null);
+  };
+
+  const handlePackageBookingSuccess = () => {
+    fetchContracts(); // Refresh contracts to update entries_used
+    setShowPackageBooking(false);
+    setSelectedPackageContract(null);
+  };
+
   const handleDeleteContract = (contract) => {
     setContractToDelete(contract);
     setDeleteStep(1);
@@ -220,14 +244,11 @@ const Contracts = () => {
 
   const handleDeleteConfirm = async () => {
     if (deleteStep === 1) {
-      // First confirmation - move to second step
       setDeleteStep(2);
       return;
     }
 
-    // Second confirmation - actually delete
     try {
-      // Delete the contract (this will cascade delete the booking due to foreign key)
       const { error } = await supabase
         .from('contracts')
         .delete()
@@ -239,10 +260,7 @@ const Contracts = () => {
         return;
       }
 
-      // Remove from local state
       setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
-      
-      // Close dialog and reset state
       setShowDeleteConfirm(false);
       setContractToDelete(null);
       setDeleteStep(1);
@@ -310,12 +328,10 @@ const Contracts = () => {
   };
 
   const getResourceDisplayName = (contract) => {
-    // If we have a proper resource name, use it
     if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
       return contract.resource_name;
     }
     
-    // Otherwise, create a generic display name based on resource type
     const resourceTypeNames = {
       'scrivania': t('locations.scrivania'),
       'sala_riunioni': t('locations.salaRiunioni')
@@ -326,9 +342,9 @@ const Contracts = () => {
 
   const calculateDaysRemaining = (endDate) => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate calculation
+    today.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0); // Reset time to start of day
+    end.setHours(0, 0, 0, 0);
     const diffTime = end - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -428,7 +444,7 @@ const Contracts = () => {
                 <th className="contracts-table-header">
                   {t('contracts.status')}
                 </th>
-                {canEditContracts && (
+                {(canEditContracts || isCustomer) && (
                   <th className="contracts-table-header">
                     {t('contracts.actions')}
                   </th>
@@ -439,6 +455,7 @@ const Contracts = () => {
               {contracts.map((contract) => {
                 const daysRemaining = calculateDaysRemaining(contract.end_date);
                 const isInRange = isDateInContractRange(contract.start_date, contract.end_date);
+                
                 return (
                   <tr key={contract.id} className="contracts-table-row">
                     <td className="contracts-table-cell">
@@ -471,6 +488,9 @@ const Contracts = () => {
                         {contract.service_type === 'pacchetto' && contract.service_max_entries && (
                           <div className="usage-info">
                             {contract.entries_used || 0} / {contract.service_max_entries} {t('contracts.entriesUsed')}
+                            <div className="remaining-entries">
+                              {(contract.service_max_entries - (contract.entries_used || 0))} {t('reservations.entriesRemaining')}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -514,16 +534,33 @@ const Contracts = () => {
                         {t(`contracts.${contract.contract_status}`)}
                       </span>
                     </td>
-                    {canEditContracts && (
+                    {(canEditContracts || isCustomer) && (
                       <td className="contracts-table-cell">
                         <div className="contract-actions">
-                          <button 
-                            className="edit-btn"
-                            onClick={() => handleEditContract(contract)}
-                            title={t('contracts.editContract')}
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                          {canEditContracts && (
+                            <button 
+                              className="edit-btn"
+                              onClick={() => handleEditContract(contract)}
+                              title={t('contracts.editContract')}
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                          )}
+                          
+                          {/* Package booking button */}
+                          {contract.service_type === 'pacchetto' && 
+                           contract.contract_status === 'active' && 
+                           isInRange && 
+                           (contract.service_max_entries - (contract.entries_used || 0)) >= 0.5 && (
+                            <button 
+                              className="package-booking-btn"
+                              onClick={() => handlePackageBooking(contract)}
+                              title={t('reservations.bookReservation')}
+                            >
+                              <Calendar size={16} />
+                            </button>
+                          )}
+                          
                           {(isPartnerAdmin || isSuperAdmin) && (
                             <button 
                               className="delete-btn"
@@ -580,6 +617,14 @@ const Contracts = () => {
         locations={locations}
         editMode={true}
         contractToEdit={editingContract}
+      />
+
+      {/* Package Booking Modal */}
+      <PackageBookingForm
+        isOpen={showPackageBooking}
+        onClose={handlePackageBookingClose}
+        onSuccess={handlePackageBookingSuccess}
+        contract={selectedPackageContract}
       />
 
       {/* Delete Confirmation Modal */}

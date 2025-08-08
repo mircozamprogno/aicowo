@@ -654,6 +654,7 @@ const ContractForm = ({
     return type === 'scrivania' ? '🪑' : '🏢';
   };
 
+
   if (!isOpen) return null;
 
   if (showConfirmation) {
