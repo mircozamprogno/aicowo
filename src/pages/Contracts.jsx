@@ -1,10 +1,11 @@
-import { Calendar, Edit2, FileText, Plus, Trash2, X } from 'lucide-react';
+import { Calendar, Download, Edit2, FileText, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ContractForm from '../components/forms/ContractForm';
 import PackageBookingForm from '../components/forms/PackageBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 
 const Contracts = () => {
@@ -22,6 +23,9 @@ const Contracts = () => {
   // Package booking states
   const [showPackageBooking, setShowPackageBooking] = useState(false);
   const [selectedPackageContract, setSelectedPackageContract] = useState(null);
+  
+  // PDF generation states
+  const [generatingPDF, setGeneratingPDF] = useState(null); // contract ID being processed
   
   const { profile } = useAuth();
   const { t } = useTranslation();
@@ -236,6 +240,96 @@ const Contracts = () => {
     fetchContracts(); // Refresh contracts to update entries_used
     setShowPackageBooking(false);
     setSelectedPackageContract(null);
+  };
+
+  // PDF Generation handler
+  const handleGeneratePDF = async (contract) => {
+    setGeneratingPDF(contract.id);
+    
+    try {
+      console.log('Generating PDF for contract:', contract);
+      
+      // Fetch complete customer data with address information
+      let fullCustomerData = contract.customers;
+      
+      if (contract.customer_id) {
+        console.log('Fetching customer data for ID:', contract.customer_id);
+        
+        const { data: customerData, error: customerError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', contract.customer_id)
+          .single();
+        
+        if (customerError) {
+          console.error('Error fetching customer data:', customerError);
+        } else if (customerData) {
+          console.log('Found customer data:', customerData);
+          fullCustomerData = customerData;
+        } else {
+          console.warn('No customer data found for ID:', contract.customer_id);
+        }
+      } else {
+        console.warn('No customer_id found in contract:', contract);
+      }
+      
+      // Create enhanced contract object with full customer data
+      const enhancedContract = {
+        ...contract,
+        customers: fullCustomerData
+      };
+      
+      console.log('Enhanced contract with customer data:', enhancedContract);
+      
+      // Fetch partner data for PDF header
+      let partnerData = null;
+      let logoUrl = null;
+      
+      if (profile?.partner_uuid) {
+        // Get partner information
+        const { data: partner, error: partnerError } = await supabase
+          .from('partners')
+          .select('*')
+          .eq('partner_uuid', profile.partner_uuid)
+          .single();
+        
+        if (!partnerError && partner) {
+          partnerData = partner;
+        }
+        
+        // Get partner logo
+        try {
+          const { data: files } = await supabase.storage
+            .from('partners')
+            .list(`${profile.partner_uuid}`, {
+              search: 'logo'
+            });
+
+          const logoFile = files?.find(file => file.name.startsWith('logo.'));
+          
+          if (logoFile) {
+            const { data } = supabase.storage
+              .from('partners')
+              .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
+            
+            logoUrl = data.publicUrl;
+          }
+        } catch (logoError) {
+          console.log('No logo found:', logoError);
+        }
+      }
+
+      // Generate PDF with enhanced data
+      await generateContractPDF(enhancedContract, partnerData, logoUrl, t);
+      
+      toast.success(t('contracts.pdfGeneratedSuccessfully') || 'PDF generated successfully!');
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error(t('contracts.errorGeneratingPDF') || 'Error generating PDF. Please try again.');
+    } finally {
+      setGeneratingPDF(null);
+    }
   };
 
   const handleDeleteContract = (contract) => {
@@ -596,7 +690,34 @@ const Contracts = () => {
                       </span>
                     </td>
                     <td className="contracts-table-cell">
-                      <div className="contract-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div className="contract-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {/* PDF Generation Button - Show for all users */}
+                        <button 
+                          className="pdf-btn"
+                          onClick={() => handleGeneratePDF(contract)}
+                          disabled={generatingPDF === contract.id}
+                          title={t('contracts.generatePDF') || 'Generate PDF'}
+                          style={{
+                            backgroundColor: generatingPDF === contract.id ? '#9ca3af' : '#8b5cf6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.375rem',
+                            padding: '0.5rem',
+                            cursor: generatingPDF === contract.id ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '2.5rem',
+                            opacity: generatingPDF === contract.id ? 0.6 : 1
+                          }}
+                        >
+                          {generatingPDF === contract.id ? (
+                            <div className="loading-spinner-small" style={{ borderTopColor: 'white' }}></div>
+                          ) : (
+                            <Download size={16} />
+                          )}
+                        </button>
+
                         {canEditContracts && (
                           <button 
                             className="edit-btn"

@@ -71,7 +71,14 @@
     "manageCustomerData": "Manage your customer and billing information",
     "managePartnerData": "Manage your partner information and business details",
     "saveSettings": "Save Settings",
-    "billingInfoDescription": "Leave billing information empty to use the same as your personal information."
+    "billingInfoDescription": "Leave billing information empty to use the same as your personal information.",
+    "uploadLogo": "Upload Logo",
+    "changeLogo": "Change Logo", 
+    "removeLogo": "Remove Logo",
+    "currentLogo": "Current Logo:",
+    "logoPreview": "Logo Preview:",
+    "uploadingLogo": "Uploading Logo...",
+    "processingAndUploading": "Processing and uploading..."
   },
   "locations": {
     "addLocation": "Add Location",
@@ -461,7 +468,13 @@
     "resourceNotAvailable": "Resource Not Available",
     "availabilityDetails": "{{available}} of {{total}} {{resource}} available for this period",
     "resourceFullyBooked": "All {{total}} {{resource}} are booked for this period",
-    "contractNotActive": "Not Active"
+    "contractNotActive": "Not Active",
+    "generatePDF": "Generate PDF",
+    "contractReceipt": "CONTRACT RECEIPT", 
+    "pdfGeneratedSuccessfully": "PDF generated successfully!",
+    "errorGeneratingPDF": "Error generating PDF. Please try again.",
+    "receiptFooter": "This document is a service contract receipt. It has no fiscal value.",
+    "generatedOn": "Generated on"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",

@@ -1,4 +1,4 @@
-import { Save, User } from 'lucide-react';
+import { Image, Save, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,12 @@ const Settings = () => {
   const [partnerData, setPartnerData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  // Logo upload states
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [currentLogoUrl, setCurrentLogoUrl] = useState(null);
   
   // Determine if user is admin partner or regular user
   const isAdminPartner = profile?.role === 'admin';
@@ -48,11 +54,231 @@ const Settings = () => {
     if (user && profile) {
       if (isAdminPartner) {
         fetchPartnerData();
+        loadCurrentLogo();
       } else {
         fetchCustomerData();
       }
     }
   }, [user, profile, isAdminPartner]);
+
+  const loadCurrentLogo = async () => {
+    if (!profile?.partner_uuid) return;
+
+    try {
+      // Check if logo exists in storage
+      const { data: files, error } = await supabase.storage
+        .from('partners')
+        .list(`${profile.partner_uuid}`, {
+          search: 'logo'
+        });
+
+      if (error) {
+        console.log('No existing logo found or error:', error);
+        return;
+      }
+
+      // Find logo file (could be logo.png, logo.jpg, etc.)
+      const logoFile = files?.find(file => file.name.startsWith('logo.'));
+      
+      if (logoFile) {
+        const { data } = supabase.storage
+          .from('partners')
+          .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
+        
+        setCurrentLogoUrl(data.publicUrl);
+      }
+    } catch (error) {
+      console.error('Error loading current logo:', error);
+    }
+  };
+
+  const processImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.createElement('img');
+
+      img.onload = () => {
+        // Calculate new dimensions (max 800x600, maintaining aspect ratio)
+        const maxWidth = 800;
+        const maxHeight = 600;
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress image
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob with compression
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to process image'));
+            }
+          },
+          'image/png',
+          0.9 // Quality setting
+        );
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleLogoSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 10MB original)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image file size must be less than 10MB');
+      return;
+    }
+
+    setLogoUploading(true);
+
+    try {
+      // Process and compress image
+      const processedBlob = await processImage(file);
+      
+      // Create File object from blob
+      const processedFile = new File([processedBlob], 'logo.png', {
+        type: 'image/png'
+      });
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(processedBlob);
+      setLogoPreview(previewUrl);
+
+      // Automatically upload after processing
+      await uploadLogoFile(processedFile);
+
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Error processing image. Please try another file.');
+      setLogoUploading(false);
+    }
+  };
+
+  const uploadLogoFile = async (file) => {
+    if (!file || !profile?.partner_uuid) return;
+
+    try {
+      // Delete existing logo first
+      try {
+        const { data: existingFiles } = await supabase.storage
+          .from('partners')
+          .list(`${profile.partner_uuid}`, {
+            search: 'logo'
+          });
+
+        if (existingFiles && existingFiles.length > 0) {
+          for (const existingFile of existingFiles) {
+            await supabase.storage
+              .from('partners')
+              .remove([`${profile.partner_uuid}/${existingFile.name}`]);
+          }
+        }
+      } catch (deleteError) {
+        console.log('No existing logo to delete or error:', deleteError);
+      }
+
+      // Upload new logo
+      const fileName = 'logo.png';
+      const filePath = `${profile.partner_uuid}/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('partners')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('partners')
+        .getPublicUrl(filePath);
+
+      setCurrentLogoUrl(urlData.publicUrl);
+      setLogoPreview(null); // Clear preview since we now have current logo
+
+      toast.success('Logo uploaded successfully!');
+
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      
+      // Provide more specific error messages
+      if (error.message?.includes('row-level security policy')) {
+        toast.error('Storage permission error. Please contact support to configure bucket policies.');
+      } else if (error.message?.includes('storage')) {
+        toast.error('Storage error. Please try again or contact support.');
+      } else {
+        toast.error('Error uploading logo. Please try again.');
+      }
+      
+      // Clear preview on error
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+        setLogoPreview(null);
+      }
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    if (!profile?.partner_uuid || !currentLogoUrl) return;
+
+    try {
+      const { error } = await supabase.storage
+        .from('partners')
+        .remove([`${profile.partner_uuid}/logo.png`]);
+
+      if (error) throw error;
+
+      setCurrentLogoUrl(null);
+      toast.success('Logo removed successfully!');
+
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast.error('Error removing logo. Please try again.');
+    }
+  };
+
+  const cancelLogoSelection = () => {
+    setLogoUploading(false);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+      setLogoPreview(null);
+    }
+  };
 
   const fetchPartnerData = async () => {
     try {
@@ -274,10 +500,182 @@ const Settings = () => {
 
       <div className="settings-content">
         <form onSubmit={handleSubmit} className="settings-form">
+          
+          {/* Logo Upload Section - Only for Partners */}
+          {isAdminPartner && (
+            <div className="form-section">
+              <h3 className="form-section-title">
+                <Image size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
+                Company Logo
+              </h3>
+              <p className="form-section-description">
+                Upload your company logo. It will be used in contracts and other documents. 
+                Recommended size: 800x600px or smaller. Supported formats: JPG, PNG, GIF.
+              </p>
+
+              <div className="logo-upload-section">
+                {/* Current Logo Display */}
+                {currentLogoUrl && !logoPreview && (
+                  <div className="current-logo">
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '500' }}>
+                      {t('settings.currentLogo') || 'Current Logo:'}
+                    </h4>
+                    <div className="logo-display">
+                      <img 
+                        src={currentLogoUrl} 
+                        alt="Current company logo" 
+                        style={{
+                          maxWidth: '200px',
+                          maxHeight: '150px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '0.375rem',
+                          objectFit: 'contain'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleLogoRemove}
+                        className="logo-action-btn remove-logo-btn"
+                        style={{
+                          marginTop: '0.5rem',
+                          backgroundColor: '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '0.375rem',
+                          fontSize: '0.875rem',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          minWidth: '120px',
+                          height: '38px',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
+                      >
+                        <X size={16} />
+                        {t('settings.removeLogo') || 'Remove Logo'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Logo Preview */}
+                {logoPreview && (
+                  <div className="logo-preview">
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '500' }}>
+                      {logoUploading ? (t('settings.uploadingLogo') || 'Uploading Logo...') : (t('settings.logoPreview') || 'Logo Preview:')}
+                    </h4>
+                    <div className="logo-display">
+                      <img 
+                        src={logoPreview} 
+                        alt="Logo preview" 
+                        style={{
+                          maxWidth: '200px',
+                          maxHeight: '150px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '0.375rem',
+                          objectFit: 'contain',
+                          opacity: logoUploading ? 0.6 : 1
+                        }}
+                      />
+                      {logoUploading && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.5rem', 
+                          marginTop: '0.5rem',
+                          color: '#6b7280',
+                          fontSize: '0.875rem'
+                        }}>
+                          <div className="loading-spinner-small"></div>
+                          {t('settings.processingAndUploading') || 'Processing and uploading...'}
+                        </div>
+                      )}
+                      {!logoUploading && (
+                        <button
+                          type="button"
+                          onClick={cancelLogoSelection}
+                          className="logo-action-btn cancel-logo-btn"
+                          style={{
+                            marginTop: '0.5rem',
+                            backgroundColor: '#6b7280',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.375rem',
+                            fontSize: '0.875rem',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            minWidth: '120px',
+                            height: '38px',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                          onMouseLeave={(e) => e.target.style.backgroundColor = '#6b7280'}
+                        >
+                          <X size={16} />
+                          {t('common.cancel') || 'Cancel'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Logo Upload Input */}
+                {!logoPreview && (
+                  <div className="logo-upload-input">
+                    <label 
+                      htmlFor="logo-upload" 
+                      className="logo-action-btn logo-upload-label"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        backgroundColor: '#4f46e5',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s',
+                        minWidth: '120px',
+                        height: '38px'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4338ca'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#4f46e5'}
+                    >
+                      <Upload size={16} />
+                      {currentLogoUrl ? (t('settings.changeLogo') || 'Change Logo') : (t('settings.uploadLogo') || 'Upload Logo')}
+                    </label>
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoSelect}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Personal Information Section */}
           <div className="form-section">
             <h3 className="form-section-title">
-              {isAdminPartner ? t('partners.partnerInformation') : t('customers.personalInformation')}
+              {isAdminPartner ? t('customers.partnerInformation') : t('customers.personalInformation')}
             </h3>
             
             <div className="form-row">
@@ -502,7 +900,7 @@ const Settings = () => {
           {(isAdminPartner || formData.customer_type === 'company') && (
             <div className="form-section">
               <h3 className="form-section-title">
-                {isAdminPartner ? t('partners.businessInformation') : t('customers.businessInformation')}
+                {isAdminPartner ? t('customers.businessInformation') : t('customers.businessInformation')}
               </h3>
               
               <div className="form-group">

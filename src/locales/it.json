@@ -71,7 +71,14 @@
     "manageCustomerData": "Gestisci le tue informazioni cliente e di fatturazione",
     "managePartnerData": "Gestisci le tue informazioni partner e dettagli aziendali",
     "saveSettings": "Salva Impostazioni",
-    "billingInfoDescription": "Lascia vuote le informazioni di fatturazione per utilizzare le stesse informazioni personali."
+    "billingInfoDescription": "Lascia vuote le informazioni di fatturazione per utilizzare le stesse informazioni personali.",
+    "uploadLogo": "Carica Logo",
+    "changeLogo": "Cambia Logo",
+    "removeLogo": "Rimuovi Logo", 
+    "currentLogo": "Logo Attuale:",
+    "logoPreview": "Anteprima Logo:",
+    "uploadingLogo": "Caricamento Logo...",
+    "processingAndUploading": "Elaborazione e caricamento..."
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
@@ -462,7 +469,13 @@
     "resourceNotAvailable": "Risorsa Non Disponibile",
     "availabilityDetails": "{{available}} di {{total}} {{resource}} disponibili per questo periodo",
     "resourceFullyBooked": "Tutti i {{total}} {{resource}} sono prenotati per questo periodo",
-    "contractNotActive": "Non Attivo"
+    "contractNotActive": "Non Attivo",
+    "generatePDF": "Genera PDF",
+    "contractReceipt": "RICEVUTA CONTRATTO",
+    "pdfGeneratedSuccessfully": "PDF generato con successo!",
+    "errorGeneratingPDF": "Errore nella generazione del PDF. Riprova.",
+    "receiptFooter": "Questo documento è una ricevuta del contratto di servizio. Non ha valore fiscale.",
+    "generatedOn": "Generato il"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

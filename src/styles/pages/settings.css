@@ -176,6 +176,23 @@
   padding-right: 2.5rem;
 }
 
+/* Read-only email field styles */
+.form-input-readonly {
+  background-color: #f9fafb !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+  border-color: #e5e7eb !important;
+}
+
+.form-input-readonly:focus {
+  border-color: #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+.form-input-readonly:hover {
+  border-color: #e5e7eb !important;
+}
+
 /* Loading spinner for settings save button */
 .loading-spinner-small {
   display: inline-block;
