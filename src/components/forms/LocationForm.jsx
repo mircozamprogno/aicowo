@@ -1,5 +1,5 @@
-import { Plus, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, MapPin, Monitor, Plus, Trash2, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
@@ -9,7 +9,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const isEditing = !!location;
   
   const [formData, setFormData] = useState({
-    location_name: location?.location_name || '',
+    location_name: '',
   });
 
   const [resources, setResources] = useState([
@@ -18,6 +18,43 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   ]);
   
   const [loading, setLoading] = useState(false);
+
+  // Initialize form data when location changes
+  useEffect(() => {
+    if (location) {
+      // Set form data
+      setFormData({
+        location_name: location.location_name || '',
+      });
+
+      // Set resources data
+      if (location.resources && location.resources.length > 0) {
+        const formattedResources = location.resources.map(resource => ({
+          id: resource.id, // Keep the ID for updates
+          resource_type: resource.resource_type,
+          resource_name: resource.resource_name,
+          quantity: resource.quantity.toString(),
+          description: resource.description || ''
+        }));
+        setResources(formattedResources);
+      } else {
+        // Default resources for new locations or locations without resources
+        setResources([
+          { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' },
+          { resource_type: 'sala_riunioni', resource_name: '', quantity: '1', description: '' }
+        ]);
+      }
+    } else {
+      // Reset form for new location
+      setFormData({
+        location_name: '',
+      });
+      setResources([
+        { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' },
+        { resource_type: 'sala_riunioni', resource_name: '', quantity: '1', description: '' }
+      ]);
+    }
+  }, [location]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -150,170 +187,273 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }
   };
 
+  const getResourceIcon = (type) => {
+    return type === 'scrivania' ? <Monitor /> : <Users />;
+  };
+
+  const getResourceTypeLabel = (type) => {
+    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container location-form-modal">
-        <div className="modal-header">
-          <h2 className="modal-title">
-            {isEditing ? t('locations.editLocation') : t('locations.addLocation')}
-          </h2>
-          <button onClick={onClose} className="modal-close-btn">
-            <X size={24} />
+    <div className="locations-modal-backdrop">
+      <div className="location-form-modal-container">
+        {/* Header */}
+        <div className="location-form-header">
+          <div className="location-form-header-content">
+            <MapPin />
+            <h2 className="location-form-title">
+              {isEditing ? t('locations.editLocation') : t('locations.addLocation')}
+            </h2>
+          </div>
+          <button onClick={onClose} className="location-form-close">
+            <X />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          {/* Basic Information */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('locations.basicInformation')}</h3>
-            
-            <div className="form-group">
-              <label htmlFor="location_name" className="form-label">
-                {t('locations.locationName')} *
-              </label>
-              <input
-                id="location_name"
-                name="location_name"
-                type="text"
-                required
-                className="form-input"
-                placeholder={t('placeholders.locationNamePlaceholder')}
-                value={formData.location_name}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* Resources Section */}
-          <div className="form-section">
-            <div className="resources-header">
-              <h3 className="form-section-title">{t('locations.availableResources')}</h3>
-              <button
-                type="button"
-                onClick={addResource}
-                className="add-resource-btn"
-              >
-                <Plus size={16} />
-                {t('locations.addResource')}
-              </button>
-            </div>
-            
-            <div className="resources-list">
-              {resources.map((resource, index) => (
-                <div key={index} className="resource-item">
-                  <div className="resource-header">
-                    <span className="resource-number">{index + 1}.</span>
-                    {resources.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeResource(index)}
-                        className="remove-resource-btn"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                  
-                  <div className="resource-form">
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">
-                          {t('locations.resourceType')} *
-                        </label>
-                        <select
-                          className="form-select"
-                          value={resource.resource_type}
-                          onChange={(e) => handleResourceChange(index, 'resource_type', e.target.value)}
-                          required
-                        >
-                          <option value="scrivania">{t('locations.scrivania')}</option>
-                          <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
-                        </select>
-                      </div>
-                      
-                      <div className="form-group">
-                        <label className="form-label">
-                          {t('locations.resourceName')} *
-                        </label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder={t('placeholders.resourceNamePlaceholder')}
-                          value={resource.resource_name}
-                          onChange={(e) => handleResourceChange(index, 'resource_name', e.target.value)}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="form-group">
-                        <label className="form-label">
-                          {t('locations.quantity')} *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          className="form-input"
-                          placeholder="1"
-                          value={resource.quantity}
-                          onChange={(e) => handleResourceChange(index, 'quantity', e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label className="form-label">
-                        {t('locations.description')} ({t('common.optional')})
-                      </label>
-                      <textarea
-                        rows={2}
-                        className="form-textarea"
-                        placeholder={t('placeholders.resourceDescriptionPlaceholder')}
-                        value={resource.description}
-                        onChange={(e) => handleResourceChange(index, 'description', e.target.value)}
-                      />
-                    </div>
+        <form onSubmit={handleSubmit} className="location-form-layout">
+          {/* Left Panel - Location Details */}
+          <div className="location-form-sidebar">
+            <div className="location-form-sidebar-content">
+              <div className="location-details-section">
+                <h3 className="location-details-header">
+                  <MapPin />
+                  {t('locations.basicInformation')}
+                </h3>
+                
+                <div className="location-form-group">
+                  <div className="location-input-group">
+                    <label htmlFor="location_name" className="location-form-label">
+                      {t('locations.locationName')} *
+                    </label>
+                    <input
+                      id="location_name"
+                      name="location_name"
+                      type="text"
+                      required
+                      className="location-form-input"
+                      placeholder={t('placeholders.locationNamePlaceholder')}
+                      value={formData.location_name}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="resources-examples">
-              <div className="examples-title">{t('locations.resourceExamples')}:</div>
-              <div className="examples-content">
-                <div className="example-group">
-                  <strong>{t('locations.scrivania')}:</strong>
-                  <span>{t('locations.scrivaniaSexamples')}</span>
+              {/* Resource Summary */}
+              <div className="resource-summary">
+                <h4 className="resource-summary-title">{t('locations.resourcesSummary')}</h4>
+                <div className="resource-summary-list">
+                  {resources.filter(r => r.resource_name.trim()).map((resource, index) => (
+                    <div key={index} className="resource-summary-item">
+                      <div className="resource-summary-info">
+                        {getResourceIcon(resource.resource_type)}
+                        <span>{resource.resource_name || t('locations.unnamed')}</span>
+                      </div>
+                      <span className="resource-summary-quantity">×{resource.quantity}</span>
+                    </div>
+                  ))}
+                  {resources.filter(r => r.resource_name.trim()).length === 0 && (
+                    <p className="resource-summary-empty">{t('locations.noResourcesAddedYet')}</p>
+                  )}
                 </div>
-                <div className="example-group">
-                  <strong>{t('locations.salaRiunioni')}:</strong>
-                  <span>{t('locations.salaRiunioniExamples')}</span>
-                </div>
+              </div>
+
+              {/* Helper Tips */}
+              <div className="helper-tips">
+                <h4 className="helper-tips-title">💡 {t('locations.tips')}</h4>
+                <ul className="helper-tips-list">
+                  <li>• {t('locations.useDescriptiveNames')}</li>
+                  <li>• {t('locations.addDescriptionsForSpecial')}</li>
+                  <li>• {t('locations.setAccurateQuantities')}</li>
+                </ul>
               </div>
             </div>
           </div>
 
-          <div className="modal-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-              disabled={loading}
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-            >
-              {loading 
-                ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
-                : (isEditing ? t('common.save') : t('common.create'))
-              }
-            </button>
+          {/* Right Panel - Resources */}
+          <div className="location-form-main">
+            <div className="resources-management-header">
+              <h3 className="resources-management-title">
+                <Calendar />
+                {t('locations.availableResources')}
+              </h3>
+              <button
+                type="button"
+                onClick={addResource}
+                className="add-resource-button"
+              >
+                <Plus />
+                {t('locations.addResource')}
+              </button>
+            </div>
+
+            <div className="resources-content">
+              <div className="resources-list">
+                {resources.map((resource, index) => (
+                  <div key={index} className="resource-item">
+                    <div className="resource-item-header">
+                      <div className="resource-item-info">
+                        <div className="resource-number-badge">
+                          {index + 1}
+                        </div>
+                        <div className="resource-type-info">
+                          {getResourceIcon(resource.resource_type)}
+                          {getResourceTypeLabel(resource.resource_type)}
+                        </div>
+                      </div>
+                      {resources.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeResource(index)}
+                          className="resource-remove-button"
+                        >
+                          <Trash2 />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="resource-item-form">
+                      <div className="resource-form-grid">
+                        <div className="resource-form-col-3">
+                          <div className="resource-form-group">
+                            <label className="resource-form-label">
+                              {t('locations.resourceType')} *
+                            </label>
+                            <select
+                              className="resource-form-select"
+                              value={resource.resource_type}
+                              onChange={(e) => handleResourceChange(index, 'resource_type', e.target.value)}
+                              required
+                            >
+                              <option value="scrivania">{t('locations.scrivania')}</option>
+                              <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="resource-form-col-5">
+                          <div className="resource-form-group">
+                            <label className="resource-form-label">
+                              {t('locations.resourceName')} *
+                            </label>
+                            <input
+                              type="text"
+                              className="resource-form-input"
+                              placeholder={t('placeholders.resourceNamePlaceholder')}
+                              value={resource.resource_name}
+                              onChange={(e) => handleResourceChange(index, 'resource_name', e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="resource-form-col-2">
+                          <div className="resource-form-group">
+                            <label className="resource-form-label">
+                              {t('locations.quantity')} *
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="999"
+                              className="resource-form-input"
+                              value={resource.quantity}
+                              onChange={(e) => handleResourceChange(index, 'quantity', e.target.value)}
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="resource-form-col-2">
+                          <div className="resource-form-group">
+                            <label className="resource-form-label">
+                              {t('locations.status')}
+                            </label>
+                            <div className="resource-status-container">
+                              <span className="resource-status-badge">
+                                {t('locations.available')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="resource-description-group">
+                          <div className="resource-form-group">
+                            <label className="resource-form-label">
+                              {t('locations.description')} <span style={{color: '#6b7280'}}>({t('common.optional')})</span>
+                            </label>
+                            <textarea
+                              rows={2}
+                              className="resource-form-textarea"
+                              placeholder={t('placeholders.resourceDescriptionPlaceholder')}
+                              value={resource.description}
+                              onChange={(e) => handleResourceChange(index, 'description', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Examples section */}
+              <div className="examples-section">
+                <h4 className="examples-title">📋 {t('locations.resourceExamples')}</h4>
+                <div className="examples-grid">
+                  <div className="example-category">
+                    <div className="example-category-header">
+                      <Monitor />
+                      {t('locations.scrivania')}:
+                    </div>
+                    <ul className="example-list">
+                      <li>• {t('locations.hotDeskExample')}</li>
+                      <li>• {t('locations.privateOfficeExample')}</li>
+                      <li>• {t('locations.standingDeskExample')}</li>
+                    </ul>
+                  </div>
+                  <div className="example-category">
+                    <div className="example-category-header">
+                      <Users />
+                      {t('locations.salaRiunioni')}:
+                    </div>
+                    <ul className="example-list">
+                      <li>• {t('locations.conferenceRoomExample')}</li>
+                      <li>• {t('locations.phoneBoothExample')}</li>
+                      <li>• {t('locations.trainingRoomExample')}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="location-form-footer">
+              <button
+                type="button"
+                onClick={onClose}
+                className="form-button form-button-secondary"
+                disabled={loading}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                className="form-button form-button-primary"
+                disabled={loading}
+              >
+                {loading && (
+                  <div className="form-loading-spinner" />
+                )}
+                {loading 
+                  ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
+                  : (isEditing ? t('common.save') : t('common.create'))
+                }
+              </button>
+            </div>
           </div>
         </form>
       </div>

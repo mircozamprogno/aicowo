@@ -102,7 +102,32 @@
     "noResourcesFound": "Nessuna risorsa definita per questa sede",
     "resourceExamples": "Esempi di Risorse",
     "scrivaniaSexamples": "Scrivanie Condivise, Scrivanie Dedicate, Uffici Privati",
-    "salaRiunioniExamples": "Sala Riunioni Piccola, Sala Conferenze, Cabina Telefonica"
+    "salaRiunioniExamples": "Sala Riunioni Piccola, Sala Conferenze, Cabina Telefonica",
+    
+    "manageWorkspacesAndMeetingRooms": "Gestisci spazi di lavoro e sale riunioni nelle varie sedi",
+    "quickStats": "Statistiche Rapide",
+    "totalLocations": "Totale Sedi",
+    "locations": "Sedi",
+    "loadingLocations": "Caricamento sedi...",
+    "noLocationsYet": "Nessuna sede ancora",
+    "getStartedByAdding": "Inizia aggiungendo la tua prima sede",
+    "workspaces": "Spazi di Lavoro",
+    "meetingRooms": "Sale Riunioni",
+    "status": "Stato",
+    "addResources": "Aggiungi risorse",
+    "resourcesSummary": "Riepilogo Risorse",
+    "unnamed": "Senza nome",
+    "noResourcesAddedYet": "Nessuna risorsa aggiunta ancora",
+    "tips": "Suggerimenti",
+    "useDescriptiveNames": "Usa nomi descrittivi per una facile identificazione",
+    "addDescriptionsForSpecial": "Aggiungi descrizioni per requisiti speciali",
+    "setAccurateQuantities": "Imposta quantità accurate per una migliore prenotazione",
+    "hotDeskExample": "Area Scrivanie Condivise A (6 scrivanie)",
+    "privateOfficeExample": "Ufficio Privato 201",
+    "standingDeskExample": "Zona Scrivanie in Piedi",
+    "conferenceRoomExample": "Sala Conferenze Alpha (12 persone)",
+    "phoneBoothExample": "Cabina Telefonica 1",
+    "trainingRoomExample": "Sala Formazione B"
   },
   "auth": {
     "signIn": "Accedi",
@@ -299,7 +324,8 @@
     "availabilityCheckInProgress": "Attendere il completamento del controllo disponibilità",
     "pleaseWaitForAvailabilityCheck": "Attendere il controllo disponibilità",
     "resourceNotAvailable": "La risorsa selezionata non è disponibile per il periodo scelto",
-    "errorLoadingBookings": "Errore nel caricamento delle prenotazioni"
+    "errorLoadingBookings": "Errore nel caricamento delle prenotazioni",
+    "errorLoadingLocationData": "Errore nel caricamento dei dati della sede"
   },
   "services": {
     "title": "Servizi",

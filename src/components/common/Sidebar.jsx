@@ -1,12 +1,21 @@
 import { Building, Calendar, Cog, FileText, Home, Mail, Settings, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { supabase } from '../../services/supabase';
 import Link from './Link';
 
 const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   const currentPath = window.location.hash.slice(1) || '/dashboard';
   const { profile } = useAuth();
   const { t } = useTranslation();
+  
+  // State for partner branding
+  const [partnerBranding, setPartnerBranding] = useState({
+    logo: null,
+    companyName: null,
+    loading: true
+  });
   
   // Define navigation items based on user role
   const getNavigationItems = () => {
@@ -44,6 +53,91 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
     return filteredItems;
   };
 
+  // Fetch partner branding data
+  useEffect(() => {
+    if (profile) {
+      fetchPartnerBranding();
+    }
+  }, [profile]);
+
+  const fetchPartnerBranding = async () => {
+    if (!profile?.partner_uuid) {
+      // For superadmin or users without partner_uuid, show default branding
+      setPartnerBranding({
+        logo: null,
+        companyName: profile?.role === 'superadmin' ? 'System Admin' : 'PowerCowo',
+        loading: false
+      });
+      return;
+    }
+
+    try {
+      console.log('Fetching partner branding for:', profile.partner_uuid);
+      
+      // Fetch partner data
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('company_name')
+        .eq('partner_uuid', profile.partner_uuid)
+        .single();
+
+      if (partnerError) {
+        console.error('Error fetching partner data:', partnerError);
+        // Fallback with debugging
+        setPartnerBranding({
+          logo: null,
+          companyName: 'PowerCowo (Partner Error)',
+          loading: false
+        });
+        return;
+      }
+
+      console.log('Partner data fetched:', partnerData);
+
+      // Fetch partner logo
+      let logoUrl = null;
+      try {
+        const { data: files, error: storageError } = await supabase.storage
+          .from('partners')
+          .list(`${profile.partner_uuid}`, {
+            search: 'logo'
+          });
+
+        if (!storageError && files) {
+          const logoFile = files.find(file => file.name.startsWith('logo.'));
+          
+          if (logoFile) {
+            const { data } = supabase.storage
+              .from('partners')
+              .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
+            
+            logoUrl = data.publicUrl;
+            console.log('Logo URL found:', logoUrl);
+          }
+        }
+      } catch (logoError) {
+        console.log('No logo found or error loading logo:', logoError);
+      }
+
+      const companyName = partnerData?.company_name || 'PowerCowo (No Company Name)';
+      console.log('Setting company name:', companyName);
+
+      setPartnerBranding({
+        logo: logoUrl,
+        companyName: companyName,
+        loading: false
+      });
+
+    } catch (error) {
+      console.error('Error fetching partner branding:', error);
+      setPartnerBranding({
+        logo: null,
+        companyName: 'PowerCowo (Error)',
+        loading: false
+      });
+    }
+  };
+
   const navigationItems = getNavigationItems();
 
   return (
@@ -58,8 +152,40 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <Building size={32} color="#4f46e5" />
-          <span className="sidebar-logo-text">{t('app.appShortName')}</span>
+          {partnerBranding.loading ? (
+            // Loading state
+            <div className="logo-loading">
+              <div className="logo-skeleton"></div>
+              <div className="company-name-skeleton"></div>
+            </div>
+          ) : partnerBranding.logo ? (
+            // Custom partner logo
+            <div className="partner-branding">
+              <img 
+                src={partnerBranding.logo} 
+                alt={`${partnerBranding.companyName} logo`}
+                className="partner-logo"
+                onError={(e) => {
+                  // Fallback to default icon if logo fails to load
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'block';
+                }}
+              />
+              <Building 
+                size={32} 
+                color="#4f46e5" 
+                className="partner-logo-fallback"
+                style={{ display: 'none' }}
+              />
+              <span className="sidebar-logo-text">{partnerBranding.companyName}</span>
+            </div>
+          ) : (
+            // Default branding
+            <div className="default-branding">
+              <Building size={32} color="#4f46e5" />
+              <span className="sidebar-logo-text">{partnerBranding.companyName}</span>
+            </div>
+          )}
         </div>
       </div>
       

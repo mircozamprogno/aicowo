@@ -38,17 +38,29 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await signUp(formData.email, formData.password, {
+      // Create the user metadata object that will be passed to the trigger
+      const userMetadata = {
         first_name: formData.firstName,
         last_name: formData.lastName,
         role: formData.role,
-        username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
-      });
+        username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(/\s+/g, '_'),
+        // Add partner_uuid if this is an invitation-based registration
+        // partner_uuid: invitationData?.partner_uuid || null
+      };
+
+      console.log('Registering user with metadata:', userMetadata);
+
+      await signUp(formData.email, formData.password, userMetadata);
       
       toast.success(t('messages.accountCreatedSuccessfully'));
-      // Redirect to login after successful registration
-      window.location.hash = '/login';
+      
+      // Small delay to ensure the trigger has processed
+      setTimeout(() => {
+        window.location.hash = '/login';
+      }, 1000);
+      
     } catch (error) {
+      console.error('Registration error:', error);
       toast.error(error.message);
     } finally {
       setLoading(false);

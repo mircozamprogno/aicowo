@@ -1,4 +1,4 @@
-import { Edit2, MapPin, Plus, Trash2, X } from 'lucide-react';
+import { Building2, Calendar, Edit2, MapPin, Monitor, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -36,13 +36,15 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
             id: 1,
             location_name: 'Main Office',
             location_uuid: 'mock-uuid-1',
-            partner_uuid: partner.partner_uuid
+            partner_uuid: partner.partner_uuid,
+            created_at: '2024-01-15T10:30:00Z'
           },
           {
             id: 2,
             location_name: 'Secondary Branch',
             location_uuid: 'mock-uuid-2', 
-            partner_uuid: partner.partner_uuid
+            partner_uuid: partner.partner_uuid,
+            created_at: '2024-02-20T14:15:00Z'
           }
         ]);
       } else {
@@ -93,9 +95,31 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
     setShowLocationForm(true);
   };
 
-  const handleEditLocation = (location) => {
-    setEditingLocation(location);
-    setShowLocationForm(true);
+  const handleEditLocation = async (location) => {
+    try {
+      // Fetch the complete location data including resources
+      const { data: resourcesData, error: resourcesError } = await supabase
+        .from('location_resources')
+        .select('*')
+        .eq('location_id', location.id)
+        .order('id', { ascending: true });
+
+      if (resourcesError) {
+        console.error('Error fetching location resources:', resourcesError);
+      }
+
+      // Create the complete location object with resources
+      const locationWithResources = {
+        ...location,
+        resources: resourcesData || []
+      };
+
+      setEditingLocation(locationWithResources);
+      setShowLocationForm(true);
+    } catch (error) {
+      console.error('Error preparing location for edit:', error);
+      toast.error(t('messages.errorLoadingLocationData'));
+    }
   };
 
   const handleDeleteLocation = async (location) => {
@@ -147,8 +171,8 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
     return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
+  const getResourceIcon = (type) => {
+    return type === 'scrivania' ? <Monitor /> : <Users />;
   };
 
   const getTotalResourcesForLocation = (locationId) => {
@@ -156,132 +180,285 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
     return resources.reduce((total, resource) => total + resource.quantity, 0);
   };
 
+  const getResourceTypeStats = (locationId) => {
+    const resources = locationResources[locationId] || [];
+    const desks = resources.filter(r => r.resource_type === 'scrivania').reduce((sum, r) => sum + r.quantity, 0);
+    const rooms = resources.filter(r => r.resource_type === 'sala_riunioni').reduce((sum, r) => sum + r.quantity, 0);
+    return { desks, rooms };
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container locations-modal">
-        <div className="modal-header">
-          <h2 className="modal-title">
-            <MapPin size={20} className="inline mr-2" />
-            {t('locations.locationsFor')} {partner?.first_name && partner?.second_name 
-              ? `${partner.first_name} ${partner.second_name}`
-              : partner?.first_name || partner?.company_name
-            }
-          </h2>
-          <button onClick={onClose} className="modal-close-btn">
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className="locations-content">
-          <div className="locations-header">
-            <button 
-              onClick={handleAddLocation}
-              className="btn-primary"
-            >
-              <Plus size={16} className="mr-2" />
-              {t('locations.addLocation')}
+    <>
+      <div className="locations-modal-backdrop">
+        <div className="locations-modal-container">
+          {/* Header */}
+          <div className="locations-modal-header">
+            <div className="locations-modal-header-content">
+              <Building2 className="locations-modal-icon" />
+              <div>
+                <h2 className="locations-modal-title">
+                  {t('locations.locationsFor')} {partner?.first_name && partner?.second_name 
+                    ? `${partner.first_name} ${partner.second_name}`
+                    : partner?.first_name || partner?.company_name
+                  }
+                </h2>
+                <p className="locations-modal-subtitle">
+                  {t('locations.manageWorkspacesAndMeetingRooms')}
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} className="locations-modal-close">
+              <X />
             </button>
           </div>
 
-          {loading ? (
-            <div className="locations-loading">
-              {t('common.loading')}
-            </div>
-          ) : (
-            <div className="locations-list">
-              {locations.length === 0 ? (
-                <div className="locations-empty">
-                  <MapPin size={48} className="text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">{t('locations.noLocationsFound')}</p>
-                  <button 
-                    onClick={handleAddLocation}
-                    className="btn-primary mt-4"
-                  >
-                    {t('locations.addFirstLocation')}
-                  </button>
-                </div>
-              ) : (
-                locations.map((location) => (
-                  <div key={location.id} className="location-item">
-                    <div className="location-main-info">
-                      <div className="location-header">
-                        <h3 className="location-name">{location.location_name}</h3>
-                        <div className="location-summary">
-                          {t('locations.totalResources')}: {getTotalResourcesForLocation(location.id)}
-                        </div>
-                      </div>
-                      <div className="location-actions">
-                        <button
-                          onClick={() => handleEditLocation(location)}
-                          className="btn-icon"
-                          title={t('common.edit')}
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLocation(location)}
-                          className="btn-icon btn-danger"
-                          title={t('common.delete')}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+          {/* Content */}
+          <div className="locations-content-layout">
+            {/* Sidebar */}
+            <div className="locations-sidebar">
+              <div className="locations-sidebar-header">
+                <button onClick={handleAddLocation} className="locations-add-button">
+                  <Plus />
+                  {t('locations.addLocation')}
+                </button>
+              </div>
+
+              {/* Location Stats */}
+              <div className="locations-stats">
+                <h3 className="locations-stats-title">{t('locations.quickStats')}</h3>
+                <div className="locations-stats-grid">
+                  <div className="locations-stat-card">
+                    <div className="locations-stat-value">
+                      {locations.length}
                     </div>
-                    
-                    {/* Resources List */}
-                    <div className="location-resources">
-                      <h4 className="resources-title">{t('locations.availableResources')}:</h4>
-                      {locationResources[location.id] && locationResources[location.id].length > 0 ? (
-                        <div className="resources-grid">
-                          {locationResources[location.id].map((resource) => (
-                            <div key={resource.id} className="resource-card">
-                              <div className="resource-info">
-                                <div className="resource-header">
-                                  <span className="resource-icon">
-                                    {getResourceTypeIcon(resource.resource_type)}
-                                  </span>
-                                  <span className="resource-type">
-                                    {getResourceTypeLabel(resource.resource_type)}
-                                  </span>
+                    <div className="locations-stat-label">{t('locations.totalLocations')}</div>
+                  </div>
+                  <div className="locations-stat-card">
+                    <div className="locations-stat-value blue">
+                      {Object.values(locationResources).flat().reduce((sum, r) => sum + r.quantity, 0)}
+                    </div>
+                    <div className="locations-stat-label">{t('locations.totalResources')}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Navigation */}
+              <div className="locations-navigation">
+                <div className="locations-nav-container">
+                  <h3 className="locations-nav-title">{t('locations.locations')}</h3>
+                  {loading ? (
+                    <div className="locations-nav-loading">{t('common.loading')}</div>
+                  ) : locations.length === 0 ? (
+                    <div className="locations-nav-empty">
+                      <MapPin />
+                      <p>{t('locations.noLocationsFound')}</p>
+                    </div>
+                  ) : (
+                    <div className="locations-nav-list">
+                      {locations.map((location) => {
+                        const stats = getResourceTypeStats(location.id);
+                        return (
+                          <div key={location.id} className="location-nav-item">
+                            <div className="location-nav-content">
+                              <div className="location-nav-info">
+                                <h4 className="location-nav-name">
+                                  {location.location_name}
+                                </h4>
+                                <div className="location-nav-stats">
+                                  <div className="location-nav-stat">
+                                    <Monitor />
+                                    {stats.desks}
+                                  </div>
+                                  <div className="location-nav-stat">
+                                    <Users />
+                                    {stats.rooms}
+                                  </div>
                                 </div>
-                                <div className="resource-name">{resource.resource_name}</div>
-                                <div className="resource-quantity">
-                                  <span className="quantity-number">{resource.quantity}</span>
-                                  <span className="quantity-label">{t('locations.available')}</span>
-                                </div>
-                                {resource.description && (
-                                  <div className="resource-description">{resource.description}</div>
-                                )}
+                              </div>
+                              <div className="location-nav-actions">
+                                <button
+                                  onClick={() => handleEditLocation(location)}
+                                  className="location-nav-action edit"
+                                  title={t('common.edit')}
+                                >
+                                  <Edit2 />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteLocation(location)}
+                                  className="location-nav-action delete"
+                                  title={t('common.delete')}
+                                >
+                                  <Trash2 />
+                                </button>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="no-resources">
-                          <p>{t('locations.noResourcesFound')}</p>
-                        </div>
-                      )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    
-                    <div className="location-meta">
-                      <small>{t('common.createdAt')}: {new Date(location.created_at).toLocaleDateString()}</small>
-                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="locations-main-content">
+              {loading ? (
+                <div className="locations-loading-state">
+                  <div className="text-center">
+                    <div className="locations-loading-spinner"></div>
+                    <p className="locations-loading-text">{t('locations.loadingLocations')}</p>
                   </div>
-                ))
+                </div>
+              ) : locations.length === 0 ? (
+                <div className="locations-empty-state">
+                  <div className="text-center">
+                    <Building2 className="locations-empty-icon" />
+                    <h3 className="locations-empty-title">{t('locations.noLocationsYet')}</h3>
+                    <p className="locations-empty-description">{t('locations.getStartedByAdding')}</p>
+                    <button onClick={handleAddLocation} className="locations-empty-button">
+                      <Plus />
+                      {t('locations.addFirstLocation')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="locations-content">
+                  <div className="locations-grid">
+                    {locations.map((location) => {
+                      const resources = locationResources[location.id] || [];
+                      const stats = getResourceTypeStats(location.id);
+                      
+                      return (
+                        <div key={location.id} className="location-card">
+                          {/* Location Header */}
+                          <div className="location-card-header">
+                            <div className="location-card-header-content">
+                              <div className="location-card-info">
+                                <div className="location-card-icon-container">
+                                  <div className="location-card-icon">
+                                    <MapPin />
+                                  </div>
+                                  <div>
+                                    <h3 className="location-card-title">
+                                      {location.location_name}
+                                    </h3>
+                                    <p className="location-card-date">
+                                      {t('common.createdAt')}: {new Date(location.created_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="location-card-stats">
+                                  <div className="location-card-stat blue">
+                                    <Monitor />
+                                    <span>
+                                      {stats.desks} {t('locations.workspaces')}
+                                    </span>
+                                  </div>
+                                  <div className="location-card-stat purple">
+                                    <Users />
+                                    <span>
+                                      {stats.rooms} {t('locations.meetingRooms')}
+                                    </span>
+                                  </div>
+                                  <div className="location-card-stat emerald">
+                                    <Calendar />
+                                    <span>
+                                      {getTotalResourcesForLocation(location.id)} {t('locations.totalResources')}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="location-card-actions">
+                                <button
+                                  onClick={() => handleEditLocation(location)}
+                                  className="location-card-action edit"
+                                  title={t('common.edit')}
+                                >
+                                  <Edit2 />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteLocation(location)}
+                                  className="location-card-action delete"
+                                  title={t('common.delete')}
+                                >
+                                  <Trash2 />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Resources Grid */}
+                          <div className="location-card-resources">
+                            {resources.length > 0 ? (
+                              <div className="location-resources-grid">
+                                {resources.map((resource) => (
+                                  <div key={resource.id} className="resource-card">
+                                    <div className="resource-card-header">
+                                      <div className="resource-card-type">
+                                        <div className={`resource-card-icon ${
+                                          resource.resource_type === 'scrivania' ? 'desk' : 'room'
+                                        }`}>
+                                          {getResourceIcon(resource.resource_type)}
+                                        </div>
+                                        <div>
+                                          <span className="resource-card-type-label">
+                                            {getResourceTypeLabel(resource.resource_type)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="resource-card-quantity">
+                                        <span className="resource-quantity-number">
+                                          {resource.quantity}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    
+                                    <h4 className="resource-card-name">
+                                      {resource.resource_name}
+                                    </h4>
+                                    
+                                    {resource.description && (
+                                      <p className="resource-card-description">
+                                        {resource.description}
+                                      </p>
+                                    )}
+                                    
+                                    <div className="resource-card-footer">
+                                      <span className="resource-card-status-label">{t('locations.status')}</span>
+                                      <span className="resource-card-status-badge">
+                                        {t('locations.available')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="resource-no-resources">
+                                <Users />
+                                <p>{t('locations.noResourcesFound')}</p>
+                                <button onClick={() => handleEditLocation(location)}>
+                                  {t('locations.addResources')}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn-secondary">
-            {t('common.close')}
-          </button>
+          </div>
         </div>
       </div>
 
+      {/* Location Form Modal */}
       <LocationForm
         isOpen={showLocationForm}
         onClose={handleLocationFormClose}
@@ -289,7 +466,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         location={editingLocation}
         partnerUuid={partner?.partner_uuid}
       />
-    </div>
+    </>
   );
 };
 

@@ -102,7 +102,32 @@
     "noResourcesFound": "No resources defined for this location",
     "resourceExamples": "Resource Examples",
     "scrivaniaSexamples": "Hot Desks, Dedicated Desks, Private Offices",
-    "salaRiunioniExamples": "Small Meeting Room, Conference Room, Phone Booth"
+    "salaRiunioniExamples": "Small Meeting Room, Conference Room, Phone Booth",
+    
+    "manageWorkspacesAndMeetingRooms": "Manage workspaces and meeting rooms across locations",
+    "quickStats": "Quick Stats",
+    "totalLocations": "Total Locations",
+    "locations": "Locations",
+    "loadingLocations": "Loading locations...",
+    "noLocationsYet": "No locations yet",
+    "getStartedByAdding": "Get started by adding your first location",
+    "workspaces": "Workspaces",
+    "meetingRooms": "Meeting Rooms",
+    "status": "Status",
+    "addResources": "Add resources",
+    "resourcesSummary": "Resources Summary",
+    "unnamed": "Unnamed",
+    "noResourcesAddedYet": "No resources added yet",
+    "tips": "Tips",
+    "useDescriptiveNames": "Use descriptive names for easy identification",
+    "addDescriptionsForSpecial": "Add descriptions for special requirements",
+    "setAccurateQuantities": "Set accurate quantities for better booking",
+    "hotDeskExample": "Hot Desk Area A (6 desks)",
+    "privateOfficeExample": "Private Office 201",
+    "standingDeskExample": "Standing Desk Zone",
+    "conferenceRoomExample": "Conference Room Alpha (12 people)",
+    "phoneBoothExample": "Phone Booth 1",
+    "trainingRoomExample": "Training Room B"
   },
   "auth": {
     "signIn": "Sign In",
@@ -298,7 +323,8 @@
     "availabilityCheckInProgress": "Please wait for availability check to complete",
     "pleaseWaitForAvailabilityCheck": "Please wait for availability check",
     "resourceNotAvailable": "Selected resource is not available for the chosen period",
-    "errorLoadingBookings": "Error loading bookings"
+    "errorLoadingBookings": "Error loading bookings",
+    "errorLoadingLocationData": "Error loading location data"
   },
   "services": {
     "title": "Services",
