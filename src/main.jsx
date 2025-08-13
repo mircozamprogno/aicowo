@@ -17,6 +17,7 @@ import './styles/pages/customers.css'
 import './styles/pages/dashboard.css'
 import './styles/pages/invitations.css'
 import './styles/pages/partners.css'
+import './styles/pages/photo-gallery.css'; // Add this line for PhotoGallery styles
 import './styles/pages/services.css'
 import './styles/pages/settings.css'
 import './styles/pages/users.css'

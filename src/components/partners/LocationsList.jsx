@@ -1,16 +1,22 @@
-import { Building2, Calendar, Edit2, MapPin, Monitor, Plus, Trash2, Users, X } from 'lucide-react';
+import { Building2, Calendar, Edit2, Image, MapPin, Monitor, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { imageService } from '../../services/imageService';
 import { supabase } from '../../services/supabase';
+import ImageLightbox from '../common/ImageLightbox';
 import { toast } from '../common/ToastContainer';
 import LocationForm from '../forms/LocationForm';
 
 const LocationsList = ({ partner, isOpen, onClose }) => {
   const [locations, setLocations] = useState([]);
   const [locationResources, setLocationResources] = useState({});
+  const [locationImages, setLocationImages] = useState({});
   const [loading, setLoading] = useState(true);
   const [showLocationForm, setShowLocationForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -82,12 +88,36 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         });
         setLocationResources(groupedResources);
       }
+
+      // Fetch images for all locations
+      await fetchLocationImages(locationsData || []);
+
     } catch (error) {
       console.error('Error fetching locations and resources:', error);
       toast.error(t('messages.errorLoadingLocations'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchLocationImages = async (locationsList) => {
+    const imagesData = {};
+    
+    for (const location of locationsList) {
+      try {
+        const result = await imageService.getLocationImagesGrouped(location.id);
+        if (result.success) {
+          imagesData[location.id] = result.data;
+        } else {
+          imagesData[location.id] = { exterior: [], scrivania: [], sala_riunioni: [] };
+        }
+      } catch (error) {
+        console.error(`Error fetching images for location ${location.id}:`, error);
+        imagesData[location.id] = { exterior: [], scrivania: [], sala_riunioni: [] };
+      }
+    }
+    
+    setLocationImages(imagesData);
   };
 
   const handleAddLocation = () => {
@@ -141,6 +171,12 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         delete newResources[location.id];
         return newResources;
       });
+      setLocationImages(prev => {
+        const newImages = { ...prev };
+        delete newImages[location.id];
+        return newImages;
+      });
+      
       toast.success(t('messages.locationDeletedSuccessfully'));
     } catch (error) {
       console.error('Error deleting location:', error);
@@ -163,8 +199,20 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
       // Add new location to the list
       setLocations(prev => [savedLocation, ...prev]);
     }
-    // Refresh resources data
+    // Refresh all data including images
     fetchLocationsAndResources();
+  };
+
+  const openLightbox = (images, startIndex = 0) => {
+    setLightboxImages(images);
+    setLightboxIndex(startIndex);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setLightboxImages([]);
+    setLightboxIndex(0);
   };
 
   const getResourceTypeLabel = (type) => {
@@ -185,6 +233,66 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
     const desks = resources.filter(r => r.resource_type === 'scrivania').reduce((sum, r) => sum + r.quantity, 0);
     const rooms = resources.filter(r => r.resource_type === 'sala_riunioni').reduce((sum, r) => sum + r.quantity, 0);
     return { desks, rooms };
+  };
+
+  const getLocationImageStats = (locationId) => {
+    const images = locationImages[locationId] || { exterior: [], scrivania: [], sala_riunioni: [] };
+    return {
+      total: Object.values(images).reduce((sum, arr) => sum + arr.length, 0),
+      exterior: images.exterior.length,
+      scrivania: images.scrivania.length,
+      sala_riunioni: images.sala_riunioni.length
+    };
+  };
+
+  const renderImageGallery = (locationId, category, maxVisible = 3) => {
+    const images = locationImages[locationId]?.[category] || [];
+    
+    if (images.length === 0) {
+      return (
+        <div className="image-gallery-empty">
+          <Image size={16} />
+          <span>{t('locations.noImages')}</span>
+        </div>
+      );
+    }
+
+    const visibleImages = images.slice(0, maxVisible);
+    const remainingCount = Math.max(0, images.length - maxVisible);
+
+    return (
+      <div className="image-gallery">
+        {visibleImages.map((image, index) => (
+          <div 
+            key={image.id} 
+            className="image-gallery-item"
+            onClick={() => openLightbox(images, index)}
+          >
+            <img 
+              src={image.public_url} 
+              alt={image.alt_text || `${category} image`}
+              className="gallery-thumbnail"
+            />
+          </div>
+        ))}
+        
+        {remainingCount > 0 && (
+          <div 
+            className="image-gallery-more"
+            onClick={() => openLightbox(images, maxVisible)}
+          >
+            <div className="gallery-more-overlay">
+              <span>+{remainingCount}</span>
+            </div>
+            <img 
+              src={images[maxVisible].public_url} 
+              alt="More images"
+              className="gallery-thumbnail"
+            />
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -241,6 +349,14 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                     </div>
                     <div className="locations-stat-label">{t('locations.totalResources')}</div>
                   </div>
+                  <div className="locations-stat-card">
+                    <div className="locations-stat-value purple">
+                      {Object.values(locationImages).reduce((sum, imgs) => 
+                        sum + Object.values(imgs).reduce((s, arr) => s + arr.length, 0), 0
+                      )}
+                    </div>
+                    <div className="locations-stat-label">{t('locations.totalImages')}</div>
+                  </div>
                 </div>
               </div>
 
@@ -259,6 +375,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                     <div className="locations-nav-list">
                       {locations.map((location) => {
                         const stats = getResourceTypeStats(location.id);
+                        const imageStats = getLocationImageStats(location.id);
                         return (
                           <div key={location.id} className="location-nav-item">
                             <div className="location-nav-content">
@@ -274,6 +391,10 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                   <div className="location-nav-stat">
                                     <Users />
                                     {stats.rooms}
+                                  </div>
+                                  <div className="location-nav-stat">
+                                    <Image />
+                                    {imageStats.total}
                                   </div>
                                 </div>
                               </div>
@@ -330,6 +451,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                     {locations.map((location) => {
                       const resources = locationResources[location.id] || [];
                       const stats = getResourceTypeStats(location.id);
+                      const imageStats = getLocationImageStats(location.id);
                       
                       return (
                         <div key={location.id} className="location-card">
@@ -370,6 +492,12 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                       {getTotalResourcesForLocation(location.id)} {t('locations.totalResources')}
                                     </span>
                                   </div>
+                                  <div className="location-card-stat orange">
+                                    <Image />
+                                    <span>
+                                      {imageStats.total} {t('locations.images')}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                               
@@ -391,6 +519,53 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                               </div>
                             </div>
                           </div>
+
+                          {/* Image Galleries */}
+                          {imageStats.total > 0 && (
+                            <div className="location-card-images">
+                              <h4 className="location-images-title">
+                                <Image size={16} />
+                                {t('locations.locationImages')}
+                              </h4>
+                              
+                              <div className="location-images-categories">
+                                {imageStats.exterior > 0 && (
+                                  <div className="image-category">
+                                    <div className="image-category-header">
+                                      <span className="image-category-label">
+                                        {t('locations.exteriorImages')} ({imageStats.exterior})
+                                      </span>
+                                    </div>
+                                    {renderImageGallery(location.id, 'exterior', 4)}
+                                  </div>
+                                )}
+
+                                {imageStats.scrivania > 0 && (
+                                  <div className="image-category">
+                                    <div className="image-category-header">
+                                      <Monitor size={14} />
+                                      <span className="image-category-label">
+                                        {t('locations.deskImages')} ({imageStats.scrivania})
+                                      </span>
+                                    </div>
+                                    {renderImageGallery(location.id, 'scrivania', 4)}
+                                  </div>
+                                )}
+
+                                {imageStats.sala_riunioni > 0 && (
+                                  <div className="image-category">
+                                    <div className="image-category-header">
+                                      <Users size={14} />
+                                      <span className="image-category-label">
+                                        {t('locations.meetingRoomImages')} ({imageStats.sala_riunioni})
+                                      </span>
+                                    </div>
+                                    {renderImageGallery(location.id, 'sala_riunioni', 4)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Resources Grid */}
                           <div className="location-card-resources">
@@ -465,6 +640,14 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         onSuccess={handleLocationFormSuccess}
         location={editingLocation}
         partnerUuid={partner?.partner_uuid}
+      />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={closeLightbox}
       />
     </>
   );

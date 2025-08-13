@@ -14,7 +14,8 @@
     "systemAdmin": "System Administrator",
     "partnerAdmin": "Partner Administrator",
     "member": "Member",
-    "contracts": "Contracts"
+    "contracts": "Contracts",
+    "photoGallery": "Photo Gallery"
   },
   "customers": {
     "title": "Customers",
@@ -127,7 +128,37 @@
     "standingDeskExample": "Standing Desk Zone",
     "conferenceRoomExample": "Conference Room Alpha (12 people)",
     "phoneBoothExample": "Phone Booth 1",
-    "trainingRoomExample": "Training Room B"
+    "trainingRoomExample": "Training Room B",
+    "images": "Images",
+    "totalImages": "Total Images",
+    "noImages": "No Images",
+    "exteriorImages": "Exterior Photos",
+    "deskImages": "Desk Areas",
+    "meetingRoomImages": "Meeting Rooms",
+    "locationImages": "Location Images",
+    "imagesSummary": "Images Summary",
+    "addImages": "Add Images",
+    "dropImagesHere": "Drop images here or click to browse",
+    "imageRequirements": "JPG, PNG, WebP up to 5MB each",
+    "newImage": "New",
+    "imageDescription": "Image description",
+    "noImagesUploaded": "No images uploaded yet",
+    "maxImagesReached": "Maximum {max} images reached",
+    "maxImagesExceeded": "Cannot add more than {max} images",
+    "imageUploadTips": "Image Upload Tips",
+    "tipSupportedFormats": "Supported formats: JPG, PNG, WebP",
+    "tipMaxSize": "Maximum file size: 5MB per image",
+    "tipBestQuality": "Use high-quality images for best results",
+    "tipDescriptiveNames": "Add descriptive alt text for accessibility",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "previousImage": "Previous Image",
+    "nextImage": "Next Image",
+    "moveLeft": "Move Left",
+    "moveRight": "Move Right",
+    "uploadQualityImages": "Upload quality images to showcase your space",
+    "resources": "Resources",
+    "exterior": "Exterior"
   },
   "auth": {
     "signIn": "Sign In",
@@ -174,9 +205,13 @@
   "dashboard": {
     "welcomeBack": "Welcome back",
     "totalPartners": "Total Partners",
-    "activeLocations": "Active Locations",
+    "activeLocations": "Active Locations", 
     "totalUsers": "Total Users",
-    "monthlyOverview": "Monthly Overview"
+    "monthlyOverview": "Monthly Overview",
+    "quickActions": "Quick Actions",
+    "contractsOverview": "Your Contracts",
+    "packageEntriesOverview": "Package Entries",
+    "bookingsOverview": "Your Bookings"
   },
   "partners": {
     "title": "Partners",
@@ -324,7 +359,10 @@
     "pleaseWaitForAvailabilityCheck": "Please wait for availability check",
     "resourceNotAvailable": "Selected resource is not available for the chosen period",
     "errorLoadingBookings": "Error loading bookings",
-    "errorLoadingLocationData": "Error loading location data"
+    "errorLoadingLocationData": "Error loading location data",
+    "imagesUploadedSuccessfully": "{count} images uploaded successfully",
+    "someImagesFailedToUpload": "{count} images failed to upload",
+    "errorUploadingImages": "Error uploading images"
   },
   "services": {
     "title": "Services",
@@ -429,7 +467,16 @@
     "fullDayEntry": "Full Day (1 entry)",
     "halfDayEntry": "Half Day (0.5 entries)",
     "noEntriesRemaining": "No Entries",
-    "notAvailable": "Not Available"
+    "notAvailable": "Not Available",
+    "totalEntries": "Total Entries",
+    "usedEntries": "Used Entries", 
+    "remainingEntries": "Remaining Entries",
+    "packageEntries": "Package Entries",
+    "usageProgress": "Usage Progress",
+    "lowEntriesWarning": "Warning: Few entries remaining!",
+    "usePackageEntries": "Use your package entries",
+    "packageReservations": "Package Reservations",
+    "bookPackage": "Book Package"
   },
   "contracts": {
     "title": "Contracts",
@@ -500,7 +547,10 @@
     "pdfGeneratedSuccessfully": "PDF generated successfully!",
     "errorGeneratingPDF": "Error generating PDF. Please try again.",
     "receiptFooter": "This document is a service contract receipt. It has no fiscal value.",
-    "generatedOn": "Generated on"
+    "generatedOn": "Generated on",
+    "viewContracts": "View Contracts",
+    "packageContracts": "Package Contracts",
+    "subscriptionContracts": "Subscription Contracts"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -554,7 +604,11 @@
     "bookings": "bookings",
     "noBookingsForDay": "No bookings for this day",
     "noBookingsFound": "No bookings found for the selected period",
-    "more": "more"
+    "more": "more",
+    "activeBookings": "Active Bookings",
+    "upcomingBookings": "Upcoming Bookings", 
+    "viewBookings": "View Bookings",
+    "totalBookings": "Total Bookings"
   },
   "calendar": {
     "sunday": "Sun",
@@ -564,6 +618,22 @@
     "thursday": "Thu",
     "friday": "Fri",
     "saturday": "Sat"
+  },
+  "photoGallery": {
+    "title": "Photo Gallery",
+    "filters": "Filters",
+    "totalImages": "Total Images",
+    "locations": "Locations",
+    "filterByCategory": "Category",
+    "filterByLocation": "Location",
+    "allCategories": "All Categories",
+    "allLocations": "All Locations",
+    "clearFilters": "Clear Filters",
+    "noImages": "No Images Found",
+    "noImagesWithFilters": "Try adjusting your filters to see more images.",
+    "noImagesAvailable": "No images have been uploaded yet.",
+    "errorLoadingGallery": "Error loading photo gallery",
+    "errorMessage": "Error"
   },
   "app": {
     "appName": "Coworking Management",

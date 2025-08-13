@@ -6,6 +6,7 @@ import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
 import Partners from '../../pages/Partners';
+import PhotoGallery from '../../pages/PhotoGallery';
 import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
 import Users from '../../pages/Users';
@@ -97,6 +98,12 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['admin']}>
           <Customers />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/photo-gallery':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user']}>
+          <PhotoGallery />
         </ProtectedRoute>
       ) : <Login />;
     case '/contracts':

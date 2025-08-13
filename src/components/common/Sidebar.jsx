@@ -1,4 +1,4 @@
-import { Building, Calendar, Cog, FileText, Home, Mail, Settings, Users, X } from 'lucide-react';
+import { Building, Calendar, Camera, Cog, FileText, Home, Mail, Settings, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -38,7 +38,8 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       
-      // Regular users see limited options and settings
+      // Regular users see limited options and settings - including Photo Gallery
+      { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
