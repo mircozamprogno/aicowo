@@ -1,4 +1,4 @@
-import { Building2, Calendar, Edit2, Image, MapPin, Monitor, Plus, Trash2, Users, X } from 'lucide-react';
+import { Building2, Calendar, Edit2, Image, Mail, MapPin, Monitor, Navigation, Phone, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { imageService } from '../../services/imageService';
@@ -27,7 +27,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
 
   const fetchLocationsAndResources = async () => {
     try {
-      // Fetch locations
+      // Fetch locations with enhanced fields
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select('*')
@@ -36,13 +36,22 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
 
       if (locationsError && locationsError.code !== 'PGRST116') {
         console.error('Error fetching locations:', locationsError);
-        // Provide mock data for now
+        // Enhanced mock data with address fields
         setLocations([
           {
             id: 1,
             location_name: 'Main Office',
             location_uuid: 'mock-uuid-1',
             partner_uuid: partner.partner_uuid,
+            address: 'Via Roma 123',
+            city: 'Milano',
+            postal_code: '20121',
+            country: 'Italy',
+            latitude: 45.4642,
+            longitude: 9.1900,
+            phone: '+39 02 1234567',
+            email: 'milano@example.com',
+            description: 'Our main office location in the heart of Milan',
             created_at: '2024-01-15T10:30:00Z'
           },
           {
@@ -50,6 +59,15 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
             location_name: 'Secondary Branch',
             location_uuid: 'mock-uuid-2', 
             partner_uuid: partner.partner_uuid,
+            address: 'Corso di Porta Nuova 15',
+            city: 'Roma',
+            postal_code: '00186',
+            country: 'Italy',
+            latitude: 41.9028,
+            longitude: 12.4964,
+            phone: '+39 06 7654321',
+            email: 'roma@example.com',
+            description: 'Our branch office near the city center',
             created_at: '2024-02-20T14:15:00Z'
           }
         ]);
@@ -245,6 +263,31 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
     };
   };
 
+  // NEW: Format address for display
+  const formatAddress = (location) => {
+    const parts = [
+      location.address,
+      [location.postal_code, location.city].filter(Boolean).join(' '),
+      location.country
+    ].filter(Boolean);
+    
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+
+  // NEW: Open location in external map
+  const openInMap = (location) => {
+    if (location.latitude && location.longitude) {
+      const url = `https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}&zoom=15`;
+      window.open(url, '_blank');
+    } else if (location.address || location.city) {
+      const address = formatAddress(location);
+      if (address) {
+        const url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`;
+        window.open(url, '_blank');
+      }
+    }
+  };
+
   const renderImageGallery = (locationId, category, maxVisible = 3) => {
     const images = locationImages[locationId]?.[category] || [];
     
@@ -383,6 +426,13 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                 <h4 className="location-nav-name">
                                   {location.location_name}
                                 </h4>
+                                {/* NEW: Display city if available */}
+                                {location.city && (
+                                  <div className="location-nav-city">
+                                    <MapPin size={12} />
+                                    <span>{location.city}</span>
+                                  </div>
+                                )}
                                 <div className="location-nav-stats">
                                   <div className="location-nav-stat">
                                     <Monitor />
@@ -399,6 +449,16 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                 </div>
                               </div>
                               <div className="location-nav-actions">
+                                {/* NEW: Map button */}
+                                {(location.latitude && location.longitude) || location.address && (
+                                  <button
+                                    onClick={() => openInMap(location)}
+                                    className="location-nav-action map"
+                                    title={t('locations.viewOnMap')}
+                                  >
+                                    <MapPin />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleEditLocation(location)}
                                   className="location-nav-action edit"
@@ -452,6 +512,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                       const resources = locationResources[location.id] || [];
                       const stats = getResourceTypeStats(location.id);
                       const imageStats = getLocationImageStats(location.id);
+                      const address = formatAddress(location);
                       
                       return (
                         <div key={location.id} className="location-card">
@@ -472,7 +533,50 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                     </p>
                                   </div>
                                 </div>
-                                
+
+                                {/* NEW: Address Information */}
+                                {address && (
+                                  <div className="location-card-address">
+                                    <MapPin size={14} />
+                                    <span>{address}</span>
+                                    {(location.latitude && location.longitude) && (
+                                      <button
+                                        onClick={() => openInMap(location)}
+                                        className="location-map-link"
+                                        title={t('locations.viewOnMap')}
+                                      >
+                                        <Navigation size={12} />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* NEW: Contact Information */}
+                                {(location.phone || location.email) && (
+                                  <div className="location-card-contact">
+                                    {location.phone && (
+                                      <div className="location-contact-item">
+                                        <Phone size={14} />
+                                        <a href={`tel:${location.phone}`}>{location.phone}</a>
+                                      </div>
+                                    )}
+                                    {location.email && (
+                                      <div className="location-contact-item">
+                                        <Mail size={14} />
+                                        <a href={`mailto:${location.email}`}>{location.email}</a>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* NEW: Description */}
+                                {location.description && (
+                                  <div className="location-card-description">
+                                    <p>{location.description}</p>
+                                  </div>
+                                )}
+
+                                {/* Enhanced Statistics */}
                                 <div className="location-card-stats">
                                   <div className="location-card-stat blue">
                                     <Monitor />
@@ -502,6 +606,16 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                               </div>
                               
                               <div className="location-card-actions">
+                                {/* NEW: Map button */}
+                                {((location.latitude && location.longitude) || address) && (
+                                  <button
+                                    onClick={() => openInMap(location)}
+                                    className="location-card-action map"
+                                    title={t('locations.viewOnMap')}
+                                  >
+                                    <MapPin />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleEditLocation(location)}
                                   className="location-card-action edit"
@@ -640,6 +754,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         onSuccess={handleLocationFormSuccess}
         location={editingLocation}
         partnerUuid={partner?.partner_uuid}
+        partnerData={partner}
       />
 
       {/* Image Lightbox */}

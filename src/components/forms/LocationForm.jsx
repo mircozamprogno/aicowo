@@ -1,17 +1,28 @@
-import { Calendar, Image, MapPin, Monitor, Plus, Trash2, Users, X } from 'lucide-react';
+import { Calendar, Image, Mail, Map, MapPin, Monitor, Navigation, Phone, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { imageService } from '../../services/imageService';
 import { supabase } from '../../services/supabase';
 import ImageUpload from '../common/ImageUpload';
 import { toast } from '../common/ToastContainer';
+import MapSelector from '../maps/MapSelector';
 
-const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid }) => {
+const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null }) => {
   const { t } = useTranslation();
   const isEditing = !!location;
   
   const [formData, setFormData] = useState({
     location_name: '',
+    address: '',
+    city: '',
+    postal_code: '',
+    country: 'Italy',
+    latitude: null,
+    longitude: null,
+    phone: '',
+    email: '',
+    description: '',
+    timezone: 'Europe/Rome'
   });
 
   const [resources, setResources] = useState([
@@ -26,10 +37,10 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     sala_riunioni: []
   });
 
-  const [activeImageTab, setActiveImageTab] = useState('exterior');
+  const [activeTab, setActiveTab] = useState('basic');
   const [uploadingImages, setUploadingImages] = useState(false);
-  
   const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
 
   // Initialize form data when location changes
   useEffect(() => {
@@ -37,6 +48,16 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       // Set form data
       setFormData({
         location_name: location.location_name || '',
+        address: location.address || '',
+        city: location.city || '',
+        postal_code: location.postal_code || '',
+        country: location.country || 'Italy',
+        latitude: location.latitude || null,
+        longitude: location.longitude || null,
+        phone: location.phone || '',
+        email: location.email || '',
+        description: location.description || '',
+        timezone: location.timezone || 'Europe/Rome'
       });
 
       // Set resources data
@@ -59,10 +80,22 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       // Load existing images
       loadExistingImages();
     } else {
-      // Reset form for new location
-      setFormData({
+      // Reset form for new location with partner defaults
+      const defaultFormData = {
         location_name: '',
-      });
+        address: partnerData?.address || '',
+        city: partnerData?.city || '',
+        postal_code: partnerData?.zip || '',
+        country: partnerData?.country || 'Italy',
+        latitude: null,
+        longitude: null,
+        phone: partnerData?.phone || '',
+        email: partnerData?.email || '',
+        description: '',
+        timezone: 'Europe/Rome'
+      };
+      
+      setFormData(defaultFormData);
       setResources([
         { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' },
         { resource_type: 'sala_riunioni', resource_name: '', quantity: '1', description: '' }
@@ -73,7 +106,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         sala_riunioni: []
       });
     }
-  }, [location]);
+  }, [location, partnerData]);
 
   const loadExistingImages = async () => {
     if (!location?.id) return;
@@ -127,6 +160,69 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }));
   };
 
+  // Handle coordinates change from map
+  const handleCoordinatesChange = (lat, lng) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng
+    }));
+  };
+
+  // Geocode address using Nominatim
+  const geocodeAddress = async () => {
+    const { address, city, postal_code, country } = formData;
+    
+    if (!address && !city) {
+      toast.error(t('locations.addressOrCityRequired'));
+      return;
+    }
+
+    setGeocoding(true);
+    
+    try {
+      // Build query string for Nominatim
+      const addressComponents = [
+        address,
+        city,
+        postal_code,
+        country
+      ].filter(Boolean);
+      
+      const query = addressComponents.join(', ');
+      
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=${country === 'Italy' ? 'it' : ''}`
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+        
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat,
+          longitude: lng
+        }));
+        
+        toast.success(t('locations.addressGeocodedSuccessfully'));
+        
+        // Switch to map tab to show the result
+        setActiveTab('location');
+      } else {
+        toast.error(t('locations.addressNotFound'));
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast.error(t('locations.geocodingError'));
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
   // Upload images to storage
   const uploadImages = async (locationId) => {
     setUploadingImages(true);
@@ -176,6 +272,12 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       return false;
     }
 
+    // Validate email format if provided
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error(t('messages.invalidEmailFormat'));
+      return false;
+    }
+
     for (let i = 0; i < resources.length; i++) {
       const resource = resources[i];
       if (!resource.resource_name.trim()) {
@@ -207,7 +309,19 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         // Update existing location
         const { data: updatedLocation, error: locationError } = await supabase
           .from('locations')
-          .update({ location_name: formData.location_name.trim() })
+          .update({
+            location_name: formData.location_name.trim(),
+            address: formData.address.trim() || null,
+            city: formData.city.trim() || null,
+            postal_code: formData.postal_code.trim() || null,
+            country: formData.country,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            phone: formData.phone.trim() || null,
+            email: formData.email.trim() || null,
+            description: formData.description.trim() || null,
+            timezone: formData.timezone
+          })
           .eq('id', location.id)
           .select()
           .single();
@@ -215,7 +329,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         if (locationError) throw locationError;
         locationData = updatedLocation;
 
-        // Delete existing resources for this location (wait for completion)
+        // Delete existing resources for this location
         const { error: deleteResourcesError } = await supabase
           .from('location_resources')
           .delete()
@@ -223,7 +337,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
         if (deleteResourcesError) {
           console.error('Error deleting existing resources:', deleteResourcesError);
-          // Continue anyway - we'll handle duplicates below
         }
 
       } else {
@@ -232,7 +345,17 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           .from('locations')
           .insert([{
             location_name: formData.location_name.trim(),
-            partner_uuid: partnerUuid
+            partner_uuid: partnerUuid,
+            address: formData.address.trim() || null,
+            city: formData.city.trim() || null,
+            postal_code: formData.postal_code.trim() || null,
+            country: formData.country,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            phone: formData.phone.trim() || null,
+            email: formData.email.trim() || null,
+            description: formData.description.trim() || null,
+            timezone: formData.timezone
           }])
           .select()
           .single();
@@ -241,7 +364,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         locationData = newLocation;
       }
 
-      // Insert/Update resources with better error handling
+      // Insert/Update resources
       const resourcesData = resources
         .filter(resource => resource.resource_name.trim())
         .map(resource => ({
@@ -254,7 +377,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         }));
 
       if (resourcesData.length > 0) {
-        // For editing, use upsert to handle any potential duplicates
         if (isEditing) {
           // Insert resources one by one to handle potential conflicts
           for (const resourceData of resourcesData) {
@@ -267,7 +389,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             
             if (resourceError) {
               console.error('Error inserting resource:', resourceError);
-              // Continue with other resources
             }
           }
         } else {
@@ -342,6 +463,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           {/* Left Panel - Location Details */}
           <div className="location-form-sidebar">
             <div className="location-form-sidebar-content">
+              {/* Basic Information */}
               <div className="location-details-section">
                 <h3 className="location-details-header">
                   <MapPin />
@@ -364,6 +486,58 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       onChange={handleChange}
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Contact Information Summary */}
+              <div className="contact-summary">
+                <h4 className="contact-summary-title">
+                  <Phone size={16} />
+                  {t('locations.contactInformation')}
+                </h4>
+                <div className="contact-summary-list">
+                  {formData.phone && (
+                    <div className="contact-summary-item">
+                      <Phone size={14} />
+                      <span>{formData.phone}</span>
+                    </div>
+                  )}
+                  {formData.email && (
+                    <div className="contact-summary-item">
+                      <Mail size={14} />
+                      <span>{formData.email}</span>
+                    </div>
+                  )}
+                  {!formData.phone && !formData.email && (
+                    <p className="contact-summary-empty">{t('locations.noContactInfoYet')}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Address Summary */}
+              <div className="address-summary">
+                <h4 className="address-summary-title">
+                  <MapPin size={16} />
+                  {t('locations.addressInformation')}
+                </h4>
+                <div className="address-summary-content">
+                  {formData.address || formData.city ? (
+                    <div className="address-summary-text">
+                      {formData.address && <div>{formData.address}</div>}
+                      <div>
+                        {[formData.postal_code, formData.city].filter(Boolean).join(' ')}
+                      </div>
+                      {formData.country && <div>{formData.country}</div>}
+                      {formData.latitude && formData.longitude && (
+                        <div className="coordinates-display">
+                          <Navigation size={12} />
+                          <span>{formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="address-summary-empty">{t('locations.noAddressYet')}</p>
+                  )}
                 </div>
               </div>
 
@@ -405,61 +579,297 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                   ))}
                 </div>
               </div>
-
-              {/* Helper Tips */}
-              <div className="helper-tips">
-                <h4 className="helper-tips-title">💡 {t('locations.tips')}</h4>
-                <ul className="helper-tips-list">
-                  <li>• {t('locations.useDescriptiveNames')}</li>
-                  <li>• {t('locations.addDescriptionsForSpecial')}</li>
-                  <li>• {t('locations.setAccurateQuantities')}</li>
-                  <li>• {t('locations.uploadQualityImages')}</li>
-                </ul>
-              </div>
             </div>
           </div>
 
-          {/* Right Panel - Resources and Images */}
+          {/* Right Panel - Tabbed Content */}
           <div className="location-form-main">
             {/* Tab Navigation */}
             <div className="form-tabs-nav">
               <button
                 type="button"
-                className={`form-tab ${activeImageTab === 'resources' ? 'active' : ''}`}
-                onClick={() => setActiveImageTab('resources')}
+                className={`form-tab ${activeTab === 'basic' ? 'active' : ''}`}
+                onClick={() => setActiveTab('basic')}
+              >
+                <MapPin />
+                {t('locations.basicInfo')}
+              </button>
+              <button
+                type="button"
+                className={`form-tab ${activeTab === 'address' ? 'active' : ''}`}
+                onClick={() => setActiveTab('address')}
+              >
+                <Navigation />
+                {t('locations.address')}
+              </button>
+              <button
+                type="button"
+                className={`form-tab ${activeTab === 'location' ? 'active' : ''}`}
+                onClick={() => setActiveTab('location')}
+              >
+                <Map />
+                {t('locations.mapLocation')}
+              </button>
+              <button
+                type="button"
+                className={`form-tab ${activeTab === 'resources' ? 'active' : ''}`}
+                onClick={() => setActiveTab('resources')}
               >
                 <Calendar />
                 {t('locations.resources')}
               </button>
               <button
                 type="button"
-                className={`form-tab ${activeImageTab === 'exterior' ? 'active' : ''}`}
-                onClick={() => setActiveImageTab('exterior')}
+                className={`form-tab ${activeTab === 'images' ? 'active' : ''}`}
+                onClick={() => setActiveTab('images')}
               >
                 <Image />
-                {t('locations.exteriorImages')}
-              </button>
-              <button
-                type="button"
-                className={`form-tab ${activeImageTab === 'scrivania' ? 'active' : ''}`}
-                onClick={() => setActiveImageTab('scrivania')}
-              >
-                <Monitor />
-                {t('locations.deskImages')}
-              </button>
-              <button
-                type="button"
-                className={`form-tab ${activeImageTab === 'sala_riunioni' ? 'active' : ''}`}
-                onClick={() => setActiveImageTab('sala_riunioni')}
-              >
-                <Users />
-                {t('locations.meetingRoomImages')}
+                {t('locations.images')} ({getTotalImages()})
               </button>
             </div>
 
             {/* Tab Content */}
             <div className="form-tab-content">
-              {activeImageTab === 'resources' && (
+              {/* Basic Information Tab */}
+              {activeTab === 'basic' && (
+                <div className="basic-info-tab">
+                  <div className="basic-info-content">
+                    <h3 className="tab-section-title">
+                      <Phone />
+                      {t('locations.contactDetails')}
+                    </h3>
+                    
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label htmlFor="phone" className="form-label">
+                          {t('locations.phoneNumber')}
+                        </label>
+                        <input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          className="form-input"
+                          placeholder={t('placeholders.phoneNumberPlaceholder')}
+                          value={formData.phone}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="email" className="form-label">
+                          {t('locations.emailAddress')}
+                        </label>
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          className="form-input"
+                          placeholder={t('placeholders.emailPlaceholder')}
+                          value={formData.email}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="description" className="form-label">
+                        {t('locations.description')} <span style={{color: '#6b7280'}}>({t('common.optional')})</span>
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        rows={4}
+                        className="form-textarea"
+                        placeholder={t('placeholders.locationDescriptionPlaceholder')}
+                        value={formData.description}
+                        onChange={handleChange}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="timezone" className="form-label">
+                        {t('locations.timezone')}
+                      </label>
+                      <select
+                        id="timezone"
+                        name="timezone"
+                        className="form-select"
+                        value={formData.timezone}
+                        onChange={handleChange}
+                      >
+                        <option value="Europe/Rome">Europe/Rome (GMT+1)</option>
+                        <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
+                        <option value="Europe/Berlin">Europe/Berlin (GMT+1)</option>
+                        <option value="Europe/Madrid">Europe/Madrid (GMT+1)</option>
+                        <option value="Europe/London">Europe/London (GMT+0)</option>
+                        <option value="Europe/Zurich">Europe/Zurich (GMT+1)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Address Tab */}
+              {activeTab === 'address' && (
+                <div className="address-tab">
+                  <div className="address-content">
+                    <div className="address-header">
+                      <h3 className="tab-section-title">
+                        <MapPin />
+                        {t('locations.addressInformation')}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={geocodeAddress}
+                        disabled={geocoding || (!formData.address && !formData.city)}
+                        className="geocode-button"
+                      >
+                        {geocoding ? (
+                          <>
+                            <div className="geocode-spinner" />
+                            {t('locations.geocoding')}...
+                          </>
+                        ) : (
+                          <>
+                            <Navigation />
+                            {t('locations.findOnMap')}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    
+                    <div className="form-grid">
+                      <div className="form-group form-group-full">
+                        <label htmlFor="address" className="form-label">
+                          {t('locations.streetAddress')}
+                        </label>
+                        <input
+                          id="address"
+                          name="address"
+                          type="text"
+                          className="form-input"
+                          placeholder={t('placeholders.streetAddressPlaceholder')}
+                          value={formData.address}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label htmlFor="postal_code" className="form-label">
+                          {t('locations.postalCode')}
+                        </label>
+                        <input
+                          id="postal_code"
+                          name="postal_code"
+                          type="text"
+                          className="form-input"
+                          placeholder={t('placeholders.postalCodePlaceholder')}
+                          value={formData.postal_code}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="city" className="form-label">
+                          {t('locations.city')}
+                        </label>
+                        <input
+                          id="city"
+                          name="city"
+                          type="text"
+                          className="form-input"
+                          placeholder={t('placeholders.cityPlaceholder')}
+                          value={formData.city}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="country" className="form-label">
+                          {t('locations.country')}
+                        </label>
+                        <select
+                          id="country"
+                          name="country"
+                          className="form-select"
+                          value={formData.country}
+                          onChange={handleChange}
+                        >
+                          <option value="Italy">Italy</option>
+                          <option value="France">France</option>
+                          <option value="Germany">Germany</option>
+                          <option value="Spain">Spain</option>
+                          <option value="Switzerland">Switzerland</option>
+                          <option value="Austria">Austria</option>
+                          <option value="Netherlands">Netherlands</option>
+                          <option value="Belgium">Belgium</option>
+                          <option value="Portugal">Portugal</option>
+                          <option value="United Kingdom">United Kingdom</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Coordinates Display */}
+                    {(formData.latitude && formData.longitude) && (
+                      <div className="coordinates-section">
+                        <h4 className="coordinates-title">
+                          <Navigation size={16} />
+                          {t('locations.coordinates')}
+                        </h4>
+                        <div className="coordinates-display">
+                          <div className="coordinate-item">
+                            <span className="coordinate-label">{t('locations.latitude')}:</span>
+                            <span className="coordinate-value">{formData.latitude.toFixed(6)}</span>
+                          </div>
+                          <div className="coordinate-item">
+                            <span className="coordinate-label">{t('locations.longitude')}:</span>
+                            <span className="coordinate-value">{formData.longitude.toFixed(6)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Address Tips */}
+                    <div className="address-tips">
+                      <h4 className="address-tips-title">💡 {t('locations.addressTips')}</h4>
+                      <ul className="address-tips-list">
+                        <li>• {t('locations.tipCompleteAddress')}</li>
+                        <li>• {t('locations.tipUseGeocode')}</li>
+                        <li>• {t('locations.tipVerifyOnMap')}</li>
+                        <li>• {t('locations.tipContactInfo')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Map Location Tab */}
+              {activeTab === 'location' && (
+                <div className="location-tab">
+                  <div className="location-content">
+                    <h3 className="tab-section-title">
+                      <Map />
+                      {t('locations.mapLocation')}
+                    </h3>
+                    
+                    <div className="map-instructions">
+                      <p>{t('locations.mapInstructions')}</p>
+                    </div>
+
+                    <MapSelector
+                      latitude={formData.latitude}
+                      longitude={formData.longitude}
+                      onCoordinatesChange={handleCoordinatesChange}
+                      address={`${formData.address}, ${formData.city}, ${formData.country}`.replace(/^[, ]+|[, ]+$/g, '')}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Resources Tab */}
+              {activeTab === 'resources' && (
                 <div className="resources-tab">
                   <div className="resources-management-header">
                     <h3 className="resources-management-title">
@@ -616,17 +1026,38 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               )}
 
-              {/* Image Upload Tabs */}
-              {activeImageTab !== 'resources' && (
+              {/* Images Tab */}
+              {activeTab === 'images' && (
                 <div className="images-tab">
-                  <ImageUpload
-                    category={activeImageTab}
-                    images={images[activeImageTab]}
-                    onImagesChange={(newImages) => handleImagesChange(activeImageTab, newImages)}
-                    maxImages={10}
-                    disabled={loading || uploadingImages}
-                    showAltText={true}
-                  />
+                  <div className="images-content">
+                    <h3 className="tab-section-title">
+                      <Image />
+                      {t('locations.locationImages')}
+                    </h3>
+                    
+                    {/* Image Categories */}
+                    <div className="image-categories">
+                      {Object.entries(images).map(([category, categoryImages]) => (
+                        <div key={category} className="image-category-section">
+                          <h4 className="image-category-title">
+                            {category === 'exterior' && <Image size={16} />}
+                            {category === 'scrivania' && <Monitor size={16} />}
+                            {category === 'sala_riunioni' && <Users size={16} />}
+                            {getImageTabLabel(category)} ({categoryImages.length})
+                          </h4>
+                          
+                          <ImageUpload
+                            category={category}
+                            images={categoryImages}
+                            onImagesChange={(newImages) => handleImagesChange(category, newImages)}
+                            maxImages={10}
+                            disabled={loading || uploadingImages}
+                            showAltText={true}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
