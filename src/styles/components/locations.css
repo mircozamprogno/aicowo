@@ -764,10 +764,6 @@
   gap: 1.5rem;
 }
 
-.location-details-section {
-  
-}
-
 .location-details-header {
   font-size: 1.125rem;
   font-weight: 600;
@@ -788,10 +784,6 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.location-input-group {
-  
 }
 
 .location-form-label {
@@ -1176,9 +1168,6 @@
   font-size: 0.875rem;
 }
 
-.example-category {
-  
-}
 
 .example-category-header {
   display: flex;
@@ -2225,10 +2214,6 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.875rem;
 }
 
-.address-summary-content {
-  
-}
-
 .address-summary-text {
   font-size: 0.875rem;
   color: #6b7280;
@@ -2455,10 +2440,6 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-}
-
-.image-category-section {
-  
 }
 
 .image-category-title {
@@ -2786,9 +2767,6 @@ input:focus, select:focus, textarea:focus {
   margin-top: 1rem;
 }
 
-.image-category {
-  
-}
 
 .image-category-header {
   display: flex;
@@ -2803,10 +2781,6 @@ input:focus, select:focus, textarea:focus {
 .image-category-header svg {
   width: 0.875rem;
   height: 0.875rem;
-}
-
-.image-category-label {
-  
 }
 
 /* Location Images Section */

@@ -13,10 +13,33 @@ export const AuthProvider = ({ children }) => {
     console.log('AuthProvider: Starting auth initialization');
     
     let isMounted = true;
+    let loadingTimeout = null;
+
+    // Add a safety timeout for loading state
+    const setLoadingWithTimeout = (isLoading) => {
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        loadingTimeout = null;
+      }
+
+      if (isLoading) {
+        setLoading(true);
+        // Force loading to false after 10 seconds to prevent infinite loading
+        loadingTimeout = setTimeout(() => {
+          console.warn('AuthProvider: Loading timeout reached, forcing loading to false');
+          if (isMounted) {
+            setLoading(false);
+          }
+        }, 10000);
+      } else {
+        setLoading(false);
+      }
+    };
 
     // Simple session check
     const checkSession = async () => {
       try {
+        console.log('AuthProvider: Checking session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!isMounted) return;
@@ -30,7 +53,10 @@ export const AuthProvider = ({ children }) => {
         } else {
           console.log('Valid session found, setting user');
           setUser(session.user);
-          await fetchProfile(session.user.id);
+          // Don't await fetchProfile here to avoid blocking the loading state
+          fetchProfile(session.user.id).catch(err => {
+            console.error('Initial profile fetch failed:', err);
+          });
         }
       } catch (err) {
         console.error('Session check error:', err);
@@ -39,7 +65,7 @@ export const AuthProvider = ({ children }) => {
       } finally {
         if (isMounted) {
           console.log('Setting loading to false');
-          setLoading(false);
+          setLoadingWithTimeout(false);
         }
       }
     };
@@ -52,26 +78,65 @@ export const AuthProvider = ({ children }) => {
       
       if (!isMounted) return;
 
-      if (event === 'SIGNED_OUT' || !session) {
-        setUser(null);
-        setProfile(null);
-      } else if (event === 'SIGNED_IN' && session) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
+      // Set loading to true for state changes
+      setLoadingWithTimeout(true);
+
+      try {
+        if (event === 'SIGNED_OUT' || !session) {
+          console.log('User signed out or no session');
+          setUser(null);
+          setProfile(null);
+        } else if (event === 'SIGNED_IN' && session) {
+          console.log('User signed in, setting user and fetching profile');
+          setUser(session.user);
+          // Fetch profile with timeout protection
+          await Promise.race([
+            fetchProfile(session.user.id),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+            )
+          ]);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          console.log('Token refreshed, updating user');
+          setUser(session.user);
+          // For token refresh, don't refetch profile unless it's missing
+          if (!profile) {
+            await Promise.race([
+              fetchProfile(session.user.id),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+              )
+            ]);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+        // Don't clear user/profile on profile fetch errors
+        if (event === 'SIGNED_OUT' || !session) {
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingWithTimeout(false);
+        }
       }
-      
-      setLoading(false);
     });
 
     return () => {
       console.log('AuthProvider: Cleanup');
       isMounted = false;
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
       subscription.unsubscribe();
     };
   }, []);
 
   const fetchProfile = async (userId) => {
     try {
+      console.log('Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -90,6 +155,7 @@ export const AuthProvider = ({ children }) => {
         partner_uuid: null
       };
 
+      console.log('Profile fetched successfully:', userProfile);
       setProfile(userProfile);
 
       // Ensure customer record exists for users (not for superadmins)
@@ -116,6 +182,7 @@ export const AuthProvider = ({ children }) => {
         role: 'user',
         partner_uuid: null
       });
+      throw error; // Re-throw to be caught by the timeout wrapper
     }
   };
 
@@ -211,7 +278,7 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Partner UUID:', profile?.partner_uuid);
+  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid);
 
   const value = {
     user,
