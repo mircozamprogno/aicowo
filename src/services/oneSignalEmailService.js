@@ -86,13 +86,13 @@ class OneSignalEmailService {
       // For userUUID: use partner_uuid for admin invitations, could be user-specific for users
       const userUUID = invitationData.partner_uuid;
       
-      // FIXED: Create proper email subject without role variable
-      const emailSubject = `Invitation to join ${partnerName}`;
+      // Create email subject with actual partner name
+      const emailSubject = `Invito a unirti a ${partnerName}`;
 
       const payload = {
         app_id: this.appId,
         email_from_name: "PowerCowo",
-        email_subject: emailSubject, // ← FIXED: No more template variables
+        email_subject: emailSubject,
         email_from_address: "info@tuttoapposto.info",
         email_reply_to_address: "noreply@proton.me",
         template_id: templateId,
@@ -107,7 +107,8 @@ class OneSignalEmailService {
             ? { partner_name: partnerName }
             : { user_name: fullName }
           ),
-          link_contract: substitutions.invitation_link
+          link_contract: substitutions.invitation_link,
+          personal_msg: invitationData.custom_message || ''
         }
       };
 
@@ -116,8 +117,8 @@ class OneSignalEmailService {
         templateId,
         role: invitationData.invited_role,
         userUUID,
-        emailSubject, // ← FIXED: Log the actual subject being sent
-        partnerName, // ← FIXED: Log the actual partner name
+        emailSubject,
+        partnerName,
         customData: payload.custom_data
       });
 
@@ -261,16 +262,16 @@ class OneSignalEmailService {
                          invitationData.partners?.company_name || 
                          'the partner';
     
-    // FIXED: Log the corrected email subject
-    const emailSubject = `Invitation to join ${partnerName}`;
+    // Create email subject with actual partner name  
+    const emailSubject = `Invito a unirti a ${partnerName}`;
     
     console.log('=== ONESIGNAL EMAIL WOULD BE SENT ===');
     console.log('To:', invitationData.invited_email);
-    console.log('Subject:', emailSubject); // ← FIXED: Show actual subject
+    console.log('Subject:', emailSubject);
     console.log('Template:', invitationData.invited_role === 'admin' ? 'Admin Template' : 'User Template');
     console.log('Template ID:', invitationData.invited_role === 'admin' ? this.adminTemplateId : this.userTemplateId);
     console.log('Link:', invitationLink);
-    console.log('Partner:', partnerName); // ← FIXED: Show actual partner name
+    console.log('Partner:', partnerName);
     console.log('Role:', invitationData.invited_role);
     console.log('Custom Message:', invitationData.custom_message || 'None');
     console.log('========================================');

@@ -13,7 +13,7 @@ export const LanguageProvider = ({ children }) => {
     localStorage.setItem('preferred-language', languageCode);
   };
 
-  const t = (keyPath) => {
+  const t = (keyPath, interpolationValues = {}) => {
     const keys = keyPath.split('.');
     let value = translations[currentLanguage];
     
@@ -29,7 +29,19 @@ export const LanguageProvider = ({ children }) => {
       }
     }
     
-    return value || keyPath;
+    // If no translation found, return the keyPath
+    if (!value) {
+      return keyPath;
+    }
+    
+    // Handle interpolation
+    if (typeof value === 'string' && Object.keys(interpolationValues).length > 0) {
+      return value.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+        return interpolationValues[key] !== undefined ? interpolationValues[key] : match;
+      });
+    }
+    
+    return value;
   };
 
   const value = {
