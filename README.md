@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+V 0.240 Fix per ridurre il tempo di loading quando si cambia tab
 V 0.230 Fix per invio mail con messaggio personalizzato
 V 0.220 Fix loading spinning$
 V 0.210 Maps Locations + Api Server

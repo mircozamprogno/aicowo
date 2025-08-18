@@ -24,13 +24,13 @@ export const AuthProvider = ({ children }) => {
 
       if (isLoading) {
         setLoading(true);
-        // Force loading to false after 10 seconds to prevent infinite loading
+        // Force loading to false after 5 seconds to prevent infinite loading
         loadingTimeout = setTimeout(() => {
           console.warn('AuthProvider: Loading timeout reached, forcing loading to false');
           if (isMounted) {
             setLoading(false);
           }
-        }, 10000);
+        }, 5000);
       } else {
         setLoading(false);
       }
@@ -78,48 +78,51 @@ export const AuthProvider = ({ children }) => {
       
       if (!isMounted) return;
 
-      // Set loading to true for state changes
-      setLoadingWithTimeout(true);
-
       try {
         if (event === 'SIGNED_OUT' || !session) {
           console.log('User signed out or no session');
+          setLoadingWithTimeout(true);
           setUser(null);
           setProfile(null);
+          setLoadingWithTimeout(false);
         } else if (event === 'SIGNED_IN' && session) {
-          console.log('User signed in, setting user and fetching profile');
-          setUser(session.user);
-          // Fetch profile with timeout protection
-          await Promise.race([
-            fetchProfile(session.user.id),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
-            )
-          ]);
-        } else if (event === 'TOKEN_REFRESHED' && session) {
-          console.log('Token refreshed, updating user');
-          setUser(session.user);
-          // For token refresh, don't refetch profile unless it's missing
-          if (!profile) {
+          // Only fetch profile if we don't already have one for this user
+          if (!user || user.id !== session.user.id) {
+            console.log('New user signed in, setting user and fetching profile');
+            setLoadingWithTimeout(true);
+            setUser(session.user);
+            // Fetch profile with timeout protection
             await Promise.race([
               fetchProfile(session.user.id),
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
               )
             ]);
+            setLoadingWithTimeout(false);
+          } else {
+            // Same user, just update user object without loading
+            console.log('Same user, just updating user object');
+            setUser(session.user);
+          }
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          console.log('Token refreshed, updating user without loading');
+          setUser(session.user);
+          // Only fetch profile if we don't have one
+          if (!profile) {
+            setLoadingWithTimeout(true);
+            await Promise.race([
+              fetchProfile(session.user.id),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+              )
+            ]);
+            setLoadingWithTimeout(false);
           }
         }
       } catch (error) {
         console.error('Error handling auth state change:', error);
-        // Don't clear user/profile on profile fetch errors
-        if (event === 'SIGNED_OUT' || !session) {
-          setUser(null);
-          setProfile(null);
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingWithTimeout(false);
-        }
+        // Don't clear user/profile on profile fetch errors, just stop loading
+        setLoadingWithTimeout(false);
       }
     });
 
@@ -131,7 +134,7 @@ export const AuthProvider = ({ children }) => {
       }
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // REMOVED dependencies - this was causing infinite re-renders!
 
   const fetchProfile = async (userId) => {
     try {
