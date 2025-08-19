@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+V 0.250 Pagination and record delete for the invitations page
 V 0.240 Fix per ridurre il tempo di loading quando si cambia tab
 V 0.230 Fix per invio mail con messaggio personalizzato
 V 0.220 Fix loading spinning$
