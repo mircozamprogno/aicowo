@@ -313,7 +313,22 @@
     "cancelled": "Annullato",
     "cancelInvitation": "Annulla Invito",
     "noInvitationsFound": "Nessun invito trovato",
-    "partnerInfoAutoFilled": "Le informazioni del partner sono state compilate automaticamente dal profilo partner. Puoi modificare questi campi se necessario."
+    "partnerInfoAutoFilled": "Le informazioni del partner sono state compilate automaticamente dal profilo partner. Puoi modificare questi campi se necessario.",
+    "searchPlaceholder": "Cerca per email, nome o partner...",
+    "allStatuses": "Tutti gli Stati",
+    "noInvitationsSelected": "Nessun invito selezionato",
+    "confirmDeleteSelected": "Sei sicuro di voler eliminare definitivamente {{count}} invito/i? Questa azione non può essere annullata.",
+    "invitationsDeletedSuccessfully": "{{count}} invito/i eliminati con successo",
+    "errorDeletingInvitations": "Errore nell'eliminazione degli inviti",
+    "selectedCount": "{{count}} selezionati",
+    "deleteSelected": "Elimina Selezionati",
+    "deleting": "Eliminazione...",
+    "noInvitationsMatchFilter": "Nessun invito corrisponde ai filtri attuali",
+    "showingResults": "Mostrando {{start}}-{{end}} di {{total}} risultati",
+    "itemsPerPage": "Elementi per pagina",
+    "previous": "Precedente",
+    "next": "Successivo",
+    "pageOfPages": "Pagina {{current}} di {{total}}"
   },
   "common": {
     "loading": "Caricamento...",

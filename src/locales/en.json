@@ -313,7 +313,22 @@
     "cancelled": "Cancelled",
     "cancelInvitation": "Cancel Invitation",
     "noInvitationsFound": "No invitations found",
-    "partnerInfoAutoFilled": "Partner information has been automatically filled from the partner profile. You can modify these fields if needed."
+    "partnerInfoAutoFilled": "Partner information has been automatically filled from the partner profile. You can modify these fields if needed.",
+    "searchPlaceholder": "Search by email, name, or partner...",
+    "allStatuses": "All Statuses",
+    "noInvitationsSelected": "No invitations selected",
+    "confirmDeleteSelected": "Are you sure you want to permanently delete {{count}} invitation(s)? This action cannot be undone.",
+    "invitationsDeletedSuccessfully": "{{count}} invitation(s) deleted successfully",
+    "errorDeletingInvitations": "Error deleting invitations",
+    "selectedCount": "{{count}} selected",
+    "deleteSelected": "Delete Selected",
+    "deleting": "Deleting...",
+    "noInvitationsMatchFilter": "No invitations match your current filters",
+    "showingResults": "Showing {{start}}-{{end}} of {{total}} results",
+    "itemsPerPage": "Items per page",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOfPages": "Page {{current}} of {{total}}"
   },
   "common": {
     "loading": "Loading...",
