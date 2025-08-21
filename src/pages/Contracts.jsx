@@ -5,6 +5,7 @@ import ContractForm from '../components/forms/ContractForm';
 import PackageBookingForm from '../components/forms/PackageBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { ContractArchiveService } from '../services/contractArchiveService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 
@@ -27,7 +28,7 @@ const Contracts = () => {
   // PDF generation states
   const [generatingPDF, setGeneratingPDF] = useState(null); // contract ID being processed
   
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { t } = useTranslation();
 
   // Determine user capabilities
@@ -71,6 +72,7 @@ const Contracts = () => {
             location_name
           )
         `)
+        .eq('is_archived', false) // Only get non-archived contracts
         .order('created_at', { ascending: false });
 
       // Apply filters based on user role
@@ -115,6 +117,7 @@ const Contracts = () => {
             customer_id: 1,
             partner_uuid: 'test-partner',
             created_at: new Date().toISOString(),
+            is_archived: false, // Add this field
             customers: {
               first_name: 'Mario',
               second_name: 'Rossi',
@@ -142,6 +145,7 @@ const Contracts = () => {
             customer_id: 1,
             partner_uuid: 'test-partner',
             created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+            is_archived: false, // Add this field
             customers: {
               first_name: 'Anna',
               second_name: 'Verdi',
@@ -345,49 +349,28 @@ const Contracts = () => {
     }
 
     try {
-      // First delete related package reservations
-      const { error: reservationsError } = await supabase
-        .from('package_reservations')
-        .delete()
-        .eq('contract_id', contractToDelete.id);
+      const result = await ContractArchiveService.archiveContract(
+        contractToDelete.id,
+        user.id,
+        'Contract deleted by user'
+      );
 
-      if (reservationsError) {
-        console.error('Error deleting package reservations:', reservationsError);
+      if (result.success) {
+        setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
+        setShowDeleteConfirm(false);
+        setContractToDelete(null);
+        setDeleteStep(1);
+        
+        toast.success(t('contracts.contractArchivedSuccessfully') || 'Contract archived successfully');
+      } else {
+        toast.error(result.error || t('contracts.errorArchivingContract') || 'Error archiving contract');
       }
-
-      // Then delete related bookings
-      const { error: bookingsError } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('contract_id', contractToDelete.id);
-
-      if (bookingsError) {
-        console.error('Error deleting bookings:', bookingsError);
-      }
-
-      // Finally delete the contract
-      const { error } = await supabase
-        .from('contracts')
-        .delete()
-        .eq('id', contractToDelete.id);
-
-      if (error) {
-        console.error('Error deleting contract:', error);
-        toast.error('Errore durante l\'eliminazione del contratto');
-        return;
-      }
-
-      setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
-      setShowDeleteConfirm(false);
-      setContractToDelete(null);
-      setDeleteStep(1);
-      
-      toast.success('Contratto eliminato con successo');
     } catch (error) {
-      console.error('Error deleting contract:', error);
-      toast.error('Errore durante l\'eliminazione del contratto');
+      console.error('Error archiving contract:', error);
+      toast.error(t('contracts.errorArchivingContract') || 'Error archiving contract');
     }
   };
+
 
   const handleDeleteCancel = () => {
     setShowDeleteConfirm(false);

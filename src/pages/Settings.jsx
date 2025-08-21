@@ -516,46 +516,40 @@ const Settings = () => {
               <div className="logo-upload-section">
                 {/* Current Logo Display */}
                 {currentLogoUrl && !logoPreview && (
-                  <div className="current-logo">
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '500' }}>
-                      {t('settings.currentLogo') || 'Current Logo:'}
-                    </h4>
-                    <div className="logo-display">
-                      <img 
-                        src={currentLogoUrl} 
-                        alt="Current company logo" 
-                        style={{
-                          maxWidth: '200px',
-                          maxHeight: '150px',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '0.375rem',
-                          objectFit: 'contain'
-                        }}
+                  <div className="current-logo-container">
+                    <div className="logo-display-card">
+                      <div className="logo-header">
+                        <h4 className="logo-section-subtitle">
+                          {t('settings.currentLogo') || 'Current Logo'}
+                        </h4>
+                      </div>
+                      <div className="logo-image-container">
+                        <img 
+                          src={currentLogoUrl} 
+                          alt="Current company logo" 
+                          className="logo-image"
+                        />
+                      </div>
+                    </div>
+                    <div className="logo-actions-container">
+                      <label 
+                        htmlFor="logo-upload-change" 
+                        className="logo-btn logo-btn-primary"
+                      >
+                        <Upload size={16} />
+                        {t('settings.changeLogo') || 'Change Logo'}
+                      </label>
+                      <input
+                        id="logo-upload-change"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoSelect}
+                        style={{ display: 'none' }}
                       />
                       <button
                         type="button"
                         onClick={handleLogoRemove}
-                        className="logo-action-btn remove-logo-btn"
-                        style={{
-                          marginTop: '0.5rem',
-                          backgroundColor: '#dc2626',
-                          color: 'white',
-                          border: 'none',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '0.375rem',
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.5rem',
-                          minWidth: '120px',
-                          height: '38px',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
+                        className="logo-btn logo-btn-danger"
                       >
                         <X size={16} />
                         {t('settings.removeLogo') || 'Remove Logo'}
@@ -566,106 +560,75 @@ const Settings = () => {
 
                 {/* Logo Preview */}
                 {logoPreview && (
-                  <div className="logo-preview">
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '500' }}>
-                      {logoUploading ? (t('settings.uploadingLogo') || 'Uploading Logo...') : (t('settings.logoPreview') || 'Logo Preview:')}
-                    </h4>
-                    <div className="logo-display">
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo preview" 
-                        style={{
-                          maxWidth: '200px',
-                          maxHeight: '150px',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '0.375rem',
-                          objectFit: 'contain',
-                          opacity: logoUploading ? 0.6 : 1
-                        }}
-                      />
-                      {logoUploading && (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '0.5rem', 
-                          marginTop: '0.5rem',
-                          color: '#6b7280',
-                          fontSize: '0.875rem'
-                        }}>
-                          <div className="loading-spinner-small"></div>
-                          {t('settings.processingAndUploading') || 'Processing and uploading...'}
-                        </div>
-                      )}
-                      {!logoUploading && (
+                  <div className="logo-preview-container">
+                    <div className="logo-display-card">
+                      <div className="logo-header">
+                        <h4 className="logo-section-subtitle">
+                          {logoUploading ? 
+                            (t('settings.uploadingLogo') || 'Uploading Logo...') : 
+                            (t('settings.logoPreview') || 'Logo Preview')
+                          }
+                        </h4>
+                        {logoUploading && (
+                          <div className="upload-status">
+                            <div className="loading-spinner-small"></div>
+                            <span className="upload-status-text">
+                              {t('settings.processingAndUploading') || 'Processing and uploading...'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="logo-image-container">
+                        <img 
+                          src={logoPreview} 
+                          alt="Logo preview" 
+                          className={`logo-image ${logoUploading ? 'uploading' : ''}`}
+                        />
+                      </div>
+                    </div>
+                    {!logoUploading && (
+                      <div className="logo-actions-container">
                         <button
                           type="button"
                           onClick={cancelLogoSelection}
-                          className="logo-action-btn cancel-logo-btn"
-                          style={{
-                            marginTop: '0.5rem',
-                            backgroundColor: '#6b7280',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '0.375rem',
-                            fontSize: '0.875rem',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            minWidth: '120px',
-                            height: '38px',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
-                          onMouseLeave={(e) => e.target.style.backgroundColor = '#6b7280'}
+                          className="logo-btn logo-btn-secondary"
                         >
                           <X size={16} />
                           {t('common.cancel') || 'Cancel'}
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Logo Upload Input */}
-                {!logoPreview && (
-                  <div className="logo-upload-input">
-                    <label 
-                      htmlFor="logo-upload" 
-                      className="logo-action-btn logo-upload-label"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        backgroundColor: '#4f46e5',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.375rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s',
-                        minWidth: '120px',
-                        height: '38px'
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4338ca'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#4f46e5'}
-                    >
-                      <Upload size={16} />
-                      {currentLogoUrl ? (t('settings.changeLogo') || 'Change Logo') : (t('settings.uploadLogo') || 'Upload Logo')}
-                    </label>
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoSelect}
-                      style={{ display: 'none' }}
-                    />
+                {/* Upload Logo Input - First time */}
+                {!logoPreview && !currentLogoUrl && (
+                  <div className="logo-upload-empty">
+                    <div className="upload-placeholder">
+                      <div className="upload-icon">
+                        <Upload size={32} />
+                      </div>
+                      <div className="upload-text">
+                        <h4>{t('settings.uploadLogo') || 'Upload Company Logo'}</h4>
+                        <p>JPG, PNG, GIF up to 10MB</p>
+                      </div>
+                    </div>
+                    <div className="logo-actions-container">
+                      <label 
+                        htmlFor="logo-upload-new" 
+                        className="logo-btn logo-btn-primary logo-btn-large"
+                      >
+                        <Upload size={16} />
+                        {t('settings.uploadLogo') || 'Upload Logo'}
+                      </label>
+                      <input
+                        id="logo-upload-new"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoSelect}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

@@ -476,9 +476,6 @@
 }
 
 /* ADD SPECIFIC CLASSES FOR MOBILE HIDING */
-.hide-on-mobile {
-  /* This class will be used to hide specific columns */
-}
 
 /* Responsive design */
 @media (max-width: 768px) {
@@ -562,7 +559,7 @@
   
   /* BETTER APPROACH: Hide columns using CSS classes instead of nth-child */
   .hide-on-mobile {
-    display: none;
+    display: none !important;
   }
   
   /* Alternative: If you want to keep nth-child, use this SAFER approach */

@@ -235,3 +235,354 @@
     font-size: 0.9375rem;
   }
 }
+
+
+/* Add these styles to your existing settings.css file */
+
+/* ===== Logo Upload Section Styles ===== */
+.logo-upload-section {
+  margin-top: 1rem;
+}
+
+.current-logo-container,
+.logo-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.logo-display-card {
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  min-width: 280px;
+  max-width: 400px;
+}
+
+.logo-display-card:hover {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+.logo-header {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-section-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.upload-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.upload-status-text {
+  font-style: italic;
+}
+
+.logo-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 120px;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+}
+
+.logo-image {
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.3s ease;
+}
+
+.logo-image.uploading {
+  opacity: 0.6;
+}
+
+/* Logo Actions Container */
+.logo-actions-container {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Logo Button Styles */
+.logo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  min-width: 120px;
+  height: 44px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.logo-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Primary Button (Upload/Change) */
+.logo-btn-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: white;
+}
+
+.logo-btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%);
+}
+
+/* Danger Button (Remove) */
+.logo-btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+}
+
+.logo-btn-danger:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+}
+
+/* Secondary Button (Cancel) */
+.logo-btn-secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+  color: white;
+}
+
+.logo-btn-secondary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #6b7280 100%);
+}
+
+/* Large Button for First Upload */
+.logo-btn-large {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  min-width: 160px;
+  height: 50px;
+}
+
+/* Upload Placeholder for First Time */
+.logo-upload-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 1rem;
+  min-width: 300px;
+  transition: all 0.3s ease;
+}
+
+.upload-placeholder:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border-radius: 50%;
+  color: #64748b;
+}
+
+.upload-text {
+  text-align: center;
+}
+
+.upload-text h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.upload-text p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Loading Animation */
+@keyframes spin {
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+.loading-spinner-small {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+/* Responsive Design for Logo Section */
+@media (max-width: 768px) {
+  .current-logo-container,
+  .logo-preview-container {
+    gap: 1rem;
+  }
+  
+  .logo-display-card {
+    min-width: 260px;
+    padding: 1.25rem;
+  }
+  
+  .logo-actions-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .logo-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .upload-placeholder {
+    min-width: 260px;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-display-card,
+  .upload-placeholder {
+    min-width: auto;
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  .logo-actions-container {
+    width: 100%;
+  }
+  
+  .logo-btn {
+    max-width: none;
+  }
+  
+  .upload-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .upload-text h4 {
+    font-size: 1rem;
+  }
+}
+
+/* Focus States for Accessibility */
+.logo-btn:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.logo-btn-danger:focus-visible {
+  outline-color: #dc2626;
+}
+
+.logo-btn-secondary:focus-visible {
+  outline-color: #6b7280;
+}
+
+/* Hover Effects for Upload Placeholder */
+.upload-placeholder {
+  cursor: pointer;
+}
+
+.upload-placeholder:hover .upload-icon {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  color: #475569;
+  transform: scale(1.05);
+}
+
+.upload-placeholder:hover .upload-text h4 {
+  color: #1f2937;
+}
+
+/* Animation for Logo Display */
+.logo-display-card {
+  animation: fadeInLogo 0.3s ease-in-out;
+}
+
+@keyframes fadeInLogo {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Improved Button Spacing */
+.logo-actions-container .logo-btn + .logo-btn {
+  margin-left: 0; /* Reset any default margins */
+}
+
+/* Success State Animation */
+.logo-image {
+  animation: logoAppear 0.5s ease-in-out;
+}
+
+@keyframes logoAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

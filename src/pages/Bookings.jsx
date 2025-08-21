@@ -43,7 +43,7 @@ const Bookings = () => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      // Base queries
+      // Base queries with archive filter
       let bookingsQuery = supabase
         .from('bookings')
         .select(`
@@ -51,13 +51,14 @@ const Bookings = () => {
           start_date,
           end_date,
           booking_status,
-          contracts (
+          contracts!inner (
             id,
             contract_number,
             service_name,
             service_type,
             service_cost,
-            service_currency
+            service_currency,
+            is_archived
           ),
           location_resources (
             id,
@@ -77,6 +78,8 @@ const Bookings = () => {
           )
         `)
         .eq('booking_status', 'active')
+        .eq('is_archived', false) // Exclude archived bookings
+        .eq('contracts.is_archived', false) // Exclude bookings from archived contracts
         .order('start_date');
 
       let packagesQuery = supabase
@@ -87,13 +90,14 @@ const Bookings = () => {
           duration_type,
           time_slot,
           reservation_status,
-          contracts (
+          contracts!inner (
             id,
             contract_number,
             service_name,
             service_type,
             service_cost,
-            service_currency
+            service_currency,
+            is_archived
           ),
           location_resources (
             id,
@@ -113,6 +117,8 @@ const Bookings = () => {
           )
         `)
         .eq('reservation_status', 'confirmed')
+        .eq('is_archived', false) // Exclude archived package reservations
+        .eq('contracts.is_archived', false) // Exclude reservations from archived contracts
         .order('reservation_date');
 
       // Role-based filters

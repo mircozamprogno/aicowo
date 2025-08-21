@@ -167,6 +167,303 @@ export const reservationService = {
 };
 
 
+// Add these functions to the existing supabase.js file
+
+// Archive service functions
+export const archiveService = {
+  // Get active contracts (non-archived)
+  async getActiveContracts(partnerUuid, userRole, userId = null) {
+    let query = supabase
+      .from('contracts')
+      .select(`
+        *,
+        customers (
+          id,
+          first_name,
+          second_name,
+          email,
+          company_name
+        ),
+        services (
+          id,
+          service_name,
+          service_type
+        ),
+        locations (
+          id,
+          location_name
+        )
+      `)
+      .eq('is_archived', false)
+      .order('created_at', { ascending: false });
+
+    // Apply role-based filters
+    if (userRole === 'user') {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (customerData) {
+        query = query.eq('customer_id', customerData.id);
+      } else {
+        return { data: [], error: null };
+      }
+    } else if (userRole === 'admin') {
+      query = query.eq('partner_uuid', partnerUuid);
+    }
+
+    return await query;
+  },
+
+  // Get active bookings (non-archived, from non-archived contracts)
+  async getActiveBookings(partnerUuid, userRole, userId = null) {
+    let query = supabase
+      .from('bookings')
+      .select(`
+        id,
+        start_date,
+        end_date,
+        booking_status,
+        contracts!inner (
+          id,
+          contract_number,
+          service_name,
+          service_type,
+          service_cost,
+          service_currency,
+          is_archived
+        ),
+        location_resources (
+          id,
+          resource_name,
+          resource_type,
+          locations (
+            id,
+            location_name
+          )
+        ),
+        customers (
+          id,
+          first_name,
+          second_name,
+          email,
+          company_name
+        )
+      `)
+      .eq('booking_status', 'active')
+      .eq('is_archived', false)
+      .eq('contracts.is_archived', false)
+      .order('start_date');
+
+    // Apply role-based filters
+    if (userRole === 'user') {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (customerData) {
+        query = query.eq('customer_id', customerData.id);
+      } else {
+        return { data: [], error: null };
+      }
+    } else if (userRole === 'admin') {
+      query = query.eq('partner_uuid', partnerUuid);
+    }
+
+    return await query;
+  },
+
+  // Get active package reservations (non-archived, from non-archived contracts)
+  async getActivePackageReservations(partnerUuid, userRole, userId = null) {
+    let query = supabase
+      .from('package_reservations')
+      .select(`
+        id,
+        reservation_date,
+        duration_type,
+        time_slot,
+        reservation_status,
+        contracts!inner (
+          id,
+          contract_number,
+          service_name,
+          service_type,
+          service_cost,
+          service_currency,
+          is_archived
+        ),
+        location_resources (
+          id,
+          resource_name,
+          resource_type,
+          locations (
+            id,
+            location_name
+          )
+        ),
+        customers (
+          id,
+          first_name,
+          second_name,
+          email,
+          company_name
+        )
+      `)
+      .eq('reservation_status', 'confirmed')
+      .eq('is_archived', false)
+      .eq('contracts.is_archived', false)
+      .order('reservation_date');
+
+    // Apply role-based filters
+    if (userRole === 'user') {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (customerData) {
+        query = query.eq('customer_id', customerData.id);
+      } else {
+        return { data: [], error: null };
+      }
+    } else if (userRole === 'admin') {
+      query = query.eq('partner_uuid', partnerUuid);
+    }
+
+    return await query;
+  },
+
+  // Check if contract has related active data that would be affected by archiving
+  async checkContractDependencies(contractId) {
+    try {
+      // Check for active bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('contract_id', contractId)
+        .eq('is_archived', false)
+        .eq('booking_status', 'active');
+
+      if (bookingsError) throw bookingsError;
+
+      // Check for active package reservations
+      const { data: reservations, error: reservationsError } = await supabase
+        .from('package_reservations')
+        .select('id')
+        .eq('contract_id', contractId)
+        .eq('is_archived', false)
+        .eq('reservation_status', 'confirmed');
+
+      if (reservationsError) throw reservationsError;
+
+      return {
+        hasActiveBookings: (bookings || []).length > 0,
+        hasActiveReservations: (reservations || []).length > 0,
+        activeBookingsCount: (bookings || []).length,
+        activeReservationsCount: (reservations || []).length
+      };
+
+    } catch (error) {
+      console.error('Error checking contract dependencies:', error);
+      return {
+        hasActiveBookings: false,
+        hasActiveReservations: false,
+        activeBookingsCount: 0,
+        activeReservationsCount: 0,
+        error: error.message
+      };
+    }
+  },
+
+  // Bulk archive old contracts (utility function for maintenance)
+  async bulkArchiveExpiredContracts(daysAfterExpiry = 30, partnerUuid = null) {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysAfterExpiry);
+
+      let query = supabase
+        .from('contracts')
+        .select('id, contract_number, end_date')
+        .eq('is_archived', false)
+        .lt('end_date', cutoffDate.toISOString().split('T')[0]);
+
+      if (partnerUuid) {
+        query = query.eq('partner_uuid', partnerUuid);
+      }
+
+      const { data: expiredContracts, error: selectError } = await query;
+
+      if (selectError) throw selectError;
+
+      if (!expiredContracts || expiredContracts.length === 0) {
+        return {
+          success: true,
+          archivedCount: 0,
+          message: 'No expired contracts found to archive'
+        };
+      }
+
+      const now = new Date().toISOString();
+      const contractIds = expiredContracts.map(c => c.id);
+
+      // Archive expired contracts
+      const { error: archiveError } = await supabase
+        .from('contracts')
+        .update({
+          is_archived: true,
+          archived_at: now,
+          archive_reason: `Automatically archived - expired more than ${daysAfterExpiry} days ago`,
+          updated_at: now
+        })
+        .in('id', contractIds);
+
+      if (archiveError) throw archiveError;
+
+      // Archive related bookings
+      await supabase
+        .from('bookings')
+        .update({
+          is_archived: true,
+          archived_at: now,
+          archive_reason: `Contract automatically archived`,
+          updated_at: now
+        })
+        .in('contract_id', contractIds)
+        .eq('is_archived', false);
+
+      // Archive related package reservations
+      await supabase
+        .from('package_reservations')
+        .update({
+          is_archived: true,
+          archived_at: now,
+          archive_reason: `Contract automatically archived`,
+          updated_at: now
+        })
+        .in('contract_id', contractIds)
+        .eq('is_archived', false);
+
+      return {
+        success: true,
+        archivedCount: contractIds.length,
+        archivedContracts: expiredContracts.map(c => c.contract_number)
+      };
+
+    } catch (error) {
+      console.error('Error in bulk archive operation:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+};
+
 // For development/testing, you can temporarily use mock data
 // but the authentication will go through real Supabase
 export default supabase;

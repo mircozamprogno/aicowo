@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import ArchivedContracts from '../../pages/ArchivedContracts';
 import Bookings from '../../pages/Bookings';
 import Contracts from '../../pages/Contracts';
 import Customers from '../../pages/Customers';
@@ -132,7 +133,13 @@ const Router = () => {
           <Settings />
         </ProtectedRoute>
       ) : <Login />;
-    default:
+    case '/archived-contracts':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+          <ArchivedContracts />
+        </ProtectedRoute>
+      ) : <Login />;
+        default:
       // For any unknown path, redirect based on auth status
       if (user) {
         window.location.hash = '/dashboard';

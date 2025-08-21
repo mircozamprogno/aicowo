@@ -1,0 +1,500 @@
+/* ===== Archived Contracts Page Styles ===== */
+.archived-contracts-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.archived-contracts-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .archived-contracts-header {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.archived-contracts-header-content {
+  flex: 1;
+}
+
+.archived-contracts-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.archived-contracts-description {
+  font-size: 0.875rem;
+  color: #374151;
+  margin: 0 0 1rem 0;
+}
+
+/* Archive Stats */
+.archive-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Archived table specific styles */
+.archived-contracts-table-container {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.archived-contracts-table-wrapper {
+  overflow-x: auto;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+}
+
+/* Archived row styling */
+.archived-row {
+  background-color: #fefefe;
+  opacity: 0.85;
+  border-left: 4px solid #f59e0b;
+}
+
+.archived-row:hover {
+  background-color: #fafafa;
+  opacity: 1;
+}
+
+/* Archive info cell */
+.archive-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 180px;
+}
+
+.archive-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.archive-reason {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archive-status {
+  margin-top: 0.25rem;
+}
+
+/* Archive status badge */
+.status-archived {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Archive action buttons */
+.contract-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 120px; /* Ensure minimum width for button container */
+}
+
+.restore-btn,
+.permanent-delete-btn,
+.pdf-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.375rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.permanent-delete-btn:hover {
+  background-color: #fef2f2;
+  transform: translateY(-1px);
+}
+
+.permanent-delete-btn:focus {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* Restore modal styles */
+.restore-warning {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.375rem;
+  border-left: 4px solid #16a34a;
+  margin-bottom: 1.5rem;
+}
+
+.restore-warning .warning-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.restore-warning .warning-text h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #166534;
+}
+
+.restore-warning .warning-text p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #166534;
+  line-height: 1.5;
+}
+
+.contract-to-restore {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.contract-to-restore .contract-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+}
+
+.contract-to-restore .contract-detail:last-child {
+  border-bottom: none;
+}
+
+.contract-to-restore .contract-detail strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Enhanced final warning for permanent delete */
+.final-warning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #fecaca;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.final-warning::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #dc2626, #b91c1c, #dc2626);
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.final-warning-icon {
+  color: #dc2626;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.final-warning-text {
+  text-align: center;
+}
+
+.final-warning-text h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #991b1b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.final-warning-text p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #991b1b;
+  line-height: 1.5;
+}
+
+.final-warning-note {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #fecaca;
+  margin-top: 1rem !important;
+  box-shadow: inset 0 1px 2px rgba(220, 38, 38, 0.1);
+}
+
+.final-warning-note strong {
+  font-weight: 700;
+  color: #7f1d1d;
+}
+
+/* Enhanced button styling for permanent delete */
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-danger::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(220, 38, 38, 0.4);
+}
+
+.btn-danger:hover::before {
+  left: 100%;
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+/* Responsive adjustments for archived contracts */
+@media (max-width: 768px) {
+  .archive-info {
+    min-width: 150px;
+  }
+  
+  .archive-date,
+  .archive-reason {
+    font-size: 0.6875rem;
+  }
+  
+  .archive-reason {
+    max-width: 120px;
+  }
+  
+  .final-warning {
+    padding: 1.5rem;
+  }
+  
+  .final-warning-text h3 {
+    font-size: 1rem;
+  }
+  
+  /* Improve button layout on smaller screens */
+  .contract-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 80px;
+  }
+  
+  .restore-btn,
+  .permanent-delete-btn,
+  .pdf-btn {
+    width: 100%;
+    min-width: 2.25rem;
+    padding: 0.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .archive-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .archived-contracts-header {
+    gap: 1.5rem;
+  }
+  
+  .archive-info {
+    min-width: auto;
+  }
+  
+  .archive-reason {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+  }
+  
+  .contract-to-restore .contract-detail {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .final-warning {
+    padding: 1rem;
+  }
+  
+  /* Full width actions on mobile */
+  .contract-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.375rem;
+  }
+  
+  .restore-btn,
+  .permanent-delete-btn,
+  .pdf-btn {
+    flex: 1;
+    max-width: 3rem;
+  }
+}
+
+/* Table cell specific adjustments for actions column */
+.archived-contracts-table-wrapper .contracts-table-cell:last-child {
+  padding: 0.75rem 1rem;
+  min-width: 140px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+/* Ensure table doesn't break layout */
+.archived-contracts-table-wrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.archived-contracts-table-wrapper .contracts-table {
+  table-layout: auto;
+  min-width: 100%;
+}
+
+/* Specific width for actions column */
+.contracts-table-header:last-child,
+.contracts-table-cell:last-child {
+  width: 160px;
+  min-width: 160px;
+}
+
+/* Loading states for archive actions */
+.restore-btn:disabled,
+.permanent-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.restore-btn:disabled:hover,
+.permanent-delete-btn:disabled:hover {
+  background: transparent;
+  transform: none;
+}
+
+/* Archive analytics enhancements */
+.archive-stats .stat-item {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.archive-stats .stat-label {
+  color: #92400e;
+}
+
+.archive-stats .stat-value {
+  color: #78350f;
+}
+
+/* Archive table header styling */
+.archived-contracts-table-wrapper .contracts-table-header {
+  background-color: #fefbf3;
+  color: #92400e;
+  border-bottom: 2px solid #fde68a;
+}
+
+/* Animation for archived rows */
+.archived-row {
+  animation: fadeInArchived 0.3s ease-in-out;
+}
+
+@keyframes fadeInArchived {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 0.85;
+    transform: translateX(0);
+  }
+}
+
+/* Focus states for accessibility */
+.restore-btn:focus-visible,
+.permanent-delete-btn:focus-visible {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .archived-row {
+    border-left-width: 6px;
+    border-left-color: #000;
+  }
+  
+  .status-archived {
+    background-color: #000;
+    color: #fff;
+  }
+  
+  .final-warning {
+    border-color: #000;
+    background: #fff;
+  }
+}

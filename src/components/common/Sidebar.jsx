@@ -1,4 +1,4 @@
-import { Building, Calendar, Camera, Cog, FileText, Home, Mail, Settings, Users, X } from 'lucide-react';
+import { Archive, Building, Calendar, Camera, Cog, FileText, Home, Mail, Settings, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -34,6 +34,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
+      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['admin'] }, // Add this line
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
@@ -41,6 +42,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       // Regular users see limited options and settings - including Photo Gallery
       { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
+      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['user'] }, // Add this line
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
     ];
