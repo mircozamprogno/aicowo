@@ -1,283 +1,189 @@
-import { Building, Eye, EyeOff, Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTranslation } from '../../contexts/LanguageContext';
-import { supabase } from '../../services/supabase';
-import LanguageSwitcher from '../common/LanguageSwitcher';
-import Link from '../common/Link';
-import { toast } from '../common/ToastContainer';
+import ArchivedContracts from '../../pages/ArchivedContracts';
+import Bookings from '../../pages/Bookings';
+import Contracts from '../../pages/Contracts';
+import Customers from '../../pages/Customers';
+import Dashboard from '../../pages/Dashboard';
+import Invitations from '../../pages/Invitations';
+import Partners from '../../pages/Partners';
+import PhotoGallery from '../../pages/PhotoGallery';
+import Services from '../../pages/Services';
+import Settings from '../../pages/Settings';
+import Users from '../../pages/Users';
+import ForgotPassword from '../auth/ForgotPassword';
+import InvitationRegister from '../auth/InvitationRegister';
+import Login from '../auth/Login';
+import Register from '../auth/Register';
+import ResetPassword from '../auth/ResetPassword'; // ← ADD THIS IMPORT
+import ProtectedRoute from './ProtectedRoute';
 
-const ResetPassword = () => {
-  const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: ''
+const Router = () => {
+  const [currentPath, setCurrentPath] = useState(() => {
+    return window.location.hash.slice(1) || '/login';
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [validatingToken, setValidatingToken] = useState(true);
-  const [tokenValid, setTokenValid] = useState(false);
-  const [resetComplete, setResetComplete] = useState(false);
-  const { updatePassword } = useAuth();
-  const { t } = useTranslation();
-
-  // Extract token from URL parameters
-  const getResetTokenFromURL = () => {
-    // Check both hash parameters (Supabase auth redirects) and regular URL parameters
-    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
-    const type = hashParams.get('type') || urlParams.get('type');
-    
-    console.log('Reset password URL params:', {
-      hash: window.location.hash,
-      search: window.location.search,
-      type,
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken
-    });
-    
-    return { accessToken, refreshToken, type };
-  };
+  
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const { accessToken, refreshToken, type } = getResetTokenFromURL();
-    
-    console.log('ResetPassword: Checking URL parameters', { type, hasAccessToken: !!accessToken });
-    
-    // Validate that we have the correct parameters for password reset
-    if (type === 'recovery') {
-      setTokenValid(true);
-      console.log('ResetPassword: Valid recovery token detected');
-    } else {
-      console.log('ResetPassword: Invalid or missing recovery token');
-      setTokenValid(false);
-      toast.error(t('messages.invalidResetLink'));
-    }
-    
-    setValidatingToken(false);
+    const handleHashChange = () => {
+      const newPath = window.location.hash.slice(1) || '/login';
+      console.log('Router: Hash changed to:', newPath);
+      setCurrentPath(newPath);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Check if this is a password recovery flow
+  const isRecoveryFlow = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const isRecoveryType = urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
+    const hasAccessToken = urlParams.get('access_token') || hashParams.get('access_token');
+    const isResetPath = currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword');
     
-    if (formData.password !== formData.confirmPassword) {
-      toast.error(t('messages.passwordsDoNotMatch'));
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error(t('messages.passwordTooShort'));
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      await updatePassword(formData.password);
-      setResetComplete(true);
-      toast.success(t('messages.passwordResetSuccessfully'));
-      
-      // Optional: Sign out the user so they need to log in with their new password
-      // This is a security best practice
-      setTimeout(async () => {
-        try {
-          await supabase.auth.signOut();
-        } catch (signOutError) {
-          console.log('Note: Could not sign out user after password reset:', signOutError);
-        }
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Password reset error:', error);
-      toast.error(error.message || t('messages.errorResettingPassword'));
-    } finally {
-      setLoading(false);
-    }
+    // If we're on the reset password path, assume it's a recovery flow
+    return isRecoveryType || hasAccessToken || isResetPath;
   };
 
-  // Loading state while validating token
-  if (validatingToken) {
+  // Simple redirect logic - no complex state management
+  useEffect(() => {
+    if (loading) return; // Wait for auth check to complete
+
+    console.log('Router: Checking redirects - User:', !!user, 'Path:', currentPath, 'IsRecovery:', isRecoveryFlow());
+
+    // If this is a recovery flow, always go to reset password page regardless of auth state
+    if (isRecoveryFlow()) {
+      if (!currentPath.startsWith('/reset-password') && !currentPath.startsWith('/ResetPassword')) {
+        console.log('Router: Recovery flow detected, redirecting to reset password');
+        window.location.hash = '/ResetPassword' + window.location.search;
+        return;
+      }
+      return; // Stay on reset password page
+    }
+
+    // Special handling for invitation registration and password reset - don't redirect if user is on these pages
+    if (currentPath.startsWith('/invitation-register') || 
+        currentPath.startsWith('/reset-password') || 
+        currentPath.startsWith('/ResetPassword')) {
+      return; // Let the components handle their own logic
+    }
+
+    // If user is logged in but on auth pages, redirect to dashboard
+    if (user && ['/login', '/register', '/forgot-password'].includes(currentPath)) {
+      console.log('Router: User logged in, redirecting to dashboard');
+      window.location.hash = '/dashboard';
+      return;
+    }
+
+    // If user is not logged in and not on auth pages, redirect to login
+    if (!user && !['/login', '/register', '/forgot-password', '/reset-password', '/ResetPassword'].includes(currentPath)) {
+      console.log('Router: User not logged in, redirecting to login');
+      window.location.hash = '/login';
+      return;
+    }
+  }, [user, loading, currentPath]);
+
+  if (loading) {
+    console.log('Router: Showing loading spinner');
     return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-loading">
-            <div className="loading-spinner"></div>
-            <p>{t('common.loading')}</p>
-          </div>
-        </div>
-        <div className="auth-language-switcher">
-          <LanguageSwitcher />
-        </div>
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
       </div>
     );
   }
 
-  // Success state after password reset
-  if (resetComplete) {
-    return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-header">
-            <Building size={48} color="#10b981" className="auth-logo" />
-            <h2 className="auth-title" style={{ color: '#10b981' }}>
-              {t('auth.passwordResetSuccessful')}
-            </h2>
-            <p className="auth-instructions">
-              {t('auth.passwordResetSuccessMessage')}
-            </p>
-            <div className="auth-back-link">
-              <Link
-                to="/login"
-                className="auth-submit-btn"
-                style={{ 
-                  display: 'inline-block', 
-                  textAlign: 'center', 
-                  textDecoration: 'none',
-                  backgroundColor: '#10b981'
-                }}
-              >
-                {t('auth.goToLogin')}
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="auth-language-switcher">
-          <LanguageSwitcher />
-        </div>
-      </div>
-    );
+  console.log('Router: Rendering page - User:', !!user, 'Path:', currentPath);
+
+  // Handle invitation registration route (can include query parameters)
+  if (currentPath.startsWith('/invitation-register')) {
+    return <InvitationRegister />;
   }
 
-  // Invalid token state
-  if (!tokenValid) {
-    return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-header">
-            <div className="auth-logo">
-              <Building size={48} color="#dc2626" />
-            </div>
-            <h2 className="auth-title auth-title-error">
-              {t('auth.invalidResetLink')}
-            </h2>
-            <p className="auth-instructions">
-              {t('auth.invalidResetLinkMessage')}
-            </p>
-          </div>
-          <div className="auth-actions">
-            <Link to="/forgot-password" className="auth-submit-btn">
-              {t('auth.requestNewResetLink')}
-            </Link>
-            <div className="auth-back-link">
-              <Link to="/login" className="auth-switch-link">
-                {t('auth.backToSignIn')}
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="auth-language-switcher">
-          <LanguageSwitcher />
-        </div>
-      </div>
-    );
+  // Handle reset password route (can include query parameters)
+  if (currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword')) { // ← ADD THIS
+    return <ResetPassword />;
   }
 
-  // Main password reset form
-  return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-header">
-          <div className="auth-logo">
-            <Building size={48} color="#4f46e5" />
-          </div>
-          <h2 className="auth-title">
-            {t('auth.setNewPassword')}
-          </h2>
-          <p className="auth-instructions">
-            {t('auth.setNewPasswordInstructions')}
-          </p>
-        </div>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              {t('auth.newPassword')} *
-            </label>
-            <div className="input-group">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                required
-                className="form-input"
-                placeholder={t('placeholders.newPasswordPlaceholder')}
-                value={formData.password}
-                onChange={handleChange}
-                minLength="6"
-              />
-              <Lock size={16} className="input-icon input-icon-left" />
-              <button
-                type="button"
-                className="input-icon input-icon-right"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="confirmPassword" className="form-label">
-              {t('auth.confirmNewPassword')} *
-            </label>
-            <div className="input-group">
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                required
-                className="form-input"
-                placeholder={t('auth.confirmNewPassword')}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                minLength="6"
-              />
-              <Lock size={16} className="input-icon input-icon-left" />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <button
-              type="submit"
-              disabled={loading}
-              className="auth-submit-btn"
-            >
-              {loading ? `${t('auth.updatingPassword')}...` : t('auth.updatePassword')}
-            </button>
-          </div>
-
-          <div className="auth-switch">
-            <Link to="/login" className="auth-switch-link">
-              {t('auth.backToSignIn')}
-            </Link>
-          </div>
-        </form>
-      </div>
-      <div className="auth-language-switcher">
-        <LanguageSwitcher />
-      </div>
-    </div>
-  );
+  // Render the appropriate component based on current path
+  switch (currentPath) {
+    case '/login':
+      return <Login />;
+    case '/register':
+      return <Register />;
+    case '/forgot-password':
+      return <ForgotPassword />;
+    // You can also add explicit cases if needed:
+    // case '/reset-password':
+    //   return <ResetPassword />;
+    // case '/ResetPassword':
+    //   return <ResetPassword />;
+    case '/dashboard':
+      return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
+    case '/partners':
+      return user ? <ProtectedRoute><Partners /></ProtectedRoute> : <Login />;
+    case '/services':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <Services />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/customers':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <Customers />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/photo-gallery':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user']}>
+          <PhotoGallery />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/contracts':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+          <Contracts />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/bookings':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+          <Bookings />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/invitations':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin', 'admin']}>
+          <Invitations />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/users':
+      return user ? <ProtectedRoute><Users /></ProtectedRoute> : <Login />;
+    case '/settings':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin']}>
+          <Settings />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/archived-contracts':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+          <ArchivedContracts />
+        </ProtectedRoute>
+      ) : <Login />;
+        default:
+      // For any unknown path, redirect based on auth status
+      if (user) {
+        window.location.hash = '/dashboard';
+        return <ProtectedRoute><Dashboard /></ProtectedRoute>;
+      } else {
+        window.location.hash = '/login';
+        return <Login />;
+      }
+  }
 };
 
-export default ResetPassword;
+export default Router;
