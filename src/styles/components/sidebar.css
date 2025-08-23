@@ -262,3 +262,69 @@
 .partner-logo.error + .partner-logo-fallback {
   display: block !important;
 }
+
+
+/* Add this to your existing sidebar.css file */
+
+/* Version Info Styles */
+.sidebar-version {
+  margin-top: auto;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #f3f4f6;
+  background: #f9fafb;
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.version-commit {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-weight: 600;
+  color: #4b5563;
+  padding: 0.125rem 0.375rem;
+  background: #e5e7eb;
+  border-radius: 0.25rem;
+  align-self: flex-start;
+}
+
+.version-message {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.2;
+  cursor: help;
+}
+
+.version-message:hover {
+  color: #6b7280;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .sidebar-version {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .version-info {
+    font-size: 0.7rem;
+  }
+  
+  .version-commit {
+    font-size: 0.65rem;
+  }
+  
+  .version-message {
+    font-size: 0.65rem;
+  }
+}
+
+/* Hide version on very small screens */
+@media (max-width: 480px) {
+  .sidebar-version {
+    display: none;
+  }
+}

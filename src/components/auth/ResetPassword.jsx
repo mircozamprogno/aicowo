@@ -2,8 +2,8 @@ import { Building, Eye, EyeOff, Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { supabase } from '../../services/supabase';
 import LanguageSwitcher from '../common/LanguageSwitcher';
-import Link from '../common/Link';
 import { toast } from '../common/ToastContainer';
 
 const ResetPassword = () => {
@@ -22,6 +22,7 @@ const ResetPassword = () => {
   // Extract token from URL parameters
   const getResetTokenFromURL = () => {
     // Check both hash parameters (Supabase auth redirects) and regular URL parameters
+    const fullUrl = window.location.href;
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
     const urlParams = new URLSearchParams(window.location.search);
     
@@ -29,12 +30,17 @@ const ResetPassword = () => {
     const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
     const type = hashParams.get('type') || urlParams.get('type');
     
-    console.log('Reset password URL params:', {
+    console.log('Reset password URL analysis:', {
+      fullUrl,
       hash: window.location.hash,
       search: window.location.search,
+      hashParamsString: window.location.hash.split('?')[1] || 'none',
+      searchParamsString: window.location.search,
       type,
       hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken
+      hasRefreshToken: !!refreshToken,
+      allHashParams: Object.fromEntries(hashParams.entries()),
+      allUrlParams: Object.fromEntries(urlParams.entries())
     });
     
     return { accessToken, refreshToken, type };
@@ -43,10 +49,14 @@ const ResetPassword = () => {
   useEffect(() => {
     const { accessToken, refreshToken, type } = getResetTokenFromURL();
     
-    // Validate that we have the correct parameters for password reset
-    if (type === 'recovery' && accessToken) {
+    console.log('ResetPassword: Checking URL parameters', { type, hasAccessToken: !!accessToken });
+    
+    // More lenient validation - check for type=recovery OR presence of access_token
+    if (type === 'recovery' || accessToken) {
       setTokenValid(true);
+      console.log('ResetPassword: Valid recovery token detected');
     } else {
+      console.log('ResetPassword: Invalid or missing recovery token');
       setTokenValid(false);
       toast.error(t('messages.invalidResetLink'));
     }
@@ -80,6 +90,18 @@ const ResetPassword = () => {
       await updatePassword(formData.password);
       setResetComplete(true);
       toast.success(t('messages.passwordResetSuccessfully'));
+      
+      // Sign out the user so they need to log in with their new password
+      // This will also clear the password recovery state
+      setTimeout(async () => {
+        try {
+          await supabase.auth.signOut();
+          console.log('User signed out after password reset');
+        } catch (signOutError) {
+          console.log('Note: Could not sign out user after password reset:', signOutError);
+        }
+      }, 2000);
+      
     } catch (error) {
       console.error('Password reset error:', error);
       toast.error(error.message || t('messages.errorResettingPassword'));
@@ -119,18 +141,20 @@ const ResetPassword = () => {
               {t('auth.passwordResetSuccessMessage')}
             </p>
             <div className="auth-back-link">
-              <Link
-                to="/login"
+              <button
+                onClick={() => window.location.hash = '/login'}
                 className="auth-submit-btn"
                 style={{ 
                   display: 'inline-block', 
                   textAlign: 'center', 
                   textDecoration: 'none',
-                  backgroundColor: '#10b981'
+                  backgroundColor: '#10b981',
+                  border: 'none',
+                  cursor: 'pointer'
                 }}
               >
                 {t('auth.goToLogin')}
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -158,13 +182,20 @@ const ResetPassword = () => {
             </p>
           </div>
           <div className="auth-actions">
-            <Link to="/forgot-password" className="auth-submit-btn">
+            <button 
+              onClick={() => window.location.hash = '/forgot-password'} 
+              className="auth-submit-btn"
+            >
               {t('auth.requestNewResetLink')}
-            </Link>
+            </button>
             <div className="auth-back-link">
-              <Link to="/login" className="auth-switch-link">
+              <button 
+                onClick={() => window.location.hash = '/login'} 
+                className="auth-switch-link"
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
                 {t('auth.backToSignIn')}
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -251,9 +282,13 @@ const ResetPassword = () => {
           </div>
 
           <div className="auth-switch">
-            <Link to="/login" className="auth-switch-link">
+            <button 
+              onClick={() => window.location.hash = '/login'} 
+              className="auth-switch-link"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
               {t('auth.backToSignIn')}
-            </Link>
+            </button>
           </div>
         </form>
       </div>

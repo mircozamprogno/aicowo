@@ -16,6 +16,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
     companyName: null,
     loading: true
   });
+
+  // State for version info
+  const [versionInfo, setVersionInfo] = useState(null);
   
   // Define navigation items based on user role
   const getNavigationItems = () => {
@@ -62,6 +65,35 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       fetchPartnerBranding();
     }
   }, [profile]);
+
+  // Fetch version info
+  useEffect(() => {
+    fetchVersionInfo();
+  }, []);
+
+  const fetchVersionInfo = async () => {
+    try {
+      // Try to fetch from environment variables first (Vercel)
+      const envCommit = process.env.REACT_APP_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA;
+      if (envCommit) {
+        setVersionInfo({
+          commit: envCommit.substring(0, 7), // Short hash
+          message: 'Build from environment'
+        });
+        return;
+      }
+
+      // Fallback to version.json file
+      const response = await fetch('/version.json');
+      if (response.ok) {
+        const data = await response.json();
+        setVersionInfo(data);
+      }
+    } catch (error) {
+      console.log('Version info not available:', error);
+      // Don't show anything if version info is not available
+    }
+  };
 
   const fetchPartnerBranding = async () => {
     if (!profile?.partner_uuid) {
@@ -205,6 +237,23 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
           </Link>
         ))}
       </nav>
+
+      {/* Version Info - Debug Only */}
+      {versionInfo && (
+        <div className="sidebar-version">
+          <div className="version-info">
+            <span className="version-commit">{versionInfo.commit}</span>
+            {versionInfo.message && (
+              <span className="version-message" title={versionInfo.message}>
+                {versionInfo.message.length > 30 
+                  ? `${versionInfo.message.substring(0, 30)}...` 
+                  : versionInfo.message
+                }
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
