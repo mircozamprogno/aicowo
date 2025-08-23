@@ -16,7 +16,7 @@ const ResetPassword = () => {
   const [validatingToken, setValidatingToken] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [resetComplete, setResetComplete] = useState(false);
-  const { updatePassword } = useAuth();
+  const { updatePassword, isPasswordRecovery } = useAuth(); // ← ADD isPasswordRecovery
   const { t } = useTranslation();
 
   // Extract token from URL parameters
@@ -64,7 +64,8 @@ const ResetPassword = () => {
       hasAccessToken: !!accessToken,
       error,
       errorCode,
-      errorDescription: decodeURIComponent(errorDescription || '')
+      errorDescription: decodeURIComponent(errorDescription || ''),
+      isPasswordRecovery // ← USE CONTEXT STATE
     });
     
     // Handle specific error cases
@@ -85,8 +86,8 @@ const ResetPassword = () => {
       return;
     }
     
-    // More lenient validation - check for type=recovery OR presence of access_token
-    if (type === 'recovery' || accessToken) {
+    // SIMPLIFIED validation - rely on AuthContext password recovery state
+    if (type === 'recovery' || accessToken || isPasswordRecovery) {
       setTokenValid(true);
       console.log('✅ ResetPassword: Valid recovery token detected');
     } else {
@@ -97,7 +98,7 @@ const ResetPassword = () => {
     
     console.log('=====================================');
     setValidatingToken(false);
-  }, []);
+  }, [isPasswordRecovery]); // ← ADD DEPENDENCY
 
   const handleChange = (e) => {
     setFormData({

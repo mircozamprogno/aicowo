@@ -72,7 +72,11 @@ const Router = () => {
     if (isRecoveryFlow()) {
       if (!currentPath.startsWith('/reset-password') && !currentPath.startsWith('/ResetPassword')) {
         console.log('Router: Recovery flow detected, redirecting to reset password');
-        window.location.hash = '/ResetPassword';
+        // PRESERVE URL parameters when redirecting
+        const currentParams = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+        const redirectUrl = currentParams ? `/ResetPassword?${currentParams}` : '/ResetPassword';
+        console.log('Router: Redirecting to:', redirectUrl);
+        window.location.hash = redirectUrl;
         return;
       }
       return; // Stay on reset password page
