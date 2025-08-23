@@ -15,6 +15,7 @@ import ForgotPassword from '../auth/ForgotPassword';
 import InvitationRegister from '../auth/InvitationRegister';
 import Login from '../auth/Login';
 import Register from '../auth/Register';
+import ResetPassword from '../auth/ResetPassword'; // ← ADD THIS IMPORT
 import ProtectedRoute from './ProtectedRoute';
 
 const Router = () => {
@@ -41,9 +42,11 @@ const Router = () => {
 
     console.log('Router: Checking redirects - User:', !!user, 'Path:', currentPath);
 
-    // Special handling for invitation registration - don't redirect if user is on this page
-    if (currentPath.startsWith('/invitation-register')) {
-      return; // Let the InvitationRegister component handle the logic
+    // Special handling for invitation registration and password reset - don't redirect if user is on these pages
+    if (currentPath.startsWith('/invitation-register') || 
+        currentPath.startsWith('/reset-password') || 
+        currentPath.startsWith('/ResetPassword')) { // ← ADD THESE CONDITIONS
+      return; // Let the components handle their own logic
     }
 
     // If user is logged in but on auth pages, redirect to dashboard
@@ -54,7 +57,7 @@ const Router = () => {
     }
 
     // If user is not logged in and not on auth pages, redirect to login
-    if (!user && !['/login', '/register', '/forgot-password'].includes(currentPath)) {
+    if (!user && !['/login', '/register', '/forgot-password', '/reset-password', '/ResetPassword'].includes(currentPath)) { // ← ADD RESET ROUTES
       console.log('Router: User not logged in, redirecting to login');
       window.location.hash = '/login';
       return;
@@ -77,6 +80,11 @@ const Router = () => {
     return <InvitationRegister />;
   }
 
+  // Handle reset password route (can include query parameters)
+  if (currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword')) { // ← ADD THIS
+    return <ResetPassword />;
+  }
+
   // Render the appropriate component based on current path
   switch (currentPath) {
     case '/login':
@@ -85,6 +93,11 @@ const Router = () => {
       return <Register />;
     case '/forgot-password':
       return <ForgotPassword />;
+    // You can also add explicit cases if needed:
+    // case '/reset-password':
+    //   return <ResetPassword />;
+    // case '/ResetPassword':
+    //   return <ResetPassword />;
     case '/dashboard':
       return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
     case '/partners':
