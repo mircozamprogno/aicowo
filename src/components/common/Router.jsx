@@ -42,10 +42,9 @@ const Router = () => {
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
     const isRecoveryType = urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
     const hasAccessToken = urlParams.get('access_token') || hashParams.get('access_token');
-    const isResetPath = currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword');
     
-    // If we're on the reset password path, assume it's a recovery flow
-    return isRecoveryType || hasAccessToken || isResetPath;
+    // Only consider it a recovery flow if we have the recovery type parameter
+    return isRecoveryType;
   };
 
   // Simple redirect logic - no complex state management
