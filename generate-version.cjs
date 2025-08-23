@@ -1,4 +1,4 @@
-// Create this file in your project root: generate-version.js
+// Rename your file from generate-version.js to generate-version.cjs
 const fs = require('fs');
 const path = require('path');
 

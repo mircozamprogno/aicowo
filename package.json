@@ -7,8 +7,8 @@
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prebuild": "node generate-version.js",
-    "build": "react-scripts build"
+    "prebuild": "node generate-version.cjs",
+    "build": "vite build"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
