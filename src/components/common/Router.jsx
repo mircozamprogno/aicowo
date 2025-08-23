@@ -23,7 +23,7 @@ const Router = () => {
     return window.location.hash.slice(1) || '/login';
   });
   
-  const { user, loading } = useAuth();
+  const { user, loading, isPasswordRecovery } = useAuth(); // ← ADD isPasswordRecovery HERE
 
   useEffect(() => {
     const handleHashChange = () => {
