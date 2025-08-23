@@ -230,13 +230,24 @@
     "afterVerificationLogin": "Dopo la verifica, puoi accedere con le tue credenziali",
     "importantNote": "Nota Importante",
     "verificationEmailNote": "Devi verificare la tua email prima di poter accedere al tuo account",
-    "goToLogin": "Vai alla Pagina di Login",
     "createAccount": "Crea Account",
     "creatingAccount": "Creazione Account",
     "invalidInvitation": "Invito Non Valido",
     "invalidInvitationMessage": "Questo link di invito non è valido o è scaduto. Contatta il tuo amministratore per un nuovo invito.",
     "invitedAsPartnerAdmin": "Sei stato invitato a diventare amministratore per {{partnerName}}",
-    "invitedAsUser": "Sei stato invitato a unirti a {{partnerName}} come utente"
+    "invitedAsUser": "Sei stato invitato a unirti a {{partnerName}} come utente",
+    "setNewPassword": "Imposta Nuova Password",
+    "setNewPasswordInstructions": "Inserisci la tua nuova password qui sotto.",
+    "newPassword": "Nuova Password",
+    "confirmNewPassword": "Conferma Nuova Password",
+    "updatePassword": "Aggiorna Password",
+    "updatingPassword": "Aggiornamento Password",
+    "passwordResetSuccessful": "Reset Password Completato",
+    "passwordResetSuccessMessage": "La tua password è stata aggiornata con successo. Ora puoi accedere con la tua nuova password.",
+    "invalidResetLink": "Link di Reset Non Valido",
+    "invalidResetLinkMessage": "Questo link per il reset della password non è valido o è scaduto. Per favore richiedine uno nuovo.",
+    "requestNewResetLink": "Richiedi Nuovo Link di Reset",
+    "goToLogin": "Vai al Login"
   },
   "roles": {
     "superadmin": "Super Amministratore",
@@ -420,7 +431,11 @@
     "imagesUploadedSuccessfully": "{count} immagini caricate con successo",
     "someImagesFailedToUpload": "{count} immagini non sono riuscite a caricarsi",
     "errorUploadingImages": "Errore nel caricamento delle immagini",
-    "invalidEmailFormat": "Formato email non valido"
+    "invalidEmailFormat": "Formato email non valido",
+    "passwordTooShort": "La password deve contenere almeno 6 caratteri",
+    "passwordResetSuccessfully": "Password reimpostata con successo",
+    "errorResettingPassword": "Errore nel reimpostare la password",
+    "invalidResetLink": "Link di reset non valido o scaduto"
   },
   "services": {
     "title": "Servizi",
@@ -671,7 +686,8 @@
     "phoneNumberPlaceholder": "es. +39 02 1234567",
     "streetAddressPlaceholder": "es. Via Roma 123",
     "postalCodePlaceholder": "es. 20121",
-    "locationDescriptionPlaceholder": "Descrivi caratteristiche speciali, istruzioni di accesso o dettagli aggiuntivi su questa sede..."
+    "locationDescriptionPlaceholder": "Descrivi caratteristiche speciali, istruzioni di accesso o dettagli aggiuntivi su questa sede...",
+    "newPasswordPlaceholder": "Inserisci la tua nuova password"
   },
   "bookings": {
     "title": "Calendario Prenotazioni",

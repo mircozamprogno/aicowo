@@ -230,13 +230,24 @@
     "afterVerificationLogin": "After verification, you can login with your credentials",
     "importantNote": "Important Note",
     "verificationEmailNote": "You must verify your email before you can login to your account",
-    "goToLogin": "Go to Login Page",
     "createAccount": "Create Account",
     "creatingAccount": "Creating Account",
     "invalidInvitation": "Invalid Invitation",
     "invalidInvitationMessage": "This invitation link is invalid or has expired. Please contact your administrator for a new invitation.",
     "invitedAsPartnerAdmin": "You've been invited to become an administrator for {{partnerName}}",
-    "invitedAsUser": "You've been invited to join {{partnerName}} as a user"
+    "invitedAsUser": "You've been invited to join {{partnerName}} as a user",
+    "setNewPassword": "Set New Password",
+    "setNewPasswordInstructions": "Please enter your new password below.",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "updatePassword": "Update Password",
+    "updatingPassword": "Updating Password",
+    "passwordResetSuccessful": "Password Reset Successful",
+    "passwordResetSuccessMessage": "Your password has been updated successfully. You can now sign in with your new password.",
+    "invalidResetLink": "Invalid Reset Link",
+    "invalidResetLinkMessage": "This password reset link is invalid or has expired. Please request a new one.",
+    "requestNewResetLink": "Request New Reset Link",
+    "goToLogin": "Go to Login"
   },
   "roles": {
     "superadmin": "Super Admin",
@@ -419,7 +430,11 @@
     "imagesUploadedSuccessfully": "{count} images uploaded successfully",
     "someImagesFailedToUpload": "{count} images failed to upload",
     "errorUploadingImages": "Error uploading images",
-    "invalidEmailFormat": "Invalid email format"
+    "invalidEmailFormat": "Invalid email format",
+    "passwordTooShort": "Password must be at least 6 characters long",
+    "passwordResetSuccessfully": "Password reset successfully",
+    "errorResettingPassword": "Error resetting password",
+    "invalidResetLink": "Invalid or expired reset link"
   },
   "services": {
     "title": "Services",
@@ -670,7 +685,8 @@
     "phoneNumberPlaceholder": "e.g., +39 02 1234567",
     "streetAddressPlaceholder": "e.g., Via Roma 123",
     "postalCodePlaceholder": "e.g., 20121",
-    "locationDescriptionPlaceholder": "Describe special features, access instructions, or additional details about this location..."
+    "locationDescriptionPlaceholder": "Describe special features, access instructions, or additional details about this location...",
+    "newPasswordPlaceholder": "Enter your new password"
   },
   "bookings": {
     "title": "Bookings Calendar",

@@ -281,6 +281,24 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  // Add this method to your AuthContext
+  const updatePassword = async (newPassword) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw error;
+    }
+  };
+  
   console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid);
 
   const value = {
@@ -290,6 +308,7 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signUp,
     signOut,
+    updatePassword,
     resetPassword
   };
 
