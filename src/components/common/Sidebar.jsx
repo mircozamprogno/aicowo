@@ -73,25 +73,48 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
   const fetchVersionInfo = async () => {
     try {
-      // Try to fetch from environment variables first (Vercel)
-      const envCommit = process.env.REACT_APP_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA;
-      if (envCommit) {
+      // Debug: Log all environment variables that start with REACT_APP_
+      console.log('All REACT_APP environment variables:', 
+        Object.keys(process.env)
+          .filter(key => key.startsWith('REACT_APP_'))
+          .reduce((obj, key) => {
+            obj[key] = process.env[key];
+            return obj;
+          }, {})
+      );
+      
+      // Get version info from environment variables
+      const commit = process.env.REACT_APP_GIT_COMMIT;
+      const message = process.env.REACT_APP_GIT_MESSAGE;
+      
+      console.log('Raw commit:', commit);
+      console.log('Raw message:', message);
+      
+      if (commit && commit !== 'undefined') {
+        const versionData = {
+          commit: commit.substring(0, 7), // Short hash (first 7 characters)
+          message: message && message !== 'undefined' ? message : 'No commit message'
+        };
+        
+        console.log('Setting version info:', versionData);
+        setVersionInfo(versionData);
+      } else {
+        console.log('No commit info available - commit value:', commit);
+        
+        // For debugging, let's show a fallback
         setVersionInfo({
-          commit: envCommit.substring(0, 7), // Short hash
-          message: 'Build from environment'
+          commit: 'debug',
+          message: 'Environment variables not found'
         });
-        return;
-      }
-
-      // Fallback to version.json file
-      const response = await fetch('/version.json');
-      if (response.ok) {
-        const data = await response.json();
-        setVersionInfo(data);
       }
     } catch (error) {
-      console.log('Version info not available:', error);
-      // Don't show anything if version info is not available
+      console.error('Error in fetchVersionInfo:', error);
+      
+      // Show error state for debugging
+      setVersionInfo({
+        commit: 'error',
+        message: error.message
+      });
     }
   };
 

@@ -57,7 +57,7 @@ const Router = () => {
     if (isRecoveryFlow()) {
       if (!currentPath.startsWith('/reset-password') && !currentPath.startsWith('/ResetPassword')) {
         console.log('Router: Recovery flow detected, redirecting to reset password');
-        window.location.hash = '/ResetPassword' + window.location.search;
+        window.location.hash = '/ResetPassword';
         return;
       }
       return; // Stay on reset password page
@@ -71,7 +71,7 @@ const Router = () => {
     }
 
     // If user is logged in but on auth pages, redirect to dashboard
-    if (user && ['/login', '/register', '/forgot-password'].includes(currentPath)) {
+    if (user && !isPasswordRecovery && ['/login', '/register', '/forgot-password'].includes(currentPath)) { // ← ADD RECOVERY CHECK
       console.log('Router: User logged in, redirecting to dashboard');
       window.location.hash = '/dashboard';
       return;
@@ -83,7 +83,7 @@ const Router = () => {
       window.location.hash = '/login';
       return;
     }
-  }, [user, loading, currentPath]);
+  }, [user, loading, currentPath, isPasswordRecovery]); // ← ADD isPasswordRecovery TO DEPENDENCIES
 
   if (loading) {
     console.log('Router: Showing loading spinner');

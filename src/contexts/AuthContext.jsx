@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false); // ← ADD THIS
 
   useEffect(() => {
     console.log('AuthProvider: Starting auth initialization');
@@ -79,11 +80,24 @@ export const AuthProvider = ({ children }) => {
       if (!isMounted) return;
 
       try {
+        // ← ADD PASSWORD_RECOVERY DETECTION HERE
+        if (event === 'PASSWORD_RECOVERY') {
+          console.log('AuthProvider: Password recovery detected');
+          setIsPasswordRecovery(true);
+          // Set the user but don't fetch profile yet
+          if (session?.user) {
+            setUser(session.user);
+          }
+          setLoadingWithTimeout(false);
+          return; // Don't continue with normal auth flow
+        }
+
         if (event === 'SIGNED_OUT' || !session) {
           console.log('User signed out or no session');
           setLoadingWithTimeout(true);
           setUser(null);
           setProfile(null);
+          setIsPasswordRecovery(false); // ← RESET PASSWORD RECOVERY FLAG
           setLoadingWithTimeout(false);
         } else if (event === 'SIGNED_IN' && session) {
           // Only fetch profile if we don't already have one for this user
@@ -91,13 +105,16 @@ export const AuthProvider = ({ children }) => {
             console.log('New user signed in, setting user and fetching profile');
             setLoadingWithTimeout(true);
             setUser(session.user);
-            // Fetch profile with timeout protection
-            await Promise.race([
-              fetchProfile(session.user.id),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
-              )
-            ]);
+            // Don't fetch profile if this is a password recovery flow
+            if (!isPasswordRecovery) {
+              // Fetch profile with timeout protection
+              await Promise.race([
+                fetchProfile(session.user.id),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+                )
+              ]);
+            }
             setLoadingWithTimeout(false);
           } else {
             // Same user, just update user object without loading
@@ -107,8 +124,8 @@ export const AuthProvider = ({ children }) => {
         } else if (event === 'TOKEN_REFRESHED' && session) {
           console.log('Token refreshed, updating user without loading');
           setUser(session.user);
-          // Only fetch profile if we don't have one
-          if (!profile) {
+          // Only fetch profile if we don't have one and not in recovery mode
+          if (!profile && !isPasswordRecovery) {
             setLoadingWithTimeout(true);
             await Promise.race([
               fetchProfile(session.user.id),
@@ -273,6 +290,7 @@ export const AuthProvider = ({ children }) => {
     console.log('Signing out...');
     setUser(null);
     setProfile(null);
+    setIsPasswordRecovery(false); // ← RESET PASSWORD RECOVERY FLAG
     await supabase.auth.signOut();
   };
 
@@ -299,12 +317,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
-  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid);
+  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid, 'IsPasswordRecovery:', isPasswordRecovery); // ← ADD RECOVERY TO LOG
 
   const value = {
     user,
     profile,
     loading,
+    isPasswordRecovery, // ← ADD THIS TO CONTEXT VALUE
     signIn,
     signUp,
     signOut,
