@@ -47,20 +47,55 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
+    console.log('=== RESET PASSWORD COMPONENT DEBUG ===');
+    
     const { accessToken, refreshToken, type } = getResetTokenFromURL();
     
-    console.log('ResetPassword: Checking URL parameters', { type, hasAccessToken: !!accessToken });
+    // Check for error parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    
+    const error = urlParams.get('error') || hashParams.get('error');
+    const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
+    const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
+    
+    console.log('Reset password validation:', { 
+      type, 
+      hasAccessToken: !!accessToken,
+      error,
+      errorCode,
+      errorDescription: decodeURIComponent(errorDescription || '')
+    });
+    
+    // Handle specific error cases
+    if (error) {
+      console.log('❌ Error detected in reset password URL');
+      if (errorCode === 'otp_expired') {
+        console.log('🕐 Reset link has expired');
+        toast.error('Password reset link has expired. Please request a new one.');
+      } else if (error === 'access_denied') {
+        console.log('🚫 Access denied - link may be invalid');
+        toast.error('Invalid password reset link. Please request a new one.');
+      } else {
+        console.log('❓ Unknown error:', error);
+        toast.error(`Reset link error: ${decodeURIComponent(errorDescription || error)}`);
+      }
+      setTokenValid(false);
+      setValidatingToken(false);
+      return;
+    }
     
     // More lenient validation - check for type=recovery OR presence of access_token
     if (type === 'recovery' || accessToken) {
       setTokenValid(true);
-      console.log('ResetPassword: Valid recovery token detected');
+      console.log('✅ ResetPassword: Valid recovery token detected');
     } else {
-      console.log('ResetPassword: Invalid or missing recovery token');
+      console.log('❌ ResetPassword: Invalid or missing recovery token');
       setTokenValid(false);
       toast.error(t('messages.invalidResetLink'));
     }
     
+    console.log('=====================================');
     setValidatingToken(false);
   }, []);
 

@@ -73,42 +73,31 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
   const fetchVersionInfo = async () => {
     try {
-      // Debug: Log all environment variables that start with REACT_APP_
-      console.log('All REACT_APP environment variables:', 
-        Object.keys(process.env)
-          .filter(key => key.startsWith('REACT_APP_'))
-          .reduce((obj, key) => {
-            obj[key] = process.env[key];
-            return obj;
-          }, {})
-      );
+      console.log('Fetching version info from /version.json...');
       
-      // Get version info from environment variables
-      const commit = process.env.REACT_APP_GIT_COMMIT;
-      const message = process.env.REACT_APP_GIT_MESSAGE;
+      // Fetch version info from the JSON file created during build
+      const response = await fetch('/version.json?t=' + Date.now()); // Cache busting
       
-      console.log('Raw commit:', commit);
-      console.log('Raw message:', message);
-      
-      if (commit && commit !== 'undefined') {
-        const versionData = {
-          commit: commit.substring(0, 7), // Short hash (first 7 characters)
-          message: message && message !== 'undefined' ? message : 'No commit message'
-        };
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Version data loaded:', data);
         
-        console.log('Setting version info:', versionData);
-        setVersionInfo(versionData);
-      } else {
-        console.log('No commit info available - commit value:', commit);
-        
-        // For debugging, let's show a fallback
         setVersionInfo({
-          commit: 'debug',
-          message: 'Environment variables not found'
+          commit: data.commit,
+          message: data.message,
+          buildDate: data.buildDate
+        });
+      } else {
+        console.log('❌ Failed to load version.json, status:', response.status);
+        
+        // Fallback for debugging
+        setVersionInfo({
+          commit: 'no-file',
+          message: 'version.json not found'
         });
       }
     } catch (error) {
-      console.error('Error in fetchVersionInfo:', error);
+      console.error('❌ Error fetching version info:', error);
       
       // Show error state for debugging
       setVersionInfo({

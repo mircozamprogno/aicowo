@@ -41,7 +41,17 @@ export const AuthProvider = ({ children }) => {
     const checkSession = async () => {
       try {
         console.log('AuthProvider: Checking session...');
+        console.log('Current URL when checking session:', window.location.href);
+        
         const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log('=== SESSION CHECK DEBUG ===');
+        console.log('Session error:', error);
+        console.log('Session exists:', !!session);
+        console.log('Session user:', session?.user?.id);
+        console.log('Session expires at:', session?.expires_at);
+        console.log('Session access token length:', session?.access_token?.length);
+        console.log('============================');
         
         if (!isMounted) return;
 
@@ -75,20 +85,31 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, !!session);
+      console.log('=== AUTH STATE CHANGE DEBUG ===');
+      console.log('Event:', event);
+      console.log('Session exists:', !!session);
+      console.log('Session user:', session?.user?.id);
+      console.log('Current URL:', window.location.href);
+      console.log('URL Hash:', window.location.hash);
+      console.log('URL Search:', window.location.search);
+      console.log('================================');
       
       if (!isMounted) return;
 
       try {
         // ← ADD PASSWORD_RECOVERY DETECTION HERE
         if (event === 'PASSWORD_RECOVERY') {
-          console.log('AuthProvider: Password recovery detected');
+          console.log('🔐 PASSWORD RECOVERY EVENT DETECTED');
+          console.log('Session in recovery:', session);
+          console.log('User in recovery:', session?.user);
           setIsPasswordRecovery(true);
           // Set the user but don't fetch profile yet
           if (session?.user) {
+            console.log('Setting user from password recovery session');
             setUser(session.user);
           }
           setLoadingWithTimeout(false);
+          console.log('Password recovery setup complete');
           return; // Don't continue with normal auth flow
         }
 

@@ -40,11 +40,26 @@ const Router = () => {
   const isRecoveryFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    
+    // Check for various recovery indicators
     const isRecoveryType = urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
     const hasAccessToken = urlParams.get('access_token') || hashParams.get('access_token');
+    const hasError = urlParams.get('error') || hashParams.get('error');
+    const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
     
-    // Only consider it a recovery flow if we have the recovery type parameter
-    return isRecoveryType;
+    console.log('=== RECOVERY FLOW DEBUG ===');
+    console.log('Full URL:', window.location.href);
+    console.log('Hash:', window.location.hash);
+    console.log('Search:', window.location.search);
+    console.log('Recovery type found:', isRecoveryType);
+    console.log('Access token found:', !!hasAccessToken);
+    console.log('Error found:', hasError);
+    console.log('Error code:', errorCode);
+    console.log('isPasswordRecovery from context:', isPasswordRecovery);
+    console.log('==========================');
+    
+    // Return true if any recovery indicator is present
+    return isRecoveryType || hasAccessToken || isPasswordRecovery || (hasError && errorCode === 'otp_expired');
   };
 
   // Simple redirect logic - no complex state management
