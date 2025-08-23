@@ -105,16 +105,13 @@ export const AuthProvider = ({ children }) => {
             console.log('New user signed in, setting user and fetching profile');
             setLoadingWithTimeout(true);
             setUser(session.user);
-            // Don't fetch profile if this is a password recovery flow
-            if (!isPasswordRecovery) {
-              // Fetch profile with timeout protection
-              await Promise.race([
-                fetchProfile(session.user.id),
-                new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
-                )
-              ]);
-            }
+            // Fetch profile with timeout protection - always fetch for SIGNED_IN
+            await Promise.race([
+              fetchProfile(session.user.id),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+              )
+            ]);
             setLoadingWithTimeout(false);
           } else {
             // Same user, just update user object without loading
@@ -124,8 +121,8 @@ export const AuthProvider = ({ children }) => {
         } else if (event === 'TOKEN_REFRESHED' && session) {
           console.log('Token refreshed, updating user without loading');
           setUser(session.user);
-          // Only fetch profile if we don't have one and not in recovery mode
-          if (!profile && !isPasswordRecovery) {
+          // Only fetch profile if we don't have one
+          if (!profile) {
             setLoadingWithTimeout(true);
             await Promise.race([
               fetchProfile(session.user.id),
