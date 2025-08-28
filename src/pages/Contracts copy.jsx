@@ -247,7 +247,6 @@ const Contracts = () => {
   };
 
   // PDF Generation handler
-
   const handleGeneratePDF = async (contract) => {
     setGeneratingPDF(contract.id);
     
@@ -278,37 +277,13 @@ const Contracts = () => {
         console.warn('No customer_id found in contract:', contract);
       }
       
-      // Fetch location data with VAT information
-      let locationData = null;
-      if (contract.location_id) {
-        console.log('Fetching location data for ID:', contract.location_id);
-        
-        const { data: locationInfo, error: locationError } = await supabase
-          .from('locations')
-          .select('*')
-          .eq('id', contract.location_id)
-          .single();
-        
-        if (locationError) {
-          console.error('Error fetching location data:', locationError);
-        } else if (locationInfo) {
-          console.log('Found location data:', locationInfo);
-          locationData = locationInfo;
-        } else {
-          console.warn('No location data found for ID:', contract.location_id);
-        }
-      } else {
-        console.warn('No location_id found in contract:', contract);
-      }
-      
-      // Create enhanced contract object with full customer and location data
+      // Create enhanced contract object with full customer data
       const enhancedContract = {
         ...contract,
-        customers: fullCustomerData,
-        location_data: locationData
+        customers: fullCustomerData
       };
       
-      console.log('Enhanced contract with customer and location data:', enhancedContract);
+      console.log('Enhanced contract with customer data:', enhancedContract);
       
       // Fetch partner data for PDF header
       let partnerData = null;
@@ -704,7 +679,7 @@ const Contracts = () => {
                           className="pdf-btn"
                           onClick={() => handleGeneratePDF(contract)}
                           disabled={generatingPDF === contract.id}
-                          title={t('contracts.tooltips.generatePDF') || 'Download PDF receipt'}
+                          title={t('contracts.generatePDF') || 'Generate PDF'}
                           style={{
                             backgroundColor: generatingPDF === contract.id ? '#9ca3af' : '#8b5cf6',
                             color: 'white',
@@ -730,7 +705,7 @@ const Contracts = () => {
                           <button 
                             className="edit-btn"
                             onClick={() => handleEditContract(contract)}
-                            title={t('contracts.tooltips.editContract') || 'Edit contract details'}
+                            title={t('contracts.editContract')}
                             style={{
                               backgroundColor: '#3b82f6',
                               color: 'white',
@@ -753,10 +728,7 @@ const Contracts = () => {
                           <button 
                             className="package-booking-btn"
                             onClick={() => handlePackageBooking(contract)}
-                            title={canBook 
-                              ? t('contracts.tooltips.bookReservation') || 'Book a new reservation with this package'
-                              : (getBookButtonText(contract) + ' - ' + (t('contracts.tooltips.cannotBook') || 'Cannot book reservation'))
-                            }
+                            title={canBook ? t('reservations.bookReservation') : getBookButtonText(contract)}
                             disabled={!canBook}
                             style={{
                               backgroundColor: canBook ? '#16a34a' : '#9ca3af',
@@ -783,7 +755,7 @@ const Contracts = () => {
                           <button 
                             className="delete-btn"
                             onClick={() => handleDeleteContract(contract)}
-                            title={t('contracts.tooltips.deleteContract') || 'Archive this contract permanently'}
+                            title="Elimina Contratto"
                             style={{
                               backgroundColor: '#dc2626',
                               color: 'white',

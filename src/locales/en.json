@@ -35,11 +35,19 @@
     "taxInfo": "Tax Information",
     "billing": "Billing",
     "individual": "Individual",
-    "company": "Company",
-    "organization": "Organization",
+    "freelancer": "Free Lance",
+    "entrepeneur": "Entrepeneur",
+    "employee": "Employee",
+    "tourist": "Tourist",
+    "student": "Student",
+    "affiliated": "Affiliated with portal",
+    "tobequalified": "To be qualified",
+    "qualified": "Qualified",
+    "tobeactivated": "To be activated",
     "active": "Active",
+    "expiring": "Expiring",
+    "toberenewed": "To be renewed",
     "inactive": "Inactive",
-    "suspended": "Suspended",
     "address": "Address",
     "zip": "ZIP Code",
     "city": "City",
@@ -199,7 +207,13 @@
     "addressNotFound": "Address not found. Please check the address and try again.",
     "geocodingError": "Error occurred while geocoding address",
     "mapError": "Error loading map",
-    "confirmDeleteLocation": "Are you sure you want to delete this location?"
+    "confirmDeleteLocation": "Are you sure you want to delete this location?",
+    "vatPercentage": "VAT Percentage",
+    "vatRate": "VAT Rate",
+    "vatInformation": "VAT Information", 
+    "vatFor": "VAT for",
+    "vatCountryDefaults": "Country VAT Defaults",
+    "vatHelpText": "Enter the VAT percentage applied to services at this location. This will be used for billing customers who use services at this location."
   },
   "auth": {
     "signIn": "Sign In",
@@ -434,7 +448,8 @@
     "passwordTooShort": "Password must be at least 6 characters long",
     "passwordResetSuccessfully": "Password reset successfully",
     "errorResettingPassword": "Error resetting password",
-    "invalidResetLink": "Invalid or expired reset link"
+    "invalidResetLink": "Invalid or expired reset link",
+    "invalidVatPercentage": "VAT percentage must be between 0% and 100%"
   },
   "services": {
     "title": "Services",
@@ -650,7 +665,17 @@
     "totalArchived": "Total Archived",
     "archivedThisMonth": "This Month",
     "archivedThisYear": "This Year",
-    "totalArchivedValue": "Total Value"
+    "totalArchivedValue": "Total Value",
+    "baseAmount": "Net",
+    "vat": "VAT",
+    "total": "Total",
+    "tooltips": {
+      "generatePDF": "Download PDF receipt",
+      "editContract": "Edit contract details",
+      "bookReservation": "Book a new reservation with this package",
+      "cannotBook": "Cannot book reservation",
+      "deleteContract": "Archive this contract permanently"
+    }
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -686,7 +711,8 @@
     "streetAddressPlaceholder": "e.g., Via Roma 123",
     "postalCodePlaceholder": "e.g., 20121",
     "locationDescriptionPlaceholder": "Describe special features, access instructions, or additional details about this location...",
-    "newPasswordPlaceholder": "Enter your new password"
+    "newPasswordPlaceholder": "Enter your new password",
+    "vatPercentagePlaceholder": "22.00"
   },
   "bookings": {
     "title": "Bookings Calendar",

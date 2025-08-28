@@ -160,7 +160,7 @@ const Register = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className="form-input"
+                className="form-input has-right-icon"  // ADD has-right-icon class
                 placeholder={t('placeholders.passwordPlaceholder')}
                 value={formData.password}
                 onChange={handleChange}
@@ -168,7 +168,7 @@ const Register = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon input-icon-right"
+                className="input-icon-right"  // Remove "input-icon" class
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -187,12 +187,19 @@ const Register = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className="form-input"
+                className="form-input has-right-icon"
                 placeholder={t('auth.confirmPassword')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
-              <Lock size={16} className="input-icon input-icon-left" />
+              <Lock size={16} className="input-icon-left" />
+              <button
+                type="button"
+                className="input-icon-right"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 

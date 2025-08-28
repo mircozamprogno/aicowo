@@ -11,6 +11,23 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const { t } = useTranslation();
   const isEditing = !!location;
   
+  // VAT defaults by country
+  const getDefaultVatByCountry = (country) => {
+    const vatRates = {
+      'Italy': 22.00,
+      'France': 20.00,
+      'Germany': 19.00,
+      'Spain': 21.00,
+      'Switzerland': 7.70,
+      'Austria': 20.00,
+      'Netherlands': 21.00,
+      'Belgium': 21.00,
+      'Portugal': 23.00,
+      'United Kingdom': 20.00
+    };
+    return vatRates[country] || 22.00;
+  };
+
   const [formData, setFormData] = useState({
     location_name: '',
     address: '',
@@ -22,7 +39,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     phone: '',
     email: '',
     description: '',
-    timezone: 'Europe/Rome'
+    timezone: 'Europe/Rome',
+    vat_percentage: 22.00
   });
 
   const [resources, setResources] = useState([
@@ -57,7 +75,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         phone: location.phone || '',
         email: location.email || '',
         description: location.description || '',
-        timezone: location.timezone || 'Europe/Rome'
+        timezone: location.timezone || 'Europe/Rome',
+        vat_percentage: location.vat_percentage || getDefaultVatByCountry(location.country || 'Italy')
       });
 
       // Set resources data
@@ -81,18 +100,20 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       loadExistingImages();
     } else {
       // Reset form for new location with partner defaults
+      const defaultCountry = partnerData?.country || 'Italy';
       const defaultFormData = {
         location_name: '',
         address: partnerData?.address || '',
         city: partnerData?.city || '',
         postal_code: partnerData?.zip || '',
-        country: partnerData?.country || 'Italy',
+        country: defaultCountry,
         latitude: null,
         longitude: null,
         phone: partnerData?.phone || '',
         email: partnerData?.email || '',
         description: '',
-        timezone: 'Europe/Rome'
+        timezone: 'Europe/Rome',
+        vat_percentage: getDefaultVatByCountry(defaultCountry)
       };
       
       setFormData(defaultFormData);
@@ -107,6 +128,16 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       });
     }
   }, [location, partnerData]);
+
+  // Update VAT when country changes (only for new locations)
+  useEffect(() => {
+    if (!isEditing) {
+      setFormData(prev => ({
+        ...prev,
+        vat_percentage: getDefaultVatByCountry(prev.country)
+      }));
+    }
+  }, [formData.country, isEditing]);
 
   const loadExistingImages = async () => {
     if (!location?.id) return;
@@ -125,9 +156,18 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special handling for VAT percentage
+    if (name === 'vat_percentage') {
+      const numValue = parseFloat(value);
+      if (value !== '' && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
+        return; // Don't update if invalid
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'vat_percentage' ? (value === '' ? 0 : parseFloat(value)) : value
     }));
   };
 
@@ -278,6 +318,12 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       return false;
     }
 
+    // Validate VAT percentage
+    if (formData.vat_percentage < 0 || formData.vat_percentage > 100) {
+      toast.error(t('messages.invalidVatPercentage'));
+      return false;
+    }
+
     for (let i = 0; i < resources.length; i++) {
       const resource = resources[i];
       if (!resource.resource_name.trim()) {
@@ -320,7 +366,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             phone: formData.phone.trim() || null,
             email: formData.email.trim() || null,
             description: formData.description.trim() || null,
-            timezone: formData.timezone
+            timezone: formData.timezone,
+            vat_percentage: formData.vat_percentage
           })
           .eq('id', location.id)
           .select()
@@ -355,7 +402,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             phone: formData.phone.trim() || null,
             email: formData.email.trim() || null,
             description: formData.description.trim() || null,
-            timezone: formData.timezone
+            timezone: formData.timezone,
+            vat_percentage: formData.vat_percentage
           }])
           .select()
           .single();
@@ -541,6 +589,22 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               </div>
 
+              {/* VAT Information Summary */}
+              <div className="vat-summary">
+                <h4 className="vat-summary-title">
+                  <span className="vat-icon">🧾</span>
+                  {t('locations.vatInformation')}
+                </h4>
+                <div className="vat-summary-content">
+                  <div className="vat-summary-display">
+                    <span className="vat-percentage-large">{formData.vat_percentage}%</span>
+                    <span className="vat-country-label">
+                      {t('locations.vatFor')} {formData.country}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Resource Summary */}
               <div className="resource-summary">
                 <h4 className="resource-summary-title">{t('locations.resourcesSummary')}</h4>
@@ -686,29 +750,71 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label htmlFor="timezone" className="form-label">
-                        {t('locations.timezone')}
-                      </label>
-                      <select
-                        id="timezone"
-                        name="timezone"
-                        className="form-select"
-                        value={formData.timezone}
-                        onChange={handleChange}
-                      >
-                        <option value="Europe/Rome">Europe/Rome (GMT+1)</option>
-                        <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
-                        <option value="Europe/Berlin">Europe/Berlin (GMT+1)</option>
-                        <option value="Europe/Madrid">Europe/Madrid (GMT+1)</option>
-                        <option value="Europe/London">Europe/London (GMT+0)</option>
-                        <option value="Europe/Zurich">Europe/Zurich (GMT+1)</option>
-                      </select>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label htmlFor="timezone" className="form-label">
+                          {t('locations.timezone')}
+                        </label>
+                        <select
+                          id="timezone"
+                          name="timezone"
+                          className="form-select"
+                          value={formData.timezone}
+                          onChange={handleChange}
+                        >
+                          <option value="Europe/Rome">Europe/Rome (GMT+1)</option>
+                          <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
+                          <option value="Europe/Berlin">Europe/Berlin (GMT+1)</option>
+                          <option value="Europe/Madrid">Europe/Madrid (GMT+1)</option>
+                          <option value="Europe/London">Europe/London (GMT+0)</option>
+                          <option value="Europe/Zurich">Europe/Zurich (GMT+1)</option>
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="vat_percentage" className="form-label">
+                          {t('locations.vatPercentage')} *
+                        </label>
+                        <div className="vat-input-container">
+                          <input
+                            id="vat_percentage"
+                            name="vat_percentage"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            required
+                            className="form-input vat-input"
+                            placeholder={t('placeholders.vatPercentagePlaceholder')}
+                            value={formData.vat_percentage}
+                            onChange={handleChange}
+                          />
+                          <span className="vat-percentage-symbol">%</span>
+                        </div>
+                        <p className="vat-help-text">
+                          {t('locations.vatHelpText')}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* VAT Country Defaults Info */}
+                    <div className="vat-country-info">
+                      <h5 className="vat-info-title">💡 {t('locations.vatCountryDefaults')}</h5>
+                      <div className="vat-defaults-grid">
+                        <div className="vat-default-item">🇮🇹 Italy: 22%</div>
+                        <div className="vat-default-item">🇫🇷 France: 20%</div>
+                        <div className="vat-default-item">🇩🇪 Germany: 19%</div>
+                        <div className="vat-default-item">🇪🇸 Spain: 21%</div>
+                        <div className="vat-default-item">🇨🇭 Switzerland: 7.7%</div>
+                        <div className="vat-default-item">🇬🇧 UK: 20%</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
+              {/* Rest of the tabs (address, location, resources, images) remain the same as your original code */}
+              
               {/* Address Tab */}
               {activeTab === 'address' && (
                 <div className="address-tab">
@@ -871,155 +977,157 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
               {/* Resources Tab */}
               {activeTab === 'resources' && (
                 <div className="resources-tab">
-                  <div className="resources-management-header">
-                    <h3 className="resources-management-title">
-                      <Calendar />
-                      {t('locations.availableResources')}
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={addResource}
-                      className="add-resource-button"
-                    >
-                      <Plus />
-                      {t('locations.addResource')}
-                    </button>
-                  </div>
+                  <div className="resources-content">
+                    <div className="resources-management-header">
+                      <h3 className="resources-management-title">
+                        <Calendar />
+                        {t('locations.availableResources')}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={addResource}
+                        className="add-resource-button"
+                      >
+                        <Plus />
+                        {t('locations.addResource')}
+                      </button>
+                    </div>
 
-                  <div className="resources-list">
-                    {resources.map((resource, index) => (
-                      <div key={index} className="resource-item">
-                        <div className="resource-item-header">
-                          <div className="resource-item-info">
-                            <div className="resource-number-badge">
-                              {index + 1}
+                    <div className="resources-list">
+                      {resources.map((resource, index) => (
+                        <div key={index} className="resource-item">
+                          <div className="resource-item-header">
+                            <div className="resource-item-info">
+                              <div className="resource-number-badge">
+                                {index + 1}
+                              </div>
+                              <div className="resource-type-info">
+                                {getResourceIcon(resource.resource_type)}
+                                {getResourceTypeLabel(resource.resource_type)}
+                              </div>
                             </div>
-                            <div className="resource-type-info">
-                              {getResourceIcon(resource.resource_type)}
-                              {getResourceTypeLabel(resource.resource_type)}
-                            </div>
+                            {resources.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeResource(index)}
+                                className="resource-remove-button"
+                              >
+                                <Trash2 />
+                              </button>
+                            )}
                           </div>
-                          {resources.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeResource(index)}
-                              className="resource-remove-button"
-                            >
-                              <Trash2 />
-                            </button>
-                          )}
-                        </div>
-                        
-                        <div className="resource-item-form">
-                          <div className="resource-form-grid">
-                            <div className="resource-form-col-3">
-                              <div className="resource-form-group">
-                                <label className="resource-form-label">
-                                  {t('locations.resourceType')} *
-                                </label>
-                                <select
-                                  className="resource-form-select"
-                                  value={resource.resource_type}
-                                  onChange={(e) => handleResourceChange(index, 'resource_type', e.target.value)}
-                                  required
-                                >
-                                  <option value="scrivania">{t('locations.scrivania')}</option>
-                                  <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
-                                </select>
+                          
+                          <div className="resource-item-form">
+                            <div className="resource-form-grid">
+                              <div className="resource-form-col-3">
+                                <div className="resource-form-group">
+                                  <label className="resource-form-label">
+                                    {t('locations.resourceType')} *
+                                  </label>
+                                  <select
+                                    className="resource-form-select"
+                                    value={resource.resource_type}
+                                    onChange={(e) => handleResourceChange(index, 'resource_type', e.target.value)}
+                                    required
+                                  >
+                                    <option value="scrivania">{t('locations.scrivania')}</option>
+                                    <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
+                                  </select>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div className="resource-form-col-5">
-                              <div className="resource-form-group">
-                                <label className="resource-form-label">
-                                  {t('locations.resourceName')} *
-                                </label>
-                                <input
-                                  type="text"
-                                  className="resource-form-input"
-                                  placeholder={t('placeholders.resourceNamePlaceholder')}
-                                  value={resource.resource_name}
-                                  onChange={(e) => handleResourceChange(index, 'resource_name', e.target.value)}
-                                  required
-                                />
+                              
+                              <div className="resource-form-col-5">
+                                <div className="resource-form-group">
+                                  <label className="resource-form-label">
+                                    {t('locations.resourceName')} *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    className="resource-form-input"
+                                    placeholder={t('placeholders.resourceNamePlaceholder')}
+                                    value={resource.resource_name}
+                                    onChange={(e) => handleResourceChange(index, 'resource_name', e.target.value)}
+                                    required
+                                  />
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div className="resource-form-col-2">
-                              <div className="resource-form-group">
-                                <label className="resource-form-label">
-                                  {t('locations.quantity')} *
-                                </label>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max="999"
-                                  className="resource-form-input"
-                                  value={resource.quantity}
-                                  onChange={(e) => handleResourceChange(index, 'quantity', e.target.value)}
-                                  required
-                                />
+                              
+                              <div className="resource-form-col-2">
+                                <div className="resource-form-group">
+                                  <label className="resource-form-label">
+                                    {t('locations.quantity')} *
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="999"
+                                    className="resource-form-input"
+                                    value={resource.quantity}
+                                    onChange={(e) => handleResourceChange(index, 'quantity', e.target.value)}
+                                    required
+                                  />
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div className="resource-form-col-2">
-                              <div className="resource-form-group">
-                                <label className="resource-form-label">
-                                  {t('locations.status')}
-                                </label>
-                                <div className="resource-status-container">
-                                  <span className="resource-status-badge">
-                                    {t('locations.available')}
-                                  </span>
+                              
+                              <div className="resource-form-col-2">
+                                <div className="resource-form-group">
+                                  <label className="resource-form-label">
+                                    {t('locations.status')}
+                                  </label>
+                                  <div className="resource-status-container">
+                                    <span className="resource-status-badge">
+                                      {t('locations.available')}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="resource-description-group">
+                                <div className="resource-form-group">
+                                  <label className="resource-form-label">
+                                    {t('locations.description')} <span style={{color: '#6b7280'}}>({t('common.optional')})</span>
+                                  </label>
+                                  <textarea
+                                    rows={2}
+                                    className="resource-form-textarea"
+                                    placeholder={t('placeholders.resourceDescriptionPlaceholder')}
+                                    value={resource.description}
+                                    onChange={(e) => handleResourceChange(index, 'description', e.target.value)}
+                                  />
                                 </div>
                               </div>
                             </div>
-                            
-                            <div className="resource-description-group">
-                              <div className="resource-form-group">
-                                <label className="resource-form-label">
-                                  {t('locations.description')} <span style={{color: '#6b7280'}}>({t('common.optional')})</span>
-                                </label>
-                                <textarea
-                                  rows={2}
-                                  className="resource-form-textarea"
-                                  placeholder={t('placeholders.resourceDescriptionPlaceholder')}
-                                  value={resource.description}
-                                  onChange={(e) => handleResourceChange(index, 'description', e.target.value)}
-                                />
-                              </div>
-                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
 
-                  {/* Examples section */}
-                  <div className="examples-section">
-                    <h4 className="examples-title">📋 {t('locations.resourceExamples')}</h4>
-                    <div className="examples-grid">
-                      <div className="example-category">
-                        <div className="example-category-header">
-                          <Monitor />
-                          {t('locations.scrivania')}:
+                    {/* Examples section */}
+                    <div className="examples-section">
+                      <h4 className="examples-title">📋 {t('locations.resourceExamples')}</h4>
+                      <div className="examples-grid">
+                        <div className="example-category">
+                          <div className="example-category-header">
+                            <Monitor />
+                            {t('locations.scrivania')}:
+                          </div>
+                          <ul className="example-list">
+                            <li>• {t('locations.hotDeskExample')}</li>
+                            <li>• {t('locations.privateOfficeExample')}</li>
+                            <li>• {t('locations.standingDeskExample')}</li>
+                          </ul>
                         </div>
-                        <ul className="example-list">
-                          <li>• {t('locations.hotDeskExample')}</li>
-                          <li>• {t('locations.privateOfficeExample')}</li>
-                          <li>• {t('locations.standingDeskExample')}</li>
-                        </ul>
-                      </div>
-                      <div className="example-category">
-                        <div className="example-category-header">
-                          <Users />
-                          {t('locations.salaRiunioni')}:
+                        <div className="example-category">
+                          <div className="example-category-header">
+                            <Users />
+                            {t('locations.salaRiunioni')}:
+                          </div>
+                          <ul className="example-list">
+                            <li>• {t('locations.conferenceRoomExample')}</li>
+                            <li>• {t('locations.phoneBoothExample')}</li>
+                            <li>• {t('locations.trainingRoomExample')}</li>
+                          </ul>
                         </div>
-                        <ul className="example-list">
-                          <li>• {t('locations.conferenceRoomExample')}</li>
-                          <li>• {t('locations.phoneBoothExample')}</li>
-                          <li>• {t('locations.trainingRoomExample')}</li>
-                        </ul>
                       </div>
                     </div>
                   </div>

@@ -266,12 +266,8 @@ const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid
                   onChange={handleChange}
                 >
                   <option value="individual">{t('customers.individual')}</option>
-                  <option value="freelancer">{t('customers.freelancer')}</option>
-                  <option value="entrepeneur">{t('customers.entrepeneur')}</option>
-                  <option value="employee">{t('customers.employee')}</option>
-                  <option value="tourist">{t('customers.tourist')}</option>
-                  <option value="student">{t('customers.student')}</option>
-                  <option value="affiliated">{t('customers.affiliated')}</option>
+                  <option value="company">{t('customers.company')}</option>
+                  <option value="organization">{t('customers.organization')}</option>
                 </select>
               </div>
               <div className="form-group">
@@ -286,13 +282,9 @@ const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid
                   value={formData.customer_status}
                   onChange={handleChange}
                 >
-                  <option value="tobequalified">{t('customers.tobequalified')}</option>
-                  <option value="qualified">{t('customers.qualified')}</option>
-                  <option value="tobeactivated">{t('customers.tobeactivated')}</option>
                   <option value="active">{t('customers.active')}</option>
-                  <option value="expiring">{t('customers.expiring')}</option>
-                  <option value="toberenewed">{t('customers.toberenewed')}</option>
                   <option value="inactive">{t('customers.inactive')}</option>
+                  <option value="suspended">{t('customers.suspended')}</option>
                 </select>
               </div>
             </div>

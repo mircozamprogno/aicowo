@@ -1,6 +1,7 @@
-import { ChevronDown, Search, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
+import { ChevronDown, Search, Send, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
+import SendInvitationModal from '../components/invitations/SendInvitationModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
@@ -14,13 +15,45 @@ const Invitations = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedInvitations, setSelectedInvitations] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [showInvitation, setShowInvitation] = useState(false);
+  const [currentPartner, setCurrentPartner] = useState(null);
   
   const { profile } = useAuth();
   const { t } = useTranslation();
 
   useEffect(() => {
     fetchInvitations();
+    if (profile?.role === 'admin') {
+      fetchCurrentPartner();
+    }
   }, [profile]);
+
+  const fetchCurrentPartner = async () => {
+    if (!profile?.partner_uuid) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('partner_uuid', profile.partner_uuid)
+        .single();
+
+      if (error) {
+        console.error('Error fetching current partner:', error);
+        // Mock data for development
+        setCurrentPartner({
+          partner_uuid: profile.partner_uuid,
+          first_name: 'TechHub',
+          second_name: 'Milano',
+          company_name: 'TechHub Milano SRL'
+        });
+      } else {
+        setCurrentPartner(data);
+      }
+    } catch (error) {
+      console.error('Error fetching current partner:', error);
+    }
+  };
 
   const fetchInvitations = async () => {
     if (!profile) return;
@@ -36,7 +69,8 @@ const Invitations = () => {
           partners (
             first_name,
             second_name,
-            company_name
+            company_name,
+            email
           )
         `)
         .order('created_at', { ascending: false });
@@ -85,7 +119,8 @@ const Invitations = () => {
             partners: {
               first_name: 'TechHub',
               second_name: 'Milano',
-              company_name: 'TechHub Milano SRL'
+              company_name: 'TechHub Milano SRL',
+              email: 'info@techhub.it'
             }
           },
           {
@@ -102,7 +137,8 @@ const Invitations = () => {
             partners: {
               first_name: 'TechHub',
               second_name: 'Milano',
-              company_name: 'TechHub Milano SRL'
+              company_name: 'TechHub Milano SRL',
+              email: 'info@techhub.it'
             }
           },
           {
@@ -119,7 +155,8 @@ const Invitations = () => {
             partners: {
               first_name: 'Startup',
               second_name: 'Space',
-              company_name: 'Startup Space SRL'
+              company_name: 'Startup Space SRL',
+              email: 'hello@startupspace.com'
             }
           }
         ];
@@ -163,11 +200,13 @@ const Invitations = () => {
         const lastName = inv.invited_last_name?.toLowerCase() || '';
         const partnerName = inv.partners?.company_name?.toLowerCase() || 
                            `${inv.partners?.first_name || ''} ${inv.partners?.second_name || ''}`.toLowerCase();
+        const partnerEmail = inv.partners?.email?.toLowerCase() || '';
         
         return email.includes(searchLower) || 
                firstName.includes(searchLower) || 
                lastName.includes(searchLower) ||
-               partnerName.includes(searchLower);
+               partnerName.includes(searchLower) ||
+               partnerEmail.includes(searchLower);
       });
     }
 
@@ -279,6 +318,14 @@ const Invitations = () => {
     setSelectedInvitations(newSelected);
   };
 
+  const handleSendInvitation = () => {
+    setShowInvitation(true);
+  };
+
+  const handleCloseInvitation = () => {
+    setShowInvitation(false);
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
@@ -334,23 +381,40 @@ const Invitations = () => {
             }
           </p>
         </div>
-        <div className="invitations-stats">
-          <div className="stat-item">
-            <span className="stat-label">{t('invitations.totalInvitations')}</span>
-            <span className="stat-value">{allInvitations.length}</span>
+        
+        {/* Stats and Actions Container */}
+        <div className="invitations-stats-and-actions">
+          <div className="invitations-stats">
+            <div className="stat-item">
+              <span className="stat-label">{t('invitations.totalInvitations')}</span>
+              <span className="stat-value">{allInvitations.length}</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">{t('invitations.pendingInvitations')}</span>
+              <span className="stat-value">
+                {allInvitations.filter(inv => inv.status === 'pending').length}
+              </span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">{t('invitations.usedInvitations')}</span>
+              <span className="stat-value">
+                {allInvitations.filter(inv => inv.status === 'used').length}
+              </span>
+            </div>
           </div>
-          <div className="stat-item">
-            <span className="stat-label">{t('invitations.pendingInvitations')}</span>
-            <span className="stat-value">
-              {allInvitations.filter(inv => inv.status === 'pending').length}
-            </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">{t('invitations.usedInvitations')}</span>
-            <span className="stat-value">
-              {allInvitations.filter(inv => inv.status === 'used').length}
-            </span>
-          </div>
+          
+          {/* Send Invitation button only for partner admins */}
+          {profile?.role === 'admin' && currentPartner && (
+            <div className="invitations-header-actions">
+              <button 
+                className="send-invitation-btn"
+                onClick={handleSendInvitation}
+              >
+                <Send size={16} />
+                {t('invitations.sendInvitation')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -420,9 +484,12 @@ const Invitations = () => {
                 <th className="invitations-table-header">
                   {t('invitations.invitee')}
                 </th>
-                <th className="invitations-table-header">
-                  {t('auth.email')}
-                </th>
+                {/* Remove email column for superadmin, keep for admin */}
+                {profile?.role === 'admin' && (
+                  <th className="invitations-table-header">
+                    {t('auth.email')}
+                  </th>
+                )}
                 {profile?.role === 'superadmin' && (
                   <th className="invitations-table-header hide-on-mobile">
                     {t('partners.partner')}
@@ -462,13 +529,20 @@ const Invitations = () => {
                         {invitation.invited_first_name} {invitation.invited_last_name}
                       </div>
                       <div className="invitee-created">
+                        {invitation.invited_email}
+                      </div>
+                      <div className="invitee-created">
                         {t('common.createdAt')}: {formatDate(invitation.created_at)}
                       </div>
                     </div>
                   </td>
-                  <td className="invitations-table-cell">
-                    {invitation.invited_email}
-                  </td>
+                  {/* Keep email column for admin */}
+                  {profile?.role === 'admin' && (
+                    <td className="invitations-table-cell">
+                      {invitation.invited_email}
+                    </td>
+                  )}
+                  {/* Updated Partner column for superadmin */}
                   {profile?.role === 'superadmin' && (
                     <td className="invitations-table-cell hide-on-mobile">
                       <div className="partner-info">
@@ -477,6 +551,9 @@ const Invitations = () => {
                             ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
                             : invitation.partners?.first_name || invitation.partners?.company_name
                           }
+                        </div>
+                        <div className="partner-email">
+                          {invitation.partners?.email}
                         </div>
                       </div>
                     </td>
@@ -586,6 +663,16 @@ const Invitations = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Send Invitation Modal - Only for partner admins */}
+      {profile?.role === 'admin' && currentPartner && (
+        <SendInvitationModal
+          isOpen={showInvitation}
+          onClose={handleCloseInvitation}
+          partner={currentPartner}
+          currentUserRole={profile?.role}
+        />
       )}
     </div>
   );

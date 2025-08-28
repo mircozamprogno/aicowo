@@ -1,5 +1,6 @@
 import { Building2, Calendar, Edit2, Image, Mail, MapPin, Monitor, Navigation, Phone, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext'; // ADD THIS IMPORT
 import { useTranslation } from '../../contexts/LanguageContext';
 import { imageService } from '../../services/imageService';
 import { supabase } from '../../services/supabase';
@@ -17,7 +18,11 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
   const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const { profile } = useAuth(); // ADD THIS LINE
   const { t } = useTranslation();
+
+  // ADD THIS LINE - Check if user can manage locations (only superadmin can add new locations)
+  const canManageLocations = profile?.role === 'superadmin';
 
   useEffect(() => {
     if (isOpen && partner) {
@@ -370,10 +375,13 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
             {/* Sidebar */}
             <div className="locations-sidebar">
               <div className="locations-sidebar-header">
-                <button onClick={handleAddLocation} className="locations-add-button">
-                  <Plus />
-                  {t('locations.addLocation')}
-                </button>
+                {/* WRAP THE ADD BUTTON IN ROLE CHECK */}
+                {canManageLocations && (
+                  <button onClick={handleAddLocation} className="locations-add-button">
+                    <Plus />
+                    {t('locations.addLocation')}
+                  </button>
+                )}
               </div>
 
               {/* Location Stats */}
@@ -466,13 +474,16 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                 >
                                   <Edit2 />
                                 </button>
-                                <button
-                                  onClick={() => handleDeleteLocation(location)}
-                                  className="location-nav-action delete"
-                                  title={t('common.delete')}
-                                >
-                                  <Trash2 />
-                                </button>
+                                {/* Only superadmin can delete locations */}
+                                {canManageLocations && (
+                                  <button
+                                    onClick={() => handleDeleteLocation(location)}
+                                    className="location-nav-action delete"
+                                    title={t('common.delete')}
+                                  >
+                                    <Trash2 />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -499,10 +510,13 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                     <Building2 className="locations-empty-icon" />
                     <h3 className="locations-empty-title">{t('locations.noLocationsYet')}</h3>
                     <p className="locations-empty-description">{t('locations.getStartedByAdding')}</p>
-                    <button onClick={handleAddLocation} className="locations-empty-button">
-                      <Plus />
-                      {t('locations.addFirstLocation')}
-                    </button>
+                    {/* WRAP THE EMPTY STATE ADD BUTTON IN ROLE CHECK TOO */}
+                    {canManageLocations && (
+                      <button onClick={handleAddLocation} className="locations-empty-button">
+                        <Plus />
+                        {t('locations.addFirstLocation')}
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -623,13 +637,16 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
                                 >
                                   <Edit2 />
                                 </button>
-                                <button
-                                  onClick={() => handleDeleteLocation(location)}
-                                  className="location-card-action delete"
-                                  title={t('common.delete')}
-                                >
-                                  <Trash2 />
-                                </button>
+                                {/* Only superadmin can delete locations */}
+                                {canManageLocations && (
+                                  <button
+                                    onClick={() => handleDeleteLocation(location)}
+                                    className="location-card-action delete"
+                                    title={t('common.delete')}
+                                  >
+                                    <Trash2 />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -747,7 +764,7 @@ const LocationsList = ({ partner, isOpen, onClose }) => {
         </div>
       </div>
 
-      {/* Location Form Modal */}
+      {/* Location Form Modal - Partners can edit existing locations */}
       <LocationForm
         isOpen={showLocationForm}
         onClose={handleLocationFormClose}

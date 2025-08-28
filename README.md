@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.08.28 V 0.400 Iva, Status, Tipo cliente
 2025.08.23 V 0.320 Reset Password
            V 0.310 Powercowo logo
            V 0.300 Archived contract and finale delete

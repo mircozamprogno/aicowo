@@ -34,12 +34,20 @@
     "actions": "Azioni",
     "taxInfo": "Informazioni Fiscali",
     "billing": "Fatturazione",
-    "individual": "Privato",
-    "company": "Azienda",
-    "organization": "Organizzazione",
+    "individual": "Individuale",
+    "freelancer": "Free Lance",
+    "entrepeneur": "Imprenditore",
+    "employee": "Impiegato",
+    "tourist": "Turista",
+    "student": "Studente",
+    "affiliated": "Affiliato con portale",
+    "tobequalified": "Da qualificare",
+    "qualified": "Qualificato",
+    "tobeactivated": "Da attivare",
     "active": "Attivo",
-    "inactive": "Inattivo",
-    "suspended": "Sospeso",
+    "expiring": "Scaduto",
+    "toberenewed": "Da rinnovare",
+    "inactive": "Non attivo",
     "address": "Indirizzo",
     "zip": "CAP",
     "city": "Città",
@@ -199,7 +207,13 @@
     "addressNotFound": "Indirizzo non trovato. Controlla l'indirizzo e riprova.",
     "geocodingError": "Errore durante la geocodifica dell'indirizzo",
     "mapError": "Errore caricamento mappa",
-    "confirmDeleteLocation": "Sei sicuro di voler eliminare questa sede?"
+    "confirmDeleteLocation": "Sei sicuro di voler eliminare questa sede?",
+    "vatPercentage": "Percentuale IVA",
+    "vatRate": "Aliquota IVA", 
+    "vatInformation": "Informazioni IVA",
+    "vatFor": "IVA per",
+    "vatCountryDefaults": "Aliquote IVA per Paese",
+    "vatHelpText": "Inserisci la percentuale IVA applicata ai servizi in questa sede. Sarà utilizzata per fatturare i clienti che utilizzano servizi in questa sede."
   },
   "auth": {
     "signIn": "Accedi",
@@ -435,7 +449,8 @@
     "passwordTooShort": "La password deve contenere almeno 6 caratteri",
     "passwordResetSuccessfully": "Password reimpostata con successo",
     "errorResettingPassword": "Errore nel reimpostare la password",
-    "invalidResetLink": "Link di reset non valido o scaduto"
+    "invalidResetLink": "Link di reset non valido o scaduto",
+    "invalidVatPercentage": "La percentuale IVA deve essere compresa tra 0% e 100%"
   },
   "services": {
     "title": "Servizi",
@@ -651,7 +666,17 @@
     "totalArchived": "Totale Archiviati",
     "archivedThisMonth": "Questo Mese",
     "archivedThisYear": "Quest'Anno",
-    "totalArchivedValue": "Valore Totale"
+    "totalArchivedValue": "Valore Totale",
+    "baseAmount": "Netto",
+    "vat": "IVA",
+    "total": "Totale",
+    "tooltips": {
+      "generatePDF": "Scarica ricevuta PDF",
+      "editContract": "Modifica dettagli contratto",
+      "bookReservation": "Prenota una nuova prenotazione con questo pacchetto", 
+      "cannotBook": "Impossibile prenotare",
+      "deleteContract": "Archivia questo contratto definitivamente"
+    }
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",
@@ -687,7 +712,8 @@
     "streetAddressPlaceholder": "es. Via Roma 123",
     "postalCodePlaceholder": "es. 20121",
     "locationDescriptionPlaceholder": "Descrivi caratteristiche speciali, istruzioni di accesso o dettagli aggiuntivi su questa sede...",
-    "newPasswordPlaceholder": "Inserisci la tua nuova password"
+    "newPasswordPlaceholder": "Inserisci la tua nuova password",
+    "vatPercentagePlaceholder": "22,00"
   },
   "bookings": {
     "title": "Calendario Prenotazioni",

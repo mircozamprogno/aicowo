@@ -303,37 +303,35 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(secondaryColor);
     
-    // Service details table with better column structure
+    // Service details table
     const tableStartY = currentY;
-
+    
     // Table headers
     pdf.setFillColor(240, 240, 240);
     pdf.rect(margin, currentY, contentWidth, 8, 'F');
-
+    
     currentY += 6;
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(9);
-
-    // Adjusted column positions for better spacing
-    const col1X = margin + 2;       // Service Name (reduced width)
-    const col2X = margin + 45;      // Type (reduced width) 
-    const col3X = margin + 70;      // Location (reduced width)
-    const col4X = margin + 105;     // Cost Label
-    const col5X = margin + 140;     // Cost Amount
-
+    
+    const col1X = margin + 2;
+    const col2X = margin + 60;
+    const col3X = margin + 100;
+    const col4X = margin + 140;
+    
     pdf.text(t('services.serviceName') || 'Servizio', col1X, currentY);
     pdf.text(t('services.type') || 'Tipo', col2X, currentY);
     pdf.text(t('contracts.location') || 'Sede', col3X, currentY);
     pdf.text(t('contracts.cost') || 'Costo', col4X, currentY);
-
+    
     currentY += 8;
-
-    // Table content with VAT calculations
+    
+    // Table content
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
-
+    
     const serviceName = contract.service_name || 'N/A';
-
+    
     // Fix service type translation
     let serviceType = 'N/A';
     if (contract.service_type) {
@@ -351,70 +349,30 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
           serviceType = contract.service_type;
       }
     }
-
+    
     const locationName = contract.location_name || 'N/A';
-
-    // VAT Calculations
-    const baseAmount = contract.service_cost || 0;
-    const vatPercentage = contract.location_data?.vat_percentage || 0;
-    const vatAmount = baseAmount * (vatPercentage / 100);
-    const totalAmount = baseAmount + vatAmount;
-
-    // Service basic info (first row)
-    const startY = currentY;
-    currentY = addWrappedText(serviceName, col1X, currentY, 40, 4);
-    const serviceNameHeight = currentY - startY;
-
-    // Reset to baseline for other columns
-    currentY = startY;
+    const cost = formatCurrency(contract.service_cost, contract.service_currency);
+    
+    // Add service row
+    currentY = addWrappedText(serviceName, col1X, currentY, 55, 4);
+    currentY -= 4; // Reset to row baseline
     pdf.text(serviceType, col2X, currentY);
-    currentY = addWrappedText(locationName, col3X, currentY, 32, 4);
-    const locationHeight = currentY - startY;
-
-    // Reset to service row baseline
-    currentY = startY;
-
-    // Cost breakdown in two properly aligned columns
-    pdf.setTextColor(secondaryColor);
-    pdf.setFontSize(9);
-
-    // Base amount row
-    pdf.text(t('contracts.baseAmount') || 'Netto', col4X, currentY);
-    pdf.text(formatCurrency(baseAmount, contract.service_currency), col5X + 25 - pdf.getTextWidth(formatCurrency(baseAmount, contract.service_currency)), currentY);
-    currentY += 5;
-
-    // VAT row
-    const vatLabel = `${t('contracts.vat') || 'IVA'} (${vatPercentage}%):`;
-    pdf.text(vatLabel, col4X, currentY);
-    pdf.text(formatCurrency(vatAmount, contract.service_currency), col5X + 25 - pdf.getTextWidth(formatCurrency(vatAmount, contract.service_currency)), currentY);
-    currentY += 5;
-
-    // Total row with emphasis
-    pdf.setFont('helvetica', 'bold');
+    pdf.text(locationName, col3X, currentY);
     pdf.setTextColor(primaryColor);
-    pdf.text(t('contracts.total') || 'Totale', col4X, currentY);
-    const totalText = formatCurrency(totalAmount, contract.service_currency);
-    pdf.text(totalText, col5X + 25 - pdf.getTextWidth(totalText), currentY);
-
-    // Reset formatting
-    pdf.setFont('helvetica', 'normal');
+    pdf.text(cost, col4X, currentY);
     pdf.setTextColor(secondaryColor);
-    pdf.setFontSize(9);
-
-    // Ensure we move past all content (service name, location, or cost breakdown)
-    const costBreakdownHeight = 15; // 3 rows * 5 points each
-    currentY = startY + Math.max(serviceNameHeight, locationHeight, costBreakdownHeight);
+    
     currentY += 8;
-
-    // Resource information (keep existing code)
+    
+    // Resource information
     if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
       pdf.setFontSize(8);
       pdf.setTextColor('#6b7280');
       pdf.text(`${t('contracts.resource') || 'Risorsa'}: ${contract.resource_name}`, col1X, currentY);
       currentY += 5;
     }
-
-    // Package entries info (keep existing code)
+    
+    // Package entries info
     if (contract.service_type === 'pacchetto' && contract.service_max_entries) {
       pdf.setFontSize(8);
       pdf.setTextColor('#6b7280');

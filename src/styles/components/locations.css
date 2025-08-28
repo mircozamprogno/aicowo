@@ -2972,3 +2972,329 @@ input:focus, select:focus, textarea:focus {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+
+/* ===== VAT/IVA Styles for Locations Components ===== */
+
+/* VAT Summary in Sidebar */
+.vat-summary {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.vat-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+}
+
+.vat-icon {
+  font-size: 1rem;
+}
+
+.vat-summary-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vat-summary-display {
+  text-align: center;
+}
+
+.vat-percentage-large {
+  display: block;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #16a34a;
+  line-height: 1;
+}
+
+.vat-country-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* VAT Input Container */
+.vat-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.vat-input {
+  padding-right: 2rem !important;
+}
+
+.vat-percentage-symbol {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.875rem;
+  pointer-events: none;
+}
+
+/* VAT Help Text */
+.vat-help-text {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* VAT Country Defaults Info */
+.vat-country-info {
+  margin-top: 1.5rem;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.vat-info-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0369a1;
+  margin: 0 0 0.75rem 0;
+}
+
+.vat-defaults-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.vat-default-item {
+  font-size: 0.75rem;
+  color: #0369a1;
+  padding: 0.375rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 0.25rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* VAT Card Stats */
+.location-card-stat.green svg,
+.location-card-stat.green .vat-icon {
+  color: #16a34a;
+}
+
+/* VAT Display in Location Cards */
+.location-vat-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  padding: 0.5rem;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.location-vat-info .vat-icon {
+  color: #16a34a;
+  font-size: 0.875rem;
+}
+
+.vat-info-text {
+  color: #15803d;
+  font-weight: 500;
+}
+
+.vat-percentage-display {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+/* VAT Badge */
+.vat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.vat-badge .vat-icon {
+  font-size: 0.75rem;
+}
+
+/* Enhanced Resource Form Grid for VAT */
+.resource-form-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.resource-form-col-3 {
+  grid-column: span 3;
+}
+
+.resource-form-col-4 {
+  grid-column: span 4;
+}
+
+.resource-form-col-5 {
+  grid-column: span 5;
+}
+
+.resource-form-col-2 {
+  grid-column: span 2;
+}
+
+.resource-description-group {
+  grid-column: span 12;
+}
+
+/* VAT Error States */
+.vat-input.error {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.vat-error-message {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+/* VAT Success States */
+.vat-input.success {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+/* Responsive Design for VAT Elements */
+@media (max-width: 1024px) {
+  .vat-defaults-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  
+  .vat-percentage-large {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .vat-summary {
+    margin-bottom: 1rem;
+  }
+  
+  .vat-defaults-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .vat-default-item {
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.375rem;
+  }
+  
+  .vat-country-info {
+    margin-top: 1rem;
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .vat-summary-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .vat-percentage-large {
+    font-size: 1.25rem;
+  }
+  
+  .vat-country-label {
+    margin-top: 0;
+    font-size: 0.6875rem;
+  }
+  
+  .vat-defaults-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .location-vat-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
+/* Focus States */
+.vat-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Animation for VAT Changes */
+.vat-percentage-large {
+  transition: color 0.2s ease;
+}
+
+.vat-summary-display:hover .vat-percentage-large {
+  color: #15803d;
+}
+
+/* VAT Validation Indicators */
+.vat-input-container::after {
+  content: '';
+  position: absolute;
+  right: 2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.vat-input-container.valid::after {
+  background-color: #16a34a;
+  opacity: 1;
+}
+
+.vat-input-container.invalid::after {
+  background-color: #dc2626;
+  opacity: 1;
+}
+
+/* Print Styles for VAT */
+@media print {
+  .vat-summary,
+  .vat-country-info {
+    background-color: transparent !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .vat-percentage-large {
+    color: #000 !important;
+  }
+  
+  .vat-default-item {
+    background-color: transparent !important;
+    border: 1px solid #000;
+  }
+}
