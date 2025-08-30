@@ -157,8 +157,16 @@ const Contracts = () => {
         
         setContracts(mockContracts);
       } else {
-        setContracts(data || []);
-      }
+      // Process contracts to ensure numeric fields are numbers
+      const processedContracts = (data || []).map(contract => ({
+        ...contract,
+        entries_used: parseFloat(contract.entries_used) || 0,
+        service_max_entries: contract.service_max_entries ? parseFloat(contract.service_max_entries) : null,
+        service_cost: parseFloat(contract.service_cost) || 0
+      }));
+      
+      setContracts(processedContracts);
+    }
     } catch (error) {
       console.error('Error fetching contracts:', error);
       toast.error(t('messages.errorLoadingContracts'));

@@ -688,6 +688,8 @@ const Settings = () => {
                   placeholder={t('placeholders.emailPlaceholder')}
                   value={formData.email}
                   onChange={handleChange}
+                  readOnly   
+
                 />
               </div>
               <div className="form-group">
@@ -741,8 +743,11 @@ const Settings = () => {
                     onChange={handleChange}
                   >
                     <option value="individual">{t('customers.individual')}</option>
-                    <option value="company">{t('customers.company')}</option>
-                    <option value="organization">{t('customers.organization')}</option>
+                    <option value="freelancer">{t('customers.freelancer')}</option>
+                    <option value="entrepeneur">{t('customers.entrepeneur')}</option>
+                    <option value="employee">{t('customers.employee')}</option>
+                    <option value="tourist">{t('customers.tourist')}</option>
+                    <option value="student">{t('customers.student')}</option>
                   </select>
                 </div>
               </div>
@@ -763,9 +768,12 @@ const Settings = () => {
                     value={formData.partner_type}
                     onChange={handleChange}
                   >
-                    <option value="company">{t('partners.company')}</option>
                     <option value="individual">{t('partners.individual')}</option>
-                    <option value="organization">{t('partners.organization')}</option>
+                    <option value="freelancer">{t('partners.freelancer')}</option>
+                    <option value="entrepeneur">{t('partners.entrepeneur')}</option>
+                    <option value="employee">{t('partners.employee')}</option>
+                    <option value="tourist">{t('partners.tourist')}</option>
+                    <option value="student">{t('partners.student')}</option>
                   </select>
                 </div>
                 <div className="form-group">

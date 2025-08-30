@@ -286,9 +286,12 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
                 value={formData.partner_type}
                 onChange={handleChange}
               >
-                <option value="company">{t('partners.company')}</option>
-                <option value="individual">{t('partners.individual')}</option>
-                <option value="organization">{t('partners.organization')}</option>
+                    <option value="individual">{t('partners.individual')}</option>
+                    <option value="freelancer">{t('partners.freelancer')}</option>
+                    <option value="entrepeneur">{t('partners.entrepeneur')}</option>
+                    <option value="employee">{t('partners.employee')}</option>
+                    <option value="tourist">{t('partners.tourist')}</option>
+                    <option value="student">{t('partners.student')}</option>
               </select>
             </div>
             <div className="form-group">

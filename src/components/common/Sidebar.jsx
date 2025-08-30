@@ -20,6 +20,21 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   // State for version info
   const [versionInfo, setVersionInfo] = useState(null);
   
+  // Check if running on localhost
+  const isLocalhost = () => {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1' ||
+           window.location.hostname === '' ||
+           window.location.hostname.startsWith('192.168.') ||
+           window.location.hostname.startsWith('10.') ||
+           window.location.hostname.startsWith('172.');
+  };
+
+  // Alternative: Check if in development mode
+  const isDevelopment = () => {
+    return process.env.NODE_ENV === 'development' || isLocalhost();
+  };
+  
   // Define navigation items based on user role
   const getNavigationItems = () => {
     const baseItems = [
@@ -37,7 +52,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
-      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['admin'] }, // Add this line
+      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['admin'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
@@ -45,7 +60,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       // Regular users see limited options and settings - including Photo Gallery
       { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
-      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['user'] }, // Add this line
+      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['user'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
     ];
@@ -66,9 +81,13 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
     }
   }, [profile]);
 
-  // Fetch version info
+  // Fetch version info - only if not on localhost
   useEffect(() => {
-    fetchVersionInfo();
+    if (!isLocalhost()) {
+      fetchVersionInfo();
+    } else {
+      console.log('🏠 Running on localhost - skipping version fetch');
+    }
   }, []);
 
   const fetchVersionInfo = async () => {
@@ -250,8 +269,8 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
         ))}
       </nav>
 
-      {/* Version Info - Debug Only */}
-      {versionInfo && (
+      {/* Version Info - Only show in production/non-localhost */}
+      {!isLocalhost() && versionInfo && (
         <div className="sidebar-version">
           <div className="version-info">
             <span className="version-commit">{versionInfo.commit}</span>

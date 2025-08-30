@@ -480,9 +480,14 @@ const ContractForm = ({
           throw error;
         }
 
-        // Update booking if it's an abbonamento
-        if (selectedService.service_type === 'abbonamento') {
-          await updateBookingForContract(contractToEdit.id, formData.start_date, calculatedEndDate);
+        // Update booking for abbonamento and free_trial services
+        if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
+          // For free trial, book only for one day (start date)
+          const bookingEndDate = selectedService.service_type === 'free_trial' 
+            ? formData.start_date  // Same day for free trial
+            : calculatedEndDate;   // Full period for abbonamento
+            
+          await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
         }
 
         result = data;
@@ -524,9 +529,14 @@ const ContractForm = ({
           throw error;
         }
 
-        // Create booking if it's an abbonamento
-        if (selectedService.service_type === 'abbonamento') {
-          await createBookingForContract(data.id, formData.start_date, calculatedEndDate);
+        // Create booking for abbonamento and free_trial services
+        if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
+          // For free trial, book only for one day (start date)
+          const bookingEndDate = selectedService.service_type === 'free_trial' 
+            ? formData.start_date  // Same day for free trial
+            : calculatedEndDate;   // Full period for abbonamento
+            
+          await createBookingForContract(data.id, formData.start_date, bookingEndDate);
         }
 
         result = data;
