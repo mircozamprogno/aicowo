@@ -290,7 +290,8 @@
     "autoRenewActive": "Auto-renewal enabled",
     "renewNow": "RENEW NOW",
     "noActiveContracts": "You have no active contracts",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "freeTrialActive": "Free Trial active - not renewable"
   },
   "partners": {
     "title": "Partners",

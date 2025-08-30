@@ -1308,3 +1308,21 @@
     transform: translateY(0);
   }
 }
+
+
+/* free trial */
+
+.free-trial-info {
+  padding: 12px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+.free-trial-text {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  font-style: italic;
+}

@@ -863,28 +863,39 @@ const Dashboard = () => {
                         </>
                       ) : (
                         <>
-                          {/* Subscription Actions */}
-                          <div className="auto-renew-section">
-                            <label className="auto-renew-toggle">
-                              <input
-                                type="checkbox"
-                                checked={contract.auto_renew || false}
-                                onChange={() => handleAutoRenewToggle(contract.id, contract.auto_renew)}
-                                disabled={updatingAutoRenew[contract.id]}
-                              />
-                              <span className="toggle-slider"></span>
-                              <span className="toggle-label">
-                                {t('dashboard.autoRenewActive') || 'Rinnovo automatico attivato'}
-                              </span>
-                            </label>
-                          </div>
-                          <button 
-                            className={contract.auto_renew ? 'btn-contract-outline' : 'btn-contract-primary'}
-                            onClick={() => handleRenewSubscription(contract)}
-                          >
-                            <RefreshCw size={16} />
-                            {t('dashboard.renewNow') || 'RINNOVA ADESSO'}
-                          </button>
+                          {/* Subscription Actions - Only show auto-renew and renew options if it's NOT a free trial */}
+                          {contract.service_cost > 0 ? (
+                            <>
+                              <div className="auto-renew-section">
+                                <label className="auto-renew-toggle">
+                                  <input
+                                    type="checkbox"
+                                    checked={contract.auto_renew || false}
+                                    onChange={() => handleAutoRenewToggle(contract.id, contract.auto_renew)}
+                                    disabled={updatingAutoRenew[contract.id]}
+                                  />
+                                  <span className="toggle-slider"></span>
+                                  <span className="toggle-label">
+                                    {t('dashboard.autoRenewActive') || 'Rinnovo automatico attivato'}
+                                  </span>
+                                </label>
+                              </div>
+                              <button 
+                                className={contract.auto_renew ? 'btn-contract-outline' : 'btn-contract-primary'}
+                                onClick={() => handleRenewSubscription(contract)}
+                              >
+                                <RefreshCw size={16} />
+                                {t('dashboard.renewNow') || 'RINNOVA ADESSO'}
+                              </button>
+                            </>
+                          ) : (
+                            /* Free trial - show informational message instead */
+                            <div className="free-trial-info">
+                              <p className="free-trial-text">
+                                {t('dashboard.freeTrialActive') || 'Prova gratuita attiva - non rinnovabile'}
+                              </p>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>

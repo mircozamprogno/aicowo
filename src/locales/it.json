@@ -290,7 +290,8 @@
     "autoRenewActive": "Rinnovo automatico attivato",
     "renewNow": "RINNOVA ADESSO",
     "noActiveContracts": "Non hai contratti attivi",
-    "getStarted": "Inizia ora"
+    "getStarted": "Inizia ora",
+    "freeTrialActive": "Prova gratuita attiva - non rinnovabile"
   },
   "partners": {
     "title": "Partner",
