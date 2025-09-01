@@ -74,7 +74,8 @@
     "companies": "Aziende",
     "noCustomersFound": "Nessun cliente trovato. Aggiungi il tuo primo cliente per iniziare.",
     "accessDenied": "Accesso Negato",
-    "accessDeniedMessage": "Solo gli amministratori partner possono accedere alla gestione clienti."
+    "accessDeniedMessage": "Solo gli amministratori partner possono accedere alla gestione clienti.",
+    "lastName": "Cognome"
   },
   "settings": {
     "title": "Impostazioni",
@@ -387,7 +388,11 @@
     "filter": "Filtra",
     "export": "Esporta",
     "createdAt": "Creato",
-    "optional": "opzionale"
+    "optional": "opzionale",
+    "confirmDelete": "Conferma Eliminazione",
+    "updating": "Aggiornamento...",
+    "yes": "Sì",
+    "no": "No"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -585,7 +590,8 @@
     "lowEntriesWarning": "Attenzione: Pochi ingressi rimanenti!",
     "usePackageEntries": "Utilizza i tuoi ingressi pacchetto",
     "packageReservations": "Prenotazioni Pacchetto",
-    "bookPackage": "Prenota Pacchetto"
+    "bookPackage": "Prenota Pacchetto",
+    "cannotBook": "Non Disponibile"
   },
   "contracts": {
     "title": "Contratti",
@@ -691,12 +697,41 @@
     "baseAmount": "Netto",
     "vat": "IVA",
     "total": "Totale",
+    "paymentStatus": "Stato Pagamento",
+    "paymentInfo": "Info Pagamento", 
+    "paymentHistory": "Storico Pagamenti",
+    "recordPayment": "Registra Pagamento",
+    "paymentRequired": "Pagamento Richiesto",
+    "paymentOptional": "Pagamento Non Richiesto",
+    "nextDueDate": "Prossima Scadenza",
+    "lastPayment": "Ultimo Pagamento",
+    "paymentOverdue": "Pagamento Scaduto",
+    "fullyPaid": "Completamente Pagato",
+    "partiallyPaid": "Pagato Parzialmente", 
+    "awaitingPayment": "In Attesa di Pagamento",
+    "managementPayments": "Gestisci Pagamenti",
+    "deleteContract": "Elimina Contratto",
+    "after": "dopo",
+    "exportCSV": "Esporta CSV",
+    "exportToCSV": "Esporta in CSV",
+    "exporting": "Esportazione...",
+    "csvExportedSuccessfully": "Export CSV completato con successo", 
+    "errorExportingCSV": "Errore durante l'export CSV. Riprova.",
+    "exportNotAllowed": "Export non consentito",
+    "noContractsToExport": "Nessun contratto da esportare",
+    "vatPercentage": "IVA %", 
+    "vatAmount": "Importo IVA",
+    "maxEntries": "Ingressi Massimi",
+    "resourceType": "Tipo Risorsa",
     "tooltips": {
       "generatePDF": "Scarica ricevuta PDF",
       "editContract": "Modifica dettagli contratto",
       "bookReservation": "Prenota una nuova prenotazione con questo pacchetto", 
       "cannotBook": "Impossibile prenotare",
-      "deleteContract": "Archivia questo contratto definitivamente"
+      "deleteContract": "Archivia questo contratto definitivamente",
+      "recordPayment": "Registra un nuovo pagamento",
+      "viewPaymentHistory": "Visualizza storico pagamenti",
+      "managePayments": "Gestisci pagamenti per questo contratto"
     }
   },
   "placeholders": {
@@ -797,6 +832,154 @@
     "getDirections": "Indicazioni Stradali",
     "callLocation": "Chiama Sede",
     "emailLocation": "Email Sede"
+  },
+  "payments": {
+    "title": "Pagamenti",
+    "managePayments": "Gestisci i pagamenti e la fatturazione dei contratti",
+    "recordPayment": "Registra Pagamento",
+    "paymentHistory": "Storico Pagamenti",
+    "generateInvoice": "Genera Fattura",
+    "sendPaymentLink": "Invia Link Pagamento",
+    "markAsPaid": "Segna come Pagato",
+    "paymentStatus": "Stato Pagamento",
+    "paymentMethod": "Metodo Pagamento",
+    "paymentDate": "Data Pagamento",
+    "dueDate": "Scadenza",
+    "amount": "Importo",
+    "transactionRef": "Riferimento Transazione",
+    "notes": "Note",
+    "receiptUpload": "Carica Ricevuta/Prova",
+    "paymentDetails": "Dettagli Pagamento",
+    "paymentSummary": "Riepilogo Pagamento",
+    "totalPaid": "Totale Pagato",
+    "outstanding": "Da Pagare",
+    "overdue": "Scaduto",
+    "nextPayment": "Prossimo Pagamento",
+    "paymentPlan": "Piano Pagamenti",
+    "installments": "Rate",
+    "createPaymentPlan": "Crea Piano Pagamenti",
+    "editPaymentPlan": "Modifica Piano Pagamenti",
+    "paymentNumber": "Numero Pagamento",
+    "totalPayments": "Pagamenti Totali",
+    "paymentProgress": "Progresso Pagamento",
+    "confirmDeletePayment": "Conferma Eliminazione Pagamento",
+    "deletePaymentWarning": "Questo eliminerà definitivamente il record del pagamento. Questa azione non può essere annullata.",
+    "deletePayment": "Elimina Pagamento",
+    "paymentDeleted": "Pagamento eliminato con successo",
+    "errorDeletingPayment": "Errore nell'eliminazione del pagamento",
+    "errorLoadingPayments": "Errore nel caricamento dei pagamenti",
+    "editPayment": "Modifica Pagamento",
+    "updatePayment": "Aggiorna Pagamento",
+    "immediate": "Immediato",
+    "net15": "Netto 15 giorni",
+    "net30": "Netto 30 giorni",
+    "net60": "Netto 60 giorni",
+    "methods": {
+      "cash": "Contanti",
+      "bank_transfer": "Bonifico Bancario",
+      "paypal": "PayPal",
+      "stripe": "Carta di Credito",
+      "credit_card": "Carta di Credito",
+      "other": "Altro"
+    },
+    
+    "status": {
+      "paid": "Pagato",
+      "unpaid": "Non Pagato",
+      "partial": "Pagato Parzialmente", 
+      "overdue": "Scaduto",
+      "pending": "In Attesa",
+      "completed": "Completato",
+      "failed": "Fallito",
+      "refunded": "Rimborsato",
+      "cancelled": "Annullato",
+      "not_required": "Pagamento Non Richiesto"
+    },
+    
+    "types": {
+      "full": "Pagamento Completo",
+      "partial": "Pagamento Parziale",
+      "installment": "Rata",
+      "deposit": "Acconto"
+    },
+    
+    "terms": {
+      "immediate": "Pagamento Immediato",
+      "net_7": "7 Giorni",
+      "net_15": "15 Giorni",
+      "net_30": "30 Giorni",
+      "net_45": "45 Giorni", 
+      "net_60": "60 Giorni"
+    },
+    
+    "planTypes": {
+      "single": "Pagamento Unico",
+      "installments": "Piano Rate",
+      "recurring": "Pagamento Ricorrente"
+    },
+    
+    "frequency": {
+      "monthly": "Mensile",
+      "quarterly": "Trimestrale",
+      "semi_annually": "Semestrale", 
+      "annually": "Annuale"
+    },
+    
+    "confirmPayment": "Conferma Pagamento",
+    "recordPaymentFor": "Registra Pagamento per",
+    "paymentRecorded": "Pagamento registrato con successo",
+    "paymentUpdated": "Pagamento aggiornato con successo",
+    "errorRecordingPayment": "Errore nella registrazione del pagamento",
+    "errorUpdatingPayment": "Errore nell'aggiornamento del pagamento",
+    "noPaymentsFound": "Nessun pagamento trovato per questo contratto",
+    "paymentRequired": "Pagamento Richiesto",
+    "paymentOptional": "Pagamento Opzionale",
+    "selectPaymentMethod": "Seleziona metodo di pagamento",
+    "enterAmount": "Inserisci importo pagamento",
+    "enterTransactionRef": "Inserisci riferimento transazione (opzionale)",
+    "selectPaymentDate": "Seleziona data pagamento",
+    "uploadProofOfPayment": "Carica prova di pagamento (opzionale)",
+    "paymentNotes": "Note pagamento (opzionali)",
+    
+    "bulkActions": {
+      "title": "Azioni Pagamenti Multiple",
+      "markMultipleAsPaid": "Segna Multipli come Pagati",
+      "generateBatchInvoices": "Genera Fatture Multiple",
+      "exportPaymentReport": "Esporta Report Pagamenti",
+      "selected": "pagamenti selezionati",
+      "confirmBulkPaid": "Segnare {{count}} pagamenti come pagati?",
+      "bulkPaymentSuccess": "{{count}} pagamenti aggiornati con successo"
+    },
+    
+    "reminders": {
+      "title": "Promemoria Pagamenti",
+      "sendReminder": "Invia Promemoria", 
+      "reminderSent": "Promemoria pagamento inviato",
+      "autoReminders": "Promemoria Automatici",
+      "reminderSchedule": "Pianificazione Promemoria",
+      "daysBefore": "giorni prima della scadenza",
+      "daysAfter": "giorni dopo la scadenza"
+    },
+    
+    "reports": {
+      "title": "Report Pagamenti",
+      "monthlyRevenue": "Ricavi Mensili",
+      "outstandingPayments": "Pagamenti in Sospeso",
+      "overdueReport": "Report Scaduti",
+      "paymentsByMethod": "Pagamenti per Metodo",
+      "customerPaymentHistory": "Storico Pagamenti Cliente"
+    },
+    
+    "tooltips": {
+      "recordPayment": "Registra un nuovo pagamento per questo contratto",
+      "viewHistory": "Visualizza storico completo pagamenti",
+      "generateInvoice": "Genera fattura per questo pagamento", 
+      "sendReminder": "Invia promemoria pagamento al cliente",
+      "markPaid": "Segna questo pagamento come completato",
+      "editPayment": "Modifica questo record di pagamento",
+      "viewReceipt": "Visualizza ricevuta pagamento",
+      "deletePayment": "Elimina questo record di pagamento"
+    }
   },
   "app": {
     "appName": "Gestione Coworking",

@@ -1,13 +1,19 @@
-import { Calendar, Download, Edit2, FileText, Plus, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Clock, Download, FileText, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
+import ContractActionsCell from '../components/ContractActionsCell';
 import ContractForm from '../components/forms/ContractForm';
 import PackageBookingForm from '../components/forms/PackageBookingForm';
+import PaymentForm from '../components/forms/PaymentForm';
+import PaymentHistoryModal from '../components/modals/PaymentHistoryModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { ContractArchiveService } from '../services/contractArchiveService';
+import { CSVExportService } from '../services/csvExportService'; // Add this import
+import { PaymentService } from '../services/paymentService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
+
 
 const Contracts = () => {
   const [contracts, setContracts] = useState([]);
@@ -37,6 +43,17 @@ const Contracts = () => {
   const isSuperAdmin = profile?.role === 'superadmin';
   const canCreateContracts = isCustomer || isPartnerAdmin;
   const canEditContracts = isPartnerAdmin || isSuperAdmin;
+
+  // Payment states
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
+  const [selectedContract, setSelectedContract] = useState(null);
+  const [paymentToEdit, setPaymentToEdit] = useState(null);
+  const [contractPayments, setContractPayments] = useState({}); // Map of contract ID to payment status
+  const canManagePayments = isPartnerAdmin || isSuperAdmin;
+
+  // CSV Export states
+  const [exportingCSV, setExportingCSV] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -118,6 +135,8 @@ const Contracts = () => {
             partner_uuid: 'test-partner',
             created_at: new Date().toISOString(),
             is_archived: false, // Add this field
+            requires_payment: true,
+            payment_terms: 'net_30',
             customers: {
               first_name: 'Mario',
               second_name: 'Rossi',
@@ -146,6 +165,8 @@ const Contracts = () => {
             partner_uuid: 'test-partner',
             created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
             is_archived: false, // Add this field
+            requires_payment: true,
+            payment_terms: 'net_30',
             customers: {
               first_name: 'Anna',
               second_name: 'Verdi',
@@ -156,6 +177,11 @@ const Contracts = () => {
         ];
         
         setContracts(mockContracts);
+        
+        // Load payment statuses for mock data
+        if (canManagePayments) {
+          loadPaymentStatuses(mockContracts.map(c => c.id));
+        }
       } else {
       // Process contracts to ensure numeric fields are numbers
       const processedContracts = (data || []).map(contract => ({
@@ -166,6 +192,12 @@ const Contracts = () => {
       }));
       
       setContracts(processedContracts);
+
+
+      // ADD THIS LINE:
+      if (canManagePayments) {
+        loadPaymentStatuses(processedContracts.map(c => c.id));
+      }
     }
     } catch (error) {
       console.error('Error fetching contracts:', error);
@@ -225,6 +257,10 @@ const Contracts = () => {
 
   const handleFormSuccess = (savedContract) => {
     setContracts(prev => [savedContract, ...prev]);
+    // Refresh payment statuses
+    if (canManagePayments) {
+      loadPaymentStatuses([savedContract.id]);
+    }
   };
 
   const handleEditFormSuccess = (updatedContract) => {
@@ -233,6 +269,10 @@ const Contracts = () => {
         contract.id === updatedContract.id ? updatedContract : contract
       )
     );
+    // Refresh payment statuses
+    if (canManagePayments) {
+      loadPaymentStatuses([updatedContract.id]);
+    }
   };
 
   // Package booking handlers
@@ -534,9 +574,167 @@ const Contracts = () => {
     }
   };
 
+
+  const loadPaymentStatuses = async (contractIds) => {
+    try {
+      const { data, error } = await PaymentService.getContractPaymentStatus(contractIds);
+      
+      if (error) {
+        console.error('Error loading payment statuses:', error);
+        return;
+      }
+
+      // Convert array to map for easy lookup
+      const statusMap = {};
+      (data || []).forEach(status => {
+        statusMap[status.contract_id] = status;
+      });
+      
+      setContractPayments(statusMap);
+    } catch (error) {
+      console.error('Error loading payment statuses:', error);
+    }
+  };
+
+  // Payment handlers
+  const handleRecordPayment = (contract) => {
+    setSelectedContract(contract);
+    setPaymentToEdit(null);
+    setShowPaymentForm(true);
+  };
+
+  const handlePaymentHistory = (contract) => {
+    setSelectedContract(contract);
+    setShowPaymentHistory(true);
+  };
+
+  const handleEditPayment = (payment) => {
+    setPaymentToEdit(payment);
+    setShowPaymentForm(true);
+    setShowPaymentHistory(false);
+  };
+
+  const handlePaymentFormClose = () => {
+    setShowPaymentForm(false);
+    setSelectedContract(null);
+    setPaymentToEdit(null);
+  };
+
+  const handlePaymentSuccess = async (payment) => {
+    // Close the payment form first
+    setShowPaymentForm(false);
+    
+    // Wait a moment for database to update
+    setTimeout(async () => {
+      // Refresh all contracts and their payment statuses
+      await fetchContracts();
+      
+      // Also specifically refresh payment statuses
+      if (canManagePayments && contracts.length > 0) {
+        loadPaymentStatuses(contracts.map(c => c.id));
+      }
+    }, 500); // 500ms delay to ensure DB is updated
+    
+    if (paymentToEdit) {
+      // If we were editing, go back to history
+      setShowPaymentHistory(true);
+    }
+  };
+
+
+  const handlePaymentHistoryClose = () => {
+    setShowPaymentHistory(false);
+    setSelectedContract(null);
+  };
+
+  const handlePaymentRefresh = () => {
+    // Refresh payment statuses and contracts
+    fetchContracts();
+  };
+
+  // Payment status helpers
+  const getPaymentStatus = (contract) => {
+    if (contract.service_type === 'free_trial' || !contract.requires_payment) {
+      return 'not_required';
+    }
+
+    const paymentInfo = contractPayments[contract.id];
+    if (!paymentInfo) {
+      return 'unpaid'; // Default if no payment info loaded yet
+    }
+
+    return paymentInfo.payment_status;
+  };
+
+  const getPaymentStatusBadgeClass = (status) => {
+    const classes = {
+      paid: 'payment-status-paid',
+      unpaid: 'payment-status-unpaid',
+      partial: 'payment-status-partial',
+      overdue: 'payment-status-overdue',
+      not_required: 'payment-status-not-required'
+    };
+    return classes[status] || 'payment-status-default';
+  };
+
+  const isPaymentOverdue = (contract) => {
+    const paymentInfo = contractPayments[contract.id];
+    return paymentInfo?.is_overdue || false;
+  };
+
+  const getNextDueDate = (contract) => {
+    const paymentInfo = contractPayments[contract.id];
+    return paymentInfo?.next_due_date;
+  };
+
   if (loading) {
     return <div className="contracts-loading">{t('common.loading')}</div>;
   }
+
+
+  // Add the debug log here:
+  console.log('Debug payment buttons:', contracts.map(c => ({
+    id: c.id,
+    contract_number: c.contract_number,
+    canManagePayments,
+    requires_payment: c.requires_payment,
+    service_type: c.service_type,
+    shouldShowPayment: canManagePayments && c.requires_payment !== false && c.service_type !== 'free_trial'
+  })));
+
+  // Add this new function before the return statement
+  const handleExportCSV = async () => {
+    if (!isPartnerAdmin && !isSuperAdmin) {
+      toast.error(t('contracts.exportNotAllowed') || 'Export non consentito');
+      return;
+    }
+
+    if (contracts.length === 0) {
+      toast.error(t('contracts.noContractsToExport') || 'Nessun contratto da esportare');
+      return;
+    }
+
+    setExportingCSV(true);
+    
+    try {
+      // Generate CSV content
+      const csvContent = await CSVExportService.exportContractsToCSV(contracts, t);
+      
+      // Generate filename
+      const filename = CSVExportService.generateFilename();
+      
+      // Download CSV file
+      CSVExportService.downloadCSV(csvContent, filename);
+      
+      toast.success(t('contracts.csvExportedSuccessfully') || 'Export CSV completato con successo');
+      
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast.error(t('contracts.errorExportingCSV') || 'Errore durante l\'export CSV. Riprova.');
+    } finally {
+      setExportingCSV(false);
+    }
+  };
 
   return (
     <div className="contracts-page">
@@ -569,16 +767,45 @@ const Contracts = () => {
                 {contracts.filter(c => c.contract_status === 'expired').length}
               </span>
             </div>
+            {canManagePayments && (
+              <div className="stat-item">
+                <span className="stat-label">{t('payments.outstanding')}</span>
+                <span className="stat-value">
+                  {contracts.filter(c => {
+                    const status = getPaymentStatus(c);
+                    return status === 'unpaid' || status === 'partial' || status === 'overdue';
+                  }).length}
+                </span>
+              </div>
+            )}
           </div>
         </div>
         {canCreateContracts && (
           <div className="contracts-header-actions">
+
+            {/* CSV Export Button - only for partners */}
+            {(isPartnerAdmin || isSuperAdmin) && (
+              <button 
+                className="export-csv-btn"
+                onClick={handleExportCSV}
+                disabled={exportingCSV || contracts.length === 0}
+                title={t('contracts.exportToCSV') || 'Esporta in CSV'}
+              >
+                <Download size={16} className="mr-2" />
+                {exportingCSV 
+                  ? (t('contracts.exporting') || 'Esportazione...') 
+                  : (t('contracts.exportCSV') || 'Esporta CSV')
+                }
+              </button>
+            )}
+
             <button className="add-contract-btn" onClick={handleCreateContract}>
               <Plus size={16} className="mr-2" />
               {t('contracts.createContract')}
             </button>
           </div>
         )}
+
       </div>
 
       <div className="contracts-table-container">
@@ -609,7 +836,11 @@ const Contracts = () => {
                 <th className="contracts-table-header">
                   {t('contracts.status')}
                 </th>
-                <th className="contracts-table-header">
+                {canManagePayments && (
+                  <th className="contracts-table-header">
+                    {t('payments.paymentStatus')}
+                  </th>
+                )}                <th className="contracts-table-header">
                   {t('contracts.actions')}
                 </th>
               </tr>
@@ -619,6 +850,9 @@ const Contracts = () => {
                 const daysRemaining = calculateDaysRemaining(contract.end_date);
                 const isInRange = isDateInContractRange(contract.start_date, contract.end_date);
                 const canBook = canBookPackage(contract);
+                const paymentStatus = getPaymentStatus(contract);
+                const isOverdue = isPaymentOverdue(contract);
+                const nextDue = getNextDueDate(contract);
                 
                 return (
                   <tr key={contract.id} className="contracts-table-row">
@@ -705,111 +939,40 @@ const Contracts = () => {
                         {t(`contracts.${contract.contract_status}`)}
                       </span>
                     </td>
-                    <td className="contracts-table-cell">
-                      <div className="contract-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                        {/* PDF Generation Button - Show for all users */}
-                        <button 
-                          className="pdf-btn"
-                          onClick={() => handleGeneratePDF(contract)}
-                          disabled={generatingPDF === contract.id}
-                          title={t('contracts.tooltips.generatePDF') || 'Download PDF receipt'}
-                          style={{
-                            backgroundColor: generatingPDF === contract.id ? '#9ca3af' : '#8b5cf6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.375rem',
-                            padding: '0.5rem',
-                            cursor: generatingPDF === contract.id ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '2.5rem',
-                            opacity: generatingPDF === contract.id ? 0.6 : 1
-                          }}
-                        >
-                          {generatingPDF === contract.id ? (
-                            <div className="loading-spinner-small" style={{ borderTopColor: 'white' }}></div>
-                          ) : (
-                            <Download size={16} />
+                    {canManagePayments && (
+                      <td className="contracts-table-cell">
+                        <div className="payment-info">
+                          <span className={`payment-status-badge ${getPaymentStatusBadgeClass(paymentStatus)} ${isOverdue ? 'overdue' : ''}`}>
+                            {isOverdue && <AlertTriangle size={12} className="overdue-icon" />}
+                            {t(`payments.status.${paymentStatus}`)}
+                          </span>
+                          {nextDue && paymentStatus !== 'paid' && paymentStatus !== 'not_required' && (
+                            <div className="next-due-date">
+                              <Clock size={12} />
+                              {t('contracts.nextDueDate')}: {formatDate(nextDue)}
+                            </div>
                           )}
-                        </button>
-
-                        {canEditContracts && (
-                          <button 
-                            className="edit-btn"
-                            onClick={() => handleEditContract(contract)}
-                            title={t('contracts.tooltips.editContract') || 'Edit contract details'}
-                            style={{
-                              backgroundColor: '#3b82f6',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '0.375rem',
-                              padding: '0.5rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              minWidth: '2.5rem'
-                            }}
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                        )}
-                        
-                        {/* Package booking button - Only show for package contracts with remaining entries and active in date range */}
-                        {contract.service_type === 'pacchetto' && isInRange && (
-                          <button 
-                            className="package-booking-btn"
-                            onClick={() => handlePackageBooking(contract)}
-                            title={canBook 
-                              ? t('contracts.tooltips.bookReservation') || 'Book a new reservation with this package'
-                              : (getBookButtonText(contract) + ' - ' + (t('contracts.tooltips.cannotBook') || 'Cannot book reservation'))
-                            }
-                            disabled={!canBook}
-                            style={{
-                              backgroundColor: canBook ? '#16a34a' : '#9ca3af',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '0.375rem',
-                              padding: '0.5rem 0.75rem',
-                              cursor: canBook ? 'pointer' : 'not-allowed',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.375rem',
-                              minWidth: '6rem',
-                              fontSize: '0.875rem',
-                              fontWeight: '500'
-                            }}
-                          >
-                            <Calendar size={16} />
-                            {getBookButtonText(contract)}
-                          </button>
-                        )}
-                        
-                        {(isPartnerAdmin || isSuperAdmin) && (
-                          <button 
-                            className="delete-btn"
-                            onClick={() => handleDeleteContract(contract)}
-                            title={t('contracts.tooltips.deleteContract') || 'Archive this contract permanently'}
-                            style={{
-                              backgroundColor: '#dc2626',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '0.375rem',
-                              padding: '0.5rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              minWidth: '2.5rem'
-                            }}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    )}
+                    <ContractActionsCell
+                      contract={contract}
+                      canManagePayments={canManagePayments}
+                      canEditContracts={canEditContracts}
+                      isPartnerAdmin={isPartnerAdmin}
+                      isSuperAdmin={isSuperAdmin}
+                      generatingPDF={generatingPDF}
+                      onGeneratePDF={handleGeneratePDF}
+                      onRecordPayment={handleRecordPayment}
+                      onPaymentHistory={handlePaymentHistory}
+                      onEditContract={handleEditContract}
+                      onPackageBooking={handlePackageBooking}
+                      onDeleteContract={handleDeleteContract}
+                      canBookPackage={canBookPackage}
+                      getBookButtonText={getBookButtonText}
+                      isInRange={isInRange}
+                      t={t}
+                    />
                   </tr>
                 );
               })}
@@ -946,10 +1109,31 @@ const Contracts = () => {
                   {deleteStep === 1 ? 'Continua' : 'Elimina Definitivamente'}
                 </button>
               </div>
+              
             </div>
           </div>
         </div>
       )}
+
+      {/* Payment Form Modal */}
+      <PaymentForm
+        isOpen={showPaymentForm}
+        onClose={handlePaymentFormClose}
+        onSuccess={handlePaymentSuccess}
+        contract={selectedContract}
+        editMode={!!paymentToEdit}
+        paymentToEdit={paymentToEdit}
+      />
+
+      {/* Payment History Modal */}
+      <PaymentHistoryModal
+        isOpen={showPaymentHistory}
+        onClose={handlePaymentHistoryClose}
+        contract={selectedContract}
+        onEditPayment={handleEditPayment}
+        onRefresh={handlePaymentRefresh}
+      />
+
     </div>
   );
 };

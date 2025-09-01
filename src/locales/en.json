@@ -74,7 +74,8 @@
     "companies": "Companies",
     "noCustomersFound": "No customers found. Add your first customer to get started.",
     "accessDenied": "Access Denied",
-    "accessDeniedMessage": "Only partner administrators can access customer management."
+    "accessDeniedMessage": "Only partner administrators can access customer management.",
+    "lastName": "Last Name"
   },
   "settings": {
     "title": "Settings",
@@ -387,7 +388,11 @@
     "filter": "Filter",
     "export": "Export",
     "createdAt": "Created",
-    "optional": "optional"
+    "optional": "optional",
+    "confirmDelete": "Confirm Delete",
+    "updating": "Updating...",
+    "yes": "Yes",
+    "no": "No"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -584,7 +589,8 @@
     "lowEntriesWarning": "Warning: Few entries remaining!",
     "usePackageEntries": "Use your package entries",
     "packageReservations": "Package Reservations",
-    "bookPackage": "Book Package"
+    "bookPackage": "Book Package",
+    "cannotBook": "Cannot Book"
   },
   "contracts": {
     "title": "Contracts",
@@ -690,12 +696,41 @@
     "baseAmount": "Net",
     "vat": "VAT",
     "total": "Total",
+    "paymentStatus": "Payment Status", 
+    "paymentInfo": "Payment Info",
+    "paymentHistory": "Payment History",
+    "recordPayment": "Record Payment",
+    "paymentRequired": "Payment Required",
+    "paymentOptional": "No Payment Required",
+    "nextDueDate": "Next Due",
+    "lastPayment": "Last Payment",
+    "paymentOverdue": "Payment Overdue",
+    "fullyPaid": "Fully Paid",
+    "partiallyPaid": "Partially Paid",
+    "awaitingPayment": "Awaiting Payment",
+    "managementPayments": "Manage Payments",
+    "after": "after",
+    "deleteContract": "Delete Contract",
+    "exportCSV": "Export CSV",
+    "exportToCSV": "Export to CSV", 
+    "exporting": "Exporting...",
+    "csvExportedSuccessfully": "CSV export completed successfully",
+    "errorExportingCSV": "Error exporting CSV. Please try again.",
+    "exportNotAllowed": "Export not allowed",
+    "noContractsToExport": "No contracts to export",
+    "vatPercentage": "VAT %",
+    "vatAmount": "VAT Amount",
+    "maxEntries": "Max Entries",
+    "resourceType": "Resource Type",
     "tooltips": {
       "generatePDF": "Download PDF receipt",
       "editContract": "Edit contract details",
       "bookReservation": "Book a new reservation with this package",
       "cannotBook": "Cannot book reservation",
-      "deleteContract": "Archive this contract permanently"
+      "deleteContract": "Archive this contract permanently",
+      "recordPayment": "Record a new payment",
+      "viewPaymentHistory": "View payment history",
+      "managePayments": "Manage payments for this contract"
     }
   },
   "placeholders": {
@@ -796,6 +831,154 @@
     "getDirections": "Get Directions",
     "callLocation": "Call Location",
     "emailLocation": "Email Location"
+  },
+  "payments": {
+    "title": "Payments",
+    "managePayments": "Manage contract payments and billing",
+    "recordPayment": "Record Payment",
+    "paymentHistory": "Payment History",
+    "generateInvoice": "Generate Invoice",
+    "sendPaymentLink": "Send Payment Link",
+    "markAsPaid": "Mark as Paid",
+    "paymentStatus": "Payment Status",
+    "paymentMethod": "Payment Method",
+    "paymentDate": "Payment Date",
+    "dueDate": "Due Date",
+    "amount": "Amount",
+    "transactionRef": "Transaction Reference",
+    "notes": "Notes",
+    "receiptUpload": "Upload Receipt/Proof",
+    "paymentDetails": "Payment Details",
+    "paymentSummary": "Payment Summary",
+    "totalPaid": "Total Paid",
+    "outstanding": "Outstanding",
+    "overdue": "Overdue",
+    "nextPayment": "Next Payment",
+    "paymentPlan": "Payment Plan",
+    "installments": "Installments",
+    "createPaymentPlan": "Create Payment Plan",
+    "editPaymentPlan": "Edit Payment Plan",
+    "paymentNumber": "Payment Number",
+    "totalPayments": "Total Payments",
+    "paymentProgress": "Payment Progress",
+    "confirmDeletePayment": "Confirm Delete Payment",
+    "deletePaymentWarning": "This will permanently delete the payment record. This action cannot be undone.",
+    "deletePayment": "Delete Payment",
+    "paymentDeleted": "Payment deleted successfully",
+    "errorDeletingPayment": "Error deleting payment",
+    "errorLoadingPayments": "Error loading payments",
+    "editPayment": "Edit Payment",
+    "updatePayment": "Update Payment",
+    "immediate": "Immediate",
+    "net15": "Net 15 days",
+    "net30": "Net 30 days", 
+    "net60": "Net 60 days",    
+    "methods": {
+      "cash": "Cash",
+      "bank_transfer": "Bank Transfer",
+      "paypal": "PayPal",
+      "stripe": "Credit Card",
+      "credit_card": "Credit Card",
+      "other": "Other"
+    },
+    
+    "status": {
+      "paid": "Paid",
+      "unpaid": "Unpaid",
+      "partial": "Partially Paid",
+      "overdue": "Overdue",
+      "pending": "Payment Pending",
+      "completed": "Payment Completed",
+      "failed": "Payment Failed",
+      "refunded": "Refunded",
+      "cancelled": "Cancelled",
+      "not_required": "No Payment Required"
+    },
+    
+    "types": {
+      "full": "Full Payment",
+      "partial": "Partial Payment",
+      "installment": "Installment",
+      "deposit": "Deposit"
+    },
+    
+    "terms": {
+      "immediate": "Due Immediately",
+      "net_7": "Net 7 Days",
+      "net_15": "Net 15 Days", 
+      "net_30": "Net 30 Days",
+      "net_45": "Net 45 Days",
+      "net_60": "Net 60 Days"
+    },
+    
+    "planTypes": {
+      "single": "Single Payment",
+      "installments": "Installment Plan",
+      "recurring": "Recurring Payment"
+    },
+    
+    "frequency": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly", 
+      "semi_annually": "Semi-Annually",
+      "annually": "Annually"
+    },
+    
+    "confirmPayment": "Confirm Payment",
+    "recordPaymentFor": "Record Payment for",
+    "paymentRecorded": "Payment recorded successfully",
+    "paymentUpdated": "Payment updated successfully",
+    "errorRecordingPayment": "Error recording payment",
+    "errorUpdatingPayment": "Error updating payment",
+    "noPaymentsFound": "No payments found for this contract",
+    "paymentRequired": "Payment Required",
+    "paymentOptional": "Payment Optional",
+    "selectPaymentMethod": "Select payment method",
+    "enterAmount": "Enter payment amount",
+    "enterTransactionRef": "Enter transaction reference (optional)",
+    "selectPaymentDate": "Select payment date",
+    "uploadProofOfPayment": "Upload proof of payment (optional)",
+    "paymentNotes": "Payment notes (optional)",
+    
+    "bulkActions": {
+      "title": "Bulk Payment Actions",
+      "markMultipleAsPaid": "Mark Multiple as Paid",
+      "generateBatchInvoices": "Generate Batch Invoices",
+      "exportPaymentReport": "Export Payment Report",
+      "selected": "selected payments",
+      "confirmBulkPaid": "Mark {{count}} payments as paid?",
+      "bulkPaymentSuccess": "{{count}} payments updated successfully"
+    },
+    
+    "reminders": {
+      "title": "Payment Reminders",
+      "sendReminder": "Send Reminder",
+      "reminderSent": "Payment reminder sent",
+      "autoReminders": "Auto Reminders",
+      "reminderSchedule": "Reminder Schedule",
+      "daysBefore": "days before due date",
+      "daysAfter": "days after due date"
+    },
+    
+    "reports": {
+      "title": "Payment Reports",
+      "monthlyRevenue": "Monthly Revenue",
+      "outstandingPayments": "Outstanding Payments", 
+      "overdueReport": "Overdue Report",
+      "paymentsByMethod": "Payments by Method",
+      "customerPaymentHistory": "Customer Payment History"
+    },
+    
+    "tooltips": {
+      "recordPayment": "Record a new payment for this contract",
+      "viewHistory": "View complete payment history",
+      "generateInvoice": "Generate invoice for this payment",
+      "sendReminder": "Send payment reminder to customer",
+      "markPaid": "Mark this payment as completed",
+      "editPayment": "Edit this payment record",
+      "viewReceipt": "View payment receipt",
+      "deletePayment": "Delete this payment record"
+    }
   },
   "app": {
     "appName": "Coworking Management",

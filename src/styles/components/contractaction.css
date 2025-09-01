@@ -1,0 +1,245 @@
+/* Contract Actions Cell Component Styles */
+
+.contracts-table-cell.actions-cell {
+  min-width: 120px !important;
+  width: auto;
+  padding: 0.5rem 0.25rem !important;
+  white-space: nowrap;
+  position: relative;
+}
+
+.contract-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  position: relative;
+  justify-content: flex-start;
+}
+
+.action-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  border-radius: 0.375rem;
+  padding: 0.5rem !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 2.5rem !important;
+  height: 2.5rem !important;
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.action-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+  transform: none !important;
+}
+
+/* Specific button styles */
+.action-btn.pdf-btn {
+  background-color: #8b5cf6 !important;
+  color: white !important;
+}
+
+.action-btn.pdf-btn:hover:not(:disabled) {
+  background-color: #7c3aed !important;
+}
+
+/* Dropdown trigger styling */
+.dropdown-trigger {
+  background-color: #6b7280 !important;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.dropdown-trigger:hover:not(:disabled) {
+  background-color: #4b5563 !important;
+}
+
+/* Dropdown menu positioning and styling */
+.actions-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 9999 !important;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: visible;
+  margin-top: 0.25rem;
+}
+
+.dropdown-item {
+  width: 100% !important;
+  padding: 0.75rem 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  background: white !important;
+  border: none !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  font-size: 0.875rem !important;
+  color: #374151 !important;
+  transition: background-color 0.15s ease !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  box-sizing: border-box !important;
+  min-height: 44px !important;
+  justify-content: flex-start !important;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
+
+.dropdown-item:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+  background-color: #f9fafb;
+}
+
+/* Specific dropdown item colors */
+.dropdown-item.payment-btn:hover:not(:disabled) {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.dropdown-item.history-btn:hover:not(:disabled) {
+  background-color: #e0f2fe;
+  color: #0ea5e9;
+}
+
+.dropdown-item.edit-btn:hover:not(:disabled) {
+  background-color: #dbeafe;
+  color: #3b82f6;
+}
+
+.dropdown-item.package-booking-btn:hover:not(:disabled) {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.dropdown-item.delete-btn:hover:not(:disabled) {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: transparent;
+}
+
+/* Loading spinner for PDF generation */
+.loading-spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dropdown rotation animation */
+.rotate-180 {
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .contracts-table-cell.actions-cell {
+    min-width: 100px !important;
+    position: sticky;
+    right: 0;
+    background: white;
+    border-left: 1px solid #e5e7eb;
+  }
+  
+  .contract-actions {
+    gap: 0.25rem;
+  }
+  
+  .action-btn {
+    min-width: 2rem !important;
+    height: 2rem !important;
+    padding: 0.375rem !important;
+  }
+  
+  .dropdown-menu {
+    min-width: 150px;
+    right: -10px;
+  }
+  
+  .dropdown-item {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contracts-table-cell.actions-cell {
+    min-width: 80px !important;
+  }
+  
+  .action-btn {
+    min-width: 1.75rem !important;
+    height: 1.75rem !important;
+    padding: 0.25rem !important;
+  }
+  
+  .action-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  
+  .dropdown-menu {
+    right: -20px;
+    min-width: 140px;
+  }
+}
+
+/* Ensure table doesn't overflow */
+.contracts-table-container {
+  overflow-x: auto;
+  position: relative;
+}
+
+/* Icon consistency */
+.action-btn svg,
+.dropdown-item svg {
+  flex-shrink: 0;
+}
