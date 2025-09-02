@@ -22,6 +22,7 @@ import './styles/pages/photo-gallery.css'; // Add this line for PhotoGallery sty
 import './styles/pages/services.css'
 import './styles/pages/settings.css'
 import './styles/pages/users.css'
+import './styles/tour.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

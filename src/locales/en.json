@@ -980,6 +980,59 @@
       "deletePayment": "Delete this payment record"
     }
   },
+  "tour": {
+    "welcome": {
+      "title": "Welcome to PowerCowo, {{name}}!",
+      "subtitle": "Let's set up your coworking space",
+      "description": "In just 3 simple steps, we'll help you configure your workspace so you can start accepting customers and managing bookings right away.",
+      "setupStepsTitle": "What we'll set up together:",
+      "step1Title": "Create Your Location",
+      "step1Description": "Add your coworking space location with address, contact details, and photos",
+      "step2Title": "Add Resources",
+      "step2Description": "Define desks, meeting rooms, and other bookable resources",
+      "step3Title": "Create Services",
+      "step3Description": "Set up packages and subscriptions your customers can purchase",
+      "benefitsTitle": "Why complete the setup?",
+      "benefit1": "Start accepting bookings immediately",
+      "benefit2": "Professional workspace management",
+      "benefit3": "Ready for your first customers",
+      "startTour": "Start Guided Tour",
+      "skipTour": "Skip Setup",
+      "notNow": "Maybe Later",
+      "note": "Don't worry - you can always change these settings later"
+    },
+    "steps": {
+      "locations": {
+        "title": "Create Your First Location",
+        "description": "Every coworking space needs at least one location. This is where your customers will book desks and meeting rooms.",
+        "action": "Click on Partners to manage your location"
+      },
+      "resources": {
+        "title": "Add Your Resources",
+        "description": "Resources are the bookable items in your location - like hot desks, private offices, or meeting rooms.",
+        "action": "Add resources while creating your location"
+      },
+      "services": {
+        "title": "Define Your Services",
+        "description": "Services are what customers purchase - like monthly desk access or meeting room packages.",
+        "action": "Click on Services to create your first offering"
+      }
+    },
+    "stepNumber": "Step {{current}} of {{total}}",
+    "completed": "Completed",
+    "stepsCompleted": "steps completed",
+    "previous": "Previous",
+    "next": "Next",
+    "finish": "Finish Tour",
+    "skipTour": "Skip Tour",
+    "setupProgress": "Setup Progress",
+    "almostDone": "Almost done!",
+    "congratulations": "Congratulations!",
+    "setupComplete": "Your workspace is ready for customers",
+    "getStarted": "Get Started",
+    "continueSetup": "Continue Setup",
+    "viewDashboard": "Go to Dashboard"
+  },
   "app": {
     "appName": "Coworking Management",
     "appShortName": "PowerCowo",

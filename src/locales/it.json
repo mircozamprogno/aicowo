@@ -981,6 +981,59 @@
       "deletePayment": "Elimina questo record di pagamento"
     }
   },
+  "tour": {
+    "welcome": {
+      "title": "Benvenuto su PowerCowo, {{name}}!",
+      "subtitle": "Configuriamo il tuo spazio di coworking",
+      "description": "In soli 3 semplici passaggi, ti aiuteremo a configurare il tuo workspace così potrai iniziare ad accettare clienti e gestire prenotazioni immediatamente.",
+      "setupStepsTitle": "Quello che configureremo insieme:",
+      "step1Title": "Crea la Tua Sede",
+      "step1Description": "Aggiungi la sede del tuo spazio di coworking con indirizzo, contatti e foto",
+      "step2Title": "Aggiungi Risorse",
+      "step2Description": "Definisci scrivanie, sale riunioni e altre risorse prenotabili",
+      "step3Title": "Crea Servizi",
+      "step3Description": "Configura pacchetti e abbonamenti che i tuoi clienti possono acquistare",
+      "benefitsTitle": "Perché completare la configurazione?",
+      "benefit1": "Inizia ad accettare prenotazioni immediatamente",
+      "benefit2": "Gestione professionale del workspace",
+      "benefit3": "Pronto per i tuoi primi clienti",
+      "startTour": "Inizia Tour Guidato",
+      "skipTour": "Salta Configurazione",
+      "notNow": "Forse Più Tardi",
+      "note": "Non preoccuparti - puoi sempre modificare queste impostazioni in seguito"
+    },
+    "steps": {
+      "locations": {
+        "title": "Crea la Tua Prima Sede",
+        "description": "Ogni spazio di coworking ha bisogno di almeno una sede. Qui i tuoi clienti prenoteranno scrivanie e sale riunioni.",
+        "action": "Clicca su Partner per gestire la tua sede"
+      },
+      "resources": {
+        "title": "Aggiungi le Tue Risorse",
+        "description": "Le risorse sono gli elementi prenotabili nella tua sede - come hot desk, uffici privati o sale riunioni.",
+        "action": "Aggiungi risorse mentre crei la tua sede"
+      },
+      "services": {
+        "title": "Definisci i Tuoi Servizi",
+        "description": "I servizi sono quello che i clienti acquistano - come accesso mensile alle scrivanie o pacchetti sale riunioni.",
+        "action": "Clicca su Servizi per creare la tua prima offerta"
+      }
+    },
+    "stepNumber": "Passaggio {{current}} di {{total}}",
+    "completed": "Completato",
+    "stepsCompleted": "passaggi completati",
+    "previous": "Precedente",
+    "next": "Successivo",
+    "finish": "Termina Tour",
+    "skipTour": "Salta Tour",
+    "setupProgress": "Progresso Configurazione",
+    "almostDone": "Quasi finito!",
+    "congratulations": "Congratulazioni!",
+    "setupComplete": "Il tuo workspace è pronto per i clienti",
+    "getStarted": "Inizia",
+    "continueSetup": "Continua Configurazione",
+    "viewDashboard": "Vai alla Dashboard"
+  },
   "app": {
     "appName": "Gestione Coworking",
     "appShortName": "PowerCowo",

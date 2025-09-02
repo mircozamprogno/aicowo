@@ -1,0 +1,1401 @@
+/* src/styles/tour.css - Complete Tour Styles */
+
+/* =============================================================================
+   WELCOME MODAL STYLES
+   ============================================================================= */
+
+.welcome-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+.welcome-modal-container {
+  background: white;
+  border-radius: 16px;
+  max-width: 640px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: welcomeModalFadeIn 0.3s ease-out;
+}
+
+@keyframes welcomeModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.welcome-modal-header {
+  padding: 24px 24px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.welcome-modal-close {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #6b7280;
+}
+
+.welcome-modal-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.welcome-modal-content {
+  padding: 0 24px 24px;
+}
+
+/* Welcome Section */
+.welcome-section {
+  text-align: center;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 32px;
+}
+
+.welcome-icon {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 24px -4px rgba(79, 70, 229, 0.3);
+}
+
+.welcome-icon-svg {
+  color: white;
+}
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+
+.welcome-subtitle {
+  font-size: 18px;
+  color: #4f46e5;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.welcome-description {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Setup Preview */
+.setup-preview {
+  margin-bottom: 32px;
+}
+
+.setup-preview-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.setup-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setup-step {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.setup-step:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.setup-step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.setup-step-icon.location {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.setup-step-icon.resources {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.setup-step-icon.services {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.setup-step-content {
+  flex: 1;
+}
+
+.setup-step-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.setup-step-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.setup-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Benefits Section */
+.benefits-section {
+  margin-bottom: 32px;
+}
+
+.benefits-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.benefit-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.benefit-text {
+  font-size: 14px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+/* Modal Actions */
+.welcome-modal-actions {
+  padding: 0 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.welcome-action-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  min-width: 120px;
+}
+
+.welcome-action-button.primary {
+  background: #4f46e5;
+  color: white;
+}
+
+.welcome-action-button.primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.welcome-action-button.secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.welcome-action-button.secondary:hover {
+  background: #e5e7eb;
+}
+
+.welcome-action-button.tertiary {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.welcome-action-button.tertiary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.welcome-modal-note {
+  padding: 0 24px 24px;
+  text-align: center;
+}
+
+.welcome-modal-note p {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+  font-style: italic;
+}
+
+/* =============================================================================
+   TOUR OVERLAY STYLES
+   ============================================================================= */
+
+.tour-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+}
+
+.tour-spotlight {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+  border: 3px solid #4f46e5;
+  animation: tourSpotlightPulse 2s infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes tourSpotlightPulse {
+  0%, 100% {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px rgba(79, 70, 229, 0.5);
+  }
+  50% {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 30px rgba(124, 58, 237, 0.7);
+  }
+}
+
+.tour-pulse {
+  position: absolute;
+  border-radius: 12px;
+  border: 2px solid #4f46e5;
+  animation: tourPulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+@keyframes tourPulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+.tour-tooltip {
+  position: fixed;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 10000;
+  animation: tourTooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tourTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tour-tooltip-header {
+  padding: 16px 16px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.tour-step-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.tour-step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.tour-step-icon.locations {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.tour-step-icon.resources {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.tour-step-icon.services {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.tour-step-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tour-step-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tour-step-completed {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.tour-close-button {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.tour-close-button:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.tour-tooltip-content {
+  padding: 16px;
+}
+
+.tour-tooltip-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.tour-tooltip-description {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.tour-action-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fef3c7;
+  border-radius: 8px;
+  border-left: 3px solid #f59e0b;
+}
+
+.tour-action-icon {
+  font-size: 16px;
+}
+
+.tour-action-text {
+  font-size: 13px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.tour-tooltip-progress {
+  padding: 0 16px 16px;
+}
+
+.tour-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.tour-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  transition: width 0.3s ease;
+}
+
+.tour-progress-text {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  display: block;
+}
+
+.tour-tooltip-actions {
+  padding: 0 16px 16px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.tour-navigation {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tour-nav-button {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tour-nav-button.previous {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tour-nav-button.previous:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.tour-nav-button.previous:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tour-nav-button.next {
+  background: #4f46e5;
+  color: white;
+}
+
+.tour-nav-button.next:hover {
+  background: #4338ca;
+}
+
+.tour-skip-button {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.tour-skip-button:hover {
+  color: #6b7280;
+}
+
+/* =============================================================================
+   SETUP PROGRESS INDICATOR STYLES
+   ============================================================================= */
+
+.setup-progress-indicator {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.setup-progress-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.setup-progress-title-section {
+  flex: 1;
+}
+
+.setup-progress-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.setup-progress-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.setup-progress-percentage {
+  font-size: 24px;
+  font-weight: 700;
+  color: #4f46e5;
+  line-height: 1;
+}
+
+.setup-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.setup-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  transition: width 0.5s ease;
+  border-radius: 4px;
+}
+
+.setup-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.setup-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.setup-step-item.completed {
+  background: #f0fdf4;
+  border-color: #16a34a;
+}
+
+.setup-step-item.pending {
+  background: #fefbf3;
+  border-color: #f59e0b;
+}
+
+.setup-step-icon-container {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.setup-step-check {
+  color: #16a34a;
+}
+
+.setup-step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.setup-step-content {
+  flex: 1;
+}
+
+.setup-step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.setup-step-type-icon {
+  color: #6b7280;
+}
+
+.setup-step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.setup-step-description {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.setup-step-status {
+  flex-shrink: 0;
+}
+
+.setup-step-status-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setup-step-status-badge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.setup-step-status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.setup-progress-actions {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+}
+
+.setup-continue-button {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 160px;
+}
+
+.setup-continue-button:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Setup Complete State */
+.setup-progress-complete {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #16a34a;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.setup-complete-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.setup-complete-content {
+  flex: 1;
+}
+
+.setup-complete-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #166534;
+  margin: 0 0 4px;
+}
+
+.setup-complete-description {
+  font-size: 14px;
+  color: #15803d;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* =============================================================================
+   NOTIFICATION DOT STYLES
+   ============================================================================= */
+
+.tour-notification-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: tourNotificationPulse 2s infinite;
+}
+
+@keyframes tourNotificationPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* =============================================================================
+   DASHBOARD INTEGRATION STYLES
+   ============================================================================= */
+
+.dashboard-setup-section {
+  margin-bottom: 32px;
+}
+
+.dashboard-setup-banner {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-setup-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(251, 191, 36, 0.1) 10px,
+    rgba(251, 191, 36, 0.1) 20px
+  );
+  animation: dashboardBannerShimmer 3s linear infinite;
+}
+
+@keyframes dashboardBannerShimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%);
+  }
+}
+
+.dashboard-setup-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-setup-icon {
+  width: 48px;
+  height: 48px;
+  background: #f59e0b;
+  color: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dashboard-setup-text {
+  flex: 1;
+}
+
+.dashboard-setup-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 4px;
+}
+
+.dashboard-setup-description {
+  font-size: 14px;
+  color: #a16207;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.dashboard-setup-action {
+  background: #92400e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.dashboard-setup-action:hover {
+  background: #78350f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(146, 64, 14, 0.3);
+}
+
+/* =============================================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .welcome-modal-container {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .welcome-modal-content {
+    padding: 0 16px 16px;
+  }
+
+  .welcome-title {
+    font-size: 24px;
+  }
+
+  .welcome-subtitle {
+    font-size: 16px;
+  }
+
+  .welcome-description {
+    font-size: 14px;
+  }
+
+  .setup-step-status {
+    align-self: flex-end;
+  }
+
+  .setup-continue-button {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* =============================================================================
+   HIGH CONTRAST MODE SUPPORT
+   ============================================================================= */
+
+@media (prefers-contrast: high) {
+  .setup-progress-fill {
+    background: #000;
+  }
+
+  .setup-step-item.completed {
+    border-color: #000;
+  }
+
+  .setup-step-item.pending {
+    border-color: #666;
+  }
+
+  .tour-spotlight {
+    border-color: #000;
+    border-width: 4px;
+  }
+
+  .welcome-modal-container {
+    border: 2px solid #000;
+  }
+
+  .tour-tooltip {
+    border: 2px solid #000;
+  }
+}
+
+/* =============================================================================
+   REDUCED MOTION SUPPORT
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-spotlight,
+  .tour-pulse,
+  .tour-notification-dot {
+    animation: none;
+  }
+
+  .setup-progress-fill,
+  .tour-nav-button,
+  .setup-continue-button,
+  .welcome-action-button {
+    transition: none;
+  }
+
+  .dashboard-setup-banner::before {
+    animation: none;
+  }
+
+  .welcomeModalFadeIn,
+  .tourTooltipFadeIn,
+  .tourSpotlightPulse,
+  .tourPulseRing,
+  .tourNotificationPulse,
+  .dashboardBannerShimmer {
+    animation: none;
+  }
+}
+
+/* =============================================================================
+   DARK MODE SUPPORT (if needed in future)
+   ============================================================================= */
+
+@media (prefers-color-scheme: dark) {
+  .welcome-modal-container,
+  .tour-tooltip,
+  .setup-progress-indicator {
+    background: #1f2937;
+    color: #f9fafb;
+    border-color: #374151;
+  }
+
+  .welcome-title,
+  .tour-tooltip-title,
+  .setup-progress-title,
+  .setup-step-title {
+    color: #f9fafb;
+  }
+
+  .welcome-description,
+  .tour-tooltip-description,
+  .setup-progress-subtitle,
+  .setup-step-description {
+    color: #d1d5db;
+  }
+
+  .setup-step-item {
+    background: #374151;
+    border-color: #4b5563;
+  }
+
+  .setup-step-item.completed {
+    background: #064e3b;
+    border-color: #10b981;
+  }
+
+  .setup-step-item.pending {
+    background: #451a03;
+    border-color: #f59e0b;
+  }
+
+  .tour-overlay {
+    background: rgba(0, 0, 0, 0.9);
+  }
+
+  .welcome-modal-overlay {
+    background: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* =============================================================================
+   PRINT STYLES (hide tour elements when printing)
+   ============================================================================= */
+
+@media print {
+  .tour-overlay,
+  .tour-tooltip,
+  .tour-spotlight,
+  .tour-pulse,
+  .welcome-modal-overlay,
+  .welcome-modal-container,
+  .tour-notification-dot,
+  .setup-progress-indicator {
+    display: none !important;
+  }
+}
+
+/* =============================================================================
+   FOCUS STYLES FOR ACCESSIBILITY
+   ============================================================================= */
+
+.welcome-action-button:focus,
+.tour-nav-button:focus,
+.setup-continue-button:focus,
+.tour-close-button:focus,
+.welcome-modal-close:focus,
+.tour-skip-button:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.welcome-action-button:focus-visible,
+.tour-nav-button:focus-visible,
+.setup-continue-button:focus-visible {
+  box-shadow: 0 0 0 2px #4f46e5;
+}
+
+/* =============================================================================
+   ANIMATION UTILITIES
+   ============================================================================= */
+
+@keyframes tourShake {
+  0%, 100% { 
+    transform: translateX(0); 
+  }
+  10%, 30%, 50%, 70%, 90% { 
+    transform: translateX(-2px); 
+  }
+  20%, 40%, 60%, 80% { 
+    transform: translateX(2px); 
+  }
+}
+
+.tour-shake {
+  animation: tourShake 0.5s ease-in-out;
+}
+
+/* Glow effect for important elements during tour */
+.tour-glow {
+  box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+  border: 2px solid #4f46e5;
+  border-radius: 8px;
+}
+
+/* =============================================================================
+   CUSTOM SCROLLBAR FOR MODAL CONTENT
+   ============================================================================= */
+
+.welcome-modal-container::-webkit-scrollbar,
+.setup-progress-indicator::-webkit-scrollbar {
+  width: 6px;
+}
+
+.welcome-modal-container::-webkit-scrollbar-track,
+.setup-progress-indicator::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.welcome-modal-container::-webkit-scrollbar-thumb,
+.setup-progress-indicator::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.welcome-modal-container::-webkit-scrollbar-thumb:hover,
+.setup-progress-indicator::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* =============================================================================
+   LOADING STATES
+   ============================================================================= */
+
+.tour-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid #4f46e5;
+  border-radius: 50%;
+  animation: tourLoadingSpin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@keyframes tourLoadingSpin {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
+
+.tour-loading-spinner.white {
+  border-top-color: white;
+}
+
+/* =============================================================================
+   TOOLTIP POSITIONING ARROWS (optional enhancement)
+   ============================================================================= */
+
+.tour-tooltip::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px;
+}
+
+.tour-tooltip.position-right::before {
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: transparent white transparent transparent;
+}
+
+.tour-tooltip.position-left::before {
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: transparent transparent transparent white;
+}
+
+.tour-tooltip.position-bottom::before {
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-color: transparent transparent white transparent;
+}
+
+.tour-tooltip.position-top::before {
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-color: white transparent transparent transparent;
+}
+
+/* =============================================================================
+   FINAL RESPONSIVE BREAKPOINTS
+   ============================================================================= */
+
+@media (max-width: 320px) {
+  .welcome-modal-container {
+    width: 98%;
+    margin: 1%;
+  }
+
+  .welcome-title {
+    font-size: 20px;
+  }
+
+  .setup-step-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tour-tooltip {
+    width: calc(100vw - 20px);
+    left: 10px !important;
+  }
+}
+
+
+/* ADD THESE MISSING PARTS TO THE END OF YOUR tour.css FILE */
+
+/* Missing mobile responsive styles that were cut off */
+@media (max-width: 768px) {
+  .setup-step {
+    padding: 16px;
+  }
+
+  .setup-step-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .welcome-modal-actions {
+    flex-direction: column;
+    padding: 0 16px 16px;
+  }
+
+  .welcome-action-button {
+    width: 100%;
+  }
+
+  .tour-tooltip {
+    width: 280px;
+  }
+
+  .tour-tooltip-title {
+    font-size: 16px;
+  }
+
+  .setup-progress-indicator {
+    padding: 16px;
+  }
+
+  .setup-progress-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .setup-progress-percentage {
+    font-size: 20px;
+  }
+
+  .setup-step-item {
+    padding: 12px;
+  }
+
+  .setup-step-header {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-setup-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .dashboard-setup-action {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .tour-tooltip {
+    width: calc(100vw - 40px);
+    left: 20px !important;
+    right: 20px;
+  }
+
+  .benefits-grid {
+    gap: 8px;
+  }
+
+  .benefit-item {
+    padding: 10px 12px;
+  }
+
+  .benefit-text {
+    font-size: 13px;
+  }
+
+  .setup-progress-title {
+    font-size: 16px;
+  }
+
+  .setup-step-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .setup-step-status {
+    align-self: flex-end;
+  }
+
+  .setup-continue-button {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* Final large screen optimization */
+@media (min-width: 1200px) {
+  .welcome-modal-container {
+    max-width: 720px;
+  }
+
+  .tour-tooltip {
+    width: 360px;
+  }
+
+  .setup-progress-indicator {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

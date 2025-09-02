@@ -4,6 +4,9 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+// Add these imports at the top:
+import { useTourIntegration } from '../../hooks/useTourIntegration';
+
 const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, locations = [] }) => {
   const { t } = useTranslation();
   const isEditing = !!service;
@@ -26,6 +29,9 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
   const [locationResources, setLocationResources] = useState([]);
   const [loadingResources, setLoadingResources] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Then in the ServiceForm component, add this hook after the existing hooks:
+  const { onServiceCreated } = useTourIntegration();
 
   // Update form data when service changes
   useEffect(() => {
@@ -244,6 +250,11 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               )
             )
           `);
+        // ADD THIS - Track tour progress for new services
+        const { data } = result;
+        if (data && data[0]) {
+          await onServiceCreated(data[0]);
+        }
       }
 
       const { data, error } = result;

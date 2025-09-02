@@ -1,6 +1,8 @@
 import { Calendar, Image, Mail, Map, MapPin, Monitor, Navigation, Phone, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { useTourIntegration } from '../../hooks/useTourIntegration';
 import { imageService } from '../../services/imageService';
 import { supabase } from '../../services/supabase';
 import ImageUpload from '../common/ImageUpload';
@@ -10,6 +12,8 @@ import MapSelector from '../maps/MapSelector';
 const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null }) => {
   const { t } = useTranslation();
   const isEditing = !!location;
+
+  const { profile } = useAuth();
   
   // VAT defaults by country
   const getDefaultVatByCountry = (country) => {
@@ -43,11 +47,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     vat_percentage: 22.00
   });
 
-  const [resources, setResources] = useState([
-    { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' },
-    { resource_type: 'sala_riunioni', resource_name: '', quantity: '1', description: '' }
-  ]);
-
   // Image states
   const [images, setImages] = useState({
     exterior: [],
@@ -55,10 +54,17 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     sala_riunioni: []
   });
 
+  const [resources, setResources] = useState([]);
+
   const [activeTab, setActiveTab] = useState('basic');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+
+  // Then in the LocationForm component, add this hook after the existing hooks:
+  const { onLocationCreated } = useTourIntegration();
+
+
 
   // Initialize form data when location changes
   useEffect(() => {
@@ -90,10 +96,13 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         }));
         setResources(formattedResources);
       } else {
-        setResources([
-          { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' },
-          { resource_type: 'sala_riunioni', resource_name: '', quantity: '1', description: '' }
-        ]);
+        if (profile?.role === 'superadmin') {
+          setResources([]);
+        } else {
+          setResources([
+            { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' }
+          ]);
+        }
       }
 
       // Load existing images
@@ -117,17 +126,20 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       };
       
       setFormData(defaultFormData);
-      setResources([
-        { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' },
-        { resource_type: 'sala_riunioni', resource_name: '', quantity: '1', description: '' }
-      ]);
+      if (profile?.role === 'superadmin') {
+        setResources([]);
+      } else {
+        setResources([
+          { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' }
+        ]);
+      }
       setImages({
         exterior: [],
         scrivania: [],
         sala_riunioni: []
       });
     }
-  }, [location, partnerData]);
+  }, [location, partnerData, profile?.role]);
 
   // Update VAT when country changes (only for new locations)
   useEffect(() => {
@@ -213,6 +225,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const geocodeAddress = async () => {
     const { address, city, postal_code, country } = formData;
     
+    console.log('🗺️ Geocoding request:', { address, city, postal_code, country });
+    
     if (!address && !city) {
       toast.error(t('locations.addressOrCityRequired'));
       return;
@@ -230,17 +244,23 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       ].filter(Boolean);
       
       const query = addressComponents.join(', ');
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=${country === 'Italy' ? 'it' : ''}`;
       
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=${country === 'Italy' ? 'it' : ''}`
-      );
+      console.log('🔍 Query:', query);
+      console.log('🌐 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('📡 Response status:', response.status);
       
       const data = await response.json();
+      console.log('📊 Response data:', data);
       
       if (data && data.length > 0) {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
+        
+        console.log('✅ Found coordinates:', { lat, lng });
         
         setFormData(prev => ({
           ...prev,
@@ -249,14 +269,13 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         }));
         
         toast.success(t('locations.addressGeocodedSuccessfully'));
-        
-        // Switch to map tab to show the result
         setActiveTab('location');
       } else {
+        console.log('❌ No results found');
         toast.error(t('locations.addressNotFound'));
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('💥 Geocoding error:', error);
       toast.error(t('locations.geocodingError'));
     } finally {
       setGeocoding(false);
@@ -324,15 +343,22 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       return false;
     }
 
+    const isSuperAdmin = profile?.role === 'superadmin';
+
+    // For admin users, at least one resource is required
+    if (!isSuperAdmin && resources.filter(r => r.resource_name.trim()).length === 0) {
+      toast.error('At least one resource is required for partner locations');
+      return false;
+    }
+
+    // Validate filled resources
     for (let i = 0; i < resources.length; i++) {
       const resource = resources[i];
-      if (!resource.resource_name.trim()) {
-        toast.error(t('messages.resourceNameRequired', { index: i + 1 }));
-        return false;
-      }
-      if (!resource.quantity || parseInt(resource.quantity) <= 0) {
-        toast.error(t('messages.validResourceQuantityRequired', { index: i + 1 }));
-        return false;
+      if (resource.resource_name.trim()) {
+        if (!resource.quantity || parseInt(resource.quantity) <= 0) {
+          toast.error(t('messages.validResourceQuantityRequired', { index: i + 1 }));
+          return false;
+        }
       }
     }
 
@@ -410,6 +436,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
         if (locationError) throw locationError;
         locationData = newLocation;
+
+        await onLocationCreated({
+          ...locationData,
+          resources: [] // Will be updated after resources are created
+        });
       }
 
       // Insert/Update resources
@@ -995,7 +1026,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
                     <div className="resources-list">
                       {resources.map((resource, index) => (
-                        <div key={index} className="resource-item">
+                        <div key={resource.id || `resource-${index}`} className="resource-item">
                           <div className="resource-item-header">
                             <div className="resource-item-info">
                               <div className="resource-number-badge">

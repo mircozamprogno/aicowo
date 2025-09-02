@@ -8,6 +8,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
+// Add these imports to the top of Dashboard.jsx:
+import SetupProgressIndicator from '../components/tour/SetupProgressIndicator';
+import TourOverlay from '../components/tour/TourOverlay';
+import WelcomeModal from '../components/tour/WelcomeModal';
+import { useTour } from '../contexts/TourContext';
+
+
+
+
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const { t } = useTranslation();
@@ -60,6 +70,9 @@ const Dashboard = () => {
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
 
+  // Then in the Dashboard component, add this after the existing hooks:
+  const { isOnboardingComplete, shouldShowWelcome } = useTour();
+
   useEffect(() => {
     if (profile) {
       if (isCustomer) {
@@ -72,6 +85,7 @@ const Dashboard = () => {
       }
     }
   }, [profile, user]);
+
 
   // NEW: Fetch customer contracts
   const fetchCustomerContracts = async () => {
@@ -1007,7 +1021,13 @@ const Dashboard = () => {
           <h1 className="dashboard-title">
             {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
           </h1>
-          
+
+          {!isOnboardingComplete && (
+            <div className="dashboard-setup-section">
+              <SetupProgressIndicator />
+            </div>
+          )}
+
           {/* Business Overview Stats */}
           <div className="dashboard-section">
             <h2 className="section-title">Panoramica Business</h2>
@@ -1224,6 +1244,9 @@ const Dashboard = () => {
           />
         </>
       )}
+      {/* ADD THESE - Tour Components */}
+      <WelcomeModal />
+      <TourOverlay />
     </div>
   );
 };

@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.09.02 V 0.510 Partner Guided Tour 
 2025.09.01 V 0.500 Payments + export CSV
 2025.08.30 V 0.410 Dashboard with cards, new status
 2025.08.28 V 0.400 Iva, Status, Tipo cliente
