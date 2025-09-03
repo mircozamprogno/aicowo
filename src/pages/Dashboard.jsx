@@ -14,6 +14,10 @@ import TourOverlay from '../components/tour/TourOverlay';
 import WelcomeModal from '../components/tour/WelcomeModal';
 import { useTour } from '../contexts/TourContext';
 
+// Add this import to the top of Dashboard.jsx with your other imports:
+import oneSignalEmailService from '../services/oneSignalEmailService';
+
+
 
 
 
@@ -246,13 +250,133 @@ const Dashboard = () => {
     toast.success(t('messages.contractCreatedSuccessfully') || 'Contract created successfully');
   };
 
-  const handlePackageBookingSuccess = (reservation) => {
-    console.log('Package booking successful:', reservation);
+
+  // Replace your existing handlePackageBookingSuccess method with this enhanced version:
+  const handlePackageBookingSuccess = async (reservation) => {
+    console.log('🎯 BOOKING SUCCESS HANDLER CALLED!', reservation);
+    console.log('📧 Selected package contract:', selectedPackageContract);
     
+    try {
+      // Send booking confirmation emails if we have contract data
+      if (selectedPackageContract) {
+        console.log('📧 About to send emails for contract:', selectedPackageContract);
+        console.log('📧 Reservation data:', reservation);
+        console.log('📧 OneSignal configured?', oneSignalEmailService.isBookingConfigured);
+        
+        // Get partner data for partner email
+        let partnerData = null;
+        if (profile?.partner_uuid) {
+          try {
+            console.log('📧 Fetching partner data for UUID:', profile.partner_uuid);
+            
+            const { data: partner, error: partnerError } = await supabase
+              .from('partners')
+              .select('email, first_name, second_name, company_name')
+              .eq('partner_uuid', profile.partner_uuid)
+              .single();
+            
+            if (!partnerError && partner) {
+              console.log('📧 Partner data found:', partner);
+              console.log('📧 Partner email field:', { 
+                email: partner.email
+              });
+              partnerData = partner;
+            } else {
+              console.warn('📧 Partner data fetch error:', partnerError);
+            }
+          } catch (error) {
+            console.warn('📧 Could not fetch partner data for email:', error);
+          }
+        }
+
+        // We need to get full contract data with customer info for the email
+        // The selectedPackageContract might not have complete customer data
+        let fullContractData = selectedPackageContract;
+        
+        try {
+          console.log('📧 Fetching full contract data for ID:', selectedPackageContract.id);
+          
+          const { data: contractData, error: contractError } = await supabase
+            .from('contracts')
+            .select(`
+              *,
+              customers (
+                id,
+                first_name,
+                second_name,
+                email,
+                company_name
+              ),
+              services (
+                id,
+                service_name,
+                service_type
+              ),
+              locations (
+                id,
+                location_name
+              )
+            `)
+            .eq('id', selectedPackageContract.id)
+            .single();
+
+          if (!contractError && contractData) {
+            console.log('📧 Full contract data fetched:', contractData);
+            fullContractData = contractData;
+          } else {
+            console.warn('📧 Could not fetch full contract data:', contractError);
+          }
+        } catch (error) {
+          console.warn('📧 Error fetching full contract data:', error);
+        }
+
+        // Send booking confirmation emails
+        console.log('📧 Sending booking confirmation emails...');
+        
+        const emailResults = await oneSignalEmailService.sendBookingConfirmation(
+          reservation, // booking data
+          fullContractData, // contract data with customer info
+          t, // translation function
+          partnerData // partner data (optional)
+        );
+
+        // Log email results
+        console.log('📧 Email results:', emailResults);
+        
+        if (emailResults.customerSuccess) {
+          console.log('✅ Customer booking confirmation sent successfully');
+        } else {
+          console.warn('❌ Failed to send customer booking confirmation');
+        }
+
+        if (emailResults.partnerSuccess) {
+          console.log('✅ Partner booking notification sent successfully');
+        } else {
+          console.warn('❌ Failed to send partner booking notification');
+        }
+
+        // Optionally show toast messages about email status
+        if (emailResults.customerSuccess && emailResults.partnerSuccess) {
+          toast.success(t('reservations.confirmationEmailsSent') || 'Email di conferma inviate');
+        } else if (emailResults.customerSuccess || emailResults.partnerSuccess) {
+          toast.info(t('reservations.someEmailsSent') || 'Alcune email di conferma inviate');
+        } else {
+          console.warn('📧 No emails were sent successfully');
+        }
+      } else {
+        console.warn('📧 No selectedPackageContract available for email sending');
+      }
+    } catch (error) {
+      console.error('❌ Error sending booking confirmation emails:', error);
+      // Don't fail the booking process if emails fail
+    }
+
+    // Continue with existing success logic
     // Update the local contract state immediately for better UX
     setContracts(prev => prev.map(contract => {
       if (contract.id === reservation.contract_id) {
         const newEntriesUsed = parseFloat(contract.entries_used || 0) + parseFloat(reservation.entries_used || 0);
+        console.log(`📊 Updating contract ${contract.id}: ${contract.entries_used} + ${reservation.entries_used} = ${newEntriesUsed}`);
         return {
           ...contract,
           entries_used: newEntriesUsed
@@ -651,7 +775,7 @@ const Dashboard = () => {
         <div className="chart-tooltip">
           <p className="tooltip-label">{`${label}`}</p>
           {payload.map((entry, index) => (
-            <p key={index} className="tooltip-entry" style={{ color: entry.color }}>
+            <p key={entry.dataKey || index} className="tooltip-entry" style={{ color: entry.color }}>
               {`${entry.dataKey}: ${entry.value}`}
             </p>
           ))}

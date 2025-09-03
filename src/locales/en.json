@@ -590,7 +590,9 @@
     "usePackageEntries": "Use your package entries",
     "packageReservations": "Package Reservations",
     "bookPackage": "Book Package",
-    "cannotBook": "Cannot Book"
+    "cannotBook": "Cannot Book",
+    "someEmailsSent": "Partner email sent",
+    "confirmationEmailsSent": "Confirmation email sent"
   },
   "contracts": {
     "title": "Contracts",

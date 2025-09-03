@@ -591,7 +591,9 @@
     "usePackageEntries": "Utilizza i tuoi ingressi pacchetto",
     "packageReservations": "Prenotazioni Pacchetto",
     "bookPackage": "Prenota Pacchetto",
-    "cannotBook": "Non Disponibile"
+    "cannotBook": "Non Disponibile",
+    "someEmailsSent": "Partner mail inviata",
+    "confirmationEmailsSent": "Email di conferma inviata"
   },
   "contracts": {
     "title": "Contratti",

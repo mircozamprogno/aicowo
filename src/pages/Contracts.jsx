@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { ContractArchiveService } from '../services/contractArchiveService';
 import { CSVExportService } from '../services/csvExportService'; // Add this import
+import oneSignalEmailService from '../services/oneSignalEmailService';
 import { PaymentService } from '../services/paymentService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
@@ -287,8 +288,66 @@ const Contracts = () => {
     setSelectedPackageContract(null);
   };
 
-  const handlePackageBookingSuccess = (reservation) => {
+  const handlePackageBookingSuccess = async (reservation) => {
     console.log('Package booking successful:', reservation);
+    
+    try {
+      // Send booking confirmation emails
+      if (selectedPackageContract) {
+        console.log('Sending booking confirmation emails...');
+        
+        // Get partner data for partner email (you might need to fetch this)
+        let partnerData = null;
+        if (profile?.partner_uuid) {
+          try {
+            const { data: partner, error: partnerError } = await supabase
+              .from('partners')
+              .select('email, contact_email, first_name, second_name, company_name')
+              .eq('partner_uuid', profile.partner_uuid)
+              .single();
+            
+            if (!partnerError && partner) {
+              partnerData = partner;
+            }
+          } catch (error) {
+            console.warn('Could not fetch partner data for email:', error);
+          }
+        }
+
+        // Send booking confirmation emails
+        const emailResults = await oneSignalEmailService.sendBookingConfirmation(
+          reservation, // booking data
+          selectedPackageContract, // contract data
+          t, // translation function
+          partnerData // partner data (optional)
+        );
+
+        // Log email results
+        if (emailResults.customerSuccess) {
+          console.log('Customer booking confirmation sent successfully');
+        } else {
+          console.warn('Failed to send customer booking confirmation');
+        }
+
+        if (emailResults.partnerSuccess) {
+          console.log('Partner booking notification sent successfully');
+        } else {
+          console.warn('Failed to send partner booking notification');
+        }
+
+        // Optionally show toast messages about email status
+        if (emailResults.customerSuccess && emailResults.partnerSuccess) {
+          toast.success(t('reservations.confirmationEmailsSent') || 'Email di conferma inviate');
+        } else if (emailResults.customerSuccess || emailResults.partnerSuccess) {
+          toast.info(t('reservations.someEmailsSent') || 'Alcune email di conferma inviate');
+        }
+      }
+    } catch (error) {
+      console.error('Error sending booking confirmation emails:', error);
+      // Don't fail the booking process if emails fail
+    }
+
+    // Continue with existing success logic
     fetchContracts(); // Refresh contracts to update entries_used
     setShowPackageBooking(false);
     setSelectedPackageContract(null);
