@@ -2394,3 +2394,141 @@
     height: 14px;
   }
 }
+
+
+/* fatture in cloud Add these CSS styles (you can add them to your CSS file) */
+
+.fattureincloud-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fattureincloud-upload-btn:hover {
+  background-color: #bbdefb;
+  border-color: #90caf9;
+}
+
+.fattureincloud-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fattureincloud-status.uploaded {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.bulk-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+  border: 1px solid #ce93d8;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bulk-upload-btn:hover {
+  background-color: #e1bee7;
+  border-color: #ba68c8;
+}
+
+.bulk-upload-modal {
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.contracts-selection {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+
+.contract-selection-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.contract-selection-item:hover {
+  background-color: #f9f9f9;
+}
+
+.contract-selection-item:last-child {
+  border-bottom: none;
+}
+
+.contract-info {
+  flex: 1;
+}
+
+.contract-number {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.contract-details {
+  font-size: 12px;
+  color: #666;
+}
+
+.upload-result {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.upload-result.success {
+  color: #2e7d32;
+}
+
+.upload-result.error {
+  color: #d32f2f;
+}
+
+.select-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.no-eligible-contracts {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+

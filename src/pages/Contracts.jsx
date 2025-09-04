@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, Download, FileText, Plus, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Clock, Download, FileText, Plus, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ContractActionsCell from '../components/ContractActionsCell';
@@ -14,6 +14,10 @@ import oneSignalEmailService from '../services/oneSignalEmailService';
 import { PaymentService } from '../services/paymentService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
+
+// Add these imports at the top
+import { BulkUploadModal } from '../components/fattureincloud/FattureInCloudComponents';
+import { FattureInCloudService } from '../services/fattureInCloudService';
 
 
 const Contracts = () => {
@@ -56,6 +60,47 @@ const Contracts = () => {
   // CSV Export states
   const [exportingCSV, setExportingCSV] = useState(false);
 
+  // Add these state variables in the Contracts component
+  const [partnerSettings, setPartnerSettings] = useState(null);
+  const [uploadStatuses, setUploadStatuses] = useState({});
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+
+
+  // Add these functions before the return statement
+  const loadPartnerSettings = async () => {
+    try {
+      const settings = await FattureInCloudService.getPartnerSettings(profile.partner_uuid);
+      setPartnerSettings(settings);
+    } catch (error) {
+      console.error('Error loading partner settings:', error);
+    }
+  };
+
+  const loadUploadStatuses = async () => {
+    try {
+      const contractIds = contracts.map(c => c.id);
+      const statuses = await FattureInCloudService.getUploadStatus(contractIds);
+      setUploadStatuses(statuses);
+    } catch (error) {
+      console.error('Error loading upload statuses:', error);
+    }
+  };
+
+  const handleUploadSuccess = (result) => {
+    // Refresh upload statuses
+    loadUploadStatuses();
+  };
+
+  const handleBulkUpload = () => {
+    setShowBulkUpload(true);
+  };
+
+  const handleBulkUploadClose = () => {
+    setShowBulkUpload(false);
+    // Refresh upload statuses after bulk upload
+    loadUploadStatuses();
+  };
+
   useEffect(() => {
     if (profile) {
       fetchContracts();
@@ -64,6 +109,22 @@ const Contracts = () => {
       }
     }
   }, [profile]);
+
+
+  // Add this useEffect after the existing ones
+  useEffect(() => {
+    if (profile?.partner_uuid && (isPartnerAdmin || isSuperAdmin)) {
+      loadPartnerSettings();
+    }
+  }, [profile]);
+
+  // Add this useEffect to load upload statuses when contracts change
+  useEffect(() => {
+    if (contracts.length > 0 && partnerSettings?.fattureincloud_enabled) {
+      loadUploadStatuses();
+    }
+  }, [contracts, partnerSettings]);
+
 
   const fetchContracts = async () => {
     try {
@@ -795,6 +856,8 @@ const Contracts = () => {
     }
   };
 
+
+
   return (
     <div className="contracts-page">
       <div className="contracts-header">
@@ -858,6 +921,19 @@ const Contracts = () => {
               </button>
             )}
 
+            {/* FattureInCloud Bulk Upload Button */}
+            {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
+              <button 
+                className="bulk-upload-btn"
+                onClick={handleBulkUpload}
+                disabled={contracts.length === 0}
+                title="Upload to FattureInCloud"
+              >
+                <Upload size={16} className="mr-2" />
+                Upload F.C.
+              </button>
+            )}
+
             <button className="add-contract-btn" onClick={handleCreateContract}>
               <Plus size={16} className="mr-2" />
               {t('contracts.createContract')}
@@ -899,7 +975,8 @@ const Contracts = () => {
                   <th className="contracts-table-header">
                     {t('payments.paymentStatus')}
                   </th>
-                )}                <th className="contracts-table-header">
+                )}                                              
+                <th className="contracts-table-header">
                   {t('contracts.actions')}
                 </th>
               </tr>
@@ -1191,6 +1268,16 @@ const Contracts = () => {
         contract={selectedContract}
         onEditPayment={handleEditPayment}
         onRefresh={handlePaymentRefresh}
+      />
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={showBulkUpload}
+        onClose={handleBulkUploadClose}
+        contracts={contracts}
+        partnerSettings={partnerSettings}
+        uploadStatuses={uploadStatuses}
+        partnerUuid={profile?.partner_uuid}
       />
 
     </div>

@@ -1,11 +1,14 @@
 import {
-    Calendar,
-    CreditCard,
-    DollarSign,
-    Download,
-    Edit2,
-    MoreVertical,
-    Trash2
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Edit2,
+  MoreVertical,
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { useState } from 'react';
 import '../styles/components/contractaction.css';
@@ -26,13 +29,43 @@ const ContractActionsCell = ({
   canBookPackage,
   getBookButtonText,
   isInRange,
-  t 
+  t,
+  partnerSettings,
+  uploadStatus,
+  onUploadSuccess
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const canBook = canBookPackage(contract);
+  
+  // Check if already uploaded to FattureInCloud
+  const isUploaded = uploadStatus && uploadStatus.upload_status === 'success';
 
-  // Always use dropdown approach for now to simplify
+  const handleFattureInCloudUpload = async () => {
+    if (isUploaded || uploading) return;
+    
+    setUploading(true);
+    try {
+      // Import the service dynamically to avoid circular imports
+      const { FattureInCloudService } = await import('../services/fattureInCloudService');
+      const result = await FattureInCloudService.uploadContract(contract, partnerSettings, t);
+      
+      if (result.success) {
+        // Show success feedback
+        console.log(`Invoice uploaded successfully! Number: ${result.invoice_number}`);
+        onUploadSuccess && onUploadSuccess(result);
+      } else {
+        console.error(`Upload failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error(`Upload error: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Primary actions (always visible)
   const primaryActions = [
     {
       key: 'pdf',
@@ -48,6 +81,21 @@ const ContractActionsCell = ({
   ].filter(action => action.show);
 
   const secondaryActions = [
+    {
+      key: 'fattureincloud',
+      icon: isUploaded ? 
+        <CheckCircle size={14} /> : 
+        (uploading ? <Clock size={14} className="animate-spin" /> : <Upload size={14} />),
+      label: isUploaded ? 
+        `F.C. #${uploadStatus.fattureincloud_invoice_number}` : 
+        (uploading ? 'Uploading...' : 'Upload to F.C.'),
+      className: `fattureincloud-btn ${isUploaded ? 'uploaded' : ''}`,
+      onClick: handleFattureInCloudUpload,
+      disabled: uploading || isUploaded,
+      show: partnerSettings?.fattureincloud_enabled && 
+            contract.requires_payment !== false && 
+            contract.service_type !== 'free_trial'
+    },
     {
       key: 'payment',
       icon: <DollarSign size={14} />,
