@@ -40,4 +40,4 @@ create index IF not exists idx_location_resources_type on public.location_resour
 
 create trigger update_location_resources_updated_at BEFORE
 update on location_resources for EACH row
-execute FUNCTION update_location_resources_updated_at ();   
+execute FUNCTION update_location_resources_updated_at ();

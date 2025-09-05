@@ -13,12 +13,12 @@ create table public.contracts (
   service_cost numeric(10, 2) not null,
   service_currency character varying(3) null default 'EUR'::character varying,
   service_duration_days integer not null,
-  service_max_entries integer null,
+  service_max_entries numeric(10, 1) null,
   location_name character varying(255) not null,
   resource_name character varying(255) not null,
   resource_type character varying(50) not null,
   contract_status character varying(50) not null default 'active'::character varying,
-  entries_used integer null default 0,
+  entries_used numeric(10, 1) null default 0,
   last_entry_date date null,
   is_renewable boolean null default false,
   auto_renew boolean null default false,
@@ -35,6 +35,8 @@ create table public.contracts (
   archived_at timestamp with time zone null,
   archived_by_user_id uuid null,
   archive_reason text null,
+  payment_terms character varying(20) null default 'net_30'::character varying,
+  requires_payment boolean null default true,
   constraint contracts_pkey primary key (id),
   constraint contracts_contract_number_key unique (contract_number),
   constraint contracts_contract_uuid_key unique (contract_uuid),
@@ -42,7 +44,7 @@ create table public.contracts (
   constraint contracts_archived_by_user_id_fkey foreign KEY (archived_by_user_id) references auth.users (id),
   constraint contracts_customer_id_fkey foreign KEY (customer_id) references customers (id) on delete CASCADE,
   constraint contracts_location_id_fkey foreign KEY (location_id) references locations (id) on delete RESTRICT,
-  constraint chk_entries_used check ((entries_used >= 0)),
+  constraint chk_entries_used check ((entries_used >= (0)::numeric)),
   constraint chk_contract_status check (
     (
       (contract_status)::text = any (
@@ -102,6 +104,10 @@ create index IF not exists idx_contracts_end_date on public.contracts using btre
 create index IF not exists idx_contracts_status on public.contracts using btree (contract_status) TABLESPACE pg_default;
 
 create index IF not exists idx_contracts_created_at on public.contracts using btree (created_at) TABLESPACE pg_default;
+
+create index IF not exists idx_contracts_payment_terms on public.contracts using btree (payment_terms) TABLESPACE pg_default;
+
+create index IF not exists idx_contracts_requires_payment on public.contracts using btree (requires_payment) TABLESPACE pg_default;
 
 create index IF not exists idx_contracts_is_archived on public.contracts using btree (is_archived) TABLESPACE pg_default;
 

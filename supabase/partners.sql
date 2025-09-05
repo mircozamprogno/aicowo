@@ -28,6 +28,13 @@ create table public.partners (
   billing_city text null,
   billing_country text null,
   second_name text null,
+  onboarding_completed boolean not null default false,
+  onboarding_steps jsonb null default '{"resources_added": false, "service_created": false, "location_created": false}'::jsonb,
+  fattureincloud_enabled boolean null default false,
+  fattureincloud_api_token text null,
+  fattureincloud_company_id text null,
+  fattureincloud_default_vat integer null default 22,
+  fattureincloud_document_type text null default 'proforma'::text,
   constraint partners_pkey primary key (id),
   constraint partners_email_key unique (email),
   constraint partners_uuid_key unique (partner_uuid),
@@ -47,19 +54,10 @@ create table public.partners (
         ]
       )
     )
-  ),
-  constraint partners_partner_type_check check (
-    (
-      partner_type = any (
-        array[
-          'individual'::text,
-          'company'::text,
-          'organization'::text
-        ]
-      )
-    )
   )
 ) TABLESPACE pg_default;
+
+create index IF not exists idx_partners_onboarding_completed on public.partners using btree (onboarding_completed) TABLESPACE pg_default;
 
 create index IF not exists idx_partners_status on public.partners using btree (partner_status) TABLESPACE pg_default;
 
