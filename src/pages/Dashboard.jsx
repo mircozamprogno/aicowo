@@ -1,4 +1,4 @@
-import { Building, Calendar, FileText, MapPin, Plus, RefreshCw, Users } from 'lucide-react';
+import { Building, Calendar, DollarSign, MapPin, Plus, RefreshCw, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from '../components/common/ToastContainer';
@@ -37,6 +37,7 @@ const Dashboard = () => {
     totalMeetingRooms: 0,
     availableDesks: 0,
     availableMeetingRooms: 0,
+    totalContractValue: 0,
     loading: true
   });
 
@@ -590,18 +591,38 @@ const Dashboard = () => {
       // Fetch data based on user role
       if (profile.role === 'superadmin') {
         // Superadmin sees all data
-        const [partnersResult, locationsResult, usersResult] = await Promise.all([
+        const [partnersResult, locationsResult, usersResult, contractsResult] = await Promise.all([
           supabase.from('partners').select('*', { count: 'exact', head: true }),
           supabase.from('locations').select('*', { count: 'exact', head: true }),
-          supabase.from('profiles').select('*', { count: 'exact', head: true })
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('partners_contracts').select('final_price').eq('contract_status', 'active')
         ]);
 
         partnersCount = partnersResult.count || 0;
         locationsCount = locationsResult.count || 0;
         usersCount = usersResult.count || 0;
+        
+        // Calculate total contract value
+        const totalContractValue = contractsResult.data 
+          ? contractsResult.data.reduce((sum, contract) => sum + (contract.final_price || 0), 0)
+          : 0;
 
-        console.log('Superadmin stats:', { partnersCount, locationsCount, usersCount });
+        setStats({
+          totalPartners: partnersCount,
+          totalLocations: locationsCount,
+          totalUsers: usersCount,
+          totalCustomers: 0,
+          totalContracts: 0,
+          activeBookings: 0,
+          totalDesks: 0,
+          totalMeetingRooms: 0,
+          availableDesks: 0,
+          availableMeetingRooms: 0,
+          totalContractValue: totalContractValue,
+          loading: false
+        });
 
+        console.log('Superadmin stats:', { partnersCount, locationsCount, usersCount, totalContractValue });
       } else if (profile.role === 'admin') {
         // Partner admin sees only their partner's data
         if (profile.partner_uuid) {
@@ -711,6 +732,22 @@ const Dashboard = () => {
             locationsCount, usersCount, customersCount, contractsCount,
             totalDesks, totalMeetingRooms, availableDesks, availableMeetingRooms
           });
+
+
+          setStats({
+            totalPartners: 0,
+            totalLocations: locationsCount,
+            totalUsers: usersCount,
+            totalCustomers: customersCount,
+            totalContracts: contractsCount,
+            activeBookings: activeBookingsCount,
+            totalDesks,
+            totalMeetingRooms,
+            availableDesks,
+            availableMeetingRooms,
+            totalContractValue: 0,
+            loading: false
+          });
         }
       }
 
@@ -727,20 +764,6 @@ const Dashboard = () => {
         availableDesks = 42;
         availableMeetingRooms = 9;
       }
-
-      setStats({
-        totalPartners: partnersCount,
-        totalLocations: locationsCount,
-        totalUsers: usersCount,
-        totalCustomers: customersCount,
-        totalContracts: contractsCount,
-        activeBookings: activeBookingsCount,
-        totalDesks,
-        totalMeetingRooms,
-        availableDesks,
-        availableMeetingRooms,
-        loading: false
-      });
 
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -763,7 +786,7 @@ const Dashboard = () => {
         };
       }
 
-      setStats({ ...mockStats, loading: false });
+      setStats({ ...mockStats, totalContractValue: 0, loading: false });
     }
   };
 
@@ -1071,10 +1094,10 @@ const Dashboard = () => {
                   <Building size={24} color="#9ca3af" />
                 </div>
                 <div className="stat-info">
-                  <dt className="stat-label">{t('dashboard.totalPartners')}</dt>
-                  <dd className="stat-value">
+                  <div className="stat-label">{t('dashboard.totalPartners')}</div>
+                  <div className="stat-value">
                     {stats.loading ? '...' : stats.totalPartners}
-                  </dd>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1085,10 +1108,10 @@ const Dashboard = () => {
                   <MapPin size={24} color="#9ca3af" />
                 </div>
                 <div className="stat-info">
-                  <dt className="stat-label">{t('dashboard.activeLocations')}</dt>
-                  <dd className="stat-value">
+                  <div className="stat-label">{t('dashboard.activeLocations')}</div>
+                  <div className="stat-value">
                     {stats.loading ? '...' : stats.totalLocations}
-                  </dd>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1099,15 +1122,35 @@ const Dashboard = () => {
                   <Users size={24} color="#9ca3af" />
                 </div>
                 <div className="stat-info">
-                  <dt className="stat-label">{t('dashboard.totalUsers')}</dt>
-                  <dd className="stat-value">
+                  <div className="stat-label">{t('dashboard.totalUsers')}</div>
+                  <div className="stat-value">
                     {stats.loading ? '...' : stats.totalUsers}
-                  </dd>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-card-content">
+                <div className="stat-icon">
+                  <DollarSign size={24} color="#9ca3af" />
+                </div>
+                <div className="stat-info">
+                  <div className="stat-label">{t('dashboard.totalContractValue')}</div>
+                  <div className="stat-value">
+                    {stats.loading ? '...' : new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'EUR',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }).format(stats.totalContractValue)}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
+          
           {/* Contracts Analytics Chart for Superadmin */}
           <div className="dashboard-section">
             <div className="dashboard-chart">
@@ -1154,18 +1197,32 @@ const Dashboard = () => {
 
           {/* Business Overview Stats */}
           <div className="dashboard-section">
-            <h2 className="section-title">Panoramica Business</h2>
+            <h2 className="section-title">{t('dashboard.businessOverview')}</h2>
             <div className="dashboard-stats">
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <div className="stat-icon">
+                    <Building size={24} color="#9ca3af" />
+                  </div>
+                  <div className="stat-info">
+                    <div className="stat-label">Partner Totali</div>
+                    <div className="stat-value">
+                      {stats.loading ? '...' : stats.totalPartners}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="stat-card">
                 <div className="stat-card-content">
                   <div className="stat-icon">
                     <MapPin size={24} color="#9ca3af" />
                   </div>
                   <div className="stat-info">
-                    <dt className="stat-label">Sedi Attive</dt>
-                    <dd className="stat-value">
+                    <div className="stat-label">{t('dashboard.activeLocations')}</div>
+                    <div className="stat-value">
                       {stats.loading ? '...' : stats.totalLocations}
-                    </dd>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1176,49 +1233,22 @@ const Dashboard = () => {
                     <Users size={24} color="#9ca3af" />
                   </div>
                   <div className="stat-info">
-                    <dt className="stat-label">Clienti Totali</dt>
-                    <dd className="stat-value">
-                      {stats.loading ? '...' : stats.totalCustomers}
-                    </dd>
+                    <div className="stat-label">{t('dashboard.totalCustomers')}</div>
+                    <div className="stat-value">
+                      {stats.loading ? '...' : stats.totalUsers}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="stat-card">
-                <div className="stat-card-content">
-                  <div className="stat-icon">
-                    <FileText size={24} color="#9ca3af" />
-                  </div>
-                  <div className="stat-info">
-                    <dt className="stat-label">Contratti Attivi</dt>
-                    <dd className="stat-value">
-                      {stats.loading ? '...' : stats.totalContracts}
-                    </dd>
-                  </div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-card-content">
-                  <div className="stat-icon">
-                    <Calendar size={24} color="#9ca3af" />
-                  </div>
-                  <div className="stat-info">
-                    <dt className="stat-label">Prenotazioni Attive</dt>
-                    <dd className="stat-value">
-                      {stats.loading ? '...' : stats.activeBookings}
-                    </dd>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
           {/* Contracts Analytics Chart for Partner Admin */}
           <div className="dashboard-section">
             <div className="dashboard-chart">
-              <h2 className="chart-title">Andamento Contratti</h2>
-              <p className="chart-subtitle">Ultimi 4 mesi e prossimi 8 mesi - contratti per tipologia</p>
+              <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
+              <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
               {chartLoading ? (
                 <div className="chart-loading">
                   <div className="loading-spinner"></div>
@@ -1233,8 +1263,8 @@ const Dashboard = () => {
                       <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend />
-                      <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name="Abbonamenti" radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name="Pacchetti" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1244,29 +1274,29 @@ const Dashboard = () => {
 
           {/* Resources Overview */}
           <div className="dashboard-section">
-            <h2 className="section-title">Risorse Disponibili</h2>
+            <h2 className="section-title">{t('dashboard.resourcesOverview')}</h2>
             <div className="resources-grid">
               {/* Desks Section */}
               <div className="resource-card desks">
                 <div className="resource-header">
                   <div className="resource-icon">🪑</div>
                   <div className="resource-title">
-                    <h3>Scrivanie</h3>
-                    <p>Tutte le sedi</p>
+                    <h3>{t('dashboard.desks')}</h3>
+                    <p>{t('dashboard.allLocations')}</p>
                   </div>
                 </div>
                 <div className="resource-stats">
                   <div className="resource-stat">
                     <span className="resource-number">{stats.loading ? '...' : stats.totalDesks}</span>
-                    <span className="resource-label">Totali</span>
+                    <span className="resource-label">{t('dashboard.total')}</span>
                   </div>
                   <div className="resource-stat">
                     <span className="resource-number available">{stats.loading ? '...' : stats.availableDesks}</span>
-                    <span className="resource-label">Disponibili</span>
+                    <span className="resource-label">{t('dashboard.available')}</span>
                   </div>
                   <div className="resource-stat">
                     <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalDesks - stats.availableDesks)}</span>
-                    <span className="resource-label">Prenotate</span>
+                    <span className="resource-label">{t('dashboard.booked')}</span>
                   </div>
                 </div>
                 <div className="resource-progress">
@@ -1290,22 +1320,22 @@ const Dashboard = () => {
                 <div className="resource-header">
                   <div className="resource-icon">🏢</div>
                   <div className="resource-title">
-                    <h3>Sale Riunioni</h3>
-                    <p>Tutte le sedi</p>
+                    <h3>{t('dashboard.meetingRooms')}</h3>
+                    <p>{t('dashboard.allLocations')}</p>
                   </div>
                 </div>
                 <div className="resource-stats">
                   <div className="resource-stat">
                     <span className="resource-number">{stats.loading ? '...' : stats.totalMeetingRooms}</span>
-                    <span className="resource-label">Totali</span>
+                    <span className="resource-label">{t('dashboard.total')}</span>
                   </div>
                   <div className="resource-stat">
                     <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
-                    <span className="resource-label">Disponibili</span>
+                    <span className="resource-label">{t('dashboard.total')}</span>
                   </div>
                   <div className="resource-stat">
                     <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
-                    <span className="resource-label">Prenotate</span>
+                    <span className="resource-label">{t('dashboard.booked')}</span>
                   </div>
                 </div>
                 <div className="resource-progress">

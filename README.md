@@ -198,6 +198,8 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.09.07 V 0.600 Partner Contracts Management 
+2025.09.05 V 0.540 Updated SQLs 
 2025.09.04 V 0.530 Fatture in cloud 
 2025.09.03 V 0.520 Invio mail prenotazione 
 2025.09.02 V 0.510 Partner Guided Tour 

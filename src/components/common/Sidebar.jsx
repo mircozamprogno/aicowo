@@ -1,4 +1,4 @@
-import { Archive, Building, Calendar, Camera, Cog, FileText, Home, Mail, Settings, Users, X } from 'lucide-react';
+import { Archive, Building, Calendar, Camera, Cog, CreditCard, File, FileText, Home, Layers, Mail, Settings, Tag, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -50,6 +50,10 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       // Superadmin can see everything EXCEPT contracts
       { name: t('navigation.partners'), href: '/partners', icon: Building, roles: ['superadmin'] },
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['superadmin'] },
+      { name: t('navigation.planFeatures'), href: '/plan-features', icon: Layers, roles: ['superadmin'] },
+      { name: t('navigation.pricingPlans'), href: '/pricing-plans', icon: CreditCard, roles: ['superadmin'] },
+      { name: t('navigation.partnerContracts'), href: '/partner-contracts', icon: File, roles: ['superadmin'] },
+      { name: t('navigation.discountCodes'), href: '/discount-codes', icon: Tag, roles: ['superadmin'] },
       
       // Partner admin can see their partner info, services, customers, contracts, bookings, and invitations
       { name: t('navigation.partnerInfo'), href: '/partners', icon: Building, roles: ['admin'] },

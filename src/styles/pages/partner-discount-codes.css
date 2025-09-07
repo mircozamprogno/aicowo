@@ -1,0 +1,432 @@
+/* Partner Discount Codes Page Styles */
+.discount-codes-page {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Styles */
+.discount-codes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.discount-codes-header-content h1 {
+  display: flex;
+  align-items: center;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.discount-codes-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.discount-codes-description {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.discount-codes-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.discount-codes-header-actions {
+  flex-shrink: 0;
+}
+
+.add-code-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-code-btn:hover {
+  background-color: #3730a3;
+}
+
+/* Table Styles */
+.discount-codes-table-container {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.discount-codes-table-wrapper {
+  overflow-x: auto;
+}
+
+.discount-codes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.discount-codes-table-head {
+  background-color: #f9fafb;
+}
+
+.discount-codes-table-header {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.discount-codes-table-body {
+  background-color: white;
+}
+
+.discount-codes-table-row {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.1s;
+}
+
+.discount-codes-table-row:hover {
+  background-color: #f9fafb;
+}
+
+.discount-codes-table-cell {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #111827;
+  vertical-align: top;
+}
+
+/* Code Info */
+.code-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.code-value {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  width: fit-content;
+}
+
+.code-description {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Discount Info */
+.discount-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.discount-value {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.percentage-discount {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #059669;
+}
+
+.fixed-discount {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #dc2626;
+}
+
+.discount-type {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+/* Validity Info */
+.validity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.validity-dates {
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.validity-remaining {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Usage Info */
+.usage-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.usage-stats {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.usage-count {
+  font-weight: 600;
+  color: #111827;
+}
+
+.usage-separator {
+  color: #6b7280;
+  margin: 0 0.25rem;
+}
+
+.usage-limit {
+  color: #6b7280;
+}
+
+.usage-bar {
+  width: 60px;
+  height: 4px;
+  background-color: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.usage-progress {
+  height: 100%;
+  background-color: #4f46e5;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Code Actions */
+.code-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Filters */
+.discount-codes-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Empty State */
+.discount-codes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+/* Loading State */
+.discount-codes-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+/* Modal Styles */
+.discount-code-modal {
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.code-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.code-input-group .form-input {
+  flex: 1;
+}
+
+.generate-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.amount-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.preview-label {
+  font-size: 0.875rem;
+  color: #166534;
+  font-weight: 500;
+}
+
+.preview-value {
+  font-size: 1rem;
+  color: #166534;
+  font-weight: 700;
+}
+
+/* Payment Form Modal Styles */
+.partner-payment-modal {
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Payment Actions in History Modal */
+.payment-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  justify-content: flex-end;
+}
+
+.payment-actions .action-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.payment-summary {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.payment-summary .summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+}
+
+.payment-summary .summary-item:last-child {
+  border-bottom: none;
+}
+
+/* Additional Payment History Styles */
+.empty-payments {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.empty-payments .btn-primary {
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .discount-codes-page {
+    padding: 1rem;
+  }
+
+  .discount-codes-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+
+  .discount-codes-stats {
+    gap: 1rem;
+  }
+
+  .discount-codes-filters {
+    flex-direction: column;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-select {
+    min-width: auto;
+  }
+
+  .code-actions {
+    flex-wrap: wrap;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .code-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .payment-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-actions {
+    justify-content: center;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .discount-codes-header-actions,
+  .discount-codes-filters,
+  .code-actions,
+  .add-code-btn {
+    display: none;
+  }
+  
+  .discount-codes-table {
+    font-size: 0.75rem;
+  }
+  
+  .discount-codes-table-cell {
+    padding: 0.5rem;
+  }
+}

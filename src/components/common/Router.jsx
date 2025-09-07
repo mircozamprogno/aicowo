@@ -6,8 +6,11 @@ import Contracts from '../../pages/Contracts';
 import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
+import PartnerContracts from '../../pages/PartnerContracts';
 import Partners from '../../pages/Partners';
 import PhotoGallery from '../../pages/PhotoGallery';
+import PlanFeatures from '../../pages/PlanFeatures';
+import PricingPlans from '../../pages/PricingPlans';
 import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
 import Users from '../../pages/Users';
@@ -17,6 +20,10 @@ import Login from '../auth/Login';
 import Register from '../auth/Register';
 import ResetPassword from '../auth/ResetPassword'; // ← ADD THIS IMPORT
 import ProtectedRoute from './ProtectedRoute';
+// Add these imports
+import PartnerDiscountCodes from '../../pages/PartnerDiscountCodes';
+
+
 
 const Router = () => {
   const [currentPath, setCurrentPath] = useState(() => {
@@ -190,6 +197,31 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
           <ArchivedContracts />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/plan-features':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <PlanFeatures />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/pricing-plans':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <PricingPlans />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/partner-contracts':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <PartnerContracts />
+        </ProtectedRoute>
+      ) : <Login />;
+    // Add this route case
+    case '/discount-codes':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <PartnerDiscountCodes />
         </ProtectedRoute>
       ) : <Login />;
         default:
