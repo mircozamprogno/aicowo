@@ -349,7 +349,22 @@
     "country": "Country",
     "piva": "VAT Number",
     "pec": "Certified Email",
-    "website": "Website"
+    "website": "Website",
+    "fattureincloud": {
+      "title": "FattureInCloud Integration",
+      "description": "Configure automatic invoice generation through FattureInCloud",
+      "enabled": "Enable FattureInCloud Integration",
+      "apiToken": "API Token",
+      "companyId": "Company ID",
+      "defaultVat": "Default VAT (%)",
+      "documentType": "Document Type",
+      "types": {
+        "proforma": "Proforma",
+        "invoice": "Invoice", 
+        "estimate": "Estimate",
+        "receipt": "Receipt"
+      }
+    }
   },
   "invitations": {
     "title": "Invitations",
@@ -839,7 +854,9 @@
     "postalCodePlaceholder": "e.g., 20121",
     "locationDescriptionPlaceholder": "Describe special features, access instructions, or additional details about this location...",
     "newPasswordPlaceholder": "Enter your new password",
-    "vatPercentagePlaceholder": "22.00"
+    "vatPercentagePlaceholder": "22.00",
+    "fattureincloudApiTokenPlaceholder": "Enter FattureInCloud API Token",
+    "fattureincloudCompanyIdPlaceholder": "Enter Company ID"
   },
   "bookings": {
     "title": "Bookings Calendar",

@@ -349,7 +349,22 @@
     "country": "Paese",
     "piva": "Partita IVA",
     "pec": "PEC",
-    "website": "Sito Web"
+    "website": "Sito Web",
+    "fattureincloud": {
+      "title": "Integrazione FattureInCloud",
+      "description": "Configura la generazione automatica di fatture tramite FattureInCloud",
+      "enabled": "Abilita Integrazione FattureInCloud",
+      "apiToken": "Token API",
+      "companyId": "ID Azienda",
+      "defaultVat": "IVA Predefinita (%)",
+      "documentType": "Tipo Documento",
+      "types": {
+        "proforma": "Proforma",
+        "invoice": "Fattura",
+        "estimate": "Preventivo",
+        "receipt": "Ricevuta"
+      }
+    }
   },
   "invitations": {
     "title": "Inviti",
@@ -840,7 +855,9 @@
     "postalCodePlaceholder": "es. 20121",
     "locationDescriptionPlaceholder": "Descrivi caratteristiche speciali, istruzioni di accesso o dettagli aggiuntivi su questa sede...",
     "newPasswordPlaceholder": "Inserisci la tua nuova password",
-    "vatPercentagePlaceholder": "22,00"
+    "vatPercentagePlaceholder": "22,00",
+    "fattureincloudApiTokenPlaceholder": "Inserisci Token API FattureInCloud",
+    "fattureincloudCompanyIdPlaceholder": "Inserisci ID Azienda"
   },
   "bookings": {
     "title": "Calendario Prenotazioni",

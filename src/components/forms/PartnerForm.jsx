@@ -22,7 +22,13 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
     partner_status: 'active',
     piva: '',
     pec: '',
-    website: ''
+    website: '',
+    // FattureInCloud fields
+    fattureincloud_enabled: false,
+    fattureincloud_api_token: '',
+    fattureincloud_company_id: '',
+    fattureincloud_default_vat: 22,
+    fattureincloud_document_type: 'proforma'
   });
   
   const [loading, setLoading] = useState(false);
@@ -45,7 +51,13 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
         partner_status: partner.partner_status || 'active',
         piva: partner.piva || '',
         pec: partner.pec || '',
-        website: partner.website || ''
+        website: partner.website || '',
+        // FattureInCloud fields - NOW READING FROM DATABASE
+        fattureincloud_enabled: partner.fattureincloud_enabled || false,
+        fattureincloud_api_token: partner.fattureincloud_api_token || '',
+        fattureincloud_company_id: partner.fattureincloud_company_id || '',
+        fattureincloud_default_vat: partner.fattureincloud_default_vat || 22,
+        fattureincloud_document_type: partner.fattureincloud_document_type || 'proforma'
       });
     } else {
       // Reset form for new partner
@@ -64,16 +76,22 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
         partner_status: 'active',
         piva: '',
         pec: '',
-        website: ''
+        website: '',
+        // FattureInCloud fields
+        fattureincloud_enabled: false,
+        fattureincloud_api_token: '',
+        fattureincloud_company_id: '',
+        fattureincloud_default_vat: 22,
+        fattureincloud_document_type: 'proforma'
       });
     }
   }, [partner]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -358,6 +376,108 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
               value={formData.website}
               onChange={handleChange}
             />
+          </div>
+
+          {/* FattureInCloud Integration Section */}
+          <div className="form-section">
+            <div className="form-section-header">
+              <h3 className="form-section-title">{t('partners.fattureincloud.title')}</h3>
+              <p className="form-section-description">
+                {t('partners.fattureincloud.description')}
+              </p>
+            </div>
+
+            <div className="form-group">
+              <div className="form-switch">
+                <input
+                  id="fattureincloud_enabled"
+                  name="fattureincloud_enabled"
+                  type="checkbox"
+                  className="form-switch-input"
+                  checked={formData.fattureincloud_enabled}
+                  onChange={handleChange}
+                />
+                <label htmlFor="fattureincloud_enabled" className="form-switch-label">
+                  <span className="form-switch-slider"></span>
+                  <span className="form-switch-text">
+                    {t('partners.fattureincloud.enabled')}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {formData.fattureincloud_enabled && (
+              <>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="fattureincloud_api_token" className="form-label">
+                      {t('partners.fattureincloud.apiToken')} *
+                    </label>
+                    <input
+                      id="fattureincloud_api_token"
+                      name="fattureincloud_api_token"
+                      type="password"
+                      className="form-input"
+                      placeholder={t('placeholders.fattureincloudApiTokenPlaceholder')}
+                      value={formData.fattureincloud_api_token}
+                      onChange={handleChange}
+                      required={formData.fattureincloud_enabled}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="fattureincloud_company_id" className="form-label">
+                      {t('partners.fattureincloud.companyId')} *
+                    </label>
+                    <input
+                      id="fattureincloud_company_id"
+                      name="fattureincloud_company_id"
+                      type="text"
+                      className="form-input"
+                      placeholder={t('placeholders.fattureincloudCompanyIdPlaceholder')}
+                      value={formData.fattureincloud_company_id}
+                      onChange={handleChange}
+                      required={formData.fattureincloud_enabled}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="fattureincloud_default_vat" className="form-label">
+                      {t('partners.fattureincloud.defaultVat')}
+                    </label>
+                    <input
+                      id="fattureincloud_default_vat"
+                      name="fattureincloud_default_vat"
+                      type="number"
+                      min="0"
+                      max="100"
+                      className="form-input"
+                      placeholder="22"
+                      value={formData.fattureincloud_default_vat}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="fattureincloud_document_type" className="form-label">
+                      {t('partners.fattureincloud.documentType')}
+                    </label>
+                    <select
+                      id="fattureincloud_document_type"
+                      name="fattureincloud_document_type"
+                      className="form-select"
+                      value={formData.fattureincloud_document_type}
+                      onChange={handleChange}
+                    >
+                      <option value="proforma">{t('partners.fattureincloud.types.proforma')}</option>
+                      <option value="invoice">{t('partners.fattureincloud.types.invoice')}</option>
+                      <option value="estimate">{t('partners.fattureincloud.types.estimate')}</option>
+                      <option value="receipt">{t('partners.fattureincloud.types.receipt')}</option>
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="modal-actions">
