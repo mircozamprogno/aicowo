@@ -75,23 +75,33 @@ const Dashboard = () => {
   // Then in the Dashboard component, add this after the existing hooks:
   const { isOnboardingComplete, shouldShowWelcome } = useTour();
 
-  // Add these state variables at the top of Dashboard component, after existing states:
+  // Add these state variables at the top of Dashboard component:
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
   const [customerProfileData, setCustomerProfileData] = useState(null);
+  const [profileCheckComplete, setProfileCheckComplete] = useState(false);
 
-  // Modify the existing useEffect to check for incomplete profile
+  // Modified useEffect with better dependency management
   useEffect(() => {
-    if (profile) {
+    console.log('Dashboard useEffect triggered - Profile:', !!profile, 'User:', !!user, 'IsCustomer:', isCustomer);
+    
+    // Only proceed if we have both user and profile
+    if (profile && user) {
       if (isCustomer) {
-        checkProfileCompletion(); // New function to check before fetching contracts
+        console.log('Customer detected, checking profile completion...');
+        checkProfileCompletion();
       } else {
+        console.log('Non-customer user, proceeding with normal flow...');
+        setProfileCheckComplete(true);
         fetchStats();
         if (isPartnerAdmin || isSuperAdmin) {
           fetchContractsChartData();
         }
       }
+    } else {
+      console.log('Waiting for user and profile to be available...');
+      setProfileCheckComplete(false);
     }
-  }, [profile, user]);
+  }, [profile?.id, user?.id]); // Use specific IDs to avoid unnecessary re-renders
 
   // Fetch customer contracts - REMOVED MOCK DATA FALLBACK
   const fetchCustomerContracts = async () => {
@@ -170,49 +180,81 @@ const Dashboard = () => {
   };
 
 
-  // New function to check profile completion status
+  // Improved checkProfileCompletion function with better error handling
   const checkProfileCompletion = async () => {
+    console.log('=== STARTING PROFILE COMPLETION CHECK ===');
+    console.log('User ID:', user?.id);
+    console.log('Profile partner_uuid:', profile?.partner_uuid);
+    
+    if (!user?.id) {
+      console.warn('No user ID available for profile check');
+      setProfileCheckComplete(true);
+      return;
+    }
+
     try {
-      console.log('Checking profile completion for user:', user.id);
+      setContractsLoading(true);
       
       // Get customer data to check status
+      console.log('Fetching customer data for user:', user.id);
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle to avoid errors if no record
+
+      console.log('Customer fetch result:', { data: customerData, error: customerError });
 
       if (customerError) {
         console.error('Error fetching customer data:', customerError);
-        // If no customer record exists, this is unusual but we can handle it
+        // On error, proceed with normal flow but don't fail
+        setProfileCheckComplete(true);
         setContractsLoading(false);
+        fetchCustomerContracts();
         return;
       }
 
-      console.log('Customer profile status:', customerData?.customer_status);
+      if (!customerData) {
+        console.log('No customer record found - this might be a new user, waiting for customer creation...');
+        // Wait a bit for the customer record to be created by AuthContext
+        setTimeout(() => {
+          console.log('Retrying profile completion check after delay...');
+          checkProfileCompletion();
+        }, 1000);
+        return;
+      }
+
+      console.log('Customer profile status:', customerData.customer_status);
 
       // Check if profile needs completion
-      if (customerData?.customer_status === 'incomplete_profile') {
-        console.log('Profile incomplete - showing completion form');
+      if (customerData.customer_status === 'incomplete_profile') {
+        console.log('🚨 PROFILE INCOMPLETE - SHOWING COMPLETION FORM');
         setCustomerProfileData(customerData);
         setShowProfileCompletion(true);
-        setContractsLoading(false); // Don't show loading while form is open
+        setProfileCheckComplete(true);
+        setContractsLoading(false);
       } else {
-        // Profile is complete, proceed with normal flow
-        console.log('Profile complete - fetching contracts');
+        console.log('✅ PROFILE COMPLETE - PROCEEDING WITH NORMAL FLOW');
+        setShowProfileCompletion(false);
+        setCustomerProfileData(null);
+        setProfileCheckComplete(true);
         fetchCustomerContracts();
       }
     } catch (error) {
-      console.error('Error checking profile completion:', error);
-      // On error, still try to fetch contracts to not break the flow
+      console.error('Error in profile completion check:', error);
+      // On error, still try to proceed to not break the flow
+      setProfileCheckComplete(true);
+      setContractsLoading(false);
       fetchCustomerContracts();
     }
+
+    console.log('=== PROFILE COMPLETION CHECK COMPLETE ===');
   };
 
 
   // Modified success handler for profile completion
   const handleProfileCompletionSuccess = async (updatedCustomer) => {
-    console.log('Profile completion successful:', updatedCustomer);
+    console.log('🎉 PROFILE COMPLETION SUCCESSFUL:', updatedCustomer);
     
     try {
       // Update customer status to 'tobequalified'
@@ -228,7 +270,7 @@ const Dashboard = () => {
         console.error('Error updating customer status:', error);
         toast.error(t('messages.errorUpdatingStatus') || 'Error updating status');
       } else {
-        console.log('Customer status updated to tobequalified');
+        console.log('✅ Customer status updated to tobequalified');
         toast.success(t('customers.profileCompletedSuccessfully') || 'Profile completed successfully');
       }
     } catch (error) {
@@ -240,6 +282,7 @@ const Dashboard = () => {
     setCustomerProfileData(null);
     
     // Now fetch contracts normally
+    console.log('Fetching contracts after profile completion...');
     fetchCustomerContracts();
   };
 
@@ -646,6 +689,29 @@ const Dashboard = () => {
 
   // Customer Dashboard Render
   const renderCustomerDashboard = () => {
+
+    // Show loading if profile check is not complete
+    if (!profileCheckComplete) {
+      return (
+        <div className="dashboard-loading">
+          <div className="loading-spinner"></div>
+          <span>{t('dashboard.checkingProfile') || 'Checking profile...'}</span>
+        </div>
+      );
+    }
+
+    // If profile completion is required, show a message (the modal will handle the form)
+    if (showProfileCompletion) {
+      return (
+        <div className="dashboard-profile-completion">
+          <div className="profile-completion-message">
+            <h1>{t('dashboard.welcomeMessage') || 'Welcome!'}</h1>
+            <p>{t('dashboard.profileCompletionRequired') || 'Please complete your profile to continue.'}</p>
+            <div className="loading-spinner"></div>
+          </div>
+        </div>
+      );
+    }
     const activeContracts = contracts.filter(c => c.contract_status === 'active');
     
     // Calculate days remaining for a contract
@@ -1221,15 +1287,20 @@ const Dashboard = () => {
         <>
 
           {/* Profile Completion Modal - MUST complete on first login */}
-          <CustomerForm
-            isOpen={showProfileCompletion}
-            onClose={() => {}} // Prevent closing - profile completion is mandatory
-            onSuccess={handleProfileCompletionSuccess}
-            customer={customerProfileData}
-            partnerUuid={profile?.partner_uuid}
-            userId={user?.id}
-            isProfileCompletion={true}
-          />
+          {showProfileCompletion && customerProfileData && (
+            <CustomerForm
+              isOpen={true} // Always open when showProfileCompletion is true
+              onClose={() => {
+                console.log('Profile completion form close attempted - but it should be mandatory');
+                // Don't allow closing during profile completion
+              }}
+              onSuccess={handleProfileCompletionSuccess}
+              customer={customerProfileData}
+              partnerUuid={profile?.partner_uuid}
+              userId={user?.id}
+              isProfileCompletion={true}
+            />
+          )}
 
 
           {/* Contract Form Modal - for creating new contracts */}
