@@ -9,6 +9,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
 // Add these imports to the top of Dashboard.jsx:
+import CustomerForm from '../components/forms/CustomerForm';
 import SetupProgressIndicator from '../components/tour/SetupProgressIndicator';
 import TourOverlay from '../components/tour/TourOverlay';
 import WelcomeModal from '../components/tour/WelcomeModal';
