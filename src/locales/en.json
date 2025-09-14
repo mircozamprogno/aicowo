@@ -349,7 +349,12 @@
     "noContractsYet": "No contracts yet",
     "createFirstContract": "Create your first contract",
     "loadingContracts": "Loading contracts...",
-    "contractsManagement": "Contracts Management"
+    "contractsManagement": "Contracts Management",
+    "newContract": "New Contract",
+    "newContractDesc": "Purchase a new package or subscription",
+    "checkingProfile": "Checking profile...",
+    "welcomeMessage": "Welcome!",
+    "profileCompletionRequired": "Please complete your profile to continue."
   },
   "partners": {
     "title": "Partners",
@@ -594,7 +599,8 @@
     "errorLoadingPartnerContracts": "Error loading partner contracts",
     "errorCreatingPartnerContract": "Error creating partner contract",
     "errorUpdatingPartnerContract": "Error updating partner contract",
-    "errorDeletingPartnerContract": "Error deleting partner contract"
+    "errorDeletingPartnerContract": "Error deleting partner contract",
+    "errorUpdatingStatus": "Error updating status"
   },
   "services": {
     "title": "Services",

@@ -305,23 +305,44 @@ const CustomerForm = ({
                 <label htmlFor="customer_status" className="form-label">
                   {t('customers.status')} *
                 </label>
-                <select
-                  id="customer_status"
-                  name="customer_status"
-                  required
-                  className="form-select"
-                  value={formData.customer_status}
-                  onChange={handleChange}
-                >
-                  <option value="tobequalified">{t('customers.tobequalified')}</option>
-                  <option value="qualified">{t('customers.qualified')}</option>
-                  <option value="tobeactivated">{t('customers.tobeactivated')}</option>
-                  <option value="active">{t('customers.active')}</option>
-                  <option value="expiring">{t('customers.expiring')}</option>
-                  <option value="toberenewed">{t('customers.toberenewed')}</option>
-                  <option value="inactive">{t('customers.inactive')}</option>
-                </select>
+                {isProfileCompletion ? (
+                  // Show as read-only input during profile completion
+                  <input
+                    id="customer_status"
+                    name="customer_status"
+                    type="text"
+                    className="form-input"
+                    value={t(`customers.${formData.customer_status}`)}
+                    readOnly
+                    disabled
+                    style={{ 
+                      backgroundColor: '#f5f5f5', 
+                      cursor: 'not-allowed',
+                      color: '#666'
+                    }}
+                  />
+                ) : (
+                  // Show as select dropdown for admin users (editing mode)
+                  <select
+                    id="customer_status"
+                    name="customer_status"
+                    required
+                    className="form-select"
+                    value={formData.customer_status}
+                    onChange={handleChange}
+                  >
+                    <option value="tobequalified">{t('customers.tobequalified')}</option>
+                    <option value="qualified">{t('customers.qualified')}</option>
+                    <option value="tobeactivated">{t('customers.tobeactivated')}</option>
+                    <option value="active">{t('customers.active')}</option>
+                    <option value="expiring">{t('customers.expiring')}</option>
+                    <option value="toberenewed">{t('customers.toberenewed')}</option>
+                    <option value="inactive">{t('customers.inactive')}</option>
+                  </select>
+                )}
               </div>
+
+
             </div>
           </div>
 

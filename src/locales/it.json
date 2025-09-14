@@ -349,7 +349,12 @@
     "noContractsYet": "Nessun contratto ancora",
     "createFirstContract": "Crea il tuo primo contratto", 
     "loadingContracts": "Caricamento contratti...",
-    "contractsManagement": "Gestione Contratti"
+    "contractsManagement": "Gestione Contratti",
+    "newContract": "Nuovo Contratto", 
+    "newContractDesc": "Acquista un nuovo pacchetto o abbonamento",
+    "checkingProfile": "Controllo profilo...",
+    "welcomeMessage": "Benvenuto!",
+    "profileCompletionRequired": "Completa il tuo profilo per continuare."
   },
   "partners": {
     "title": "Partner",
@@ -595,7 +600,8 @@
     "errorLoadingPartnerContracts": "Errore nel caricamento dei contratti partner",
     "errorCreatingPartnerContract": "Errore nella creazione del contratto partner",
     "errorUpdatingPartnerContract": "Errore nell'aggiornamento del contratto partner",
-    "errorDeletingPartnerContract": "Errore nell'eliminazione del contratto partner"
+    "errorDeletingPartnerContract": "Errore nell'eliminazione del contratto partner",
+    "errorUpdatingStatus": "Errore nell'aggiornamento dello stato"
   },
   "services": {
     "title": "Servizi",
