@@ -102,6 +102,7 @@
     "customerDeactivatedSuccessfully": "Cliente disattivato con successo e rimosso dalla lista",
     "errorDeletingCustomer": "Errore nell'eliminazione del cliente",
     "errorDeactivatingCustomer": "Errore nella disattivazione del cliente",
+    "incomplete_profile": "Profile Incompleto",
     "constraints": {
       "activeBookings": "{{count}} prenotazione/i attiva/e",
       "activeContracts": "{{count}} contratto/i attivo/i",
