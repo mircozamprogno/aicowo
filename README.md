@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.09.14 V 0.620 Miglioramenti  
 2025.09.07 V 0.610 Partner Form FattureInCloud 
 2025.09.07 V 0.600 Partner Contracts Management 
 2025.09.05 V 0.540 Updated SQLs 

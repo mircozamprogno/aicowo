@@ -60,11 +60,17 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  
+  // Add state for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteModalInfo, setDeleteModalInfo] = useState({
+    index: null,
+    resourceName: '',
+    hasBookings: false,
+    bookingCount: 0
+  });
 
-  // Then in the LocationForm component, add this hook after the existing hooks:
   const { onLocationCreated } = useTourIntegration();
-
-
 
   // Initialize form data when location changes
   useEffect(() => {
@@ -196,6 +202,59 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       quantity: '1',
       description: ''
     }]);
+  };
+
+  // NEW: Check if resource can be deleted and handle appropriately
+  const handleResourceDelete = async (index) => {
+    const resource = resources[index];
+    
+    // For new resources (no ID), just remove immediately
+    if (!resource.id) {
+      removeResource(index);
+      return;
+    }
+
+    // For existing resources, check for bookings first
+    try {
+      const { data: bookings, error: bookingCheckError } = await supabase
+        .from('package_reservations')
+        .select('id')
+        .eq('location_resource_id', resource.id);
+
+      if (bookingCheckError) {
+        console.error('Error checking bookings:', bookingCheckError);
+        toast.error('Error checking resource usage. Please try again.');
+        return;
+      }
+
+      const bookingCount = bookings ? bookings.length : 0;
+
+      // Set modal info and show confirmation
+      setDeleteModalInfo({
+        index: index,
+        resourceName: resource.resource_name || 'Unnamed Resource',
+        hasBookings: bookingCount > 0,
+        bookingCount: bookingCount
+      });
+      setShowDeleteModal(true);
+
+    } catch (error) {
+      console.error('Error checking resource bookings:', error);
+      toast.error('Error checking resource usage. Please try again.');
+    }
+  };
+
+  // Handle the actual removal after confirmation
+  const confirmResourceDelete = () => {
+    if (deleteModalInfo.hasBookings) {
+      // Just close modal - don't delete
+      setShowDeleteModal(false);
+      return;
+    }
+    
+    // Safe to delete
+    removeResource(deleteModalInfo.index);
+    setShowDeleteModal(false);
   };
 
   const removeResource = (index) => {
@@ -402,7 +461,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         if (locationError) throw locationError;
         locationData = updatedLocation;
 
-        // Delete existing resources for this location
+        // Simple resource management - delete all and re-insert
+        // This works because we've already validated deletions via the modal
         const { error: deleteResourcesError } = await supabase
           .from('location_resources')
           .delete()
@@ -410,6 +470,27 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
         if (deleteResourcesError) {
           console.error('Error deleting existing resources:', deleteResourcesError);
+          // Continue anyway, might be no existing resources
+        }
+
+        // Insert current resources
+        const resourcesData = resources
+          .filter(resource => resource.resource_name.trim())
+          .map(resource => ({
+            location_id: locationData.id,
+            partner_uuid: partnerUuid,
+            resource_type: resource.resource_type,
+            resource_name: resource.resource_name.trim(),
+            quantity: parseInt(resource.quantity),
+            description: resource.description.trim() || null
+          }));
+
+        if (resourcesData.length > 0) {
+          const { error: resourcesError } = await supabase
+            .from('location_resources')
+            .insert(resourcesData);
+
+          if (resourcesError) throw resourcesError;
         }
 
       } else {
@@ -439,39 +520,22 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
         await onLocationCreated({
           ...locationData,
-          resources: [] // Will be updated after resources are created
+          resources: []
         });
-      }
 
-      // Insert/Update resources
-      const resourcesData = resources
-        .filter(resource => resource.resource_name.trim())
-        .map(resource => ({
-          location_id: locationData.id,
-          partner_uuid: partnerUuid,
-          resource_type: resource.resource_type,
-          resource_name: resource.resource_name.trim(),
-          quantity: parseInt(resource.quantity),
-          description: resource.description.trim() || null
-        }));
+        // Insert resources
+        const resourcesData = resources
+          .filter(resource => resource.resource_name.trim())
+          .map(resource => ({
+            location_id: locationData.id,
+            partner_uuid: partnerUuid,
+            resource_type: resource.resource_type,
+            resource_name: resource.resource_name.trim(),
+            quantity: parseInt(resource.quantity),
+            description: resource.description.trim() || null
+          }));
 
-      if (resourcesData.length > 0) {
-        if (isEditing) {
-          // Insert resources one by one to handle potential conflicts
-          for (const resourceData of resourcesData) {
-            const { error: resourceError } = await supabase
-              .from('location_resources')
-              .upsert(resourceData, {
-                onConflict: 'location_id,resource_name',
-                ignoreDuplicates: false
-              });
-            
-            if (resourceError) {
-              console.error('Error inserting resource:', resourceError);
-            }
-          }
-        } else {
-          // For new locations, insert normally
+        if (resourcesData.length > 0) {
           const { error: resourcesError } = await supabase
             .from('location_resources')
             .insert(resourcesData);
@@ -844,8 +908,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               )}
 
-              {/* Rest of the tabs (address, location, resources, images) remain the same as your original code */}
-              
               {/* Address Tab */}
               {activeTab === 'address' && (
                 <div className="address-tab">
@@ -1040,7 +1102,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                             {resources.length > 1 && (
                               <button
                                 type="button"
-                                onClick={() => removeResource(index)}
+                                onClick={() => handleResourceDelete(index)}
                                 className="resource-remove-button"
                               >
                                 <Trash2 />
@@ -1228,6 +1290,64 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           </div>
         </form>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="delete-confirmation-modal">
+            <div className="delete-modal-header">
+              <h3 className="delete-modal-title">
+                {deleteModalInfo.hasBookings ? '⚠️ Cannot Delete Resource' : '🗑️ Confirm Delete'}
+              </h3>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="delete-modal-close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="delete-modal-content">
+              {deleteModalInfo.hasBookings ? (
+                <>
+                  <p className="delete-modal-message">
+                    The resource <strong>"{deleteModalInfo.resourceName}"</strong> cannot be deleted because it has <strong>{deleteModalInfo.bookingCount}</strong> active booking{deleteModalInfo.bookingCount !== 1 ? 's' : ''} or reservation{deleteModalInfo.bookingCount !== 1 ? 's' : ''}.
+                  </p>
+                  <p className="delete-modal-explanation">
+                    To delete this resource, you must first cancel or complete all associated bookings.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="delete-modal-message">
+                    Are you sure you want to delete the resource <strong>"{deleteModalInfo.resourceName}"</strong>?
+                  </p>
+                  <p className="delete-modal-explanation">
+                    This action cannot be undone.
+                  </p>
+                </>
+              )}
+            </div>
+            
+            <div className="delete-modal-actions">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="delete-modal-button delete-modal-cancel"
+              >
+                {deleteModalInfo.hasBookings ? 'OK' : 'Cancel'}
+              </button>
+              {!deleteModalInfo.hasBookings && (
+                <button
+                  onClick={confirmResourceDelete}
+                  className="delete-modal-button delete-modal-confirm"
+                >
+                  Delete Resource
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

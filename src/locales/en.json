@@ -25,8 +25,10 @@
   "customers": {
     "title": "Customers",
     "manageCustomers": "Manage customers and their billing information",
+    "manageCustomersInvitedOnly": "Manage customers who have completed their profile after invitation",
     "addCustomer": "Add Customer",
     "editCustomer": "Edit Customer",
+    "deleteCustomer": "Delete Customer",
     "addFirstCustomer": "Add First Customer",
     "customer": "Customer",
     "firstName": "First Name",
@@ -77,9 +79,35 @@
     "activeCustomers": "Active Customers",
     "companies": "Companies",
     "noCustomersFound": "No customers found. Add your first customer to get started.",
+    "noCustomersYet": "No customers yet",
+    "customersWillAppearHere": "Customers who complete their profile after invitation will appear here.",
+    "howToAddCustomers": "How to add customers",
+    "step1SendInvitation": "Send an invitation from the Invitations page",
+    "step2CustomerRegisters": "Customer registers and verifies their email",
+    "step3CustomerCompletesProfile": "Customer completes their profile on first login",
     "accessDenied": "Access Denied",
     "accessDeniedMessage": "Only partner administrators can access customer management.",
-    "lastName": "Last Name"
+    "lastName": "Last Name",
+    "completeYourProfile": "Complete Your Profile",
+    "completeProfile": "Complete Profile",
+    "profileCompletionRequired": "To continue using the platform, please complete your customer profile.",
+    "profileCompletionDescription": "This information will be used for bookings, contracts, and billing purposes.",
+    "profileCompletionNotice": "Please fill out all required fields to complete your profile and access the platform.",
+    "profileCompletedSuccessfully": "Profile completed successfully! Welcome to the platform.",
+    "confirmDeleteCustomer": "Are you sure you want to delete {{customerName}}?",
+    "cannotDeleteCustomer": "Cannot delete customer",
+    "activeConstraints": "This customer has active records that prevent deletion",
+    "resolveConstraintsFirst": "Please resolve these issues before deleting the customer.",
+    "customerDeletedSuccessfully": "Customer deleted successfully",
+    "customerDeactivatedSuccessfully": "Customer deactivated successfully and removed from list",
+    "errorDeletingCustomer": "Error deleting customer",
+    "errorDeactivatingCustomer": "Error deactivating customer",
+    "constraints": {
+      "activeBookings": "{{count}} active booking(s)",
+      "activeContracts": "{{count}} active contract(s)",
+      "activeReservations": "{{count}} active reservation(s)",
+      "relatedPayments": "{{count}} related payment(s)"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -93,7 +121,9 @@
     "currentLogo": "Current Logo:",
     "logoPreview": "Logo Preview:",
     "uploadingLogo": "Uploading Logo...",
-    "processingAndUploading": "Processing and uploading..."
+    "processingAndUploading": "Processing and uploading...",
+    "profileSettings": "Profile Settings",
+    "locationManagement": "Location Management"
   },
   "locations": {
     "addLocation": "Add Location",
@@ -279,6 +309,7 @@
     "activeLocations": "Active Locations", 
     "totalUsers": "Total Users",
     "totalCustomers": "Total Customers",
+    "totalContracts": "Total Contracts",
     "activeContracts": "Active Contracts",
     "activeBookings": "Active Bookings",
     "businessOverview": "Business Overview",
@@ -314,7 +345,11 @@
     "freeTrialActive": "Free Trial active - not renewable",
     "totalContractValue": "Total Contract Value",
     "subscriptions": "Subscriptions",
-    "packages": "Packages"
+    "packages": "Packages",
+    "noContractsYet": "No contracts yet",
+    "createFirstContract": "Create your first contract",
+    "loadingContracts": "Loading contracts...",
+    "contractsManagement": "Contracts Management"
   },
   "partners": {
     "title": "Partners",

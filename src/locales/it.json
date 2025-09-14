@@ -25,8 +25,10 @@
   "customers": {
     "title": "Clienti",
     "manageCustomers": "Gestisci clienti e le loro informazioni di fatturazione",
+    "manageCustomersInvitedOnly": "Gestisci clienti che hanno completato il loro profilo dopo l'invito",
     "addCustomer": "Aggiungi Cliente",
     "editCustomer": "Modifica Cliente",
+    "deleteCustomer": "Elimina Cliente",
     "addFirstCustomer": "Aggiungi Primo Cliente",
     "customer": "Cliente",
     "firstName": "Nome",
@@ -77,9 +79,35 @@
     "activeCustomers": "Clienti Attivi",
     "companies": "Aziende",
     "noCustomersFound": "Nessun cliente trovato. Aggiungi il tuo primo cliente per iniziare.",
+    "noCustomersYet": "Nessun cliente ancora",
+    "customersWillAppearHere": "I clienti che completano il loro profilo dopo l'invito appariranno qui.",
+    "howToAddCustomers": "Come aggiungere clienti",
+    "step1SendInvitation": "Invia un invito dalla pagina Inviti",
+    "step2CustomerRegisters": "Il cliente si registra e verifica la sua email",
+    "step3CustomerCompletesProfile": "Il cliente completa il suo profilo al primo accesso",
     "accessDenied": "Accesso Negato",
     "accessDeniedMessage": "Solo gli amministratori partner possono accedere alla gestione clienti.",
-    "lastName": "Cognome"
+    "lastName": "Cognome",
+    "completeYourProfile": "Completa il Tuo Profilo",
+    "completeProfile": "Completa Profilo",
+    "profileCompletionRequired": "Per continuare ad utilizzare la piattaforma, completa il tuo profilo cliente.",
+    "profileCompletionDescription": "Queste informazioni saranno utilizzate per prenotazioni, contratti e fatturazione.",
+    "profileCompletionNotice": "Compila tutti i campi obbligatori per completare il tuo profilo e accedere alla piattaforma.",
+    "profileCompletedSuccessfully": "Profilo completato con successo! Benvenuto nella piattaforma.",
+    "confirmDeleteCustomer": "Sei sicuro di voler eliminare {{customerName}}?",
+    "cannotDeleteCustomer": "Impossibile eliminare il cliente",
+    "activeConstraints": "Questo cliente ha record attivi che impediscono l'eliminazione",
+    "resolveConstraintsFirst": "Risolvi questi problemi prima di eliminare il cliente.",
+    "customerDeletedSuccessfully": "Cliente eliminato con successo",
+    "customerDeactivatedSuccessfully": "Cliente disattivato con successo e rimosso dalla lista",
+    "errorDeletingCustomer": "Errore nell'eliminazione del cliente",
+    "errorDeactivatingCustomer": "Errore nella disattivazione del cliente",
+    "constraints": {
+      "activeBookings": "{{count}} prenotazione/i attiva/e",
+      "activeContracts": "{{count}} contratto/i attivo/i",
+      "activeReservations": "{{count}} prenotazione/i attiva/e",
+      "relatedPayments": "{{count}} pagamento/i correlato/i"
+    }
   },
   "settings": {
     "title": "Impostazioni",
@@ -93,7 +121,9 @@
     "currentLogo": "Logo Attuale:",
     "logoPreview": "Anteprima Logo:",
     "uploadingLogo": "Caricamento Logo...",
-    "processingAndUploading": "Elaborazione e caricamento..."
+    "processingAndUploading": "Elaborazione e caricamento...",
+    "profileSettings": "Impostazioni Profilo",
+    "locationManagement": "Gestione Sedi"
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
@@ -279,6 +309,7 @@
     "activeLocations": "Sedi Attive", 
     "totalUsers": "Utenti Totali",
     "totalCustomers": "Clienti Totali",
+    "totalContracts": "Contratti Totali",
     "activeContracts": "Contratti Attivi",
     "activeBookings": "Prenotazioni Attive",
     "businessOverview": "Panoramica Business",
@@ -314,7 +345,11 @@
     "freeTrialActive": "Prova gratuita attiva - non rinnovabile",
     "totalContractValue": "Valore Contratti Totale",
     "subscriptions": "Abbonamenti", 
-    "packages": "Pacchetti"
+    "packages": "Pacchetti",
+    "noContractsYet": "Nessun contratto ancora",
+    "createFirstContract": "Crea il tuo primo contratto", 
+    "loadingContracts": "Caricamento contratti...",
+    "contractsManagement": "Gestione Contratti"
   },
   "partners": {
     "title": "Partner",
@@ -1454,4 +1489,5 @@
     "locale": "it"
   }
 }
+
 

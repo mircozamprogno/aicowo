@@ -37,17 +37,93 @@
   color: #6b7280;
 }
 
+/* ===== Tab Navigation Styles ===== */
+.settings-tabs {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.settings-tabs-nav {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  flex: 1;
+  justify-content: center;
+}
+
+.settings-tab:hover {
+  background-color: #f9fafb;
+  color: #374151;
+}
+
+.settings-tab.active {
+  background-color: #f9fafb;
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+}
+
+.settings-tab:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
+}
+
+/* ===== Content Styles ===== */
 .settings-content {
   background-color: white;
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
+/* Profile tab content */
 .settings-form {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding: 2rem;
+}
+
+/* Locations tab content */
+.locations-tab-content {
+  padding: 2rem;
+}
+
+.locations-tab-header {
+  margin-bottom: 2rem;
+}
+
+.locations-tab-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.locations-tab-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
 }
 
 .settings-actions {
@@ -209,35 +285,6 @@
     transform: rotate(360deg); 
   }
 }
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .settings-content {
-    padding: 1.5rem;
-  }
-
-  .settings-actions {
-    justify-content: stretch;
-  }
-
-  .save-settings-btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .settings-content {
-    padding: 1rem;
-  }
-
-  .form-section-title {
-    font-size: 0.9375rem;
-  }
-}
-
-
-/* Add these styles to your existing settings.css file */
 
 /* ===== Logo Upload Section Styles ===== */
 .logo-upload-section {
@@ -449,25 +496,106 @@
   color: #6b7280;
 }
 
-/* Loading Animation */
-@keyframes spin {
-  to { 
-    transform: rotate(360deg); 
-  }
+/* ===== Embedded LocationsList Styles ===== */
+/* Override modal styles when embedded */
+.locations-tab-content .locations-modal-backdrop {
+  position: static;
+  background: transparent;
+  z-index: auto;
+  padding: 0;
 }
 
-.loading-spinner-small {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: white;
-  animation: spin 1s ease-in-out infinite;
+.locations-tab-content .location-form-modal-container {
+  position: static;
+  max-width: none;
+  max-height: none;
+  box-shadow: none;
+  background: transparent;
+  width: 100%;
 }
 
-/* Responsive Design for Logo Section */
+.locations-tab-content .locations-modal {
+  position: static;
+  max-width: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.locations-tab-content .locations-content {
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.locations-tab-content .modal-header {
+  display: none; /* Hide the modal header when embedded */
+}
+
+.locations-tab-content .modal-footer {
+  display: none; /* Hide the modal footer when embedded */
+}
+
+/* Ensure locations list is visible */
+.locations-tab-content .locations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.locations-tab-content .locations-loading,
+.locations-tab-content .locations-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.locations-tab-content .add-location-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 1.5rem;
+}
+
+.locations-tab-content .add-location-btn:hover {
+  background-color: #4338ca;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+  .settings-tabs-nav {
+    flex-direction: column;
+  }
+  
+  .settings-tab {
+    justify-content: flex-start;
+    border-bottom: none;
+    border-right: 3px solid transparent;
+  }
+  
+  .settings-tab.active {
+    border-bottom: none;
+    border-right-color: #4f46e5;
+  }
+
+  .settings-form,
+  .locations-tab-content {
+    padding: 1.5rem;
+  }
+
   .current-logo-container,
   .logo-preview-container {
     gap: 1rem;
@@ -493,9 +621,50 @@
     min-width: 260px;
     padding: 1.5rem;
   }
+
+  .settings-actions {
+    justify-content: stretch;
+  }
+
+  .save-settings-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-content {
+    border-radius: 0;
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .settings-tabs {
+    border-radius: 0;
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .form-section-title {
+    font-size: 0.9375rem;
+  }
+
+  .locations-tab-title {
+    font-size: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 }
 
 @media (max-width: 480px) {
+  .settings-form,
+  .locations-tab-content {
+    padding: 1rem;
+  }
+
   .logo-display-card,
   .upload-placeholder {
     min-width: auto;
@@ -566,11 +735,6 @@
   }
 }
 
-/* Improved Button Spacing */
-.logo-actions-container .logo-btn + .logo-btn {
-  margin-left: 0; /* Reset any default margins */
-}
-
 /* Success State Animation */
 .logo-image {
   animation: logoAppear 0.5s ease-in-out;
@@ -584,5 +748,22 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* Tab content animations */
+.settings-form,
+.locations-tab-content {
+  animation: fadeInUp 0.3s ease-in-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

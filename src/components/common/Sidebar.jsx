@@ -55,14 +55,13 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.partnerContracts'), href: '/partner-contracts', icon: File, roles: ['superadmin'] },
       { name: t('navigation.discountCodes'), href: '/discount-codes', icon: Tag, roles: ['superadmin'] },
       
-      // Partner admin can see their partner info, services, customers, contracts, bookings, and invitations
-      { name: t('navigation.partnerInfo'), href: '/partners', icon: Building, roles: ['admin'] },
+      // Partner admin navigation - removed partnerInfo, moved invitations between customers and contracts
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
+      { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
       { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['admin'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
-      { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       
       // Regular users see limited options and settings - including Photo Gallery
@@ -268,7 +267,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       
       <nav className="sidebar-nav">
         {navigationItems.map((item) => {
-          const isOnboardingItem = item.href === '/partners' || item.href === '/services';
+          const isOnboardingItem = item.href === '/services';
           const NavItem = (
             <Link
               key={item.name}

@@ -4,7 +4,15 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
-const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid, userId = null }) => {
+const CustomerForm = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  customer = null, 
+  partnerUuid, 
+  userId = null, 
+  isProfileCompletion = false 
+}) => {
   const { t } = useTranslation();
   const isEditing = !!customer;
   
@@ -139,11 +147,15 @@ const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid
       toast.success(
         isEditing 
           ? t('messages.customerUpdatedSuccessfully') 
-          : t('messages.customerCreatedSuccessfully')
+          : isProfileCompletion 
+            ? t('customers.profileCompletedSuccessfully')
+            : t('messages.customerCreatedSuccessfully')
       );
       
       onSuccess(data[0]);
-      onClose();
+      if (!isProfileCompletion) {
+        onClose();
+      }
     } catch (error) {
       console.error('Error saving customer:', error);
       toast.error(error.message || t('messages.errorSavingCustomer'));
@@ -159,12 +171,27 @@ const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid
       <div className="modal-container customer-form-modal">
         <div className="modal-header">
           <h2 className="modal-title">
-            {isEditing ? t('customers.editCustomer') : t('customers.addCustomer')}
+            {isProfileCompletion 
+              ? t('customers.completeYourProfile')
+              : isEditing 
+                ? t('customers.editCustomer') 
+                : t('customers.addCustomer')
+            }
           </h2>
-          <button onClick={onClose} className="modal-close-btn">
-            <X size={24} />
-          </button>
+          {!isProfileCompletion && (
+            <button onClick={onClose} className="modal-close-btn">
+              <X size={24} />
+            </button>
+          )}
         </div>
+
+        {isProfileCompletion && (
+          <div className="profile-completion-notice">
+            <p className="profile-completion-text">
+              {t('customers.profileCompletionNotice')}
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="modal-form">
           {/* Personal Information Section */}
@@ -566,15 +593,19 @@ const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid
                 onChange={handleChange}
               />
             </div>
-          </div>          <div className="modal-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-              disabled={loading}
-            >
-              {t('common.cancel')}
-            </button>
+          </div>
+
+          <div className="modal-actions">
+            {!isProfileCompletion && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary"
+                disabled={loading}
+              >
+                {t('common.cancel')}
+              </button>
+            )}
             <button
               type="submit"
               className="btn-primary"
@@ -582,7 +613,9 @@ const CustomerForm = ({ isOpen, onClose, onSuccess, customer = null, partnerUuid
             >
               {loading 
                 ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
-                : (isEditing ? t('common.save') : t('common.create'))
+                : isProfileCompletion 
+                  ? t('customers.completeProfile')
+                  : (isEditing ? t('common.save') : t('common.create'))
               }
             </button>
           </div>

@@ -26,7 +26,7 @@ class CustomerService {
         second_name: userData.last_name || '',
         email: userData.email || '',
         customer_type: 'individual', // Default to individual
-        customer_status: 'active',
+        customer_status: 'incomplete_profile',
         country: 'Italy', // Default country
         created_at: new Date().toISOString()
       };

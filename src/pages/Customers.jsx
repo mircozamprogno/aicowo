@@ -1,4 +1,4 @@
-import { Edit2, UserPlus } from 'lucide-react';
+import { Edit2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import CustomerForm from '../components/forms/CustomerForm';
@@ -11,6 +11,10 @@ const Customers = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [deleteConstraints, setDeleteConstraints] = useState([]);
   const { profile } = useAuth();
   const { t } = useTranslation();
 
@@ -31,6 +35,7 @@ const Customers = () => {
         .from('customers')
         .select('*')
         .eq('partner_uuid', profile.partner_uuid)
+        .neq('customer_status', 'inactive') // Exclude inactive customers
         .order('created_at', { ascending: false });
 
       const { data, error } = await query;
@@ -105,9 +110,160 @@ const Customers = () => {
     }
   };
 
-  const handleAddCustomer = () => {
-    setEditingCustomer(null);
-    setShowForm(true);
+  const checkCustomerConstraints = async (customerId) => {
+    console.log('=== CHECKING CONSTRAINTS FOR CUSTOMER ID:', customerId);
+    const constraints = [];
+
+    try {
+      // Check for active bookings
+      console.log('Checking bookings...');
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, booking_status')
+        .eq('customer_id', customerId);
+
+      console.log('Bookings result:', { data: bookings, error: bookingsError });
+      
+      if (!bookingsError && bookings && bookings.length > 0) {
+        const activeBookings = bookings.filter(b => b.booking_status === 'active');
+        if (activeBookings.length > 0) {
+          constraints.push(t('customers.constraints.activeBookings', { count: activeBookings.length }));
+          console.log('Found active bookings:', activeBookings.length);
+        }
+      }
+
+      // Check for active contracts
+      console.log('Checking contracts...');
+      const { data: contracts, error: contractsError } = await supabase
+        .from('contracts')
+        .select('id, contract_status')
+        .eq('customer_id', customerId);
+
+      console.log('Contracts result:', { data: contracts, error: contractsError });
+      
+      if (!contractsError && contracts && contracts.length > 0) {
+        const activeContracts = contracts.filter(c => c.contract_status === 'active');
+        if (activeContracts.length > 0) {
+          constraints.push(t('customers.constraints.activeContracts', { count: activeContracts.length }));
+          console.log('Found active contracts:', activeContracts.length);
+        }
+      }
+
+      // Check for package reservations
+      console.log('Checking package reservations...');
+      const { data: reservations, error: reservationsError } = await supabase
+        .from('package_reservations')
+        .select('id, reservation_status')
+        .eq('customer_id', customerId);
+
+      console.log('Reservations result:', { data: reservations, error: reservationsError });
+      
+      if (!reservationsError && reservations && reservations.length > 0) {
+        const activeReservations = reservations.filter(r => r.reservation_status === 'confirmed');
+        if (activeReservations.length > 0) {
+          constraints.push(t('customers.constraints.activeReservations', { count: activeReservations.length }));
+          console.log('Found active reservations:', activeReservations.length);
+        }
+      }
+
+      // Check for payments through contracts
+      if (contracts && contracts.length > 0) {
+        console.log('Checking payments for contracts...');
+        const contractIds = contracts.map(c => c.id);
+        
+        const { data: payments, error: paymentsError } = await supabase
+          .from('payments')
+          .select('id, payment_status')
+          .in('contract_id', contractIds);
+
+        console.log('Payments result:', { data: payments, error: paymentsError });
+        
+        if (!paymentsError && payments && payments.length > 0) {
+          const activePayments = payments.filter(p => ['pending', 'completed'].includes(p.payment_status));
+          if (activePayments.length > 0) {
+            constraints.push(t('customers.constraints.relatedPayments', { count: activePayments.length }));
+            console.log('Found related payments:', activePayments.length);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('CONSTRAINT CHECK ERROR:', error);
+    }
+
+    console.log('=== FINAL CONSTRAINTS:', constraints);
+    return constraints;
+  };
+
+  const handleDeleteCustomer = async (customer) => {
+    console.log('=== STARTING DELETE PROCESS FOR CUSTOMER:', customer);
+    
+    // Set the customer we're working with
+    setCustomerToDelete(customer);
+    
+    // Check constraints first
+    setDeleteLoading(true);
+    const constraints = await checkCustomerConstraints(customer.id);
+    setDeleteLoading(false);
+    
+    // Set up modal data and show it
+    setDeleteConstraints(constraints);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!customerToDelete) return;
+
+    console.log('=== CONFIRMING DELETE FOR:', customerToDelete);
+    console.log('=== CONSTRAINTS:', deleteConstraints);
+
+    // If there are constraints, don't allow deletion
+    if (deleteConstraints.length > 0) {
+      console.log('=== CANNOT DELETE - HAS CONSTRAINTS');
+      setShowDeleteModal(false);
+      setCustomerToDelete(null);
+      setDeleteConstraints([]);
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+
+      // Set status to inactive instead of deleting
+      const { error } = await supabase
+        .from('customers')
+        .update({ 
+          customer_status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customerToDelete.id);
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('=== CUSTOMER STATUS UPDATED TO INACTIVE');
+
+      // Remove from UI
+      setCustomers(prev => prev.filter(c => c.id !== customerToDelete.id));
+      toast.success(t('customers.customerDeactivatedSuccessfully'));
+
+    } catch (error) {
+      console.error('Error deactivating customer:', error);
+      toast.error(t('customers.errorDeactivatingCustomer'));
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+      setCustomerToDelete(null);
+      setDeleteConstraints([]);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setCustomerToDelete(null);
+    setDeleteConstraints([]);
   };
 
   const handleEditCustomer = (customer) => {
@@ -171,7 +327,7 @@ const Customers = () => {
         <div className="customers-header-content">
           <h1 className="customers-title">{t('customers.title')}</h1>
           <p className="customers-description">
-            {t('customers.manageCustomers')}
+            {t('customers.manageCustomersInvitedOnly')}
           </p>
           <div className="customers-stats">
             <div className="stat-item">
@@ -191,12 +347,6 @@ const Customers = () => {
               </span>
             </div>
           </div>
-        </div>
-        <div className="customers-header-actions">
-          <button className="add-customer-btn" onClick={handleAddCustomer}>
-            <UserPlus size={16} className="mr-2" />
-            {t('customers.addCustomer')}
-          </button>
         </div>
       </div>
 
@@ -291,6 +441,18 @@ const Customers = () => {
                       >
                         <Edit2 size={16} />
                       </button>
+                      <button 
+                        className="delete-btn"
+                        onClick={() => handleDeleteCustomer(customer)}
+                        disabled={deleteLoading}
+                        title={t('customers.deleteCustomer')}
+                      >
+                        {deleteLoading && customerToDelete?.id === customer.id ? (
+                          <div className="loading-spinner-small"></div>
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -299,20 +461,24 @@ const Customers = () => {
           </table>
           {customers.length === 0 && (
             <div className="customers-empty">
-              <UserPlus size={48} className="empty-icon" />
-              <p>{t('customers.noCustomersFound')}</p>
-              <button 
-                onClick={handleAddCustomer}
-                className="btn-primary mt-4"
-              >
-                {t('customers.addFirstCustomer')}
-              </button>
+              <div className="empty-content">
+                <h3>{t('customers.noCustomersYet')}</h3>
+                <p>{t('customers.customersWillAppearHere')}</p>
+                <div className="empty-hint">
+                  <strong>{t('customers.howToAddCustomers')}:</strong>
+                  <ol>
+                    <li>{t('customers.step1SendInvitation')}</li>
+                    <li>{t('customers.step2CustomerRegisters')}</li>
+                    <li>{t('customers.step3CustomerCompletesProfile')}</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Customer Form Modal */}
+      {/* Customer Form Modal - Only for editing */}
       <CustomerForm
         isOpen={showForm}
         onClose={handleFormClose}
@@ -320,6 +486,75 @@ const Customers = () => {
         customer={editingCustomer}
         partnerUuid={profile?.partner_uuid}
       />
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && customerToDelete && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal">
+            <div className="delete-modal-header">
+              <h3 className="delete-modal-title">
+                {deleteConstraints.length > 0 
+                  ? t('customers.cannotDeleteCustomer')
+                  : t('customers.confirmDelete')
+                }
+              </h3>
+            </div>
+            
+            <div className="delete-modal-content">
+              {deleteConstraints.length > 0 ? (
+                <>
+                  <p className="delete-modal-message">
+                    {t('customers.activeConstraints')}:
+                  </p>
+                  <ul className="constraints-list">
+                    {deleteConstraints.map((constraint, index) => (
+                      <li key={index} className="constraint-item">
+                        {constraint}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="delete-modal-warning">
+                    {t('customers.resolveConstraintsFirst')}
+                  </p>
+                </>
+              ) : (
+                <p className="delete-modal-message">
+                  {t('customers.confirmDeleteCustomer', { 
+                    customerName: `${customerToDelete.first_name} ${customerToDelete.second_name}` 
+                  })}
+                </p>
+              )}
+            </div>
+            
+            <div className="delete-modal-actions">
+              <button
+                className="btn-secondary"
+                onClick={handleCancelDelete}
+                disabled={deleteLoading}
+              >
+                {deleteConstraints.length > 0 ? t('common.close') : t('common.cancel')}
+              </button>
+              
+              {deleteConstraints.length === 0 && (
+                <button
+                  className="btn-danger"
+                  onClick={handleConfirmDelete}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? (
+                    <>
+                      <div className="loading-spinner-small"></div>
+                      {t('common.deleting')}...
+                    </>
+                  ) : (
+                    t('customers.deleteCustomer')
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

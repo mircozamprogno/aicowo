@@ -3320,3 +3320,130 @@ input:focus, select:focus, textarea:focus {
   background-size: 1.5em 1.5em;
   padding-right: 2.5rem;
 }
+
+/* ===== Delete Resource Confirmation Modal ===== */
+.delete-confirmation-modal {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+}
+
+.delete-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #fef2f2;
+}
+
+.delete-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin: 0;
+}
+
+.delete-modal-close {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.delete-modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.delete-modal-content {
+  padding: 1.5rem;
+}
+
+.delete-modal-message {
+  font-size: 0.875rem;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.delete-modal-explanation {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.delete-modal-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.delete-modal-cancel {
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.delete-modal-cancel:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.delete-modal-confirm {
+  background-color: #dc2626;
+  color: white;
+}
+
+.delete-modal-confirm:hover {
+  background-color: #b91c1c;
+}
+
+.delete-modal-confirm:focus,
+.delete-modal-cancel:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments for delete modal */
+@media (max-width: 480px) {
+  .delete-confirmation-modal {
+    max-width: 95vw;
+    margin: 0 1rem;
+  }
+  
+  .delete-modal-header,
+  .delete-modal-content,
+  .delete-modal-actions {
+    padding: 1rem;
+  }
+  
+  .delete-modal-actions {
+    flex-direction: column;
+  }
+  
+  .delete-modal-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

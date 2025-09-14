@@ -1,6 +1,7 @@
-import { Image, Save, Upload, User, X } from 'lucide-react';
+import { Image, MapPin, Save, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
+import LocationsList from '../components/partners/LocationsList';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
@@ -18,6 +19,10 @@ const Settings = () => {
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [currentLogoUrl, setCurrentLogoUrl] = useState(null);
+  
+  // Location management states
+  const [showLocations, setShowLocations] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'locations'
   
   // Determine if user is admin partner or regular user
   const isAdminPartner = profile?.role === 'admin';
@@ -477,6 +482,10 @@ const Settings = () => {
     }
   };
 
+  const handleLocationsModalClose = () => {
+    setShowLocations(false);
+  };
+
   if (loading) {
     return <div className="settings-loading">{t('common.loading')}</div>;
   }
@@ -498,585 +507,632 @@ const Settings = () => {
         </div>
       </div>
 
+      {/* Tab Navigation - Only show for admin partners */}
+      {isAdminPartner && (
+        <div className="settings-tabs">
+          <div className="settings-tabs-nav">
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <User size={20} />
+              {t('settings.profileSettings') || 'Profile Settings'}
+            </button>
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'locations' ? 'active' : ''}`}
+              onClick={() => setActiveTab('locations')}
+            >
+              <MapPin size={20} />
+              {t('locations.locations') || 'Locations'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="settings-content">
-        <form onSubmit={handleSubmit} className="settings-form">
-          
-          {/* Logo Upload Section - Only for Partners */}
-          {isAdminPartner && (
-            <div className="form-section">
-              <h3 className="form-section-title">
-                <Image size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
-                Company Logo
-              </h3>
-              <p className="form-section-description">
-                Upload your company logo. It will be used in contracts and other documents. 
-                Recommended size: 800x600px or smaller. Supported formats: JPG, PNG, GIF.
-              </p>
+        {/* Profile Tab Content */}
+        {activeTab === 'profile' && (
+          <form onSubmit={handleSubmit} className="settings-form">
+            
+            {/* Logo Upload Section - Only for Partners */}
+            {isAdminPartner && (
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <Image size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
+                  Company Logo
+                </h3>
+                <p className="form-section-description">
+                  Upload your company logo. It will be used in contracts and other documents. 
+                  Recommended size: 800x600px or smaller. Supported formats: JPG, PNG, GIF.
+                </p>
 
-              <div className="logo-upload-section">
-                {/* Current Logo Display */}
-                {currentLogoUrl && !logoPreview && (
-                  <div className="current-logo-container">
-                    <div className="logo-display-card">
-                      <div className="logo-header">
-                        <h4 className="logo-section-subtitle">
-                          {t('settings.currentLogo') || 'Current Logo'}
-                        </h4>
+                <div className="logo-upload-section">
+                  {/* Current Logo Display */}
+                  {currentLogoUrl && !logoPreview && (
+                    <div className="current-logo-container">
+                      <div className="logo-display-card">
+                        <div className="logo-header">
+                          <h4 className="logo-section-subtitle">
+                            {t('settings.currentLogo') || 'Current Logo'}
+                          </h4>
+                        </div>
+                        <div className="logo-image-container">
+                          <img 
+                            src={currentLogoUrl} 
+                            alt="Current company logo" 
+                            className="logo-image"
+                          />
+                        </div>
                       </div>
-                      <div className="logo-image-container">
-                        <img 
-                          src={currentLogoUrl} 
-                          alt="Current company logo" 
-                          className="logo-image"
-                        />
-                      </div>
-                    </div>
-                    <div className="logo-actions-container">
-                      <label 
-                        htmlFor="logo-upload-change" 
-                        className="logo-btn logo-btn-primary"
-                      >
-                        <Upload size={16} />
-                        {t('settings.changeLogo') || 'Change Logo'}
-                      </label>
-                      <input
-                        id="logo-upload-change"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoSelect}
-                        style={{ display: 'none' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleLogoRemove}
-                        className="logo-btn logo-btn-danger"
-                      >
-                        <X size={16} />
-                        {t('settings.removeLogo') || 'Remove Logo'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Logo Preview */}
-                {logoPreview && (
-                  <div className="logo-preview-container">
-                    <div className="logo-display-card">
-                      <div className="logo-header">
-                        <h4 className="logo-section-subtitle">
-                          {logoUploading ? 
-                            (t('settings.uploadingLogo') || 'Uploading Logo...') : 
-                            (t('settings.logoPreview') || 'Logo Preview')
-                          }
-                        </h4>
-                        {logoUploading && (
-                          <div className="upload-status">
-                            <div className="loading-spinner-small"></div>
-                            <span className="upload-status-text">
-                              {t('settings.processingAndUploading') || 'Processing and uploading...'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="logo-image-container">
-                        <img 
-                          src={logoPreview} 
-                          alt="Logo preview" 
-                          className={`logo-image ${logoUploading ? 'uploading' : ''}`}
-                        />
-                      </div>
-                    </div>
-                    {!logoUploading && (
                       <div className="logo-actions-container">
+                        <label 
+                          htmlFor="logo-upload-change" 
+                          className="logo-btn logo-btn-primary"
+                        >
+                          <Upload size={16} />
+                          {t('settings.changeLogo') || 'Change Logo'}
+                        </label>
+                        <input
+                          id="logo-upload-change"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoSelect}
+                          style={{ display: 'none' }}
+                        />
                         <button
                           type="button"
-                          onClick={cancelLogoSelection}
-                          className="logo-btn logo-btn-secondary"
+                          onClick={handleLogoRemove}
+                          className="logo-btn logo-btn-danger"
                         >
                           <X size={16} />
-                          {t('common.cancel') || 'Cancel'}
+                          {t('settings.removeLogo') || 'Remove Logo'}
                         </button>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* Upload Logo Input - First time */}
-                {!logoPreview && !currentLogoUrl && (
-                  <div className="logo-upload-empty">
-                    <div className="upload-placeholder">
-                      <div className="upload-icon">
-                        <Upload size={32} />
+                  {/* Logo Preview */}
+                  {logoPreview && (
+                    <div className="logo-preview-container">
+                      <div className="logo-display-card">
+                        <div className="logo-header">
+                          <h4 className="logo-section-subtitle">
+                            {logoUploading ? 
+                              (t('settings.uploadingLogo') || 'Uploading Logo...') : 
+                              (t('settings.logoPreview') || 'Logo Preview')
+                            }
+                          </h4>
+                          {logoUploading && (
+                            <div className="upload-status">
+                              <div className="loading-spinner-small"></div>
+                              <span className="upload-status-text">
+                                {t('settings.processingAndUploading') || 'Processing and uploading...'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="logo-image-container">
+                          <img 
+                            src={logoPreview} 
+                            alt="Logo preview" 
+                            className={`logo-image ${logoUploading ? 'uploading' : ''}`}
+                          />
+                        </div>
                       </div>
-                      <div className="upload-text">
-                        <h4>{t('settings.uploadLogo') || 'Upload Company Logo'}</h4>
-                        <p>JPG, PNG, GIF up to 10MB</p>
+                      {!logoUploading && (
+                        <div className="logo-actions-container">
+                          <button
+                            type="button"
+                            onClick={cancelLogoSelection}
+                            className="logo-btn logo-btn-secondary"
+                          >
+                            <X size={16} />
+                            {t('common.cancel') || 'Cancel'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Upload Logo Input - First time */}
+                  {!logoPreview && !currentLogoUrl && (
+                    <div className="logo-upload-empty">
+                      <div className="upload-placeholder">
+                        <div className="upload-icon">
+                          <Upload size={32} />
+                        </div>
+                        <div className="upload-text">
+                          <h4>{t('settings.uploadLogo') || 'Upload Company Logo'}</h4>
+                          <p>JPG, PNG, GIF up to 10MB</p>
+                        </div>
+                      </div>
+                      <div className="logo-actions-container">
+                        <label 
+                          htmlFor="logo-upload-new" 
+                          className="logo-btn logo-btn-primary logo-btn-large"
+                        >
+                          <Upload size={16} />
+                          {t('settings.uploadLogo') || 'Upload Logo'}
+                        </label>
+                        <input
+                          id="logo-upload-new"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoSelect}
+                          style={{ display: 'none' }}
+                        />
                       </div>
                     </div>
-                    <div className="logo-actions-container">
-                      <label 
-                        htmlFor="logo-upload-new" 
-                        className="logo-btn logo-btn-primary logo-btn-large"
-                      >
-                        <Upload size={16} />
-                        {t('settings.uploadLogo') || 'Upload Logo'}
-                      </label>
-                      <input
-                        id="logo-upload-new"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoSelect}
-                        style={{ display: 'none' }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Personal Information Section */}
-          <div className="form-section">
-            <h3 className="form-section-title">
-              {isAdminPartner ? t('customers.partnerInformation') : t('customers.personalInformation')}
-            </h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="first_name" className="form-label">
-                  {t('customers.firstName')} *
-                </label>
-                <input
-                  id="first_name"
-                  name="first_name"
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder={t('placeholders.firstNamePlaceholder')}
-                  value={formData.first_name}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="second_name" className="form-label">
-                  {t('customers.secondName')} {!isAdminPartner && '*'}
-                </label>
-                <input
-                  id="second_name"
-                  name="second_name"
-                  type="text"
-                  required={!isAdminPartner}
-                  className="form-input"
-                  placeholder={t('placeholders.secondNamePlaceholder')}
-                  value={formData.second_name}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="email" className="form-label">
-                  {t('auth.email')} *
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="form-input"
-                  placeholder={t('placeholders.emailPlaceholder')}
-                  value={formData.email}
-                  onChange={handleChange}
-                  readOnly   
-
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone" className="form-label">
-                  {t('customers.phone')}
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  className="form-input"
-                  placeholder={t('placeholders.phonePlaceholder')}
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            {/* Codice Fiscale only for users, not partners */}
-            {!isAdminPartner && (
-              <div className="form-group">
-                <label htmlFor="codice_fiscale" className="form-label">
-                  {t('customers.codiceFiscale')} *
-                </label>
-                <input
-                  id="codice_fiscale"
-                  name="codice_fiscale"
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder={t('placeholders.codiceFiscalePlaceholder')}
-                  value={formData.codice_fiscale}
-                  onChange={handleChange}
-                />
-              </div>
-            )}
-
-            {/* Customer type only for users */}
-            {!isAdminPartner && (
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="customer_type" className="form-label">
-                    {t('customers.type')} *
-                  </label>
-                  <select
-                    id="customer_type"
-                    name="customer_type"
-                    required
-                    className="form-select"
-                    value={formData.customer_type}
-                    onChange={handleChange}
-                  >
-                    <option value="individual">{t('customers.individual')}</option>
-                    <option value="freelancer">{t('customers.freelancer')}</option>
-                    <option value="entrepeneur">{t('customers.entrepeneur')}</option>
-                    <option value="employee">{t('customers.employee')}</option>
-                    <option value="tourist">{t('customers.tourist')}</option>
-                    <option value="student">{t('customers.student')}</option>
-                  </select>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Partner type and status for admin partners */}
-            {isAdminPartner && (
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="partner_type" className="form-label">
-                    {t('partners.type')} *
-                  </label>
-                  <select
-                    id="partner_type"
-                    name="partner_type"
-                    required
-                    className="form-select"
-                    value={formData.partner_type}
-                    onChange={handleChange}
-                  >
-                    <option value="individual">{t('partners.individual')}</option>
-                    <option value="freelancer">{t('partners.freelancer')}</option>
-                    <option value="entrepeneur">{t('partners.entrepeneur')}</option>
-                    <option value="employee">{t('partners.employee')}</option>
-                    <option value="tourist">{t('partners.tourist')}</option>
-                    <option value="student">{t('partners.student')}</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="partner_status" className="form-label">
-                    {t('partners.status')} *
-                  </label>
-                  <select
-                    id="partner_status"
-                    name="partner_status"
-                    required
-                    className="form-select"
-                    value={formData.partner_status}
-                    onChange={handleChange}
-                  >
-                    <option value="active">{t('partners.active')}</option>
-                    <option value="inactive">{t('partners.inactive')}</option>
-                    <option value="pending">{t('partners.pending')}</option>
-                    <option value="suspended">{t('partners.suspended')}</option>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Address Information */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('customers.addressInformation')}</h3>
-            
-            <div className="form-group">
-              <label htmlFor="address" className="form-label">
-                {t('customers.address')} {!isAdminPartner && '*'}
-              </label>
-              <input
-                id="address"
-                name="address"
-                type="text"
-                required={!isAdminPartner}
-                className="form-input"
-                placeholder={t('placeholders.addressPlaceholder')}
-                value={formData.address}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="zip" className="form-label">
-                  {t('customers.zip')} {!isAdminPartner && '*'}
-                </label>
-                <input
-                  id="zip"
-                  name="zip"
-                  type="text"
-                  required={!isAdminPartner}
-                  className="form-input"
-                  placeholder={t('placeholders.zipPlaceholder')}
-                  value={formData.zip}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="city" className="form-label">
-                  {t('customers.city')} {!isAdminPartner && '*'}
-                </label>
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  required={!isAdminPartner}
-                  className="form-input"
-                  placeholder={t('placeholders.cityPlaceholder')}
-                  value={formData.city}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="country" className="form-label">
-                  {t('customers.country')} {!isAdminPartner && '*'}
-                </label>
-                <input
-                  id="country"
-                  name="country"
-                  type="text"
-                  required={!isAdminPartner}
-                  className="form-input"
-                  placeholder={t('placeholders.countryPlaceholder')}
-                  value={formData.country}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Business Information - Show for companies or always for partners */}
-          {(isAdminPartner || formData.customer_type === 'company') && (
+            {/* Personal Information Section */}
             <div className="form-section">
               <h3 className="form-section-title">
-                {isAdminPartner ? t('customers.businessInformation') : t('customers.businessInformation')}
+                {isAdminPartner ? t('customers.partnerInformation') : t('customers.personalInformation')}
               </h3>
               
-              <div className="form-group">
-                <label htmlFor="company_name" className="form-label">
-                  {t('customers.companyName')} *
-                </label>
-                <input
-                  id="company_name"
-                  name="company_name"
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder={t('placeholders.companyNamePlaceholder')}
-                  value={formData.company_name}
-                  onChange={handleChange}
-                />
-              </div>
-
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="piva" className="form-label">
-                    {t('customers.piva')}
+                  <label htmlFor="first_name" className="form-label">
+                    {t('customers.firstName')} *
                   </label>
                   <input
-                    id="piva"
-                    name="piva"
+                    id="first_name"
+                    name="first_name"
                     type="text"
+                    required
                     className="form-input"
-                    placeholder={t('placeholders.pivaPlaceholder')}
-                    value={formData.piva}
+                    placeholder={t('placeholders.firstNamePlaceholder')}
+                    value={formData.first_name}
                     onChange={handleChange}
                   />
                 </div>
-                {!isAdminPartner && (
+                <div className="form-group">
+                  <label htmlFor="second_name" className="form-label">
+                    {t('customers.secondName')} {!isAdminPartner && '*'}
+                  </label>
+                  <input
+                    id="second_name"
+                    name="second_name"
+                    type="text"
+                    required={!isAdminPartner}
+                    className="form-input"
+                    placeholder={t('placeholders.secondNamePlaceholder')}
+                    value={formData.second_name}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="email" className="form-label">
+                    {t('auth.email')} *
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    className="form-input form-input-readonly"
+                    placeholder={t('placeholders.emailPlaceholder')}
+                    value={formData.email}
+                    onChange={handleChange}
+                    readOnly   
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="phone" className="form-label">
+                    {t('customers.phone')}
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    className="form-input"
+                    placeholder={t('placeholders.phonePlaceholder')}
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {/* Codice Fiscale only for users, not partners */}
+              {!isAdminPartner && (
+                <div className="form-group">
+                  <label htmlFor="codice_fiscale" className="form-label">
+                    {t('customers.codiceFiscale')} *
+                  </label>
+                  <input
+                    id="codice_fiscale"
+                    name="codice_fiscale"
+                    type="text"
+                    required
+                    className="form-input"
+                    placeholder={t('placeholders.codiceFiscalePlaceholder')}
+                    value={formData.codice_fiscale}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+
+              {/* Customer type only for users */}
+              {!isAdminPartner && (
+                <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="sdi_code" className="form-label">
-                      {t('customers.sdiCode')}
+                    <label htmlFor="customer_type" className="form-label">
+                      {t('customers.type')} *
+                    </label>
+                    <select
+                      id="customer_type"
+                      name="customer_type"
+                      required
+                      className="form-select"
+                      value={formData.customer_type}
+                      onChange={handleChange}
+                    >
+                      <option value="individual">{t('customers.individual')}</option>
+                      <option value="freelancer">{t('customers.freelancer')}</option>
+                      <option value="entrepeneur">{t('customers.entrepeneur')}</option>
+                      <option value="employee">{t('customers.employee')}</option>
+                      <option value="tourist">{t('customers.tourist')}</option>
+                      <option value="student">{t('customers.student')}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Partner type and status for admin partners */}
+              {isAdminPartner && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="partner_type" className="form-label">
+                      {t('partners.type')} *
+                    </label>
+                    <select
+                      id="partner_type"
+                      name="partner_type"
+                      required
+                      className="form-select"
+                      value={formData.partner_type}
+                      onChange={handleChange}
+                    >
+                      <option value="individual">{t('partners.individual')}</option>
+                      <option value="freelancer">{t('partners.freelancer')}</option>
+                      <option value="entrepeneur">{t('partners.entrepeneur')}</option>
+                      <option value="employee">{t('partners.employee')}</option>
+                      <option value="tourist">{t('partners.tourist')}</option>
+                      <option value="student">{t('partners.student')}</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="partner_status" className="form-label">
+                      {t('partners.status')} *
+                    </label>
+                    <select
+                      id="partner_status"
+                      name="partner_status"
+                      required
+                      className="form-select"
+                      value={formData.partner_status}
+                      onChange={handleChange}
+                    >
+                      <option value="active">{t('partners.active')}</option>
+                      <option value="inactive">{t('partners.inactive')}</option>
+                      <option value="pending">{t('partners.pending')}</option>
+                      <option value="suspended">{t('partners.suspended')}</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Address Information */}
+            <div className="form-section">
+              <h3 className="form-section-title">{t('customers.addressInformation')}</h3>
+              
+              <div className="form-group">
+                <label htmlFor="address" className="form-label">
+                  {t('customers.address')} {!isAdminPartner && '*'}
+                </label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  required={!isAdminPartner}
+                  className="form-input"
+                  placeholder={t('placeholders.addressPlaceholder')}
+                  value={formData.address}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="zip" className="form-label">
+                    {t('customers.zip')} {!isAdminPartner && '*'}
+                  </label>
+                  <input
+                    id="zip"
+                    name="zip"
+                    type="text"
+                    required={!isAdminPartner}
+                    className="form-input"
+                    placeholder={t('placeholders.zipPlaceholder')}
+                    value={formData.zip}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="city" className="form-label">
+                    {t('customers.city')} {!isAdminPartner && '*'}
+                  </label>
+                  <input
+                    id="city"
+                    name="city"
+                    type="text"
+                    required={!isAdminPartner}
+                    className="form-input"
+                    placeholder={t('placeholders.cityPlaceholder')}
+                    value={formData.city}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="country" className="form-label">
+                    {t('customers.country')} {!isAdminPartner && '*'}
+                  </label>
+                  <input
+                    id="country"
+                    name="country"
+                    type="text"
+                    required={!isAdminPartner}
+                    className="form-input"
+                    placeholder={t('placeholders.countryPlaceholder')}
+                    value={formData.country}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Business Information - Show for companies or always for partners */}
+            {(isAdminPartner || formData.customer_type === 'company') && (
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  {isAdminPartner ? t('customers.businessInformation') : t('customers.businessInformation')}
+                </h3>
+                
+                <div className="form-group">
+                  <label htmlFor="company_name" className="form-label">
+                    {t('customers.companyName')} *
+                  </label>
+                  <input
+                    id="company_name"
+                    name="company_name"
+                    type="text"
+                    required
+                    className="form-input"
+                    placeholder={t('placeholders.companyNamePlaceholder')}
+                    value={formData.company_name}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="piva" className="form-label">
+                      {t('customers.piva')}
                     </label>
                     <input
-                      id="sdi_code"
-                      name="sdi_code"
+                      id="piva"
+                      name="piva"
                       type="text"
                       className="form-input"
-                      placeholder={t('placeholders.sdiCodePlaceholder')}
-                      value={formData.sdi_code}
+                      placeholder={t('placeholders.pivaPlaceholder')}
+                      value={formData.piva}
                       onChange={handleChange}
                     />
                   </div>
+                  {!isAdminPartner && (
+                    <div className="form-group">
+                      <label htmlFor="sdi_code" className="form-label">
+                        {t('customers.sdiCode')}
+                      </label>
+                      <input
+                        id="sdi_code"
+                        name="sdi_code"
+                        type="text"
+                        className="form-input"
+                        placeholder={t('placeholders.sdiCodePlaceholder')}
+                        value={formData.sdi_code}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="pec" className="form-label">
+                      {t('customers.pec')}
+                    </label>
+                    <input
+                      id="pec"
+                      name="pec"
+                      type="email"
+                      className="form-input"
+                      placeholder={t('placeholders.pecPlaceholder')}
+                      value={formData.pec}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="website" className="form-label">
+                      {t('customers.website')}
+                    </label>
+                    <input
+                      id="website"
+                      name="website"
+                      type="url"
+                      className="form-input"
+                      placeholder={t('placeholders.websitePlaceholder')}
+                      value={formData.website}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Billing Information - Only show for users with company type */}
+            {!isAdminPartner && formData.customer_type === 'company' && (
+              <div className="form-section">
+                <h3 className="form-section-title">{t('customers.billingInformation')}</h3>
+                <p className="form-section-description">
+                  {t('settings.billingInfoDescription')}
+                </p>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="billing_email" className="form-label">
+                      {t('customers.billingEmail')}
+                    </label>
+                    <input
+                      id="billing_email"
+                      name="billing_email"
+                      type="email"
+                      className="form-input"
+                      placeholder={t('placeholders.billingEmailPlaceholder')}
+                      value={formData.billing_email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="billing_phone" className="form-label">
+                      {t('customers.billingPhone')}
+                    </label>
+                    <input
+                      id="billing_phone"
+                      name="billing_phone"
+                      type="tel"
+                      className="form-input"
+                      placeholder={t('placeholders.billingPhonePlaceholder')}
+                      value={formData.billing_phone}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="billing_address" className="form-label">
+                    {t('customers.billingAddress')}
+                  </label>
+                  <textarea
+                    id="billing_address"
+                    name="billing_address"
+                    rows={2}
+                    className="form-textarea"
+                    placeholder={t('placeholders.billingAddressPlaceholder')}
+                    value={formData.billing_address}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="billing_zip" className="form-label">
+                      {t('customers.billingZip')}
+                    </label>
+                    <input
+                      id="billing_zip"
+                      name="billing_zip"
+                      type="text"
+                      className="form-input"
+                      placeholder={t('placeholders.billingZipPlaceholder')}
+                      value={formData.billing_zip}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="billing_city" className="form-label">
+                      {t('customers.billingCity')}
+                    </label>
+                    <input
+                      id="billing_city"
+                      name="billing_city"
+                      type="text"
+                      className="form-input"
+                      placeholder={t('placeholders.billingCityPlaceholder')}
+                      value={formData.billing_city}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="billing_country" className="form-label">
+                      {t('customers.billingCountry')}
+                    </label>
+                    <input
+                      id="billing_country"
+                      name="billing_country"
+                      type="text"
+                      className="form-input"
+                      placeholder={t('placeholders.billingCountryPlaceholder')}
+                      value={formData.billing_country}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="settings-actions">
+              <button
+                type="submit"
+                className="save-settings-btn"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    {t('common.saving')}...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    {t('settings.saveSettings')}
+                  </>
                 )}
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="pec" className="form-label">
-                    {t('customers.pec')}
-                  </label>
-                  <input
-                    id="pec"
-                    name="pec"
-                    type="email"
-                    className="form-input"
-                    placeholder={t('placeholders.pecPlaceholder')}
-                    value={formData.pec}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="website" className="form-label">
-                    {t('customers.website')}
-                  </label>
-                  <input
-                    id="website"
-                    name="website"
-                    type="url"
-                    className="form-input"
-                    placeholder={t('placeholders.websitePlaceholder')}
-                    value={formData.website}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
+              </button>
             </div>
-          )}
+          </form>
+        )}
 
-          {/* Billing Information - Only show for users with company type */}
-          {!isAdminPartner && formData.customer_type === 'company' && (
-            <div className="form-section">
-              <h3 className="form-section-title">{t('customers.billingInformation')}</h3>
-              <p className="form-section-description">
-                {t('settings.billingInfoDescription')}
+        {/* Locations Tab Content - Only for admin partners */}
+        {activeTab === 'locations' && isAdminPartner && (
+          <div className="locations-tab-content">
+            <div className="locations-tab-header">
+              <h3 className="locations-tab-title">
+                <MapPin size={20} />
+                {t('locations.locationsFor')} {partnerData?.company_name || partnerData?.first_name}
+              </h3>
+              <p className="locations-tab-description">
+                {t('locations.manageWorkspacesAndMeetingRooms')}
               </p>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="billing_email" className="form-label">
-                    {t('customers.billingEmail')}
-                  </label>
-                  <input
-                    id="billing_email"
-                    name="billing_email"
-                    type="email"
-                    className="form-input"
-                    placeholder={t('placeholders.billingEmailPlaceholder')}
-                    value={formData.billing_email}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="billing_phone" className="form-label">
-                    {t('customers.billingPhone')}
-                  </label>
-                  <input
-                    id="billing_phone"
-                    name="billing_phone"
-                    type="tel"
-                    className="form-input"
-                    placeholder={t('placeholders.billingPhonePlaceholder')}
-                    value={formData.billing_phone}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="billing_address" className="form-label">
-                  {t('customers.billingAddress')}
-                </label>
-                <textarea
-                  id="billing_address"
-                  name="billing_address"
-                  rows={2}
-                  className="form-textarea"
-                  placeholder={t('placeholders.billingAddressPlaceholder')}
-                  value={formData.billing_address}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="billing_zip" className="form-label">
-                    {t('customers.billingZip')}
-                  </label>
-                  <input
-                    id="billing_zip"
-                    name="billing_zip"
-                    type="text"
-                    className="form-input"
-                    placeholder={t('placeholders.billingZipPlaceholder')}
-                    value={formData.billing_zip}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="billing_city" className="form-label">
-                    {t('customers.billingCity')}
-                  </label>
-                  <input
-                    id="billing_city"
-                    name="billing_city"
-                    type="text"
-                    className="form-input"
-                    placeholder={t('placeholders.billingCityPlaceholder')}
-                    value={formData.billing_city}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="billing_country" className="form-label">
-                    {t('customers.billingCountry')}
-                  </label>
-                  <input
-                    id="billing_country"
-                    name="billing_country"
-                    type="text"
-                    className="form-input"
-                    placeholder={t('placeholders.billingCountryPlaceholder')}
-                    value={formData.billing_country}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
             </div>
-          )}
-
-          <div className="settings-actions">
-            <button
-              type="submit"
-              className="save-settings-btn"
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <div className="loading-spinner-small"></div>
-                  {t('common.saving')}...
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  {t('settings.saveSettings')}
-                </>
-              )}
-            </button>
+            <LocationsList
+              partner={partnerData}
+              isOpen={true}
+              onClose={handleLocationsModalClose}
+              embedded={true}
+            />
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

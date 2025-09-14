@@ -1,4 +1,4 @@
-import { Building, Calendar, DollarSign, MapPin, Plus, RefreshCw, Users } from 'lucide-react';
+import { Building, Calendar, DollarSign, MapPin, Plus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from '../components/common/ToastContainer';
@@ -16,11 +16,6 @@ import { useTour } from '../contexts/TourContext';
 
 // Add this import to the top of Dashboard.jsx with your other imports:
 import oneSignalEmailService from '../services/oneSignalEmailService';
-
-
-
-
-
 
 const Dashboard = () => {
   const { profile, user } = useAuth();
@@ -58,8 +53,9 @@ const Dashboard = () => {
 
   const [contractsChartData, setContractsChartData] = useState([]);
   const [chartLoading, setChartLoading] = useState(true);
+  const [hasContractData, setHasContractData] = useState(false);
 
-    // NEW: Contract management states for customer dashboard
+  // Contract management states for customer dashboard
   const [contracts, setContracts] = useState([]);
   const [contractsLoading, setContractsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -78,10 +74,15 @@ const Dashboard = () => {
   // Then in the Dashboard component, add this after the existing hooks:
   const { isOnboardingComplete, shouldShowWelcome } = useTour();
 
+  // Add these state variables at the top of Dashboard component, after existing states:
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
+  const [customerProfileData, setCustomerProfileData] = useState(null);
+
+  // Modify the existing useEffect to check for incomplete profile
   useEffect(() => {
     if (profile) {
       if (isCustomer) {
-        fetchCustomerContracts(); // NEW: Fetch contracts instead of stats
+        checkProfileCompletion(); // New function to check before fetching contracts
       } else {
         fetchStats();
         if (isPartnerAdmin || isSuperAdmin) {
@@ -91,8 +92,7 @@ const Dashboard = () => {
     }
   }, [profile, user]);
 
-
-  // NEW: Fetch customer contracts
+  // Fetch customer contracts - REMOVED MOCK DATA FALLBACK
   const fetchCustomerContracts = async () => {
     setContractsLoading(true);
     
@@ -106,61 +106,8 @@ const Dashboard = () => {
 
       if (customerError || !customerData) {
         console.error('Error fetching customer data:', customerError);
-        // Use mock data for development
-        setContracts([
-          {
-            id: 1,
-            contract_uuid: 'mock-1',
-            service_name: 'Nome del pacchetto',
-            service_type: 'pacchetto',
-            service_max_entries: 4,
-            entries_used: 0,
-            start_date: '2024-07-20',
-            end_date: '2025-10-20',
-            contract_status: 'active',
-            auto_renew: false,
-            service_cost: 150.00,
-            location_id: 1
-          },
-          {
-            id: 2,
-            contract_uuid: 'mock-2',
-            service_name: 'Nome del pacchetto',
-            service_type: 'pacchetto',
-            service_max_entries: 10,
-            entries_used: 10,
-            start_date: '2024-07-20',
-            end_date: '2025-07-20',
-            contract_status: 'active',
-            auto_renew: false,
-            service_cost: 200.00,
-            location_id: 1
-          },
-          {
-            id: 3,
-            contract_uuid: 'mock-3',
-            service_name: 'Nome dell\'abbonamento',
-            service_type: 'abbonamento',
-            start_date: '2024-10-01',
-            end_date: '2025-10-31',
-            contract_status: 'active',
-            auto_renew: true,
-            service_cost: 300.00,
-            location_id: 1
-          },
-          {
-            id: 4,
-            contract_uuid: 'mock-4',
-            service_name: 'Nome dell\'abbonamento',
-            service_type: 'abbonamento',
-            start_date: '2024-07-01',
-            end_date: '2025-07-12',
-            contract_status: 'active',
-            auto_renew: false,
-            service_cost: 250.00,
-            location_id: 1
-          }
-        ]);
+        // NO MORE MOCK DATA - just set empty array
+        setContracts([]);
         setContractsLoading(false);
         return;
       }
@@ -201,42 +148,12 @@ const Dashboard = () => {
       }));
 
       console.log('Processed contracts:', processedContracts);
-      console.log('Entries used values:', processedContracts.map(c => ({ id: c.id, entries_used: c.entries_used, type: typeof c.entries_used })));
-
       setContracts(processedContracts);
       
     } catch (error) {
       console.error('Error fetching customer contracts:', error);
-      
-      // Fallback to mock data
-      setContracts([
-        {
-          id: 1,
-          contract_uuid: 'mock-1',
-          service_name: 'Hot Desk Monthly',
-          service_type: 'pacchetto',
-          service_max_entries: 20,
-          entries_used: 7,
-          start_date: '2024-11-01',
-          end_date: '2025-10-31',
-          contract_status: 'active',
-          auto_renew: false,
-          service_cost: 150.00,
-          location_id: 1
-        },
-        {
-          id: 2,
-          contract_uuid: 'mock-2',
-          service_name: 'Meeting Room Access',
-          service_type: 'abbonamento',
-          start_date: '2024-10-15',
-          end_date: '2025-11-15',
-          contract_status: 'active',
-          auto_renew: true,
-          service_cost: 300.00,
-          location_id: 1
-        }
-      ]);
+      // NO MORE MOCK DATA FALLBACK - just set empty array
+      setContracts([]);
     } finally {
       setContractsLoading(false);
     }
@@ -252,7 +169,79 @@ const Dashboard = () => {
   };
 
 
-  // Replace your existing handlePackageBookingSuccess method with this enhanced version:
+  // New function to check profile completion status
+  const checkProfileCompletion = async () => {
+    try {
+      console.log('Checking profile completion for user:', user.id);
+      
+      // Get customer data to check status
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (customerError) {
+        console.error('Error fetching customer data:', customerError);
+        // If no customer record exists, this is unusual but we can handle it
+        setContractsLoading(false);
+        return;
+      }
+
+      console.log('Customer profile status:', customerData?.customer_status);
+
+      // Check if profile needs completion
+      if (customerData?.customer_status === 'incomplete_profile') {
+        console.log('Profile incomplete - showing completion form');
+        setCustomerProfileData(customerData);
+        setShowProfileCompletion(true);
+        setContractsLoading(false); // Don't show loading while form is open
+      } else {
+        // Profile is complete, proceed with normal flow
+        console.log('Profile complete - fetching contracts');
+        fetchCustomerContracts();
+      }
+    } catch (error) {
+      console.error('Error checking profile completion:', error);
+      // On error, still try to fetch contracts to not break the flow
+      fetchCustomerContracts();
+    }
+  };
+
+
+  // Modified success handler for profile completion
+  const handleProfileCompletionSuccess = async (updatedCustomer) => {
+    console.log('Profile completion successful:', updatedCustomer);
+    
+    try {
+      // Update customer status to 'tobequalified'
+      const { error } = await supabase
+        .from('customers')
+        .update({ 
+          customer_status: 'tobequalified',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedCustomer.id);
+
+      if (error) {
+        console.error('Error updating customer status:', error);
+        toast.error(t('messages.errorUpdatingStatus') || 'Error updating status');
+      } else {
+        console.log('Customer status updated to tobequalified');
+        toast.success(t('customers.profileCompletedSuccessfully') || 'Profile completed successfully');
+      }
+    } catch (error) {
+      console.error('Error in profile completion handler:', error);
+    }
+
+    // Close the profile completion form
+    setShowProfileCompletion(false);
+    setCustomerProfileData(null);
+    
+    // Now fetch contracts normally
+    fetchCustomerContracts();
+  };
+
   const handlePackageBookingSuccess = async (reservation) => {
     console.log('🎯 BOOKING SUCCESS HANDLER CALLED!', reservation);
     console.log('📧 Selected package contract:', selectedPackageContract);
@@ -261,15 +250,11 @@ const Dashboard = () => {
       // Send booking confirmation emails if we have contract data
       if (selectedPackageContract) {
         console.log('📧 About to send emails for contract:', selectedPackageContract);
-        console.log('📧 Reservation data:', reservation);
-        console.log('📧 OneSignal configured?', oneSignalEmailService.isBookingConfigured);
         
         // Get partner data for partner email
         let partnerData = null;
         if (profile?.partner_uuid) {
           try {
-            console.log('📧 Fetching partner data for UUID:', profile.partner_uuid);
-            
             const { data: partner, error: partnerError } = await supabase
               .from('partners')
               .select('email, first_name, second_name, company_name')
@@ -277,26 +262,17 @@ const Dashboard = () => {
               .single();
             
             if (!partnerError && partner) {
-              console.log('📧 Partner data found:', partner);
-              console.log('📧 Partner email field:', { 
-                email: partner.email
-              });
               partnerData = partner;
-            } else {
-              console.warn('📧 Partner data fetch error:', partnerError);
             }
           } catch (error) {
             console.warn('📧 Could not fetch partner data for email:', error);
           }
         }
 
-        // We need to get full contract data with customer info for the email
-        // The selectedPackageContract might not have complete customer data
+        // Get full contract data with customer info for the email
         let fullContractData = selectedPackageContract;
         
         try {
-          console.log('📧 Fetching full contract data for ID:', selectedPackageContract.id);
-          
           const { data: contractData, error: contractError } = await supabase
             .from('contracts')
             .select(`
@@ -322,62 +298,36 @@ const Dashboard = () => {
             .single();
 
           if (!contractError && contractData) {
-            console.log('📧 Full contract data fetched:', contractData);
             fullContractData = contractData;
-          } else {
-            console.warn('📧 Could not fetch full contract data:', contractError);
           }
         } catch (error) {
           console.warn('📧 Error fetching full contract data:', error);
         }
 
         // Send booking confirmation emails
-        console.log('📧 Sending booking confirmation emails...');
-        
         const emailResults = await oneSignalEmailService.sendBookingConfirmation(
-          reservation, // booking data
-          fullContractData, // contract data with customer info
-          t, // translation function
-          partnerData // partner data (optional)
+          reservation,
+          fullContractData,
+          t,
+          partnerData
         );
 
-        // Log email results
-        console.log('📧 Email results:', emailResults);
-        
-        if (emailResults.customerSuccess) {
-          console.log('✅ Customer booking confirmation sent successfully');
-        } else {
-          console.warn('❌ Failed to send customer booking confirmation');
-        }
-
-        if (emailResults.partnerSuccess) {
-          console.log('✅ Partner booking notification sent successfully');
-        } else {
-          console.warn('❌ Failed to send partner booking notification');
-        }
-
-        // Optionally show toast messages about email status
+        // Show toast messages about email status
         if (emailResults.customerSuccess && emailResults.partnerSuccess) {
           toast.success(t('reservations.confirmationEmailsSent') || 'Email di conferma inviate');
         } else if (emailResults.customerSuccess || emailResults.partnerSuccess) {
           toast.info(t('reservations.someEmailsSent') || 'Alcune email di conferma inviate');
-        } else {
-          console.warn('📧 No emails were sent successfully');
         }
-      } else {
-        console.warn('📧 No selectedPackageContract available for email sending');
       }
     } catch (error) {
       console.error('❌ Error sending booking confirmation emails:', error);
       // Don't fail the booking process if emails fail
     }
 
-    // Continue with existing success logic
     // Update the local contract state immediately for better UX
     setContracts(prev => prev.map(contract => {
       if (contract.id === reservation.contract_id) {
         const newEntriesUsed = parseFloat(contract.entries_used || 0) + parseFloat(reservation.entries_used || 0);
-        console.log(`📊 Updating contract ${contract.id}: ${contract.entries_used} + ${reservation.entries_used} = ${newEntriesUsed}`);
         return {
           ...contract,
           entries_used: newEntriesUsed
@@ -386,7 +336,7 @@ const Dashboard = () => {
       return contract;
     }));
     
-    // Fetch fresh data after a small delay to avoid overwriting the optimistic update
+    // Fetch fresh data after a small delay
     setTimeout(() => {
       fetchCustomerContracts();
     }, 100);
@@ -395,7 +345,6 @@ const Dashboard = () => {
     setSelectedPackageContract(null);
     toast.success(t('messages.bookingConfirmedSuccessfully') || 'Booking confirmed successfully');
   };
-
 
   const fetchContractsChartData = async () => {
     setChartLoading(true);
@@ -415,32 +364,36 @@ const Dashboard = () => {
 
       if (error) {
         console.error('Error fetching contracts chart data:', error);
-        // Generate mock data for development
-        generateMockChartData();
+        // NO MORE MOCK DATA - just set empty and indicate no data
+        setContractsChartData([]);
+        setHasContractData(false);
         return;
       }
 
       if (data && data.length > 0) {
         processContractsData(data);
+        setHasContractData(true);
       } else {
-        // Generate mock data when no contracts exist
-        generateMockChartData();
+        // NO MORE MOCK DATA - just set empty
+        setContractsChartData([]);
+        setHasContractData(false);
       }
 
     } catch (error) {
       console.error('Error in fetchContractsChartData:', error);
-      generateMockChartData();
+      // NO MORE MOCK DATA - just set empty
+      setContractsChartData([]);
+      setHasContractData(false);
     } finally {
       setChartLoading(false);
     }
   };
 
   const processContractsData = (contracts) => {
-    // Group contracts by month and type - use BOTH created_at and start_date
+    // Group contracts by month and type
     const monthlyData = {};
 
     contracts.forEach(contract => {
-      // Process by creation date
       const createdDate = new Date(contract.created_at);
       const createdMonthKey = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`;
       const createdMonthName = createdDate.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
@@ -456,46 +409,12 @@ const Dashboard = () => {
         };
       }
 
-      // Also process by start date if it's different from creation date
-      if (contract.start_date && contract.start_date !== contract.created_at.split('T')[0]) {
-        const startDate = new Date(contract.start_date);
-        const startMonthKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
-        const startMonthName = startDate.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
-
-        if (!monthlyData[startMonthKey]) {
-          monthlyData[startMonthKey] = {
-            month: startMonthName,
-            monthKey: startMonthKey,
-            date: new Date(startDate.getFullYear(), startDate.getMonth(), 1),
-            Abbonamento: 0,
-            Pacchetto: 0,
-            total: 0
-          };
-        }
-      }
-
       const serviceType = contract.service_type === 'abbonamento' ? 'Abbonamento' : 
                          contract.service_type === 'pacchetto' ? 'Pacchetto' : 'Altro';
       
       if (serviceType !== 'Altro') {
-        // Add to creation month
         monthlyData[createdMonthKey][serviceType]++;
         monthlyData[createdMonthKey].total++;
-
-        // Also add to start month if different (this shows when services actually begin)
-        if (contract.start_date && contract.start_date !== contract.created_at.split('T')[0]) {
-          const startDate = new Date(contract.start_date);
-          const startMonthKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
-          
-          // Only add if it's a future start (to avoid double counting)
-          const createdMonth = new Date(createdDate.getFullYear(), createdDate.getMonth(), 1);
-          const startMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-          
-          if (startMonth > createdMonth) {
-            monthlyData[startMonthKey][serviceType]++;
-            monthlyData[startMonthKey].total++;
-          }
-        }
       }
     });
 
@@ -503,9 +422,9 @@ const Dashboard = () => {
     const today = new Date();
     const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const startMonth = new Date(currentMonth);
-    startMonth.setMonth(currentMonth.getMonth() - 4); // 4 months back
+    startMonth.setMonth(currentMonth.getMonth() - 4);
     const endMonth = new Date(currentMonth);
-    endMonth.setMonth(currentMonth.getMonth() + 8); // 8 months forward
+    endMonth.setMonth(currentMonth.getMonth() + 8);
 
     // Create a complete month sequence for the defined range
     const completeTimeline = [];
@@ -532,43 +451,6 @@ const Dashboard = () => {
     setContractsChartData(chartData);
   };
 
-  const generateMockChartData = () => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    
-    // Generate timeline: 4 months back + current + 8 months forward = 13 months total
-    const mockData = [];
-    
-    for (let i = -4; i <= 8; i++) {
-      const date = new Date(currentYear, currentMonth + i, 1);
-      const monthName = date.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
-      
-      let abbonamenti, pacchetti;
-      
-      if (i <= 0) {
-        // Past and current months with historical data
-        abbonamenti = Math.floor(Math.random() * 12) + 3;
-        pacchetti = Math.floor(Math.random() * 8) + 2;
-      } else {
-        // Future months with pre-bookings and advance contracts
-        // Show realistic future booking patterns
-        const futureFactor = Math.max(0.3, 1 - (i * 0.15)); // Gradually decrease into future
-        abbonamenti = Math.floor((Math.random() * 10 + 2) * futureFactor);
-        pacchetti = Math.floor((Math.random() * 6 + 1) * futureFactor);
-      }
-      
-      mockData.push({
-        month: monthName,
-        Abbonamento: abbonamenti,
-        Pacchetto: pacchetti,
-        total: abbonamenti + pacchetti
-      });
-    }
-
-    setContractsChartData(mockData);
-  };
-
   const fetchStats = async () => {
     if (!profile) return;
 
@@ -590,7 +472,6 @@ const Dashboard = () => {
 
       // Fetch data based on user role
       if (profile.role === 'superadmin') {
-        // Superadmin sees all data
         const [partnersResult, locationsResult, usersResult, contractsResult] = await Promise.all([
           supabase.from('partners').select('*', { count: 'exact', head: true }),
           supabase.from('locations').select('*', { count: 'exact', head: true }),
@@ -602,7 +483,6 @@ const Dashboard = () => {
         locationsCount = locationsResult.count || 0;
         usersCount = usersResult.count || 0;
         
-        // Calculate total contract value
         const totalContractValue = contractsResult.data 
           ? contractsResult.data.reduce((sum, contract) => sum + (contract.final_price || 0), 0)
           : 0;
@@ -622,9 +502,7 @@ const Dashboard = () => {
           loading: false
         });
 
-        console.log('Superadmin stats:', { partnersCount, locationsCount, usersCount, totalContractValue });
       } else if (profile.role === 'admin') {
-        // Partner admin sees only their partner's data
         if (profile.partner_uuid) {
           const [
             locationsResult, 
@@ -681,11 +559,10 @@ const Dashboard = () => {
               .reduce((sum, r) => sum + r.quantity, 0);
           }
 
-          // Calculate available resources (total - currently booked for today)
+          // Calculate available resources
           if (resourcesResult.data) {
             const today = new Date().toISOString().split('T')[0];
             
-            // Get detailed booking info to calculate availability for today
             const { data: detailedBookings } = await supabase
               .from('bookings')
               .select(`
@@ -699,8 +576,6 @@ const Dashboard = () => {
               .lte('start_date', today)
               .gte('end_date', today);
 
-            console.log('Active bookings for today:', detailedBookings);
-
             if (detailedBookings) {
               const bookedDesks = detailedBookings.filter(b => 
                 b.location_resources?.resource_type === 'scrivania'
@@ -712,27 +587,11 @@ const Dashboard = () => {
 
               availableDesks = Math.max(0, totalDesks - bookedDesks);
               availableMeetingRooms = Math.max(0, totalMeetingRooms - bookedMeetingRooms);
-              
-              console.log('Resource calculation:', {
-                totalDesks,
-                bookedDesks,
-                availableDesks,
-                totalMeetingRooms,
-                bookedMeetingRooms,
-                availableMeetingRooms
-              });
             } else {
-              // No bookings for today, all resources are available
               availableDesks = totalDesks;
               availableMeetingRooms = totalMeetingRooms;
             }
           }
-
-          console.log('Partner admin stats:', { 
-            locationsCount, usersCount, customersCount, contractsCount,
-            totalDesks, totalMeetingRooms, availableDesks, availableMeetingRooms
-          });
-
 
           setStats({
             totalPartners: 0,
@@ -751,42 +610,17 @@ const Dashboard = () => {
         }
       }
 
-      // Handle database errors with mock data
-      if (profile.role === 'admin' && locationsCount === 0 && usersCount === 0) {
-        console.log('No data from database, using mock data for partner admin');
-        locationsCount = 3;
-        usersCount = 15;
-        customersCount = 25;
-        contractsCount = 12;
-        activeBookingsCount = 8;
-        totalDesks = 50;
-        totalMeetingRooms = 12;
-        availableDesks = 42;
-        availableMeetingRooms = 9;
-      }
-
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       
-      // Fallback to mock data
-      let mockStats = { 
+      // Set all stats to 0 instead of using mock data
+      setStats({ 
         totalPartners: 0, totalLocations: 0, totalUsers: 0, 
         totalCustomers: 0, totalContracts: 0, activeBookings: 0,
-        totalDesks: 0, totalMeetingRooms: 0, availableDesks: 0, availableMeetingRooms: 0
-      };
-      
-      if (profile.role === 'superadmin') {
-        mockStats = { ...mockStats, totalPartners: 12, totalLocations: 28, totalUsers: 245 };
-      } else if (profile.role === 'admin') {
-        mockStats = { 
-          ...mockStats, 
-          totalLocations: 3, totalUsers: 15, totalCustomers: 25, totalContracts: 12,
-          activeBookings: 8, totalDesks: 50, totalMeetingRooms: 12, 
-          availableDesks: 42, availableMeetingRooms: 9
-        };
-      }
-
-      setStats({ ...mockStats, totalContractValue: 0, loading: false });
+        totalDesks: 0, totalMeetingRooms: 0, availableDesks: 0, availableMeetingRooms: 0,
+        totalContractValue: 0, 
+        loading: false 
+      });
     }
   };
 
@@ -811,9 +645,6 @@ const Dashboard = () => {
 
   // Customer Dashboard Render
   const renderCustomerDashboard = () => {
-
-    
-    // Get active contracts for the customer
     const activeContracts = contracts.filter(c => c.contract_status === 'active');
     
     // Calculate days remaining for a contract
@@ -875,17 +706,16 @@ const Dashboard = () => {
       }
     };
     
-    // Handle package booking - same as Contracts page
+    // Handle package booking
     const handleBookPackage = (contract) => {
       console.log('Opening package booking for contract:', contract);
       setSelectedPackageContract(contract);
       setShowPackageBooking(true);
     };
     
-    // Handle purchase more entries or new package - opens Contract creation form
+    // Handle purchase more entries or new package
     const handlePurchaseMore = (contract = null) => {
       console.log('Opening contract form for new purchase');
-      // If we have a contract, we can pre-select the same service/location
       if (contract) {
         setEditingContract({
           service_id: contract.service_id,
@@ -893,19 +723,6 @@ const Dashboard = () => {
           isPreselected: true
         });
       }
-      setShowForm(true);
-    };
-    
-    // Handle renew subscription
-    const handleRenewSubscription = (contract) => {
-      console.log('Opening contract form for renewal');
-      // Pre-fill the form with the same service for renewal
-      setEditingContract({
-        service_id: contract.service_id,
-        location_id: contract.location_id,
-        service_name: contract.service_name,
-        isRenewal: true
-      });
       setShowForm(true);
     };
     
@@ -925,151 +742,180 @@ const Dashboard = () => {
         
         <div className="dashboard-section">
           <div className="contract-cards-grid">
-            {activeContracts.map((contract) => {
-              const isExpired = isContractExpired(contract.end_date);
-              const daysRemaining = calculateDaysRemaining(contract.end_date);
-              
-              // Calculate remaining entries with proper decimal handling
-              let remainingEntries = null;
-              if (contract.service_type === 'pacchetto') {
-                const maxEntries = parseFloat(contract.service_max_entries || 0);
-                const usedEntries = parseFloat(contract.entries_used || 0);
-                remainingEntries = Math.round((maxEntries - usedEntries) * 10) / 10; // Round to 1 decimal place
-              }
-              
-              const canBook = canBookPackageEntry(contract);
-              
-              return (
-                <div key={contract.id} className="contract-card">
-                  <div className="contract-card-header">
-                    <span className="contract-type-label">
-                      {contract.service_type === 'pacchetto' 
-                        ? t('services.package').toUpperCase() || 'PACCHETTO'
-                        : t('services.subscription').toUpperCase() || 'ABBONAMENTO'
-                      }
-                    </span>
-                  </div>
-                  
-                  <div className="contract-card-body">
-                    <h3 className="contract-service-name">
-                      {contract.service_name || 
-                      (contract.service_type === 'pacchetto' 
-                        ? 'Nome del pacchetto' 
-                        : 'Nome dell\'abbonamento')}
-                    </h3>
-                    
-                    <div className="contract-status-info">
-                      {contract.service_type === 'pacchetto' ? (
-                        <>
-                          <p className={`contract-entries ${remainingEntries === 0 ? 'no-entries' : ''}`}>
-                            {t('dashboard.hasEntries') || 'Hai ancora'} {' '}
-                            <strong className={remainingEntries === 0 ? 'text-red' : ''}>
-                              {/* Show .0 only if it's a whole number, otherwise show .5 */}
-                              {remainingEntries.toFixed(remainingEntries % 1 === 0 ? 0 : 1)}
-                            </strong> {' '}
-                            {t('dashboard.usableEntries') || 'ingressi utilizzabili'}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          {!isExpired && (
-                            <p className="contract-days">
-                              {t('dashboard.hasRemainingDays') || 'Hai ancora'} {' '}
-                              <strong>{daysRemaining}</strong> {' '}
-                              {t('dashboard.daysRemaining') || 'giorni rimanenti'}
-                            </p>
-                          )}
-                        </>
-                      )}
-                      
-                      <p className={`contract-expiry ${isExpired ? 'expired' : ''}`}>
-                        {isExpired 
-                          ? `${t('dashboard.expiredOn') || 'Scaduto il'} ${formatDate(contract.end_date)}`
-                          : `${t('dashboard.expiresOn') || 'Scadenza'} ${formatDate(contract.end_date)}`
+            {contractsLoading ? (
+              <div className="loading-message">
+                <div className="loading-spinner"></div>
+                <span>{t('dashboard.loadingContracts') || 'Caricamento contratti...'}</span>
+              </div>
+            ) : activeContracts.length === 0 ? (
+              <div className="no-contracts-message">
+                <div className="empty-icon">
+                  <Building size={48} />
+                </div>
+                <p>{t('dashboard.noContractsYet') || 'No contracts yet'}</p>
+                <button 
+                  className="btn-contract-primary"
+                  onClick={() => handlePurchaseMore()}
+                >
+                  <Plus size={16} />
+                  {t('dashboard.createFirstContract') || 'Crea il tuo primo contratto'}
+                </button>
+              </div>
+            ) : (
+              activeContracts.map((contract) => {
+                const isExpired = isContractExpired(contract.end_date);
+                const daysRemaining = calculateDaysRemaining(contract.end_date);
+                
+                // Calculate remaining entries with proper decimal handling
+                let remainingEntries = null;
+                if (contract.service_type === 'pacchetto') {
+                  const maxEntries = parseFloat(contract.service_max_entries || 0);
+                  const usedEntries = parseFloat(contract.entries_used || 0);
+                  remainingEntries = Math.round((maxEntries - usedEntries) * 10) / 10;
+                }
+                
+                const canBook = canBookPackageEntry(contract);
+                
+                return (
+                  <div key={contract.id} className="contract-card">
+                    <div className="contract-card-header">
+                      <span className="contract-type-label">
+                        {contract.service_type === 'pacchetto' 
+                          ? t('services.package').toUpperCase() || 'PACCHETTO'
+                          : t('services.subscription').toUpperCase() || 'ABBONAMENTO'
                         }
-                      </p>
+                      </span>
                     </div>
                     
-                    {/* Actions */}
-                    <div className="contract-card-actions">
-                      {contract.service_type === 'pacchetto' ? (
-                        <>
-                          {/* Package Actions */}
-                          {remainingEntries > 0 && !isExpired ? (
-                            <>
+                    <div className="contract-card-body">
+                      <h3 className="contract-service-name">
+                        {contract.service_name || 
+                        (contract.service_type === 'pacchetto' 
+                          ? 'Nome del pacchetto' 
+                          : 'Nome dell\'abbonamento')}
+                      </h3>
+                      
+                      <div className="contract-status-info">
+                        {contract.service_type === 'pacchetto' ? (
+                          <>
+                            <p className={`contract-entries ${remainingEntries === 0 ? 'no-entries' : ''}`}>
+                              {t('dashboard.hasEntries') || 'Hai ancora'} {' '}
+                              <strong className={remainingEntries === 0 ? 'text-red' : ''}>
+                                {remainingEntries.toFixed(remainingEntries % 1 === 0 ? 0 : 1)}
+                              </strong> {' '}
+                              {t('dashboard.usableEntries') || 'ingressi utilizzabili'}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            {!isExpired && (
+                              <p className="contract-days">
+                                {t('dashboard.hasRemainingDays') || 'Hai ancora'} {' '}
+                                <strong>{daysRemaining}</strong> {' '}
+                                {t('dashboard.daysRemaining') || 'giorni rimanenti'}
+                              </p>
+                            )}
+                          </>
+                        )}
+                        
+                        <p className={`contract-expiry ${isExpired ? 'expired' : ''}`}>
+                          {isExpired 
+                            ? `${t('dashboard.expiredOn') || 'Scaduto il'} ${formatDate(contract.end_date)}`
+                            : `${t('dashboard.expiresOn') || 'Scadenza'} ${formatDate(contract.end_date)}`
+                          }
+                        </p>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="contract-card-actions">
+                        {contract.service_type === 'pacchetto' ? (
+                          <>
+                            {/* Package Actions */}
+                            {remainingEntries > 0 && !isExpired ? (
+                              <>
+                                <button 
+                                  className="btn-contract-primary"
+                                  onClick={() => handleBookPackage(contract)}
+                                >
+                                  <Calendar size={16} />
+                                  {t('dashboard.bookEntry') || 'PRENOTA INGRESSO'}
+                                </button>
+                                <button 
+                                  className="btn-contract-outline"
+                                  onClick={() => handlePurchaseMore(contract)}
+                                >
+                                  <Plus size={16} />
+                                  {t('dashboard.buyMoreEntries') || 'ACQUISTA ALTRI INGRESSI'}
+                                </button>
+                              </>
+                            ) : (
                               <button 
-                                className="btn-contract-primary"
-                                onClick={() => handleBookPackage(contract)}
-                              >
-                                <Calendar size={16} />
-                                {t('dashboard.bookEntry') || 'PRENOTA INGRESSO'}
-                              </button>
-                              <button 
-                                className="btn-contract-outline"
+                                className="btn-contract-primary full-width"
                                 onClick={() => handlePurchaseMore(contract)}
                               >
                                 <Plus size={16} />
-                                {t('dashboard.buyMoreEntries') || 'ACQUISTA ALTRI INGRESSI'}
+                                {t('dashboard.buyNewPackage') || 'ACQUISTA NUOVO PACCHETTO'}
                               </button>
-                            </>
-                          ) : (
-                            <button 
-                              className="btn-contract-primary full-width"
-                              onClick={() => handlePurchaseMore(contract)}
-                            >
-                              <Plus size={16} />
-                              {t('dashboard.buyNewPackage') || 'ACQUISTA NUOVO PACCHETTO'}
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          {/* Subscription Actions - Only show auto-renew and renew options if it's NOT a free trial */}
-                          {contract.service_cost > 0 ? (
-                            <>
-                              <div className="auto-renew-section">
-                                <label className="auto-renew-toggle">
-                                  <input
-                                    type="checkbox"
-                                    checked={contract.auto_renew || false}
-                                    onChange={() => handleAutoRenewToggle(contract.id, contract.auto_renew)}
-                                    disabled={updatingAutoRenew[contract.id]}
-                                  />
-                                  <span className="toggle-slider"></span>
-                                  <span className="toggle-label">
-                                    {t('dashboard.autoRenewActive') || 'Rinnovo automatico attivato'}
-                                  </span>
-                                </label>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {/* Subscription Actions - Only show auto-renew, REMOVED renew button */}
+                            {contract.service_cost > 0 ? (
+                              <>
+                                <div className="auto-renew-section">
+                                  <label className="auto-renew-toggle">
+                                    <input
+                                      type="checkbox"
+                                      checked={contract.auto_renew || false}
+                                      onChange={() => handleAutoRenewToggle(contract.id, contract.auto_renew)}
+                                      disabled={updatingAutoRenew[contract.id]}
+                                    />
+                                    <span className="toggle-slider"></span>
+                                    <span className="toggle-label">
+                                      {t('dashboard.autoRenewActive') || 'Rinnovo automatico attivato'}
+</span>
+                                  </label>
+                                </div>
+                              </>
+                            ) : (
+                              /* Free trial - show informational message instead */
+                              <div className="free-trial-info">
+                                <p className="free-trial-text">
+                                  {t('dashboard.freeTrialActive') || 'Prova gratuita attiva - non rinnovabile'}
+                                </p>
                               </div>
-                              <button 
-                                className={contract.auto_renew ? 'btn-contract-outline' : 'btn-contract-primary'}
-                                onClick={() => handleRenewSubscription(contract)}
-                              >
-                                <RefreshCw size={16} />
-                                {t('dashboard.renewNow') || 'RINNOVA ADESSO'}
-                              </button>
-                            </>
-                          ) : (
-                            /* Free trial - show informational message instead */
-                            <div className="free-trial-info">
-                              <p className="free-trial-text">
-                                {t('dashboard.freeTrialActive') || 'Prova gratuita attiva - non rinnovabile'}
-                              </p>
-                            </div>
-                          )}
-                        </>
-                      )}
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-            
-            {/* Empty state remains the same */}
+                );
+              })
+            )}
           </div>
         </div>
         
-        {/* Quick Actions section remains the same */}
+        {/* Quick Actions section */}
+        <div className="dashboard-section">
+          <h2 className="section-title">{t('dashboard.quickActions') || 'Azioni Rapide'}</h2>
+          <div className="quick-actions">
+            <button 
+              className="action-card"
+              onClick={() => handlePurchaseMore()}
+            >
+              <div className="action-icon">
+                <Plus size={24} />
+              </div>
+              <div className="action-content">
+                <h3>{t('dashboard.newContract') || 'Nuovo Contratto'}</h3>
+                <p>{t('dashboard.newContractDesc') || 'Acquista un nuovo pacchetto o abbonamento'}</p>
+              </div>
+              <div className="action-arrow">→</div>
+            </button>
+          </div>
+        </div>
       </>
     );
   };
@@ -1150,34 +996,35 @@ const Dashboard = () => {
             </div>
           </div>
 
-          
-          {/* Contracts Analytics Chart for Superadmin */}
-          <div className="dashboard-section">
-            <div className="dashboard-chart">
-              <h2 className="chart-title">Andamento Contratti - Tutti i Partner</h2>
-              <p className="chart-subtitle">Ultimi 4 mesi e prossimi 8 mesi - contratti per tipologia</p>
-              {chartLoading ? (
-                <div className="chart-loading">
-                  <div className="loading-spinner"></div>
-                  <span>Caricamento dati...</span>
-                </div>
-              ) : (
-                <div className="chart-container">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name="Abbonamenti" radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name="Pacchetti" radius={[2, 2, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+          {/* Contracts Analytics Chart for Superadmin - ONLY SHOW IF THERE'S DATA */}
+          {hasContractData && (
+            <div className="dashboard-section">
+              <div className="dashboard-chart">
+                <h2 className="chart-title">Andamento Contratti - Tutti i Partner</h2>
+                <p className="chart-subtitle">Ultimi 4 mesi e prossimi 8 mesi - contratti per tipologia</p>
+                {chartLoading ? (
+                  <div className="chart-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Caricamento dati...</span>
+                  </div>
+                ) : (
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name="Abbonamenti" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name="Pacchetti" radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </>
       );
     }
@@ -1202,20 +1049,6 @@ const Dashboard = () => {
               <div className="stat-card">
                 <div className="stat-card-content">
                   <div className="stat-icon">
-                    <Building size={24} color="#9ca3af" />
-                  </div>
-                  <div className="stat-info">
-                    <div className="stat-label">Partner Totali</div>
-                    <div className="stat-value">
-                      {stats.loading ? '...' : stats.totalPartners}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-card-content">
-                  <div className="stat-icon">
                     <MapPin size={24} color="#9ca3af" />
                   </div>
                   <div className="stat-info">
@@ -1235,42 +1068,57 @@ const Dashboard = () => {
                   <div className="stat-info">
                     <div className="stat-label">{t('dashboard.totalCustomers')}</div>
                     <div className="stat-value">
-                      {stats.loading ? '...' : stats.totalUsers}
+                      {stats.loading ? '...' : stats.totalCustomers}
                     </div>
                   </div>
                 </div>
               </div>
 
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <div className="stat-icon">
+                    <Building size={24} color="#9ca3af" />
+                  </div>
+                  <div className="stat-info">
+                    <div className="stat-label">{t('dashboard.totalContracts')}</div>
+                    <div className="stat-value">
+                      {stats.loading ? '...' : stats.totalContracts}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Contracts Analytics Chart for Partner Admin */}
-          <div className="dashboard-section">
-            <div className="dashboard-chart">
-              <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
-              <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
-              {chartLoading ? (
-                <div className="chart-loading">
-                  <div className="loading-spinner"></div>
-                  <span>Caricamento dati...</span>
-                </div>
-              ) : (
-                <div className="chart-container">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+          {/* Contracts Analytics Chart for Partner Admin - ONLY SHOW IF THERE'S DATA */}
+          {hasContractData && (
+            <div className="dashboard-section">
+              <div className="dashboard-chart">
+                <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
+                <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
+                {chartLoading ? (
+                  <div className="chart-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Caricamento dati...</span>
+                  </div>
+                ) : (
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend />
+                        <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Resources Overview */}
           <div className="dashboard-section">
@@ -1331,7 +1179,7 @@ const Dashboard = () => {
                   </div>
                   <div className="resource-stat">
                     <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
-                    <span className="resource-label">{t('dashboard.total')}</span>
+                    <span className="resource-label">{t('dashboard.available')}</span>
                   </div>
                   <div className="resource-stat">
                     <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
@@ -1370,6 +1218,19 @@ const Dashboard = () => {
       {/* Modal Components for Customer Dashboard */}
       {isCustomer && (
         <>
+
+          {/* Profile Completion Modal - MUST complete on first login */}
+          <CustomerForm
+            isOpen={showProfileCompletion}
+            onClose={() => {}} // Prevent closing - profile completion is mandatory
+            onSuccess={handleProfileCompletionSuccess}
+            customer={customerProfileData}
+            partnerUuid={profile?.partner_uuid}
+            userId={user?.id}
+            isProfileCompletion={true}
+          />
+
+
           {/* Contract Form Modal - for creating new contracts */}
           <ContractForm
             isOpen={showForm}
@@ -1398,7 +1259,7 @@ const Dashboard = () => {
           />
         </>
       )}
-      {/* ADD THESE - Tour Components */}
+      {/* Tour Components */}
       <WelcomeModal />
       <TourOverlay />
     </div>

@@ -28,7 +28,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
         lastName: partner.second_name || ''
       }));
     } else if (isOpen && !isPartnerAdminInvitation) {
-      // Reset form for user invitations
+      // Reset form for user invitations (customer invitations)
       setFormData({
         email: '',
         firstName: '',
@@ -51,7 +51,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
   };
 
   const sendInvitationEmail = async (invitation, invitationLink) => {
-    // Add partner data to invitation object for email service
+    // Prepare invitation data for email service
     const invitationWithPartner = {
       ...invitation,
       partners: {
@@ -60,6 +60,13 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
         company_name: partner?.company_name
       }
     };
+
+    // Remove first_name from custom_data for customer invitations
+    if (!isPartnerAdminInvitation) {
+      // For customer invitations, don't include first_name in the data sent to OneSignal
+      const { invited_first_name, invited_last_name, ...invitationData } = invitationWithPartner;
+      invitationWithPartner.custom_data = invitationData;
+    }
 
     console.log('Sending invitation email with OneSignal:', invitationWithPartner);
 
@@ -101,12 +108,16 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
         partner_uuid: partner.partner_uuid,
         invited_role: targetRole,
         invited_email: formData.email,
-        invited_first_name: formData.firstName,
-        invited_last_name: formData.lastName,
         custom_message: formData.customMessage,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
         status: 'pending'
       };
+
+      // Only include first_name and last_name for partner admin invitations (superadmin inviting partner)
+      if (isPartnerAdminInvitation) {
+        invitationData.invited_first_name = formData.firstName;
+        invitationData.invited_last_name = formData.lastName;
+      }
 
       const { data, error } = await supabase
         .from('invitations')
@@ -198,38 +209,41 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
               </div>
             )}
             
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="firstName" className="form-label">
-                  {t('auth.firstName')} *
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder={t('placeholders.firstNamePlaceholder')}
-                  value={formData.firstName}
-                  onChange={handleChange}
-                />
+            {/* Only show Name fields for partner admin invitations (superadmin inviting partner) */}
+            {isPartnerAdminInvitation && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="firstName" className="form-label">
+                    {t('auth.firstName')} *
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    className="form-input"
+                    placeholder={t('placeholders.firstNamePlaceholder')}
+                    value={formData.firstName}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="lastName" className="form-label">
+                    {t('auth.lastName')} *
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    className="form-input"
+                    placeholder={t('placeholders.lastNamePlaceholder')}
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="lastName" className="form-label">
-                  {t('auth.lastName')} *
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  className="form-input"
-                  placeholder={t('placeholders.lastNamePlaceholder')}
-                  value={formData.lastName}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="email" className="form-label">
@@ -275,7 +289,12 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                     : partner?.first_name || partner?.company_name,
                   role: t(`roles.${targetRole}`)
                 })}</p>
-                <p><strong>{t('invitations.recipient')}:</strong> {formData.firstName} {formData.lastName} ({formData.email})</p>
+                <p><strong>{t('invitations.recipient')}:</strong> 
+                  {isPartnerAdminInvitation 
+                    ? `${formData.firstName} ${formData.lastName} (${formData.email})`
+                    : formData.email
+                  }
+                </p>
                 {formData.customMessage && (
                   <p><strong>{t('invitations.customMessage')}:</strong> {formData.customMessage}</p>
                 )}
@@ -295,7 +314,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                 type="submit"
                 onClick={handleSubmit}
                 className="btn-primary"
-                disabled={loading || !formData.email || !formData.firstName || !formData.lastName}
+                disabled={loading || !formData.email || (isPartnerAdminInvitation && (!formData.firstName || !formData.lastName))}
               >
                 {loading ? (
                   <>
