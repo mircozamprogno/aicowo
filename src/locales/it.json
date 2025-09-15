@@ -474,7 +474,8 @@
     "all": "Tutti",
     "warning": "Attenzione",
     "add": "Aggiungi",
-    "remove": "Rimuovi"
+    "remove": "Rimuovi",
+    "continue": "Continua"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -851,6 +852,14 @@
     "vatAmount": "Importo IVA",
     "maxEntries": "Ingressi Massimi",
     "resourceType": "Tipo Risorsa",
+    "confirmArchive": "Conferma Archiviazione",
+    "archiveContract": "Archivia Contratto",
+    "archiveContractWarning": "Questo archivierà il contratto e lo sposterà nella sezione contratti archiviati. Il contratto potrà essere ripristinato in seguito se necessario.",
+    "archiveNoteTitle": "Cosa succede quando archivi:",
+    "archiveNote1": "Il contratto verrà spostato nei contratti archiviati",
+    "archiveNote2": "Le prenotazioni e le riservazioni correlate verranno preservate",
+    "archiveNote3": "Il contratto può essere ripristinato in qualsiasi momento", 
+    "archiveNote4": "Nessun dato verrà perso definitivamente",
     "tooltips": {
       "generatePDF": "Scarica ricevuta PDF",
       "editContract": "Modifica dettagli contratto",

@@ -1,9 +1,8 @@
-import { MapPin, Send, UserPlus } from 'lucide-react';
+import { Edit, Send, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import PartnerForm from '../components/forms/PartnerForm';
 import SendInvitationModal from '../components/invitations/SendInvitationModal';
-import LocationsList from '../components/partners/LocationsList';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
@@ -207,22 +206,16 @@ const Partners = () => {
                     <div className="partner-actions">
                       {canManagePartners && (
                         <button 
-                          className="edit-btn"
+                          className="partner-action-btn edit-btn"
                           onClick={() => handleEditPartner(partner)}
+                          title={t('partners.edit')}
                         >
-                          {t('partners.edit')}
+                          <Edit size={16} />
                         </button>
                       )}
-                      <button 
-                        className="locations-btn"
-                        onClick={() => handleViewLocations(partner)}
-                        title={t('locations.viewLocations')}
-                      >
-                        <MapPin size={16} />
-                      </button>
                       {canInvite && (
                         <button 
-                          className="invite-btn"
+                          className="partner-action-btn invite-btn"
                           onClick={() => handleSendInvitation(partner)}
                           title={
                             profile?.role === 'superadmin' 
@@ -265,13 +258,6 @@ const Partners = () => {
           partner={editingPartner}
         />
       )}
-
-      {/* Locations Modal */}
-      <LocationsList
-        partner={selectedPartner}
-        isOpen={showLocations}
-        onClose={handleCloseLocations}
-      />
 
       {/* Send Invitation Modal */}
       {canInvite && (

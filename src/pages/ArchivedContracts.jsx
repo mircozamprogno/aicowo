@@ -15,6 +15,7 @@ const ArchivedContracts = () => {
   const [contractToRestore, setContractToRestore] = useState(null);
   const [showPermanentDeleteConfirm, setShowPermanentDeleteConfirm] = useState(false);
   const [contractToDelete, setContractToDelete] = useState(null);
+  const [deleteStep, setDeleteStep] = useState(1); // Add delete step for double confirmation
   const [generatingPDF, setGeneratingPDF] = useState(null);
   const [archiveAnalytics, setArchiveAnalytics] = useState(null);
   
@@ -107,10 +108,18 @@ const ArchivedContracts = () => {
 
   const handlePermanentDelete = (contract) => {
     setContractToDelete(contract);
+    setDeleteStep(1); // Start with step 1
     setShowPermanentDeleteConfirm(true);
   };
 
   const handlePermanentDeleteConfirm = async () => {
+    if (deleteStep === 1) {
+      // Move to step 2 (final confirmation)
+      setDeleteStep(2);
+      return;
+    }
+
+    // Step 2 - Actually delete
     if (!contractToDelete) return;
 
     try {
@@ -158,7 +167,14 @@ const ArchivedContracts = () => {
     } finally {
       setShowPermanentDeleteConfirm(false);
       setContractToDelete(null);
+      setDeleteStep(1); // Reset to step 1
     }
+  };
+
+  const handlePermanentDeleteCancel = () => {
+    setShowPermanentDeleteConfirm(false);
+    setContractToDelete(null);
+    setDeleteStep(1); // Reset to step 1
   };
 
   const handleGeneratePDF = async (contract) => {
@@ -283,10 +299,6 @@ const ArchivedContracts = () => {
       free_trial: t('services.freeTrial')
     };
     return types[type] || type;
-  };
-
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🖥️' : '🏢';
   };
 
   const getResourceDisplayName = (contract) => {
@@ -424,9 +436,6 @@ const ArchivedContracts = () => {
                     <div className="location-info">
                       <div className="location-name">{contract.location_name}</div>
                       <div className="resource-info">
-                        <span className="resource-icon">
-                          {getResourceTypeIcon(contract.resource_type)}
-                        </span>
                         {getResourceDisplayName(contract)}
                       </div>
                     </div>
@@ -619,30 +628,70 @@ const ArchivedContracts = () => {
         </div>
       )}
 
-      {/* Permanent Delete Confirmation Modal */}
+      {/* Permanent Delete Confirmation Modal - DOUBLE CONFIRMATION */}
       {showPermanentDeleteConfirm && contractToDelete && (
         <div className="modal-overlay">
           <div className="modal-container">
             <div className="modal-header">
               <h2 className="modal-title">
-                {t('contracts.confirmPermanentDelete') || 'Confirm Permanent Delete'}
+                {deleteStep === 1 ? (t('contracts.confirmPermanentDelete') || 'Confirm Permanent Delete') : (t('contracts.permanentDelete') || 'Permanent Delete')}
               </h2>
-              <button onClick={() => setShowPermanentDeleteConfirm(false)} className="modal-close-btn">
+              <button onClick={handlePermanentDeleteCancel} className="modal-close-btn">
                 <X size={24} />
               </button>
             </div>
 
             <div className="delete-modal-content" style={{ padding: '1.5rem' }}>
-              <div className="final-warning">
-                <Trash2 size={32} className="final-warning-icon" />
-                <div className="final-warning-text">
-                  <h3>{t('contracts.permanentDelete') || 'Permanent Delete'}</h3>
-                  <p>{t('contracts.permanentDeleteWarning') || 'This action will permanently delete the contract and all its data. This cannot be undone.'}</p>
-                  <div className="final-warning-note">
-                    <strong>{t('contracts.warning') || 'WARNING'}:</strong> {t('contracts.permanentDeleteNote') || 'This will permanently remove the contract'} <strong>{contractToDelete.contract_number}</strong> {t('contracts.fromDatabase') || 'from the database.'}
+              {deleteStep === 1 ? (
+                <>
+                  <div className="delete-warning">
+                    <Trash2 size={24} className="warning-icon" />
+                    <div className="warning-text">
+                      <h3>{t('common.warning') || 'Warning'}!</h3>
+                      <p>{t('contracts.permanentDeleteWarning') || 'This action will permanently delete the contract and all its data. This cannot be undone.'}</p>
+                    </div>
                   </div>
-                </div>
-              </div>
+
+                  <div className="contract-to-delete">
+                    <div className="contract-detail">
+                      <strong>{t('contracts.contract')}:</strong> {contractToDelete.contract_number}
+                    </div>
+                    <div className="contract-detail">
+                      <strong>{t('contracts.customer')}:</strong> {contractToDelete.customers?.company_name || 
+                        `${contractToDelete.customers?.first_name} ${contractToDelete.customers?.second_name}`}
+                    </div>
+                    <div className="contract-detail">
+                      <strong>{t('contracts.service')}:</strong> {contractToDelete.service_name}
+                    </div>
+                    <div className="contract-detail">
+                      <strong>{t('contracts.archivedOn') || 'Archived on'}:</strong> {formatDateTime(contractToDelete.archived_at)}
+                    </div>
+                  </div>
+
+                  <div className="delete-consequences">
+                    <h4>{t('contracts.permanentDeleteNote') || 'This action will permanently remove'}:</h4>
+                    <ul>
+                      <li>{t('contracts.permanentDeleteNote') || 'Contract and all its data'}</li>
+                      <li>{t('contracts.archiveNote2') || 'All related bookings and reservations'}</li>
+                      <li>{t('payments.paymentHistory') || 'Payment history'}</li>
+                      <li><strong>{t('contracts.warning') || 'WARNING'}: {t('contracts.permanentDeleteWarning') || 'This cannot be undone'}</strong></li>
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="final-warning">
+                    <Trash2 size={32} className="final-warning-icon" />
+                    <div className="final-warning-text">
+                      <h3>{t('contracts.permanentDelete') || 'Permanent Delete'}</h3>
+                      <p>{t('contracts.permanentDeleteWarning') || 'This action will permanently delete the contract and all its data. This cannot be undone.'}</p>
+                      <div className="final-warning-note">
+                        <strong>{t('contracts.warning') || 'WARNING'}:</strong> {t('contracts.permanentDeleteNote') || 'This will permanently remove the contract'} <strong>{contractToDelete.contract_number}</strong> {t('contracts.fromDatabase') || 'from the database.'}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="delete-modal-actions" style={{ 
                 display: 'flex', 
@@ -654,7 +703,7 @@ const ArchivedContracts = () => {
               }}>
                 <button
                   type="button"
-                  onClick={() => setShowPermanentDeleteConfirm(false)}
+                  onClick={handlePermanentDeleteCancel}
                   className="btn-secondary"
                 >
                   {t('common.cancel')}
@@ -662,9 +711,9 @@ const ArchivedContracts = () => {
                 <button
                   type="button"
                   onClick={handlePermanentDeleteConfirm}
-                  className="btn-danger"
+                  className={deleteStep === 1 ? "btn-warning" : "btn-danger"}
                 >
-                  {t('contracts.deletePermanently') || 'Delete Permanently'}
+                  {deleteStep === 1 ? (t('common.continue') || 'Continue') : (t('contracts.deletePermanently') || 'Delete Permanently')}
                 </button>
               </div>
             </div>

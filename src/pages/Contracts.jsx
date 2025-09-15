@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, Download, FileText, Plus, Trash2, Upload, X } from 'lucide-react';
+import { AlertTriangle, Archive, Clock, Download, FileText, Plus, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ContractActionsCell from '../components/ContractActionsCell';
@@ -26,9 +26,8 @@ const Contracts = () => {
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [contractToDelete, setContractToDelete] = useState(null);
-  const [deleteStep, setDeleteStep] = useState(1);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [contractToArchive, setContractToArchive] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
   
@@ -529,30 +528,23 @@ const Contracts = () => {
     }
   };
 
-  const handleDeleteContract = (contract) => {
-    setContractToDelete(contract);
-    setDeleteStep(1);
-    setShowDeleteConfirm(true);
+  const handleArchiveContract = (contract) => {
+    setContractToArchive(contract);
+    setShowArchiveConfirm(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (deleteStep === 1) {
-      setDeleteStep(2);
-      return;
-    }
-
+  const handleArchiveConfirm = async () => {
     try {
       const result = await ContractArchiveService.archiveContract(
-        contractToDelete.id,
+        contractToArchive.id,
         user.id,
-        'Contract deleted by user'
+        'Contract archived by user'
       );
 
       if (result.success) {
-        setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
-        setShowDeleteConfirm(false);
-        setContractToDelete(null);
-        setDeleteStep(1);
+        setContracts(prev => prev.filter(c => c.id !== contractToArchive.id));
+        setShowArchiveConfirm(false);
+        setContractToArchive(null);
         
         toast.success(t('contracts.contractArchivedSuccessfully') || 'Contract archived successfully');
       } else {
@@ -564,11 +556,9 @@ const Contracts = () => {
     }
   };
 
-
-  const handleDeleteCancel = () => {
-    setShowDeleteConfirm(false);
-    setContractToDelete(null);
-    setDeleteStep(1);
+  const handleArchiveCancel = () => {
+    setShowArchiveConfirm(false);
+    setContractToArchive(null);
   };
 
   const formatCurrency = (amount, currency = 'EUR') => {
@@ -1040,9 +1030,6 @@ const Contracts = () => {
                       <div className="location-info">
                         <div className="location-name">{contract.location_name}</div>
                         <div className="resource-info">
-                          <span className="resource-icon">
-                            {getResourceTypeIcon(contract.resource_type)}
-                          </span>
                           {getResourceDisplayName(contract)}
                         </div>
                       </div>
@@ -1103,7 +1090,7 @@ const Contracts = () => {
                       onPaymentHistory={handlePaymentHistory}
                       onEditContract={handleEditContract}
                       onPackageBooking={handlePackageBooking}
-                      onDeleteContract={handleDeleteContract}
+                      onDeleteContract={handleArchiveContract}
                       canBookPackage={canBookPackage}
                       getBookButtonText={getBookButtonText}
                       isInRange={isInRange}
@@ -1163,89 +1150,89 @@ const Contracts = () => {
         contract={selectedPackageContract}
       />
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && contractToDelete && (
+      {/* Archive Confirmation Modal - SINGLE CONFIRMATION */}
+      {showArchiveConfirm && contractToArchive && (
         <div className="modal-overlay">
-          <div className="modal-container delete-modal">
+          <div className="modal-container archive-modal">
             <div className="modal-header">
               <h2 className="modal-title">
-                {deleteStep === 1 ? 'Conferma Eliminazione' : 'Eliminazione Definitiva'}
+                {t('contracts.confirmArchive') || 'Confirm Archive'}
               </h2>
-              <button onClick={handleDeleteCancel} className="modal-close-btn">
+              <button onClick={handleArchiveCancel} className="modal-close-btn">
                 <X size={24} />
               </button>
             </div>
 
-            <div className="delete-modal-content">
-              {deleteStep === 1 ? (
-                <>
-                  <div className="delete-warning">
-                    <Trash2 size={24} className="warning-icon" />
-                    <div className="warning-text">
-                      <h3>Attenzione!</h3>
-                      <p>Stai per eliminare definitivamente questo contratto:</p>
-                    </div>
-                  </div>
+            <div className="archive-modal-content" style={{ padding: '1.5rem' }}>
+              <div className="archive-warning">
+                <Archive size={24} className="warning-icon" />
+                <div className="warning-text">
+                  <h3>{t('contracts.archiveContract') || 'Archive Contract'}</h3>
+                  <p>{t('contracts.archiveContractWarning') || 'This will archive the contract and move it to the archived contracts section. The contract can be restored later if needed.'}</p>
+                </div>
+              </div>
 
-                  <div className="contract-to-delete">
-                    <div className="contract-detail">
-                      <strong>Contratto:</strong> {contractToDelete.contract_number}
-                    </div>
-                    <div className="contract-detail">
-                      <strong>Cliente:</strong> {contractToDelete.customers?.company_name || 
-                        `${contractToDelete.customers?.first_name} ${contractToDelete.customers?.second_name}`}
-                    </div>
-                    <div className="contract-detail">
-                      <strong>Servizio:</strong> {contractToDelete.service_name}
-                    </div>
-                    <div className="contract-detail">
-                      <strong>Periodo:</strong> {formatDate(contractToDelete.start_date)} - {formatDate(contractToDelete.end_date)}
-                    </div>
-                  </div>
+              <div className="contract-to-archive">
+                <div className="contract-detail">
+                  <strong>{t('contracts.contract')}:</strong> {contractToArchive.contract_number}
+                </div>
+                <div className="contract-detail">
+                  <strong>{t('contracts.customer')}:</strong> {contractToArchive.customers?.company_name || 
+                    `${contractToArchive.customers?.first_name} ${contractToArchive.customers?.second_name}`}
+                </div>
+                <div className="contract-detail">
+                  <strong>{t('contracts.service')}:</strong> {contractToArchive.service_name}
+                </div>
+                <div className="contract-detail">
+                  <strong>{t('contracts.period')}:</strong> {formatDate(contractToArchive.start_date)} - {formatDate(contractToArchive.end_date)}
+                </div>
+              </div>
 
-                  <div className="delete-consequences">
-                    <h4>Questa azione comporterà:</h4>
-                    <ul>
-                      <li>Eliminazione definitiva del contratto</li>
-                      <li>Cancellazione automatica delle prenotazioni associate</li>
-                      <li>Liberazione immediata delle risorse prenotate</li>
-                      <li><strong>Questa operazione non può essere annullata</strong></li>
-                    </ul>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="final-warning">
-                    <Trash2 size={32} className="final-warning-icon" />
-                    <div className="final-warning-text">
-                      <h3>Ultima Conferma</h3>
-                      <p>Sei assolutamente sicuro di voler eliminare questo contratto?</p>
-                      <p className="final-warning-note">
-                        <strong>ATTENZIONE:</strong> Questa azione è irreversibile e eliminerà 
-                        definitivamente il contratto <strong>{contractToDelete.contract_number}</strong>
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
+              <div className="archive-info-note">
+                <h4>{t('contracts.archiveNoteTitle') || 'What happens when you archive:'}</h4>
+                <ul>
+                  <li>{t('contracts.archiveNote1') || 'Contract will be moved to archived contracts'}</li>
+                  <li>{t('contracts.archiveNote2') || 'Related bookings and reservations will be preserved'}</li>
+                  <li>{t('contracts.archiveNote3') || 'Contract can be restored at any time'}</li>
+                  <li>{t('contracts.archiveNote4') || 'No data will be permanently lost'}</li>
+                </ul>
+              </div>
 
-              <div className="delete-modal-actions">
+              <div className="archive-modal-actions" style={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                gap: '0.75rem', 
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e5e7eb'
+              }}>
                 <button
                   type="button"
-                  onClick={handleDeleteCancel}
+                  onClick={handleArchiveCancel}
                   className="btn-secondary"
                 >
-                  Annulla
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="button"
-                  onClick={handleDeleteConfirm}
-                  className={deleteStep === 1 ? "btn-warning" : "btn-danger"}
+                  onClick={handleArchiveConfirm}
+                  className="btn-archive"
+                  style={{ 
+                    backgroundColor: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s'
+                  }}
                 >
-                  {deleteStep === 1 ? 'Continua' : 'Elimina Definitivamente'}
+                  <Archive size={16} className="mr-2" />
+                  {t('contracts.confirmArchive') || 'Archive Contract'}
                 </button>
               </div>
-              
             </div>
           </div>
         </div>

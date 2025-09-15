@@ -533,3 +533,101 @@
     gap: 0.5rem;
   }
 }
+
+/* ===== Updated Partner Action Buttons Styles ===== */
+.partner-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Partner Action Buttons */
+.partner-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.partner-action-btn:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.partner-action-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Edit Button */
+.edit-btn {
+  color: #4f46e5;
+  border-color: #e0e7ff;
+}
+
+.edit-btn:hover {
+  background-color: #f0f4ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+/* Locations Button */
+.locations-btn {
+  color: #059669;
+  border-color: #d1fae5;
+}
+
+.locations-btn:hover {
+  background-color: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+/* Invite Button */
+.invite-btn {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.invite-btn:hover {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+/* Responsive adjustments for action buttons */
+@media (max-width: 768px) {
+  .partner-actions {
+    gap: 0.5rem;
+  }
+  
+  .partner-action-btn {
+    padding: 0.375rem;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+  }
+  
+  .partner-action-btn svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .partner-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .partner-action-btn {
+    width: 100%;
+    min-width: auto;
+  }
+}

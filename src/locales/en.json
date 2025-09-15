@@ -474,7 +474,8 @@
     "all": "All",
     "warning": "Warning",
     "add": "Add",
-    "remove": "Remove"
+    "remove": "Remove",
+    "continue": "Continue"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -850,6 +851,14 @@
     "vatAmount": "VAT Amount",
     "maxEntries": "Max Entries",
     "resourceType": "Resource Type",
+    "confirmArchive": "Confirm Archive",
+    "archiveContract": "Archive Contract", 
+    "archiveContractWarning": "This will archive the contract and move it to the archived contracts section. The contract can be restored later if needed.",
+    "archiveNoteTitle": "What happens when you archive:",
+    "archiveNote1": "Contract will be moved to archived contracts",
+    "archiveNote2": "Related bookings and reservations will be preserved", 
+    "archiveNote3": "Contract can be restored at any time",
+    "archiveNote4": "No data will be permanently lost",
     "tooltips": {
       "generatePDF": "Download PDF receipt",
       "editContract": "Edit contract details",
