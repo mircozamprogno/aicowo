@@ -13,24 +13,23 @@ import PlanFeatures from '../../pages/PlanFeatures';
 import PricingPlans from '../../pages/PricingPlans';
 import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
+import Support from '../../pages/Support'; // ← ADD THIS IMPORT
 import Users from '../../pages/Users';
 import ForgotPassword from '../auth/ForgotPassword';
 import InvitationRegister from '../auth/InvitationRegister';
 import Login from '../auth/Login';
 import Register from '../auth/Register';
-import ResetPassword from '../auth/ResetPassword'; // ← ADD THIS IMPORT
+import ResetPassword from '../auth/ResetPassword';
 import ProtectedRoute from './ProtectedRoute';
 // Add these imports
 import PartnerDiscountCodes from '../../pages/PartnerDiscountCodes';
-
-
 
 const Router = () => {
   const [currentPath, setCurrentPath] = useState(() => {
     return window.location.hash.slice(1) || '/login';
   });
   
-  const { user, loading, isPasswordRecovery } = useAuth(); // ← ADD isPasswordRecovery HERE
+  const { user, loading, isPasswordRecovery } = useAuth();
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -97,7 +96,7 @@ const Router = () => {
     }
 
     // If user is logged in but on auth pages, redirect to dashboard
-    if (user && !isPasswordRecovery && ['/login', '/register', '/forgot-password'].includes(currentPath)) { // ← ADD RECOVERY CHECK
+    if (user && !isPasswordRecovery && ['/login', '/register', '/forgot-password'].includes(currentPath)) {
       console.log('Router: User logged in, redirecting to dashboard');
       window.location.hash = '/dashboard';
       return;
@@ -109,7 +108,7 @@ const Router = () => {
       window.location.hash = '/login';
       return;
     }
-  }, [user, loading, currentPath, isPasswordRecovery]); // ← ADD isPasswordRecovery TO DEPENDENCIES
+  }, [user, loading, currentPath, isPasswordRecovery]);
 
   if (loading) {
     console.log('Router: Showing loading spinner');
@@ -128,7 +127,7 @@ const Router = () => {
   }
 
   // Handle reset password route (can include query parameters)
-  if (currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword')) { // ← ADD THIS
+  if (currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword')) {
     return <ResetPassword />;
   }
 
@@ -140,11 +139,6 @@ const Router = () => {
       return <Register />;
     case '/forgot-password':
       return <ForgotPassword />;
-    // You can also add explicit cases if needed:
-    // case '/reset-password':
-    //   return <ResetPassword />;
-    // case '/ResetPassword':
-    //   return <ResetPassword />;
     case '/dashboard':
       return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
     case '/partners':
@@ -193,6 +187,12 @@ const Router = () => {
           <Settings />
         </ProtectedRoute>
       ) : <Login />;
+    case '/support':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <Support />
+        </ProtectedRoute>
+      ) : <Login />;
     case '/archived-contracts':
       return user ? (
         <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
@@ -217,14 +217,13 @@ const Router = () => {
           <PartnerContracts />
         </ProtectedRoute>
       ) : <Login />;
-    // Add this route case
     case '/discount-codes':
       return user ? (
         <ProtectedRoute requiredRoles={['superadmin']}>
           <PartnerDiscountCodes />
         </ProtectedRoute>
       ) : <Login />;
-        default:
+    default:
       // For any unknown path, redirect based on auth status
       if (user) {
         window.location.hash = '/dashboard';

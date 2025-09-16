@@ -24,8 +24,10 @@ import './styles/pages/plan-features.css'
 import './styles/pages/pricing-plans.css'
 import './styles/pages/services.css'
 import './styles/pages/settings.css'
+import './styles/pages/support.css'
 import './styles/pages/users.css'
 import './styles/tour.css'
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -1503,3 +1503,876 @@
     transform: scale(1);
   }
 }
+
+/* ===== Enhanced Dashboard Business Intelligence Styles ===== */
+
+/* Critical Business Alerts Section */
+.alert-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .alert-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.alert-card {
+  background: white;
+  border-radius: 0.75rem;
+  border-left: 4px solid;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.alert-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.alert-card.expiring-contracts {
+  border-left-color: #f59e0b;
+}
+
+.alert-card.payment-status {
+  border-left-color: #dc2626;
+}
+
+.alert-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: white;
+  flex-shrink: 0;
+}
+
+.payment-status .alert-icon {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.alert-title h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.alert-title p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.alert-card-body {
+  padding: 1.5rem;
+}
+
+.alert-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.alert-metric {
+  text-align: center;
+}
+
+.metric-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.metric-number.urgent {
+  color: #dc2626;
+}
+
+.metric-number.warning {
+  color: #f59e0b;
+}
+
+.metric-number.info {
+  color: #3b82f6;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.revenue-at-risk, .overdue-amount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.risk-label, .overdue-label {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.risk-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.overdue-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+/* Financial Overview Section */
+.financial-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .financial-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.financial-metric-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid;
+  transition: all 0.2s ease;
+}
+
+.financial-metric-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.financial-metric-card.mrr {
+  border-left-color: #10b981;
+}
+
+.financial-metric-card.total-value {
+  border-left-color: #3b82f6;
+}
+
+.financial-metric-card.growth {
+  border-left-color: #8b5cf6;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.mrr .metric-icon {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.total-value .metric-icon {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.growth .metric-icon {
+  background: #e9d5ff;
+  color: #8b5cf6;
+}
+
+.metric-header h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.metric-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.value-main {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.value-change {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.value-change.positive {
+  background: #d1fae5;
+  color: #10b981;
+}
+
+.value-change.negative {
+  background: #fecaca;
+  color: #dc2626;
+}
+
+.loading-spinner.small {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-width: 2px;
+}
+
+/* Dashboard Analytics Section */
+.dashboard-analytics-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-analytics-section {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.chart-container.utilization {
+  height: 20rem;
+}
+
+.chart-container.utilization .recharts-cartesian-axis-tick-value {
+  font-size: 0.75rem;
+}
+
+/* Enhanced Stat Cards */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 640px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.stat-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  flex-shrink: 0;
+}
+
+.stat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1;
+}
+
+/* Resource Cards Enhancement */
+.resource-card {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.resource-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.resource-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.resource-card:hover::before {
+  opacity: 1;
+}
+
+.resource-header {
+  margin-bottom: 1.5rem;
+}
+
+.resource-title h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+}
+
+.resource-title p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.resource-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.resource-stat {
+  text-align: center;
+}
+
+.resource-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.resource-number.available {
+  color: #10b981;
+}
+
+.resource-number.booked {
+  color: #dc2626;
+}
+
+.resource-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.resource-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background: #e5e7eb;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 0.25rem;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%);
+  background-size: 1rem 1rem;
+  animation: progress-stripe 1s linear infinite;
+}
+
+@keyframes progress-stripe {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 1rem 0;
+  }
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Dashboard Profile Completion */
+.dashboard-profile-completion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20rem;
+}
+
+.profile-completion-message {
+  text-align: center;
+  max-width: 28rem;
+}
+
+.profile-completion-message h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.profile-completion-message p {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Dashboard Loading States */
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 20rem;
+  gap: 1rem;
+}
+
+.dashboard-loading span {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Enhanced Loading Spinner */
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Section Titles Enhancement */
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+  position: relative;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 4rem;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 1px;
+}
+
+/* Chart Enhancements */
+.dashboard-chart {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
+}
+
+.chart-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.chart-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 2rem 0;
+  font-style: italic;
+}
+
+.chart-container {
+  height: 22rem;
+  width: 100%;
+}
+
+/* Custom Tooltip Styling */
+.chart-tooltip {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  font-size: 0.875rem;
+  border-left: 4px solid #3b82f6;
+}
+
+.tooltip-label {
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tooltip-entry {
+  margin: 0.5rem 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tooltip-entry::before {
+  content: '';
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tooltip-total {
+  margin: 0.75rem 0 0 0;
+  font-weight: 600;
+  color: #374151;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.5rem;
+}
+
+/* Responsive Design Enhancements */
+@media (max-width: 768px) {
+  .alert-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-metrics {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .financial-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-analytics-section {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    height: 18rem;
+  }
+
+  .chart-container.utilization {
+    height: 16rem;
+  }
+
+  .resource-stats {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .alert-card-header {
+    padding: 1rem;
+  }
+
+  .alert-card-body {
+    padding: 1rem;
+  }
+
+  .financial-metric-card {
+    padding: 1rem;
+  }
+
+  .dashboard-chart {
+    padding: 1rem;
+  }
+
+  .value-main {
+    font-size: 1.5rem;
+  }
+
+  .metric-number {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .revenue-at-risk, .overdue-amount {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .metric-value {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+  }
+
+  .chart-title {
+    font-size: 1.125rem;
+  }
+
+  .chart-subtitle {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Animation and Transition Enhancements */
+.dashboard-section {
+  animation: fadeInUp 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.dashboard-section:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.dashboard-section:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dashboard-section:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.dashboard-section:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus States for Accessibility */
+.alert-card:focus-within,
+.financial-metric-card:focus-within,
+.stat-card:focus-within,
+.resource-card:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .dashboard-page {
+    background: white;
+    color: black;
+  }
+
+  .alert-card,
+  .financial-metric-card,
+  .stat-card,
+  .resource-card,
+  .dashboard-chart {
+    border: 1px solid #000;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .alert-card:hover,
+  .financial-metric-card:hover,
+  .stat-card:hover,
+  .resource-card:hover {
+    transform: none;
+  }
+
+  .dashboard-analytics-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+  .alert-card,
+  .financial-metric-card,
+  .stat-card,
+  .resource-card,
+  .dashboard-chart {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .section-title {
+    color: #f9fafb;
+    border-bottom-color: #374151;
+  }
+
+  .alert-title h3,
+  .metric-header h3,
+  .stat-label,
+  .resource-title h3 {
+    color: #f9fafb;
+  }
+
+  .alert-title p,
+  .resource-title p,
+  .chart-subtitle {
+    color: #9ca3af;
+  }
+
+  .chart-tooltip {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+}

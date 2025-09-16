@@ -150,9 +150,7 @@ const Services = () => {
     return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
-  };
+  // Removed getResourceTypeIcon function since we don't need icons anymore
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
@@ -277,9 +275,7 @@ const Services = () => {
                       {service.location_resources ? (
                         <div className="resource-info">
                           <div className="resource-header">
-                            <span className="resource-icon">
-                              {getResourceTypeIcon(service.location_resources.resource_type)}
-                            </span>
+                            {/* Removed the resource icon span */}
                             <span className="resource-name">
                               {service.location_resources.resource_name}
                             </span>

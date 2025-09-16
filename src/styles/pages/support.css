@@ -1,0 +1,522 @@
+/* ===== Support Page Styles ===== */
+.support-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.support-header {
+  margin-bottom: 2rem;
+}
+
+.support-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.support-icon {
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.support-title h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.support-title p {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
+.support-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Support Cards */
+.support-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+}
+
+.support-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.card-header.urgent {
+  border-bottom-color: #fee2e2;
+}
+
+.card-icon {
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.card-header.urgent .card-icon {
+  color: #dc2626;
+}
+
+.card-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+/* Company Information */
+.company-info .company-name h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.contact-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  transition: color 0.2s ease;
+}
+
+.contact-icon.clickable {
+  cursor: pointer;
+  color: #4f46e5;
+}
+
+.contact-icon.clickable:hover {
+  color: #3730a3;
+}
+
+.contact-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.contact-value {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.contact-value.clickable {
+  cursor: pointer;
+  color: #4f46e5;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.contact-value.clickable:hover {
+  color: #3730a3;
+  text-decoration: underline;
+}
+
+.contact-value.secondary {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.business-hours {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.copied-text {
+  font-size: 0.75rem;
+  color: #059669;
+  font-weight: 600;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-10px); }
+  20% { opacity: 1; transform: translateX(0); }
+  80% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(10px); }
+}
+
+/* Support Categories */
+.support-categories h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 1.5rem;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.category-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.category-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.category-icon {
+  color: #4f46e5;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.category-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-info h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.priority {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.priority.high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.priority.medium {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.priority.standard {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.priority.self-service {
+  background: #f0fdf4;
+  color: #059669;
+}
+
+.category-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.category-contact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.category-contact svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.category-email {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.category-email:hover {
+  color: #3730a3;
+  text-decoration: underline;
+}
+
+/* Emergency Contact */
+.emergency-contact {
+  border-color: #fca5a5;
+  background: linear-gradient(to right, #fff5f5, white);
+}
+
+.emergency-info p {
+  font-size: 1rem;
+  color: #374151;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.emergency-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.emergency-phone,
+.emergency-availability {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.emergency-phone svg {
+  color: #dc2626;
+}
+
+.emergency-availability svg {
+  color: #059669;
+}
+
+.emergency-number {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #dc2626;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.emergency-number:hover {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.emergency-availability span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #059669;
+}
+
+.emergency-note {
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #991b1b;
+  line-height: 1.5;
+}
+
+.emergency-note strong {
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .support-page {
+    padding: 1rem;
+  }
+  
+  .support-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .support-title h1 {
+    font-size: 1.5rem;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .category-card {
+    padding: 1.25rem;
+  }
+  
+  .contact-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .contact-icon {
+    margin-top: 0;
+  }
+  
+  .emergency-details {
+    gap: 1rem;
+  }
+  
+  .emergency-phone,
+  .emergency-availability {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .support-page {
+    padding: 0.75rem;
+  }
+  
+  .support-card {
+    padding: 1rem;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .support-title h1 {
+    font-size: 1.25rem;
+  }
+  
+  .company-info .company-name h3 {
+    font-size: 1.25rem;
+  }
+  
+  .category-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .emergency-note {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .support-page {
+    padding: 0;
+  }
+  
+  .support-card {
+    border: 1px solid #000;
+    box-shadow: none;
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+  
+  .clickable {
+    cursor: auto;
+    color: #111827 !important;
+    text-decoration: none !important;
+  }
+  
+  .copied-text {
+    display: none;
+  }
+  
+  .category-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Focus States for Accessibility */
+.clickable:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.category-card:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .support-card {
+    border-color: #000;
+  }
+  
+  .priority {
+    border: 1px solid;
+  }
+  
+  .emergency-contact {
+    border-color: #dc2626;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .category-card {
+    transition: none;
+  }
+  
+  .category-card:hover {
+    transform: none;
+  }
+  
+  .clickable {
+    transition: none;
+  }
+  
+  .copied-text {
+    animation: none;
+  }
+}
