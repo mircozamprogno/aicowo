@@ -1,4 +1,4 @@
-import { Edit2, Plus, Settings } from 'lucide-react';
+import { Edit2, HelpCircle, Plus, Settings, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ServiceForm from '../components/forms/ServiceForm';
@@ -14,6 +14,7 @@ const Services = () => {
   const [editingService, setEditingService] = useState(null);
   const { profile } = useAuth();
   const { t } = useTranslation();
+  const [showServiceInfo, setShowServiceInfo] = useState(false);
 
   useEffect(() => {
     if (profile?.partner_uuid) {
@@ -211,11 +212,21 @@ const Services = () => {
           </div>
         </div>
         <div className="services-header-actions">
+          <button 
+            className="service-info-btn"
+            onClick={() => setShowServiceInfo(true)}
+            title={t('services.serviceInfo')}
+          >
+            <HelpCircle size={16} className="mr-2" />
+            {t('services.serviceInfo')}
+          </button>
           <button className="add-service-btn" onClick={handleAddService}>
             <Plus size={16} className="mr-2" />
             {t('services.addService')}
           </button>
         </div>
+
+
       </div>
 
       <div className="services-table-container">
@@ -346,6 +357,76 @@ const Services = () => {
         partnerUuid={profile?.partner_uuid}
         locations={locations}
       />
+
+
+      {showServiceInfo && (
+        <div className="modal-overlay">
+          <div className="modal-container service-info-modal">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {t('services.serviceTypesInformation')}
+              </h2>
+              <button 
+                onClick={() => setShowServiceInfo(false)} 
+                className="modal-close-btn"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="service-info-content">
+              <p className="service-info-description">
+                {t('services.serviceInfoModalDescription')}
+              </p>
+
+              <div className="service-type-info">
+                <div className="service-type-item">
+                  <div className="service-type-header">
+                    <span className="service-type-badge service-type-subscription">
+                      {t('services.subscription')}
+                    </span>
+                    <h3>{t('services.subscriptionInfo')}</h3>
+                  </div>
+                  <p className="service-type-description">
+                    {t('services.subscriptionDescription')}
+                  </p>
+                  <p className="service-type-example">
+                    {t('services.subscriptionExample')}
+                  </p>
+                </div>
+
+                <div className="service-type-item">
+                  <div className="service-type-header">
+                    <span className="service-type-badge service-type-package">
+                      {t('services.package')}
+                    </span>
+                    <h3>{t('services.packageInfo')}</h3>
+                  </div>
+                  <p className="service-type-description">
+                    {t('services.packageDescription')}
+                  </p>
+                  <p className="service-type-example">
+                    {t('services.packageExample')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="service-info-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowServiceInfo(false)}
+                  className="btn-primary"
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
     </div>
   );
 };

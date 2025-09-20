@@ -1,4 +1,4 @@
-import { Archive, Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, Mail, Settings, Tag, Users, X } from 'lucide-react';
+import { Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, Mail, Settings, Tag, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -55,20 +55,18 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.partnerContracts'), href: '/partner-contracts', icon: File, roles: ['superadmin'] },
       { name: t('navigation.discountCodes'), href: '/discount-codes', icon: Tag, roles: ['superadmin'] },
       
-      // Partner admin navigation - added Support entry between settings and other items
-      { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
-      { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
+      // Partner admin navigation - NEW ORDER
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
+      { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
-      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['admin'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
+      { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
       
-      // Regular users see limited options and settings - including Photo Gallery
+      // Regular users see limited options and settings
       { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
-      { name: t('navigation.archivedContracts'), href: '/archived-contracts', icon: Archive, roles: ['user'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
     ];

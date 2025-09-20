@@ -1034,407 +1034,394 @@ setStats({
   };
 
   // Enhanced Partner Dashboard Render
-  const renderEnhancedPartnerDashboard = () => {
-    return (
-      <>
-        <h1 className="dashboard-title">
-          {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
-        </h1>
+// Enhanced Partner Dashboard Render
+const renderEnhancedPartnerDashboard = () => {
+  return (
+    <>
+      <h1 className="dashboard-title">
+        {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
+      </h1>
 
-        {!isOnboardingComplete && (
-          <div className="dashboard-setup-section">
-            <SetupProgressIndicator />
-          </div>
-        )}
+      {!isOnboardingComplete && (
+        <div className="dashboard-setup-section">
+          <SetupProgressIndicator />
+        </div>
+      )}
 
-        {/* Critical Business Alerts */}
-        <div className="dashboard-section">
-          <h2 className="section-title">{t('dashboard.criticalAlerts')}</h2>
-          <div className="alert-cards-grid">
-            {/* Expiring Contracts Alert */}
-            <div className="alert-card expiring-contracts">
-              <div className="alert-card-header">
-                <div className="alert-icon">
-                  <Calendar size={24} />
-                </div>
-                <div className="alert-title">
-                  <h3>{t('dashboard.expiringContracts')}</h3>
-                  <p>{t('dashboard.contractsNeedingAttention')}</p>
-                </div>
-              </div>
-              <div className="alert-card-body">
-                {businessMetrics.expiringContracts.loading ? (
-                  <div className="loading-spinner"></div>
-                ) : (
-                  <>
-                    <div className="alert-metrics">
-                      <div className="alert-metric">
-                        <span className="metric-number urgent">
-                          {businessMetrics.expiringContracts.next7Days.length}
-                        </span>
-                        <span className="metric-label">{t('dashboard.next7Days')}</span>
-                      </div>
-                      <div className="alert-metric">
-                        <span className="metric-number warning">
-                          {businessMetrics.expiringContracts.next15Days.length}
-                        </span>
-                        <span className="metric-label">{t('dashboard.next15Days')}</span>
-                      </div>
-                      <div className="alert-metric">
-                        <span className="metric-number info">
-                          {businessMetrics.expiringContracts.next30Days.length}
-                        </span>
-                        <span className="metric-label">{t('dashboard.next30Days')}</span>
-                      </div>
-                    </div>
-                    <div className="revenue-at-risk">
-                      <span className="risk-label">{t('dashboard.revenueAtRisk')}:</span>
-                      <span className="risk-amount">
-                        {formatCurrency(businessMetrics.expiringContracts.revenueAtRisk)}
-                      </span>
-                    </div>
-                  </>
-                )}
+      {/* Resources Overview - MOVED TO TOP */}
+      <div className="dashboard-section">
+        <h2 className="section-title">{t('dashboard.resourcesOverview')}</h2>
+        <div className="resources-grid">
+          {/* Desks Section */}
+          <div className="resource-card desks">
+            <div className="resource-header">
+              <div className="resource-title">
+                <h3>{t('dashboard.desks')}</h3>
+                <p>{t('dashboard.allLocations')}</p>
               </div>
             </div>
+            <div className="resource-stats">
+              <div className="resource-stat">
+                <span className="resource-number">{stats.loading ? '...' : stats.totalDesks}</span>
+                <span className="resource-label">{t('dashboard.total')}</span>
+              </div>
+              <div className="resource-stat">
+                <span className="resource-number available">{stats.loading ? '...' : stats.availableDesks}</span>
+                <span className="resource-label">{t('dashboard.available')}</span>
+              </div>
+              <div className="resource-stat">
+                <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalDesks - stats.availableDesks)}</span>
+                <span className="resource-label">{t('dashboard.booked')}</span>
+              </div>
+            </div>
+            <div className="resource-progress">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ 
+                    width: stats.totalDesks > 0 ? `${Math.max(0, ((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)}%` : '0%',
+                    backgroundColor: '#3b82f6'
+                  }}
+                />
+              </div>
+              <span className="progress-text">
+                {stats.totalDesks > 0 ? Math.max(0, Math.round(((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)) : 0}% Occupazione
+              </span>
+            </div>
+          </div>
 
-            {/* Payment Status Alert */}
-            <div className="alert-card payment-status">
-              <div className="alert-card-header">
-                <div className="alert-icon">
-                  <DollarSign size={24} />
-                </div>
-                <div className="alert-title">
-                  <h3>{t('dashboard.paymentStatus')}</h3>
-                  <p>{t('dashboard.paymentHealthCheck')}</p>
-                </div>
+          {/* Meeting Rooms Section */}
+          <div className="resource-card meeting-rooms">
+            <div className="resource-header">
+              <div className="resource-title">
+                <h3>{t('dashboard.meetingRooms')}</h3>
+                <p>{t('dashboard.allLocations')}</p>
               </div>
-              <div className="alert-card-body">
-                {businessMetrics.paymentStatus.loading ? (
-                  <div className="loading-spinner"></div>
-                ) : (
-                  <>
-                    <div className="alert-metrics">
-                      <div className="alert-metric">
-                        <span className="metric-number urgent">
-                          {businessMetrics.paymentStatus.overdue.length}
-                        </span>
-                        <span className="metric-label">{t('dashboard.overduePayments')}</span>
-                      </div>
-                      <div className="alert-metric">
-                        <span className="metric-number warning">
-                          {businessMetrics.paymentStatus.dueThisWeek.length}
-                        </span>
-                        <span className="metric-label">{t('dashboard.dueThisWeek')}</span>
-                      </div>
-                      <div className="alert-metric">
-                        <span className="metric-number info">
-                          {businessMetrics.paymentStatus.dueThisMonth.length}
-                        </span>
-                        <span className="metric-label">{t('dashboard.dueThisMonth')}</span>
-                      </div>
-                    </div>
-                    <div className="overdue-amount">
-                      <span className="overdue-label">{t('dashboard.totalOverdue')}:</span>
-                      <span className="overdue-value">
-                        {formatCurrency(businessMetrics.paymentStatus.totalOverdue)}
-                      </span>
-                    </div>
-                  </>
-                )}
+            </div>
+            <div className="resource-stats">
+              <div className="resource-stat">
+                <span className="resource-number">{stats.loading ? '...' : stats.totalMeetingRooms}</span>
+                <span className="resource-label">{t('dashboard.total')}</span>
               </div>
+              <div className="resource-stat">
+                <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
+                <span className="resource-label">{t('dashboard.available')}</span>
+              </div>
+              <div className="resource-stat">
+                <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
+                <span className="resource-label">{t('dashboard.booked')}</span>
+              </div>
+            </div>
+            <div className="resource-progress">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ 
+                    width: stats.totalMeetingRooms > 0 ? `${Math.max(0, ((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)}%` : '0%',
+                    backgroundColor: '#f59e0b'
+                  }}
+                />
+              </div>
+              <span className="progress-text">
+                {stats.totalMeetingRooms > 0 ? Math.max(0, Math.round(((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)) : 0}% Occupazione
+              </span>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Financial Overview */}
-        <div className="dashboard-section">
-          <h2 className="section-title">{t('dashboard.financialOverview')}</h2>
-          <div className="financial-metrics-grid">
-            <div className="financial-metric-card mrr">
-              <div className="metric-header">
-                <div className="metric-icon">
-                  <TrendingUp size={20} />
-                </div>
-                <h3>{t('dashboard.monthlyRecurringRevenue')}</h3>
+      {/* Critical Business Alerts */}
+      <div className="dashboard-section">
+        <h2 className="section-title">{t('dashboard.criticalAlerts')}</h2>
+        <div className="alert-cards-grid">
+          {/* Expiring Contracts Alert */}
+          <div className="alert-card expiring-contracts">
+            <div className="alert-card-header">
+              <div className="alert-icon">
+                <Calendar size={24} />
               </div>
-              <div className="metric-value">
-                {businessMetrics.revenueMetrics.loading ? (
-                  <div className="loading-spinner small"></div>
-                ) : (
-                  <>
-                    <span className="value-main">
-                      {formatCurrency(businessMetrics.revenueMetrics.currentMRR)}
-                    </span>
-                    <span className={`value-change ${
-                      businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
-                    }`}>
-                      {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? '+' : ''}
-                      {businessMetrics.revenueMetrics.monthOverMonthGrowth.toFixed(1)}%
-                    </span>
-                  </>
-                )}
+              <div className="alert-title">
+                <h3>{t('dashboard.expiringContracts')}</h3>
+                <p>{t('dashboard.contractsNeedingAttention')}</p>
               </div>
             </div>
+            <div className="alert-card-body">
+              {businessMetrics.expiringContracts.loading ? (
+                <div className="loading-spinner"></div>
+              ) : (
+                <>
+                  <div className="alert-metrics">
+                    <div className="alert-metric">
+                      <span className="metric-number urgent">
+                        {businessMetrics.expiringContracts.next7Days.length}
+                      </span>
+                      <span className="metric-label">{t('dashboard.next7Days')}</span>
+                    </div>
+                    <div className="alert-metric">
+                      <span className="metric-number warning">
+                        {businessMetrics.expiringContracts.next15Days.length}
+                      </span>
+                      <span className="metric-label">{t('dashboard.next15Days')}</span>
+                    </div>
+                    <div className="alert-metric">
+                      <span className="metric-number info">
+                        {businessMetrics.expiringContracts.next30Days.length}
+                      </span>
+                      <span className="metric-label">{t('dashboard.next30Days')}</span>
+                    </div>
+                  </div>
+                  <div className="revenue-at-risk">
+                    <span className="risk-label">{t('dashboard.revenueAtRisk')}:</span>
+                    <span className="risk-amount">
+                      {formatCurrency(businessMetrics.expiringContracts.revenueAtRisk)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
 
-            <div className="financial-metric-card total-value">
-              <div className="metric-header">
-                <div className="metric-icon">
-                  <Building size={20} />
-                </div>
-                <h3>{t('dashboard.totalActiveValue')}</h3>
+          {/* Payment Status Alert */}
+          <div className="alert-card payment-status">
+            <div className="alert-card-header">
+              <div className="alert-icon">
+                <DollarSign size={24} />
               </div>
-              <div className="metric-value">
-                {businessMetrics.revenueMetrics.loading ? (
-                  <div className="loading-spinner small"></div>
-                ) : (
+              <div className="alert-title">
+                <h3>{t('dashboard.paymentStatus')}</h3>
+                <p>{t('dashboard.paymentHealthCheck')}</p>
+              </div>
+            </div>
+            <div className="alert-card-body">
+              {businessMetrics.paymentStatus.loading ? (
+                <div className="loading-spinner"></div>
+              ) : (
+                <>
+                  <div className="alert-metrics">
+                    <div className="alert-metric">
+                      <span className="metric-number urgent">
+                        {businessMetrics.paymentStatus.overdue.length}
+                      </span>
+                      <span className="metric-label">{t('dashboard.overduePayments')}</span>
+                    </div>
+                    <div className="alert-metric">
+                      <span className="metric-number warning">
+                        {businessMetrics.paymentStatus.dueThisWeek.length}
+                      </span>
+                      <span className="metric-label">{t('dashboard.dueThisWeek')}</span>
+                    </div>
+                    <div className="alert-metric">
+                      <span className="metric-number info">
+                        {businessMetrics.paymentStatus.dueThisMonth.length}
+                      </span>
+                      <span className="metric-label">{t('dashboard.dueThisMonth')}</span>
+                    </div>
+                  </div>
+                  <div className="overdue-amount">
+                    <span className="overdue-label">{t('dashboard.totalOverdue')}:</span>
+                    <span className="overdue-value">
+                      {formatCurrency(businessMetrics.paymentStatus.totalOverdue)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Financial Overview */}
+      <div className="dashboard-section">
+        <h2 className="section-title">{t('dashboard.financialOverview')}</h2>
+        <div className="financial-metrics-grid">
+          <div className="financial-metric-card mrr">
+            <div className="metric-header">
+              <div className="metric-icon">
+                <TrendingUp size={20} />
+              </div>
+              <h3>{t('dashboard.monthlyRecurringRevenue')}</h3>
+            </div>
+            <div className="metric-value">
+              {businessMetrics.revenueMetrics.loading ? (
+                <div className="loading-spinner small"></div>
+              ) : (
+                <>
                   <span className="value-main">
-                    {formatCurrency(businessMetrics.revenueMetrics.totalActiveValue)}
+                    {formatCurrency(businessMetrics.revenueMetrics.currentMRR)}
                   </span>
-                )}
-              </div>
-            </div>
-
-            <div className="financial-metric-card growth">
-              <div className="metric-header">
-                <div className="metric-icon">
-                  {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 
-                    <TrendingUp size={20} /> : <TrendingDown size={20} />
-                  }
-                </div>
-                <h3>{t('dashboard.monthOverMonthGrowth')}</h3>
-              </div>
-              <div className="metric-value">
-                {businessMetrics.revenueMetrics.loading ? (
-                  <div className="loading-spinner small"></div>
-                ) : (
-                  <span className={`value-main ${
+                  <span className={`value-change ${
                     businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
                   }`}>
                     {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? '+' : ''}
                     {businessMetrics.revenueMetrics.monthOverMonthGrowth.toFixed(1)}%
                   </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Business Overview Stats */}
-        <div className="dashboard-section">
-          <h2 className="section-title">{t('dashboard.businessOverview')}</h2>
-          <div className="dashboard-stats">
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <div className="stat-icon">
-                  <MapPin size={24} color="#9ca3af" />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">{t('dashboard.activeLocations')}</div>
-                  <div className="stat-value">
-                    {stats.loading ? '...' : stats.totalLocations}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <div className="stat-icon">
-                  <Users size={24} color="#9ca3af" />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">{t('dashboard.totalCustomers')}</div>
-                  <div className="stat-value">
-                    {stats.loading ? '...' : stats.totalCustomers}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <div className="stat-icon">
-                  <Building size={24} color="#9ca3af" />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">{t('dashboard.totalContracts')}</div>
-                  <div className="stat-value">
-                    {stats.loading ? '...' : stats.totalContracts}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <div className="stat-icon">
-                  <Calendar size={24} color="#9ca3af" />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-label">{t('dashboard.activeBookings')}</div>
-                  <div className="stat-value">
-                    {stats.loading ? '...' : stats.activeBookings}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Analytics Charts Section */}
-        <div className="dashboard-analytics-section">
-          {/* Contracts Analytics Chart - ONLY SHOW IF THERE'S DATA */}
-          {hasContractData && (
-            <div className="dashboard-chart">
-              <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
-              <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
-              {chartLoading ? (
-                <div className="chart-loading">
-                  <div className="loading-spinner"></div>
-                  <span>Caricamento dati...</span>
-                </div>
-              ) : (
-                <div className="chart-container">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                </>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Package Utilization Chart */}
-          {!businessMetrics.utilizationMetrics.loading && 
-           businessMetrics.utilizationMetrics.packageUtilization.length > 0 && (
-            <div className="dashboard-chart">
-              <h2 className="chart-title">{t('dashboard.packageUtilization')}</h2>
-              <p className="chart-subtitle">{t('dashboard.customerUsagePatterns')}</p>
-              <div className="chart-container utilization">
+          <div className="financial-metric-card total-value">
+            <div className="metric-header">
+              <div className="metric-icon">
+                <Building size={20} />
+              </div>
+              <h3>{t('dashboard.totalActiveValue')}</h3>
+            </div>
+            <div className="metric-value">
+              {businessMetrics.revenueMetrics.loading ? (
+                <div className="loading-spinner small"></div>
+              ) : (
+                <span className="value-main">
+                  {formatCurrency(businessMetrics.revenueMetrics.totalActiveValue)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="financial-metric-card growth">
+            <div className="metric-header">
+              <div className="metric-icon">
+                {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 
+                  <TrendingUp size={20} /> : <TrendingDown size={20} />
+                }
+              </div>
+              <h3>{t('dashboard.monthOverMonthGrowth')}</h3>
+            </div>
+            <div className="metric-value">
+              {businessMetrics.revenueMetrics.loading ? (
+                <div className="loading-spinner small"></div>
+              ) : (
+                <span className={`value-main ${
+                  businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
+                }`}>
+                  {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? '+' : ''}
+                  {businessMetrics.revenueMetrics.monthOverMonthGrowth.toFixed(1)}%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Business Overview Stats - REMOVED "Sedi Attive" (Active Locations) */}
+      <div className="dashboard-section">
+        <h2 className="section-title">{t('dashboard.businessOverview')}</h2>
+        <div className="dashboard-stats">
+          <div className="stat-card">
+            <div className="stat-card-content">
+              <div className="stat-icon">
+                <Users size={24} color="#9ca3af" />
+              </div>
+              <div className="stat-info">
+                <div className="stat-label">{t('dashboard.totalCustomers')}</div>
+                <div className="stat-value">
+                  {stats.loading ? '...' : stats.totalCustomers}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-card-content">
+              <div className="stat-icon">
+                <Building size={24} color="#9ca3af" />
+              </div>
+              <div className="stat-info">
+                <div className="stat-label">{t('dashboard.totalContracts')}</div>
+                <div className="stat-value">
+                  {stats.loading ? '...' : stats.totalContracts}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-card-content">
+              <div className="stat-icon">
+                <Calendar size={24} color="#9ca3af" />
+              </div>
+              <div className="stat-info">
+                <div className="stat-label">{t('dashboard.activeBookings')}</div>
+                <div className="stat-value">
+                  {stats.loading ? '...' : stats.activeBookings}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Charts Section */}
+      <div className="dashboard-analytics-section">
+        {/* Contracts Analytics Chart - ONLY SHOW IF THERE'S DATA */}
+        {hasContractData && (
+          <div className="dashboard-chart">
+            <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
+            <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
+            {chartLoading ? (
+              <div className="chart-loading">
+                <div className="loading-spinner"></div>
+                <span>Caricamento dati...</span>
+              </div>
+            ) : (
+              <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={businessMetrics.utilizationMetrics.packageUtilization.slice(0, 10)} 
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
+                  <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="customerName" 
-                      tick={{ fontSize: 10 }} 
-                      interval={0}
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                    />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip 
-                      formatter={(value) => [`${value.toFixed(1)}%`, 'Utilization']}
-                      labelFormatter={(label) => `Customer: ${label}`}
-                    />
-                    <Bar 
-                      dataKey="utilizationRate" 
-                      fill="#10b981" 
-                      name="Utilization Rate (%)"
-                      radius={[4, 4, 0, 0]}
-                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* Resources Overview */}
-        <div className="dashboard-section">
-          <h2 className="section-title">{t('dashboard.resourcesOverview')}</h2>
-          <div className="resources-grid">
-            {/* Desks Section */}
-            <div className="resource-card desks">
-              <div className="resource-header">
-                <div className="resource-title">
-                  <h3>{t('dashboard.desks')}</h3>
-                  <p>{t('dashboard.allLocations')}</p>
-                </div>
-              </div>
-              <div className="resource-stats">
-                <div className="resource-stat">
-                  <span className="resource-number">{stats.loading ? '...' : stats.totalDesks}</span>
-                  <span className="resource-label">{t('dashboard.total')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number available">{stats.loading ? '...' : stats.availableDesks}</span>
-                  <span className="resource-label">{t('dashboard.available')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalDesks - stats.availableDesks)}</span>
-                  <span className="resource-label">{t('dashboard.booked')}</span>
-                </div>
-              </div>
-              <div className="resource-progress">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill"
-                    style={{ 
-                      width: stats.totalDesks > 0 ? `${Math.max(0, ((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)}%` : '0%',
-                      backgroundColor: '#3b82f6'
-                    }}
+        {/* Package Utilization Chart */}
+        {!businessMetrics.utilizationMetrics.loading && 
+         businessMetrics.utilizationMetrics.packageUtilization.length > 0 && (
+          <div className="dashboard-chart">
+            <h2 className="chart-title">{t('dashboard.packageUtilization')}</h2>
+            <p className="chart-subtitle">{t('dashboard.customerUsagePatterns')}</p>
+            <div className="chart-container utilization">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={businessMetrics.utilizationMetrics.packageUtilization.slice(0, 10)} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="customerName" 
+                    tick={{ fontSize: 10 }} 
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
                   />
-                </div>
-                <span className="progress-text">
-                  {stats.totalDesks > 0 ? Math.max(0, Math.round(((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)) : 0}% Occupazione
-                </span>
-              </div>
-            </div>
-
-            {/* Meeting Rooms Section */}
-            <div className="resource-card meeting-rooms">
-              <div className="resource-header">
-                <div className="resource-title">
-                  <h3>{t('dashboard.meetingRooms')}</h3>
-                  <p>{t('dashboard.allLocations')}</p>
-                </div>
-              </div>
-              <div className="resource-stats">
-                <div className="resource-stat">
-                  <span className="resource-number">{stats.loading ? '...' : stats.totalMeetingRooms}</span>
-                  <span className="resource-label">{t('dashboard.total')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
-                  <span className="resource-label">{t('dashboard.available')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
-                  <span className="resource-label">{t('dashboard.booked')}</span>
-                </div>
-              </div>
-              <div className="resource-progress">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill"
-                    style={{ 
-                      width: stats.totalMeetingRooms > 0 ? `${Math.max(0, ((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)}%` : '0%',
-                      backgroundColor: '#f59e0b'
-                    }}
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    formatter={(value) => [`${value.toFixed(1)}%`, 'Utilization']}
+                    labelFormatter={(label) => `Customer: ${label}`}
                   />
-                </div>
-                <span className="progress-text">
-                  {stats.totalMeetingRooms > 0 ? Math.max(0, Math.round(((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)) : 0}% Occupazione
-                </span>
-              </div>
+                  <Bar 
+                    dataKey="utilizationRate" 
+                    fill="#10b981" 
+                    name="Utilization Rate (%)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
-        </div>
-      </>
-    );
-  };
+        )}
+      </div>
+    </>
+  );
+};
 
   // Customer Dashboard Render
   const renderCustomerDashboard = () => {

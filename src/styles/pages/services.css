@@ -818,3 +818,139 @@
     font-size: 0.6875rem;
   }
 }
+
+
+/* Info Servizi. */
+
+/* Service Info Button */
+.service-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 0.75rem;
+}
+
+.service-info-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.service-info-btn:focus {
+  outline: 2px solid #6b7280;
+  outline-offset: 2px;
+}
+
+/* Service Info Modal */
+.service-info-modal {
+  max-width: 42rem;
+  max-height: 90vh;
+}
+
+.service-info-content {
+  padding: 1.5rem;
+}
+
+.service-info-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.service-type-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.service-type-item {
+  padding: 1.25rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  border-left: 4px solid #7c3aed;
+}
+
+.service-type-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.service-type-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.service-type-description {
+  font-size: 0.9375rem;
+  color: #374151;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.service-type-example {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.service-info-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .services-header-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .service-info-btn {
+    margin-right: 0;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .service-info-modal {
+    max-width: 90vw;
+    margin: 1rem;
+  }
+  
+  .service-info-content {
+    padding: 1rem;
+  }
+  
+  .service-type-item {
+    padding: 1rem;
+  }
+  
+  .service-type-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

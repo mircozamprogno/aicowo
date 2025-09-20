@@ -911,6 +911,18 @@ const Contracts = () => {
               </button>
             )}
 
+
+            {/* Archived Contracts Button */}
+            <button 
+              className="archived-contracts-btn"
+              onClick={() => window.location.hash = '/archived-contracts'}
+              title={t('contracts.viewArchivedContracts') || 'View Archived Contracts'}
+            >
+              <Archive size={16} className="mr-2" />
+              {t('contracts.archivedContracts') || 'Archived Contracts'}
+            </button>
+
+
             {/* FattureInCloud Bulk Upload Button */}
             {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
               <button 
