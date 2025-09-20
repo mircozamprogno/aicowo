@@ -198,7 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
-2025.09.20 V 0.650 Modifiche Andrea  
+2025.09.20 V 0.650 Modifiche Dashboard e altro Andrea 
 2025.09.16 V 0.640 Dashboard e Supporto  
 2025.09.15 V 0.630 Sedi, contratti icone, cancellazione contratti  
 2025.09.14 V 0.620 Miglioramenti  
