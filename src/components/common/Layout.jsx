@@ -6,7 +6,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import Sidebar from './Sidebar';
 import { toast } from './ToastContainer';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, pageTitle }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { profile, signOut } = useAuth();
   const { t } = useTranslation();
@@ -54,7 +54,7 @@ const Layout = ({ children }) => {
           </button>
           <div className="topbar-content">
             <div className="topbar-title">
-              <h1 className="app-title">{t('app.appName')}</h1>
+              <h1 className="app-title">{pageTitle ? t(pageTitle) : t('app.appName')}</h1>
             </div>
             <div className="topbar-actions">
               <LanguageSwitcher />

@@ -114,7 +114,7 @@
   "settings": {
     "title": "Impostazioni",
     "manageCustomerData": "Gestisci le tue informazioni cliente e di fatturazione",
-    "managePartnerData": "Gestisci le tue informazioni partner e dettagli aziendali",
+    "managePartnerData": "Gestisci le tue informazioni e dettagli aziendali",
     "saveSettings": "Salva Impostazioni",
     "billingInfoDescription": "Lascia vuote le informazioni di fatturazione per utilizzare le stesse informazioni personali.",
     "uploadLogo": "Carica Logo",
@@ -244,13 +244,38 @@
     "addressNotFound": "Indirizzo non trovato. Controlla l'indirizzo e riprova.",
     "geocodingError": "Errore durante la geocodifica dell'indirizzo",
     "mapError": "Errore caricamento mappa",
-    "confirmDeleteLocation": "Sei sicuro di voler eliminare questa sede?",
     "vatPercentage": "Percentuale IVA",
     "vatRate": "Aliquota IVA", 
     "vatInformation": "Informazioni IVA",
     "vatFor": "IVA per",
     "vatCountryDefaults": "Aliquote IVA per Paese",
-    "vatHelpText": "Inserisci la percentuale IVA applicata ai servizi in questa sede. Sarà utilizzata per fatturare i clienti che utilizzano servizi in questa sede."
+    "vatHelpText": "Inserisci la percentuale IVA applicata ai servizi in questa sede. Sarà utilizzata per fatturare i clienti che utilizzano servizi in questa sede.",
+    "confirmDeleteLocation": "Conferma Eliminazione Sede",
+    "cannotDeleteLocation": "Impossibile Eliminare la Sede",
+    "checkingDependencies": "Controllo dipendenze in corso...",
+    "dependenciesFound": "Dipendenze Trovate",
+    "activeContracts": "Contratti Attivi",
+    "futureBookings": "Prenotazioni Future",
+    "historicalBookings": "Prenotazioni Storiche",
+    "deleteWarnings": "Avvertenze",
+    "deleteBlockers": "Problemi Bloccanti",
+    "proceedWithCaution": "Procedi con Cautela",
+    "cannotProceed": "Impossibile Procedere",
+    "deleteLocationWarning": "Questa azione eliminerà permanentemente la sede e tutti i dati associati.",
+    "deleteConsequence1": "Tutte le risorse saranno rimosse permanentemente",
+    "deleteConsequence2": "Tutte le immagini saranno eliminate dallo storage",
+    "deleteConsequence3": "I dati storici saranno preservati ma il riferimento alla sede rimosso",
+    "resolveIssuesFirst": "Risolvi prima questi problemi:",
+    "cancelActiveContracts": "Annulla o completa tutti i contratti attivi",
+    "cancelFutureBookings": "Annulla tutte le prenotazioni future",
+    "thenRetryDelete": "Poi riprova l'eliminazione",
+    "deleteLocationPermanently": "Elimina Sede Definitivamente",
+    "deleteWarningActiveContracts": "{{count}} contratto/i attivo/i deve/devono essere risolto/i prima",
+    "deleteWarningFutureBookings": "{{count}} prenotazione/i futura/e deve/devono essere annullata/e prima",
+    "deleteWarningResources": "{{count}} risorsa/e sarà/saranno eliminata/e definitivamente",
+    "deleteWarningImages": "{{count}} immagine/i sarà/saranno eliminate definitivamente dallo storage",
+    "deleteWarningHistoricalData": "{{count}} record di prenotazioni storiche perderanno il riferimento alla sede",
+    "deleteValidationError": "Impossibile validare la sicurezza dell'eliminazione. Riprova."
   },
   "auth": {
     "signIn": "Accedi",
@@ -430,7 +455,7 @@
   "invitations": {
     "title": "Inviti",
     "manageAllInvitations": "Gestisci tutti gli inviti nel sistema",
-    "managePartnerInvitations": "Gestisci gli inviti per il tuo partner",
+    "managePartnerInvitations": "Gestisci gli inviti dei tuoi ospiti",
     "invitePartnerAdmin": "Invita Amministratore Partner",
     "inviteUser": "Invita Utente",
     "invitingAdminFor": "Invitando Amministratore per",
@@ -754,7 +779,7 @@
   "contracts": {
     "title": "Contratti",
     "manageYourContracts": "Visualizza e gestisci i tuoi contratti di servizio attivi",
-    "managePartnerContracts": "Gestisci i contratti per i clienti del tuo partner",
+    "managePartnerContracts": "Gestisci i tuoi contratti",
     "createContract": "Crea Contratto",
     "createFirstContract": "Crea Primo Contratto",
     "viewContract": "Visualizza Contratto",
@@ -768,7 +793,6 @@
     "period": "Periodo",
     "cost": "Costo",
     "status": "Stato",
-    "actions": "Azioni",
     "startDate": "Data Inizio",
     "endDate": "Data Fine",
     "duration": "Durata",
@@ -898,6 +922,15 @@
       "recordPayment": "Registra un nuovo pagamento",
       "viewPaymentHistory": "Visualizza storico pagamenti",
       "managePayments": "Gestisci pagamenti per questo contratto"
+    },
+    "actionsColumn": "Azioni",
+    "actions": {
+      "moreActions": "Altre azioni",
+      "downloadPDF": "Scarica PDF",
+      "recordPayment": "Registra Pagamento", 
+      "paymentHistory": "Storico Pagamenti",
+      "editContract": "Modifica Contratto",
+      "archiveContract": "Archivia Contratto"
     }
   },
   "placeholders": {
@@ -1567,8 +1600,26 @@
     "note": "Nota:",
     "emergencyNote": "Il supporto di emergenza è riservato a interruzioni critiche del sistema o incidenti di sicurezza che impattano gravemente le operazioni aziendali."
   },
+  "filters": {
+    "filters": "Filtri",
+    "customer": "Cliente",
+    "location": "Sede", 
+    "dateFrom": "Data Da",
+    "dateTo": "Data A",
+    "status": "Stato",
+    "paymentStatus": "Stato Pagamento",
+    "allCustomers": "Tutti i Clienti",
+    "allLocations": "Tutte le Sedi",
+    "allStatuses": "Tutti gli Stati",
+    "allPaymentStatuses": "Tutti gli Stati di Pagamento",
+    "activeFilters": "Filtri Attivi",
+    "clearAll": "Cancella Tutto",
+    "clearFilters": "Cancella Filtri",
+    "noResultsFound": "Nessun contratto trovato con i filtri selezionati",
+    "showingResults": "Visualizzando {{count}} di {{total}} contratti"
+  },
   "app": {
-    "appName": "Gestione Coworking",
+    "appName": " ",
     "appShortName": "PowerCowo",
     "locale": "it"
   }

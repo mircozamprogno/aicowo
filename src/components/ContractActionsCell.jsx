@@ -38,6 +38,9 @@ const ContractActionsCell = ({
   const [uploading, setUploading] = useState(false);
 
   const canBook = canBookPackage(contract);
+
+  console.log('Testing translation:', t('contracts.actions.downloadPDF'));
+  console.log('Testing translation type:', typeof t('contracts.actions.downloadPDF'));
   
   // Check if already uploaded to FattureInCloud
   const isUploaded = uploadStatus && uploadStatus.upload_status === 'success';
@@ -65,22 +68,22 @@ const ContractActionsCell = ({
     }
   };
 
-  // Primary actions (always visible)
-  const primaryActions = [
+  // NO PRIMARY ACTIONS - Everything goes in dropdown now
+  const primaryActions = [].filter(action => action.show);
+
+  const secondaryActions = [
+    // PDF MOVED TO DROPDOWN AS FIRST ITEM
     {
       key: 'pdf',
       icon: generatingPDF === contract.id ? 
         <div className="loading-spinner-small"></div> : 
         <Download size={14} />,
-      label: 'PDF',
+      label: t('contracts.actions.downloadPDF'),
       className: 'pdf-btn',
       onClick: () => onGeneratePDF(contract),
       disabled: generatingPDF === contract.id,
       show: true
-    }
-  ].filter(action => action.show);
-
-  const secondaryActions = [
+    },
     {
       key: 'fattureincloud',
       icon: isUploaded ? 
@@ -99,7 +102,7 @@ const ContractActionsCell = ({
     {
       key: 'payment',
       icon: <DollarSign size={14} />,
-      label: t('payments.recordPayment'),
+      label: t('contracts.actions.recordPayment'),
       className: 'payment-btn',
       onClick: () => {
         console.log('Recording payment for contract:', contract.id);
@@ -110,7 +113,7 @@ const ContractActionsCell = ({
     {
       key: 'history',
       icon: <CreditCard size={14} />,
-      label: t('payments.paymentHistory'), 
+      label: t('contracts.actions.paymentHistory'), 
       className: 'history-btn',
       onClick: () => {
         console.log('Opening payment history for contract:', contract.id);
@@ -121,7 +124,7 @@ const ContractActionsCell = ({
     {
       key: 'edit',
       icon: <Edit2 size={14} />,
-      label: t('contracts.editContract'),
+      label: t('contracts.actions.editContract'),
       className: 'edit-btn',
       onClick: () => onEditContract(contract),
       show: canEditContracts
@@ -143,7 +146,7 @@ const ContractActionsCell = ({
     {
       key: 'delete',
       icon: <Trash2 size={14} />,
-      label: t('contracts.deleteContract'),
+      label: t('contracts.actions.archiveContract'),
       className: 'delete-btn',
       onClick: () => onDeleteContract(contract),
       show: isPartnerAdmin || isSuperAdmin
@@ -153,20 +156,7 @@ const ContractActionsCell = ({
   return (
     <td className="contracts-table-cell actions-cell">
       <div className="contract-actions">
-        {/* PDF button always visible */}
-        {primaryActions.map(action => (
-          <button
-            key={action.key}
-            className={`action-btn ${action.className}`}
-            onClick={action.onClick}
-            disabled={action.disabled}
-            title={action.label}
-          >
-            {action.icon}
-          </button>
-        ))}
-        
-        {/* Other actions in dropdown */}
+        {/* NO PDF BUTTON OUTSIDE - Only dropdown menu */}
         {secondaryActions.length > 0 && (
           <div className="actions-dropdown">
             <button
@@ -175,7 +165,7 @@ const ContractActionsCell = ({
                 e.stopPropagation();
                 setShowDropdown(!showDropdown);
               }}
-              title="More actions"
+              title={t('contracts.actions.moreActions')}
             >
               <MoreVertical size={14} />
             </button>

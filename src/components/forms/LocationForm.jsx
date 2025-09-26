@@ -892,18 +892,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       </div>
                     </div>
 
-                    {/* VAT Country Defaults Info */}
-                    <div className="vat-country-info">
-                      <h5 className="vat-info-title">💡 {t('locations.vatCountryDefaults')}</h5>
-                      <div className="vat-defaults-grid">
-                        <div className="vat-default-item">🇮🇹 Italy: 22%</div>
-                        <div className="vat-default-item">🇫🇷 France: 20%</div>
-                        <div className="vat-default-item">🇩🇪 Germany: 19%</div>
-                        <div className="vat-default-item">🇪🇸 Spain: 21%</div>
-                        <div className="vat-default-item">🇨🇭 Switzerland: 7.7%</div>
-                        <div className="vat-default-item">🇬🇧 UK: 20%</div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}

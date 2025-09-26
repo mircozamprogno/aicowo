@@ -9,19 +9,21 @@ import PaymentHistoryModal from '../components/modals/PaymentHistoryModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { ContractArchiveService } from '../services/contractArchiveService';
-import { CSVExportService } from '../services/csvExportService'; // Add this import
+import { CSVExportService } from '../services/csvExportService';
 import oneSignalEmailService from '../services/oneSignalEmailService';
 import { PaymentService } from '../services/paymentService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 
 // Add these imports at the top
+import ContractsFilter from '../components/ContractsFilter'; // New import for filter
 import { BulkUploadModal } from '../components/fattureincloud/FattureInCloudComponents';
 import { FattureInCloudService } from '../services/fattureInCloudService';
 
 
 const Contracts = () => {
   const [contracts, setContracts] = useState([]);
+  const [filteredContracts, setFilteredContracts] = useState([]); // New state for filtered contracts
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -64,6 +66,8 @@ const Contracts = () => {
   const [uploadStatuses, setUploadStatuses] = useState({});
   const [showBulkUpload, setShowBulkUpload] = useState(false);
 
+  // Filter states
+  const [activeFilters, setActiveFilters] = useState({});
 
   // Add these functions before the return statement
   const loadPartnerSettings = async () => {
@@ -100,6 +104,26 @@ const Contracts = () => {
     loadUploadStatuses();
   };
 
+  // Filter handler
+  const handleFilterChange = (filtered, filters) => {
+    setFilteredContracts(filtered);
+    setActiveFilters(filters);
+  };
+
+  // Get payment status for a contract (used by filter)
+  const getPaymentStatusForFilter = (contract) => {
+    if (contract.service_type === 'free_trial' || !contract.requires_payment) {
+      return 'not_required';
+    }
+
+    const paymentInfo = contractPayments[contract.id];
+    if (!paymentInfo) {
+      return 'unpaid'; // Default if no payment info loaded yet
+    }
+
+    return paymentInfo.payment_status;
+  };
+
   useEffect(() => {
     if (profile) {
       fetchContracts();
@@ -109,6 +133,10 @@ const Contracts = () => {
     }
   }, [profile]);
 
+  // Initialize filtered contracts when contracts change
+  useEffect(() => {
+    setFilteredContracts(contracts);
+  }, [contracts]);
 
   // Add this useEffect after the existing ones
   useEffect(() => {
@@ -123,7 +151,6 @@ const Contracts = () => {
       loadUploadStatuses();
     }
   }, [contracts, partnerSettings]);
-
 
   const fetchContracts = async () => {
     try {
@@ -186,6 +213,7 @@ const Contracts = () => {
             service_cost: 150.00,
             service_currency: 'EUR',
             location_name: 'Milano Centro',
+            location_id: 1,
             resource_name: 'Hot Desks Area A',
             resource_type: 'scrivania',
             contract_status: 'active',
@@ -195,7 +223,7 @@ const Contracts = () => {
             customer_id: 1,
             partner_uuid: 'test-partner',
             created_at: new Date().toISOString(),
-            is_archived: false, // Add this field
+            is_archived: false,
             requires_payment: true,
             payment_terms: 'net_30',
             customers: {
@@ -216,6 +244,7 @@ const Contracts = () => {
             service_cost: 200.00,
             service_currency: 'EUR',
             location_name: 'Milano Centro',
+            location_id: 1,
             resource_name: 'Small Meeting Room',
             resource_type: 'sala_riunioni',
             contract_status: 'active',
@@ -225,7 +254,7 @@ const Contracts = () => {
             customer_id: 1,
             partner_uuid: 'test-partner',
             created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-            is_archived: false, // Add this field
+            is_archived: false,
             requires_payment: true,
             payment_terms: 'net_30',
             customers: {
@@ -244,22 +273,20 @@ const Contracts = () => {
           loadPaymentStatuses(mockContracts.map(c => c.id));
         }
       } else {
-      // Process contracts to ensure numeric fields are numbers
-      const processedContracts = (data || []).map(contract => ({
-        ...contract,
-        entries_used: parseFloat(contract.entries_used) || 0,
-        service_max_entries: contract.service_max_entries ? parseFloat(contract.service_max_entries) : null,
-        service_cost: parseFloat(contract.service_cost) || 0
-      }));
-      
-      setContracts(processedContracts);
+        // Process contracts to ensure numeric fields are numbers
+        const processedContracts = (data || []).map(contract => ({
+          ...contract,
+          entries_used: parseFloat(contract.entries_used) || 0,
+          service_max_entries: contract.service_max_entries ? parseFloat(contract.service_max_entries) : null,
+          service_cost: parseFloat(contract.service_cost) || 0
+        }));
+        
+        setContracts(processedContracts);
 
-
-      // ADD THIS LINE:
-      if (canManagePayments) {
-        loadPaymentStatuses(processedContracts.map(c => c.id));
+        if (canManagePayments) {
+          loadPaymentStatuses(processedContracts.map(c => c.id));
+        }
       }
-    }
     } catch (error) {
       console.error('Error fetching contracts:', error);
       toast.error(t('messages.errorLoadingContracts'));
@@ -414,7 +441,6 @@ const Contracts = () => {
   };
 
   // PDF Generation handler
-
   const handleGeneratePDF = async (contract) => {
     setGeneratingPDF(contract.id);
     
@@ -561,130 +587,6 @@ const Contracts = () => {
     setContractToArchive(null);
   };
 
-  const formatCurrency = (amount, currency = 'EUR') => {
-    return new Intl.NumberFormat('it-IT', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('it-IT');
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'active':
-        return 'status-active';
-      case 'expired':
-        return 'status-expired';
-      case 'cancelled':
-        return 'status-cancelled';
-      case 'suspended':
-        return 'status-suspended';
-      default:
-        return 'status-inactive';
-    }
-  };
-
-  const getServiceTypeBadgeClass = (type) => {
-    const classes = {
-      abbonamento: 'service-type-subscription',
-      pacchetto: 'service-type-package',
-      free_trial: 'service-type-trial'
-    };
-    return classes[type] || 'service-type-default';
-  };
-
-  const getServiceTypeLabel = (type) => {
-    const types = {
-      abbonamento: t('services.subscription'),
-      pacchetto: t('services.package'),
-      free_trial: t('services.freeTrial')
-    };
-    return types[type] || type;
-  };
-
-  // Updated icon function with desk icon for scrivania
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🖥️' : '🏢';
-  };
-
-  const getResourceDisplayName = (contract) => {
-    if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
-      return contract.resource_name;
-    }
-    
-    const resourceTypeNames = {
-      'scrivania': t('locations.scrivania'),
-      'sala_riunioni': t('locations.salaRiunioni')
-    };
-    
-    return resourceTypeNames[contract.resource_type] || t('services.resource');
-  };
-
-  const calculateDaysRemaining = (endDate) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-    const diffTime = end - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const calculateContractDuration = (startDate, endDate) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = end - start;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const isDateInContractRange = (startDate, endDate) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
-    
-    return today >= start && today <= end;
-  };
-
-  const canBookPackage = (contract) => {
-    // Check if it's a package contract
-    if (contract.service_type !== 'pacchetto') return false;
-    
-    // Check if contract is active
-    if (contract.contract_status !== 'active') return false;
-    
-    // Check if current date is within contract range
-    if (!isDateInContractRange(contract.start_date, contract.end_date)) return false;
-    
-    // Check if there are remaining entries (at least 0.5 for half day)
-    const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
-    return remainingEntries >= 0.5;
-  };
-
-  // Get localized book button text
-  const getBookButtonText = (contract) => {
-    const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
-    const canBook = canBookPackage(contract);
-    
-    if (canBook) {
-      return t('reservations.bookReservation');
-    } else if (remainingEntries < 0.5) {
-      return t('reservations.noEntriesRemaining') || 'No Entries';
-    } else if (!isDateInContractRange(contract.start_date, contract.end_date)) {
-      return t('contracts.contractNotActive') || 'Not Active';
-    } else {
-      return t('reservations.notAvailable') || 'Not Available';
-    }
-  };
-
-
   const loadPaymentStatuses = async (contractIds) => {
     try {
       const { data, error } = await PaymentService.getContractPaymentStatus(contractIds);
@@ -751,7 +653,6 @@ const Contracts = () => {
     }
   };
 
-
   const handlePaymentHistoryClose = () => {
     setShowPaymentHistory(false);
     setSelectedContract(null);
@@ -760,6 +661,128 @@ const Contracts = () => {
   const handlePaymentRefresh = () => {
     // Refresh payment statuses and contracts
     fetchContracts();
+  };
+
+  // Utility functions
+  const formatCurrency = (amount, currency = 'EUR') => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('it-IT');
+  };
+
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'active':
+        return 'status-active';
+      case 'expired':
+        return 'status-expired';
+      case 'cancelled':
+        return 'status-cancelled';
+      case 'suspended':
+        return 'status-suspended';
+      default:
+        return 'status-inactive';
+    }
+  };
+
+  const getServiceTypeBadgeClass = (type) => {
+    const classes = {
+      abbonamento: 'service-type-subscription',
+      pacchetto: 'service-type-package',
+      free_trial: 'service-type-trial'
+    };
+    return classes[type] || 'service-type-default';
+  };
+
+  const getServiceTypeLabel = (type) => {
+    const types = {
+      abbonamento: t('services.subscription'),
+      pacchetto: t('services.package'),
+      free_trial: t('services.freeTrial')
+    };
+    return types[type] || type;
+  };
+
+  const getResourceTypeIcon = (type) => {
+    return type === 'scrivania' ? '🖥️' : '🏢';
+  };
+
+  const getResourceDisplayName = (contract) => {
+    if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
+      return contract.resource_name;
+    }
+    
+    const resourceTypeNames = {
+      'scrivania': t('locations.scrivania'),
+      'sala_riunioni': t('locations.salaRiunioni')
+    };
+    
+    return resourceTypeNames[contract.resource_type] || t('services.resource');
+  };
+
+  const calculateDaysRemaining = (endDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    const diffTime = end - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const calculateContractDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = end - start;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const isDateInContractRange = (startDate, endDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    
+    return today >= start && today <= end;
+  };
+
+  const canBookPackage = (contract) => {
+    // Check if it's a package contract
+    if (contract.service_type !== 'pacchetto') return false;
+    
+    // Check if contract is active
+    if (contract.contract_status !== 'active') return false;
+    
+    // Check if current date is within contract range
+    if (!isDateInContractRange(contract.start_date, contract.end_date)) return false;
+    
+    // Check if there are remaining entries (at least 0.5 for half day)
+    const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
+    return remainingEntries >= 0.5;
+  };
+
+  const getBookButtonText = (contract) => {
+    const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
+    const canBook = canBookPackage(contract);
+    
+    if (canBook) {
+      return t('reservations.bookReservation');
+    } else if (remainingEntries < 0.5) {
+      return t('reservations.noEntriesRemaining') || 'No Entries';
+    } else if (!isDateInContractRange(contract.start_date, contract.end_date)) {
+      return t('contracts.contractNotActive') || 'Not Active';
+    } else {
+      return t('reservations.notAvailable') || 'Not Available';
+    }
   };
 
   // Payment status helpers
@@ -797,29 +820,17 @@ const Contracts = () => {
     return paymentInfo?.next_due_date;
   };
 
-  if (loading) {
-    return <div className="contracts-loading">{t('common.loading')}</div>;
-  }
-
-
-  // Add the debug log here:
-  console.log('Debug payment buttons:', contracts.map(c => ({
-    id: c.id,
-    contract_number: c.contract_number,
-    canManagePayments,
-    requires_payment: c.requires_payment,
-    service_type: c.service_type,
-    shouldShowPayment: canManagePayments && c.requires_payment !== false && c.service_type !== 'free_trial'
-  })));
-
-  // Add this new function before the return statement
+  // CSV Export function
   const handleExportCSV = async () => {
     if (!isPartnerAdmin && !isSuperAdmin) {
       toast.error(t('contracts.exportNotAllowed') || 'Export non consentito');
       return;
     }
 
-    if (contracts.length === 0) {
+    // Export filtered contracts instead of all contracts
+    const contractsToExport = filteredContracts.length > 0 ? filteredContracts : contracts;
+
+    if (contractsToExport.length === 0) {
       toast.error(t('contracts.noContractsToExport') || 'Nessun contratto da esportare');
       return;
     }
@@ -828,7 +839,7 @@ const Contracts = () => {
     
     try {
       // Generate CSV content
-      const csvContent = await CSVExportService.exportContractsToCSV(contracts, t);
+      const csvContent = await CSVExportService.exportContractsToCSV(contractsToExport, t);
       
       // Generate filename
       const filename = CSVExportService.generateFilename();
@@ -846,7 +857,12 @@ const Contracts = () => {
     }
   };
 
+  if (loading) {
+    return <div className="contracts-loading">{t('common.loading')}</div>;
+  }
 
+  // Use filtered contracts for display
+  const contractsToDisplay = filteredContracts.length >= 0 ? filteredContracts : contracts;
 
   return (
     <div className="contracts-page">
@@ -865,25 +881,25 @@ const Contracts = () => {
           <div className="contracts-stats">
             <div className="stat-item">
               <span className="stat-label">{t('contracts.totalContracts')}</span>
-              <span className="stat-value">{contracts.length}</span>
+              <span className="stat-value">{contractsToDisplay.length}</span>
             </div>
             <div className="stat-item">
               <span className="stat-label">{t('contracts.activeContracts')}</span>
               <span className="stat-value">
-                {contracts.filter(c => c.contract_status === 'active').length}
+                {contractsToDisplay.filter(c => c.contract_status === 'active').length}
               </span>
             </div>
             <div className="stat-item">
               <span className="stat-label">{t('contracts.expiredContracts')}</span>
               <span className="stat-value">
-                {contracts.filter(c => c.contract_status === 'expired').length}
+                {contractsToDisplay.filter(c => c.contract_status === 'expired').length}
               </span>
             </div>
             {canManagePayments && (
               <div className="stat-item">
                 <span className="stat-label">{t('payments.outstanding')}</span>
                 <span className="stat-value">
-                  {contracts.filter(c => {
+                  {contractsToDisplay.filter(c => {
                     const status = getPaymentStatus(c);
                     return status === 'unpaid' || status === 'partial' || status === 'overdue';
                   }).length}
@@ -894,13 +910,17 @@ const Contracts = () => {
         </div>
         {canCreateContracts && (
           <div className="contracts-header-actions">
+            <button className="add-contract-btn" onClick={handleCreateContract}>
+              <Plus size={16} className="mr-2" />
+              {t('contracts.createContract')}
+            </button>
 
             {/* CSV Export Button - only for partners */}
             {(isPartnerAdmin || isSuperAdmin) && (
               <button 
                 className="export-csv-btn"
                 onClick={handleExportCSV}
-                disabled={exportingCSV || contracts.length === 0}
+                disabled={exportingCSV || contractsToDisplay.length === 0}
                 title={t('contracts.exportToCSV') || 'Esporta in CSV'}
               >
                 <Download size={16} className="mr-2" />
@@ -910,7 +930,6 @@ const Contracts = () => {
                 }
               </button>
             )}
-
 
             {/* Archived Contracts Button */}
             <button 
@@ -922,28 +941,45 @@ const Contracts = () => {
               {t('contracts.archivedContracts') || 'Archived Contracts'}
             </button>
 
-
             {/* FattureInCloud Bulk Upload Button */}
             {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
               <button 
                 className="bulk-upload-btn"
                 onClick={handleBulkUpload}
-                disabled={contracts.length === 0}
+                disabled={contractsToDisplay.length === 0}
                 title="Upload to FattureInCloud"
               >
                 <Upload size={16} className="mr-2" />
                 Upload F.C.
               </button>
             )}
-
-            <button className="add-contract-btn" onClick={handleCreateContract}>
-              <Plus size={16} className="mr-2" />
-              {t('contracts.createContract')}
-            </button>
           </div>
         )}
-
       </div>
+
+      {/* Add the Filters Component */}
+      <ContractsFilter
+        contracts={contracts}
+        customers={customers}
+        locations={locations}
+        onFilterChange={handleFilterChange}
+        isCustomerMode={isCustomer}
+        canManagePayments={canManagePayments}
+        contractPayments={contractPayments}
+        getPaymentStatus={getPaymentStatus}
+      />
+
+      {/* Filter Results Info */}
+      {Object.values(activeFilters).some(value => value !== '') && (
+        <div className="filter-results-info">
+          <span className="filter-results-count">
+            {t('filters.showingResults', { 
+              count: contractsToDisplay.length, 
+              total: contracts.length 
+            }) || `Showing ${contractsToDisplay.length} of ${contracts.length} contracts`}
+          </span>
+        </div>
+      )}
 
       <div className="contracts-table-container">
         <div className="contracts-table-wrapper">
@@ -979,12 +1015,12 @@ const Contracts = () => {
                   </th>
                 )}                                              
                 <th className="contracts-table-header">
-                  {t('contracts.actions')}
+                  {t('contracts.actionsColumn')}
                 </th>
               </tr>
             </thead>
             <tbody className="contracts-table-body">
-              {contracts.map((contract) => {
+              {contractsToDisplay.map((contract) => {
                 const daysRemaining = calculateDaysRemaining(contract.end_date);
                 const isInRange = isDateInContractRange(contract.start_date, contract.end_date);
                 const canBook = canBookPackage(contract);
@@ -1113,11 +1149,16 @@ const Contracts = () => {
               })}
             </tbody>
           </table>
-          {contracts.length === 0 && (
+          {contractsToDisplay.length === 0 && (
             <div className="contracts-empty">
               <FileText size={48} className="empty-icon" />
-              <p>{t('contracts.noContractsFound')}</p>
-              {canCreateContracts && (
+              <p>
+                {Object.values(activeFilters).some(value => value !== '') 
+                  ? t('filters.noResultsFound') || 'No contracts found matching your filters'
+                  : t('contracts.noContractsFound')
+                }
+              </p>
+              {canCreateContracts && !Object.values(activeFilters).some(value => value !== '') && (
                 <button 
                   onClick={handleCreateContract}
                   className="btn-primary mt-4"
@@ -1125,11 +1166,24 @@ const Contracts = () => {
                   {t('contracts.createFirstContract')}
                 </button>
               )}
+              {Object.values(activeFilters).some(value => value !== '') && (
+                <button 
+                  onClick={() => {
+                    setActiveFilters({});
+                    setFilteredContracts(contracts);
+                  }}
+                  className="btn-secondary mt-4"
+                >
+                  {t('filters.clearFilters') || 'Clear Filters'}
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/* All the existing modals remain the same */}
+      
       {/* Contract Form Modal */}
       <ContractForm
         isOpen={showForm}
@@ -1162,7 +1216,7 @@ const Contracts = () => {
         contract={selectedPackageContract}
       />
 
-      {/* Archive Confirmation Modal - SINGLE CONFIRMATION */}
+      {/* Archive Confirmation Modal */}
       {showArchiveConfirm && contractToArchive && (
         <div className="modal-overlay">
           <div className="modal-container archive-modal">
@@ -1273,12 +1327,11 @@ const Contracts = () => {
       <BulkUploadModal
         isOpen={showBulkUpload}
         onClose={handleBulkUploadClose}
-        contracts={contracts}
+        contracts={contractsToDisplay}
         partnerSettings={partnerSettings}
         uploadStatuses={uploadStatuses}
         partnerUuid={profile?.partner_uuid}
       />
-
     </div>
   );
 };

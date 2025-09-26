@@ -114,7 +114,7 @@
   "settings": {
     "title": "Settings",
     "manageCustomerData": "Manage your customer and billing information",
-    "managePartnerData": "Manage your partner information and business details",
+    "managePartnerData": "Manage your information and business details",
     "saveSettings": "Save Settings",
     "billingInfoDescription": "Leave billing information empty to use the same as your personal information.",
     "uploadLogo": "Upload Logo",
@@ -244,13 +244,38 @@
     "addressNotFound": "Address not found. Please check the address and try again.",
     "geocodingError": "Error occurred while geocoding address",
     "mapError": "Error loading map",
-    "confirmDeleteLocation": "Are you sure you want to delete this location?",
     "vatPercentage": "VAT Percentage",
     "vatRate": "VAT Rate",
     "vatInformation": "VAT Information", 
     "vatFor": "VAT for",
     "vatCountryDefaults": "Country VAT Defaults",
-    "vatHelpText": "Enter the VAT percentage applied to services at this location. This will be used for billing customers who use services at this location."
+    "vatHelpText": "Enter the VAT percentage applied to services at this location. This will be used for billing customers who use services at this location.",
+    "confirmDeleteLocation": "Confirm Delete Location",
+    "cannotDeleteLocation": "Cannot Delete Location",
+    "checkingDependencies": "Checking dependencies...",
+    "dependenciesFound": "Dependencies Found",
+    "activeContracts": "Active Contracts",
+    "futureBookings": "Future Bookings",
+    "historicalBookings": "Historical Bookings",
+    "deleteWarnings": "Warnings",
+    "deleteBlockers": "Blocking Issues",
+    "proceedWithCaution": "Proceed with Caution",
+    "cannotProceed": "Cannot Proceed",
+    "deleteLocationWarning": "This action will permanently delete the location and all associated data.",
+    "deleteConsequence1": "All resources will be permanently removed",
+    "deleteConsequence2": "All images will be deleted from storage",
+    "deleteConsequence3": "Historical data will be preserved but location reference removed",
+    "resolveIssuesFirst": "Please resolve these issues first:",
+    "cancelActiveContracts": "Cancel or complete all active contracts",
+    "cancelFutureBookings": "Cancel all future bookings and reservations",
+    "thenRetryDelete": "Then retry the deletion",
+    "deleteLocationPermanently": "Delete Location Permanently",
+    "deleteWarningActiveContracts": "{{count}} active contract(s) must be resolved first",
+    "deleteWarningFutureBookings": "{{count}} future booking(s) must be cancelled first", 
+    "deleteWarningResources": "{{count}} resource(s) will be permanently deleted",
+    "deleteWarningImages": "{{count}} image(s) will be permanently deleted from storage",
+    "deleteWarningHistoricalData": "{{count}} historical booking record(s) will lose location reference",
+    "deleteValidationError": "Unable to validate deletion safety. Please try again."
   },
   "auth": {
     "signIn": "Sign In",
@@ -430,7 +455,7 @@
   "invitations": {
     "title": "Invitations",
     "manageAllInvitations": "Manage all invitations in the system",
-    "managePartnerInvitations": "Manage invitations for your partner",
+    "managePartnerInvitations": "Manage your guests invitations",
     "invitePartnerAdmin": "Invite Partner Administrator",
     "inviteUser": "Invite User",
     "invitingAdminFor": "Inviting Administrator for",
@@ -753,7 +778,7 @@
   "contracts": {
     "title": "Contracts",
     "manageYourContracts": "View and manage your active service contracts",
-    "managePartnerContracts": "Manage contracts for your partner customers",
+    "managePartnerContracts": "Manage your contracts",
     "createContract": "Create Contract",
     "createFirstContract": "Create First Contract",
     "viewContract": "View Contract",
@@ -767,7 +792,6 @@
     "period": "Period",
     "cost": "Cost",
     "status": "Status",
-    "actions": "Actions",
     "startDate": "Start Date",
     "endDate": "End Date",
     "duration": "Duration",
@@ -897,6 +921,15 @@
       "recordPayment": "Record a new payment",
       "viewPaymentHistory": "View payment history",
       "managePayments": "Manage payments for this contract"
+    },
+    "actionsColumn": "Actions",
+    "actions": {
+      "moreActions": "More actions",
+      "downloadPDF": "Download PDF", 
+      "recordPayment": "Record Payment",
+      "paymentHistory": "Payment History",
+      "editContract": "Edit Contract", 
+      "archiveContract": "Archive Contract"
     }
   },
   "placeholders": {
@@ -1566,8 +1599,26 @@
     "note": "Note:",
     "emergencyNote": "Emergency support is reserved for critical system outages or security incidents that severely impact your business operations."
   },
+  "filters": {
+    "filters": "Filters",
+    "customer": "Customer",
+    "location": "Location", 
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
+    "status": "Status",
+    "paymentStatus": "Payment Status",
+    "allCustomers": "All Customers",
+    "allLocations": "All Locations",
+    "allStatuses": "All Statuses",
+    "allPaymentStatuses": "All Payment Statuses",
+    "activeFilters": "Active Filters",
+    "clearAll": "Clear All",
+    "clearFilters": "Clear Filters",
+    "noResultsFound": "No contracts found matching your filters",
+    "showingResults": "Showing {{count}} of {{total}} contracts"
+  },
   "app": {
-    "appName": "Coworking Management",
+    "appName": " ",
     "appShortName": "PowerCowo",
     "locale": "en"
   }

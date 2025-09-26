@@ -26,6 +26,7 @@ const Settings = () => {
   
   // Determine if user is admin partner or regular user
   const isAdminPartner = profile?.role === 'admin';
+  const isSuperAdmin = profile?.role === 'superadmin';
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -57,14 +58,14 @@ const Settings = () => {
 
   useEffect(() => {
     if (user && profile) {
-      if (isAdminPartner) {
+      if (isAdminPartner || isSuperAdmin) {
         fetchPartnerData();
         loadCurrentLogo();
       } else {
         fetchCustomerData();
       }
     }
-  }, [user, profile, isAdminPartner]);
+  }, [user, profile, isAdminPartner, isSuperAdmin]);
 
   const loadCurrentLogo = async () => {
     if (!profile?.partner_uuid) return;
@@ -413,7 +414,7 @@ const Settings = () => {
     setSaving(true);
 
     try {
-      if (isAdminPartner) {
+      if (isAdminPartner || isSuperAdmin) {
         // Update partner data
         const partnerUpdateData = {
           first_name: formData.first_name,
@@ -499,7 +500,7 @@ const Settings = () => {
             {t('settings.title')}
           </h1>
           <p className="settings-description">
-            {isAdminPartner 
+            {isAdminPartner || isSuperAdmin
               ? t('settings.managePartnerData')
               : t('settings.manageCustomerData')
             }
@@ -508,7 +509,7 @@ const Settings = () => {
       </div>
 
       {/* Tab Navigation - Only show for admin partners */}
-      {isAdminPartner && (
+      {(isAdminPartner || isSuperAdmin) && (
         <div className="settings-tabs">
           <div className="settings-tabs-nav">
             <button
@@ -537,7 +538,7 @@ const Settings = () => {
           <form onSubmit={handleSubmit} className="settings-form">
             
             {/* Logo Upload Section - Only for Partners */}
-            {isAdminPartner && (
+            {(isAdminPartner || isSuperAdmin) && (
               <div className="form-section">
                 <h3 className="form-section-title">
                   <Image size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
@@ -673,7 +674,7 @@ const Settings = () => {
             {/* Personal Information Section */}
             <div className="form-section">
               <h3 className="form-section-title">
-                {isAdminPartner ? t('customers.partnerInformation') : t('customers.personalInformation')}
+                {(isAdminPartner || isSuperAdmin) ? t('customers.partnerInformation') : t('customers.personalInformation')}
               </h3>
               
               <div className="form-row">
@@ -694,13 +695,13 @@ const Settings = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="second_name" className="form-label">
-                    {t('customers.secondName')} {!isAdminPartner && '*'}
+                    {t('customers.secondName')} {!(isAdminPartner || isSuperAdmin) && '*'}
                   </label>
                   <input
                     id="second_name"
                     name="second_name"
                     type="text"
-                    required={!isAdminPartner}
+                    required={!(isAdminPartner || isSuperAdmin)}
                     className="form-input"
                     placeholder={t('placeholders.secondNamePlaceholder')}
                     value={formData.second_name}
@@ -743,7 +744,7 @@ const Settings = () => {
               </div>
 
               {/* Codice Fiscale only for users, not partners */}
-              {!isAdminPartner && (
+              {!(isAdminPartner || isSuperAdmin) && (
                 <div className="form-group">
                   <label htmlFor="codice_fiscale" className="form-label">
                     {t('customers.codiceFiscale')} *
@@ -762,7 +763,7 @@ const Settings = () => {
               )}
 
               {/* Customer type only for users */}
-              {!isAdminPartner && (
+              {!(isAdminPartner || isSuperAdmin) && (
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="customer_type" className="form-label">
@@ -787,8 +788,8 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Partner type and status for admin partners */}
-              {isAdminPartner && (
+              {/* Partner type and status only for superadmin */}
+              {isSuperAdmin && (
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="partner_type" className="form-label">
@@ -838,13 +839,13 @@ const Settings = () => {
               
               <div className="form-group">
                 <label htmlFor="address" className="form-label">
-                  {t('customers.address')} {!isAdminPartner && '*'}
+                  {t('customers.address')} {!(isAdminPartner || isSuperAdmin) && '*'}
                 </label>
                 <input
                   id="address"
                   name="address"
                   type="text"
-                  required={!isAdminPartner}
+                  required={!(isAdminPartner || isSuperAdmin)}
                   className="form-input"
                   placeholder={t('placeholders.addressPlaceholder')}
                   value={formData.address}
@@ -855,13 +856,13 @@ const Settings = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="zip" className="form-label">
-                    {t('customers.zip')} {!isAdminPartner && '*'}
+                    {t('customers.zip')} {!(isAdminPartner || isSuperAdmin) && '*'}
                   </label>
                   <input
                     id="zip"
                     name="zip"
                     type="text"
-                    required={!isAdminPartner}
+                    required={!(isAdminPartner || isSuperAdmin)}
                     className="form-input"
                     placeholder={t('placeholders.zipPlaceholder')}
                     value={formData.zip}
@@ -870,13 +871,13 @@ const Settings = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="city" className="form-label">
-                    {t('customers.city')} {!isAdminPartner && '*'}
+                    {t('customers.city')} {!(isAdminPartner || isSuperAdmin) && '*'}
                   </label>
                   <input
                     id="city"
                     name="city"
                     type="text"
-                    required={!isAdminPartner}
+                    required={!(isAdminPartner || isSuperAdmin)}
                     className="form-input"
                     placeholder={t('placeholders.cityPlaceholder')}
                     value={formData.city}
@@ -885,13 +886,13 @@ const Settings = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="country" className="form-label">
-                    {t('customers.country')} {!isAdminPartner && '*'}
+                    {t('customers.country')} {!(isAdminPartner || isSuperAdmin) && '*'}
                   </label>
                   <input
                     id="country"
                     name="country"
                     type="text"
-                    required={!isAdminPartner}
+                    required={!(isAdminPartner || isSuperAdmin)}
                     className="form-input"
                     placeholder={t('placeholders.countryPlaceholder')}
                     value={formData.country}
@@ -902,10 +903,10 @@ const Settings = () => {
             </div>
 
             {/* Business Information - Show for companies or always for partners */}
-            {(isAdminPartner || formData.customer_type === 'company') && (
+            {((isAdminPartner || isSuperAdmin) || formData.customer_type === 'company') && (
               <div className="form-section">
                 <h3 className="form-section-title">
-                  {isAdminPartner ? t('customers.businessInformation') : t('customers.businessInformation')}
+                  {(isAdminPartner || isSuperAdmin) ? t('customers.businessInformation') : t('customers.businessInformation')}
                 </h3>
                 
                 <div className="form-group">
@@ -939,7 +940,7 @@ const Settings = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  {!isAdminPartner && (
+                  {!(isAdminPartner || isSuperAdmin) && (
                     <div className="form-group">
                       <label htmlFor="sdi_code" className="form-label">
                         {t('customers.sdiCode')}
@@ -991,7 +992,7 @@ const Settings = () => {
             )}
 
             {/* Billing Information - Only show for users with company type */}
-            {!isAdminPartner && formData.customer_type === 'company' && (
+            {!(isAdminPartner || isSuperAdmin) && formData.customer_type === 'company' && (
               <div className="form-section">
                 <h3 className="form-section-title">{t('customers.billingInformation')}</h3>
                 <p className="form-section-description">
@@ -1114,7 +1115,7 @@ const Settings = () => {
         )}
 
         {/* Locations Tab Content - Only for admin partners */}
-        {activeTab === 'locations' && isAdminPartner && (
+        {activeTab === 'locations' && (isAdminPartner || isSuperAdmin) && (
           <div className="locations-tab-content">
             <div className="locations-tab-header">
               <h3 className="locations-tab-title">

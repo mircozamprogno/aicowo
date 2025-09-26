@@ -1,4 +1,4 @@
-import { ChevronDown, Globe } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 
@@ -25,7 +25,7 @@ const LanguageSwitcher = () => {
             cursor: 'pointer'
           }}
         >
-          <Globe size={16} />
+
           <span>{currentLang?.flag}</span>
           <span>{currentLang?.name}</span>
           <ChevronDown size={16} />
