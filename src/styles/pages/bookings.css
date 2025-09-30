@@ -732,3 +732,93 @@
     min-width: 600px;
   }
 }
+
+
+/* partner booking form. */
+
+/* Partner Booking Button - Add to bookings.css */
+
+.partner-booking-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+}
+
+.partner-booking-btn:hover {
+  background-color: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+}
+
+.partner-booking-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+
+.partner-booking-btn:focus {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Additional styles for the form sections in Partner Booking Modal */
+.summary-section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.summary-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.summary-section h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-help-text {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Responsive adjustments for partner booking button */
+@media (max-width: 768px) {
+  .bookings-controls {
+    flex-wrap: wrap;
+  }
+  
+  .partner-booking-btn {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .partner-booking-btn {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .partner-booking-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}

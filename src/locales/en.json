@@ -104,6 +104,7 @@
     "errorDeletingCustomer": "Error deleting customer",
     "errorDeactivatingCustomer": "Error deactivating customer",
     "incomplete_profile": "Incomplete Profile",
+    "customerDetails": "Customer Details",
     "constraints": {
       "activeBookings": "{{count}} active booking(s)",
       "activeContracts": "{{count}} active contract(s)",
@@ -772,8 +773,7 @@
     "packageReservations": "Package Reservations",
     "bookPackage": "Book Package",
     "cannotBook": "Cannot Book",
-    "someEmailsSent": "Partner email sent",
-    "confirmationEmailsSent": "Confirmation email sent"
+    "confirmationMessage": "Once confirmed, the reservation cannot be modified."
   },
   "contracts": {
     "title": "Contracts",
@@ -996,7 +996,21 @@
     "activeBookings": "Active Bookings",
     "upcomingBookings": "Upcoming Bookings", 
     "viewBookings": "View Bookings",
-    "totalBookings": "Total Bookings"
+    "totalBookings": "Total Bookings",
+    "bookForCustomer": "Book for Customer",
+    "selectCustomer": "Select Customer",
+    "selectPackage": "Select Package",
+    "bookingFor": "Booking for:",
+    "changeCustomer": "Change Customer",
+    "noCustomersWithPackages": "No customers with available package entries found",
+    "noAvailablePackages": "No available packages found for this customer",
+    "selectACustomer": "Select a customer...",
+    "selectAPackage": "Select a package...",
+    "packageContract": "Package Contract",
+    "packageDetails": "Package Details",
+    "entriesRemaining": "entries remaining",
+    "loadingCustomers": "Loading customers...",
+    "loadingPackages": "Loading packages..."
   },
   "calendar": {
     "sunday": "Sun",

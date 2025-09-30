@@ -1,6 +1,7 @@
-import { Calendar, ChevronLeft, ChevronRight, Filter, Home } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Filter, Home, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
+import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
@@ -19,6 +20,9 @@ const Bookings = () => {
   });
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
+  
+  // Partner booking modal state
+  const [showPartnerBooking, setShowPartnerBooking] = useState(false);
   
   const { profile, user } = useAuth();
   const { t } = useTranslation();
@@ -78,8 +82,8 @@ const Bookings = () => {
           )
         `)
         .eq('booking_status', 'active')
-        .eq('is_archived', false) // Exclude archived bookings
-        .eq('contracts.is_archived', false) // Exclude bookings from archived contracts
+        .eq('is_archived', false)
+        .eq('contracts.is_archived', false)
         .order('start_date');
 
       let packagesQuery = supabase
@@ -117,8 +121,8 @@ const Bookings = () => {
           )
         `)
         .eq('reservation_status', 'confirmed')
-        .eq('is_archived', false) // Exclude archived package reservations
-        .eq('contracts.is_archived', false) // Exclude reservations from archived contracts
+        .eq('is_archived', false)
+        .eq('contracts.is_archived', false)
         .order('reservation_date');
 
       // Role-based filters
@@ -149,15 +153,15 @@ const Bookings = () => {
 
       // Normalize package reservations to match bookings structure
       const normalizedPackages = (packagesData || []).map(pkg => ({
-        id: `pkg-${pkg.id}`, // Unique ID with prefix
+        id: `pkg-${pkg.id}`,
         start_date: pkg.reservation_date,
         end_date: pkg.reservation_date,
         contracts: pkg.contracts,
         location_resources: pkg.location_resources,
         customers: pkg.customers,
-        duration_type: pkg.duration_type,   // new
-        time_slot: pkg.time_slot,          // new
-        booking_type: 'package'            // to distinguish from regular bookings
+        duration_type: pkg.duration_type,
+        time_slot: pkg.time_slot,
+        booking_type: 'package'
       }));
 
       // Add booking_type to regular bookings
@@ -216,6 +220,13 @@ const Bookings = () => {
     setFilteredBookings(filtered);
   };
 
+  const handlePartnerBookingSuccess = (reservation) => {
+    console.log('Partner booking successful:', reservation);
+    fetchBookings(); // Refresh bookings
+    setShowPartnerBooking(false);
+    toast.success('Booking created successfully for customer');
+  };
+
   const formatDate = (date) => {
     return date.toISOString().split('T')[0];
   };
@@ -252,16 +263,15 @@ const Bookings = () => {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  // Updated color system for 4 different types
   const getResourceColor = (booking) => {
     const serviceType = booking.contracts?.service_type || 'abbonamento';
     const resourceType = booking.location_resources?.resource_type || 'scrivania';
     
     const colors = {
-      'abbonamento_scrivania': '#3b82f6',    // Blue for subscription desk
-      'abbonamento_sala_riunioni': '#8b5cf6', // Purple for subscription meeting room
-      'pacchetto_scrivania': '#10b981',      // Green for package desk
-      'pacchetto_sala_riunioni': '#f59e0b'   // Orange for package meeting room
+      'abbonamento_scrivania': '#3b82f6',
+      'abbonamento_sala_riunioni': '#8b5cf6',
+      'pacchetto_scrivania': '#10b981',
+      'pacchetto_sala_riunioni': '#f59e0b'
     };
     
     return colors[`${serviceType}_${resourceType}`] || '#6b7280';
@@ -285,7 +295,6 @@ const Bookings = () => {
   const getBookingDisplayText = (booking) => {
     const customerName = booking.customers?.company_name || booking.customers?.first_name;
     
-    // For package bookings, add duration info
     if (booking.booking_type === 'package') {
       const durationText = booking.duration_type === 'full_day' 
         ? t('reservations.fullDay') 
@@ -351,11 +360,9 @@ const Bookings = () => {
   };
 
   const renderWeekView = () => {
-    // Get the start of the week (Sunday)
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
     
-    // Generate 7 days starting from Sunday
     const weekDays = [];
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
@@ -478,6 +485,19 @@ const Bookings = () => {
           </p>
         </div>
         <div className="bookings-controls">
+          {/* Partner Booking Button - Only visible to partner admins */}
+          {isPartnerAdmin && (
+            <button 
+              className="partner-booking-btn" 
+              onClick={() => setShowPartnerBooking(true)}
+              title={t('bookings.bookForCustomer')}
+            >
+              <Plus size={16} />
+              {t('bookings.bookForCustomer')}
+            </button>
+          )}
+
+
           <div className="view-selector">
             <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>
               {t('bookings.month')}
@@ -589,6 +609,13 @@ const Bookings = () => {
           </div>
         </div>
       </div>
+
+      {/* Partner Booking Modal */}
+      <PartnerBookingForm
+        isOpen={showPartnerBooking}
+        onClose={() => setShowPartnerBooking(false)}
+        onSuccess={handlePartnerBookingSuccess}
+      />
     </div>
   );
 };

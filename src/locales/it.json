@@ -104,6 +104,7 @@
     "errorDeletingCustomer": "Errore nell'eliminazione del cliente",
     "errorDeactivatingCustomer": "Errore nella disattivazione del cliente",
     "incomplete_profile": "Profilo Incompleto",
+    "customerDetails": "Dettagli Cliente",
     "constraints": {
       "activeBookings": "{{count}} prenotazione/i attiva/e",
       "activeContracts": "{{count}} contratto/i attivo/i",
@@ -774,7 +775,9 @@
     "bookPackage": "Prenota Pacchetto",
     "cannotBook": "Non Disponibile",
     "someEmailsSent": "Partner mail inviata",
-    "confirmationEmailsSent": "Email di conferma inviata"
+    "confirmationEmailsSent": "Email di conferma inviata",
+    "confirmationMessage": "Una volta confermata non potra' essere modificata."
+
   },
   "contracts": {
     "title": "Contratti",
@@ -997,7 +1000,21 @@
     "activeBookings": "Prenotazioni Attive",
     "upcomingBookings": "Prenotazioni Future",
     "viewBookings": "Visualizza Prenotazioni", 
-    "totalBookings": "Prenotazioni Totali"
+    "totalBookings": "Prenotazioni Totali",
+    "bookForCustomer": "Prenota per Cliente",
+    "selectCustomer": "Seleziona Cliente",
+    "selectPackage": "Seleziona Pacchetto",
+    "bookingFor": "Prenotazione per:",
+    "changeCustomer": "Cambia Cliente",
+    "noCustomersWithPackages": "Nessun cliente con ingressi disponibili trovato",
+    "noAvailablePackages": "Nessun pacchetto disponibile trovato per questo cliente",
+    "selectACustomer": "Seleziona un cliente...",
+    "selectAPackage": "Seleziona un pacchetto...",
+    "packageContract": "Contratto Pacchetto",
+    "packageDetails": "Dettagli Pacchetto",
+    "entriesRemaining": "ingressi rimanenti",
+    "loadingCustomers": "Caricamento clienti...",
+    "loadingPackages": "Caricamento pacchetti..."
   },
   "calendar": {
     "sunday": "Dom",
