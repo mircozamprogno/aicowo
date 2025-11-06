@@ -36,6 +36,9 @@ const ContractForm = ({
   const [availabilityStatus, setAvailabilityStatus] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
+  const [hasExistingFreeTrial, setHasExistingFreeTrial] = useState(false);
+  const [checkingFreeTrial, setCheckingFreeTrial] = useState(false);
+
   // Get customer ID for customer mode
   useEffect(() => {
     if (isCustomerMode && user && isOpen) {
@@ -88,6 +91,13 @@ const ContractForm = ({
       setAvailabilityStatus(null);
     }
   }, [selectedService, formData.start_date, calculatedEndDate]);
+
+
+  useEffect(() => {
+    if (isCustomerMode && formData.customer_id && isOpen) {
+      checkExistingFreeTrial();
+    }
+  }, [formData.customer_id, isOpen, isCustomerMode]);
 
   const loadContractForEditing = async () => {
     if (!contractToEdit) return;
@@ -234,11 +244,48 @@ const ContractForm = ({
         ];
         setAvailableServices(mockServices);
       } else {
-        setAvailableServices(data || []);
+        // Filter out free trial services if customer already had one
+        let filteredServices = data || [];
+        
+        if (isCustomerMode && hasExistingFreeTrial) {
+          filteredServices = filteredServices.filter(service => service.service_type !== 'free_trial');
+        }
+        
+        setAvailableServices(filteredServices);
       }
     } catch (error) {
       console.error('Error fetching services:', error);
       setAvailableServices([]);
+    }
+  };
+
+
+  const checkExistingFreeTrial = async () => {
+    setCheckingFreeTrial(true);
+    try {
+      // Check for ANY free trial contract (including archived ones)
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('id, contract_number, is_archived')
+        .eq('customer_id', parseInt(formData.customer_id))
+        .eq('service_type', 'free_trial')
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking free trial:', error);
+        return;
+      }
+
+      // If any free trial exists (archived or not), prevent new ones
+      if (data && data.length > 0) {
+        setHasExistingFreeTrial(true);
+      } else {
+        setHasExistingFreeTrial(false);
+      }
+    } catch (error) {
+      console.error('Error checking free trial:', error);
+    } finally {
+      setCheckingFreeTrial(false);
     }
   };
 
@@ -440,9 +487,6 @@ const ContractForm = ({
         is_renewable: selectedService.is_renewable || false,
         auto_renew: selectedService.auto_renew || false,
         
-        // Audit fields - only include fields that exist in the database
-        // updated_by_user_id: user.id,
-        // updated_by_role: profile.role,
         updated_at: new Date().toISOString()
       };
 
@@ -482,10 +526,9 @@ const ContractForm = ({
 
         // Update booking for abbonamento and free_trial services
         if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
-          // For free trial, book only for one day (start date)
           const bookingEndDate = selectedService.service_type === 'free_trial' 
-            ? formData.start_date  // Same day for free trial
-            : calculatedEndDate;   // Full period for abbonamento
+            ? formData.start_date
+            : calculatedEndDate;
             
           await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
         }
@@ -496,9 +539,6 @@ const ContractForm = ({
         // Create new contract
         const contractNumber = await generateContractNumber();
         contractData.contract_number = contractNumber;
-        // Only add creation audit fields for new contracts
-        // contractData.created_by_user_id = user.id;
-        // contractData.created_by_role = profile.role;
 
         const { data, error } = await supabase
           .from('contracts')
@@ -531,10 +571,9 @@ const ContractForm = ({
 
         // Create booking for abbonamento and free_trial services
         if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
-          // For free trial, book only for one day (start date)
           const bookingEndDate = selectedService.service_type === 'free_trial' 
-            ? formData.start_date  // Same day for free trial
-            : calculatedEndDate;   // Full period for abbonamento
+            ? formData.start_date
+            : calculatedEndDate;
             
           await createBookingForContract(data.id, formData.start_date, bookingEndDate);
         }
@@ -555,8 +594,6 @@ const ContractForm = ({
   };
 
   const generateContractNumber = async () => {
-    // For now, generate a simple contract number
-    // In real implementation, you'd call the database function
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
     const randomNum = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
@@ -565,7 +602,6 @@ const ContractForm = ({
 
   const createBookingForContract = async (contractId, startDate, endDate) => {
     try {
-      // Get the location resource for this service
       const { data: serviceData } = await supabase
         .from('services')
         .select(`
@@ -607,7 +643,6 @@ const ContractForm = ({
 
   const updateBookingForContract = async (contractId, startDate, endDate) => {
     try {
-      // Get the location resource for this service
       const { data: serviceData } = await supabase
         .from('services')
         .select(`
@@ -622,7 +657,6 @@ const ContractForm = ({
         throw new Error('Location resource not found for service');
       }
 
-      // Update existing booking
       const { error } = await supabase
         .from('bookings')
         .update({
@@ -660,11 +694,9 @@ const ContractForm = ({
     return types[type] || type;
   };
 
-  // Updated icon function with desk icon for scrivania
   const getResourceTypeIcon = (type) => {
     return type === 'scrivania' ? '🖥️' : '🏢';
   };
-
 
   if (!isOpen) return null;
 
@@ -757,7 +789,7 @@ const ContractForm = ({
               <button
                 type="button"
                 onClick={handleConfirmContract}
-                className="btn-primary"
+                className="btn-primary-green"
                 disabled={loading}
               >
                 {loading ? (
@@ -791,9 +823,7 @@ const ContractForm = ({
         <form onSubmit={handleSubmit} className="modal-form">
           {/* Customer Selection - Only for partner admins */}
           {!isCustomerMode && (
-            <div className="form-section">
-              <h3 className="form-section-title">{t('contracts.selectCustomer')}</h3>
-              
+            <div className="form-section-clean">
               <div className="form-group">
                 <label htmlFor="customer_id" className="form-label">
                   {t('contracts.customer')} *
@@ -805,7 +835,7 @@ const ContractForm = ({
                   className="form-select"
                   value={formData.customer_id}
                   onChange={handleChange}
-                  disabled={editMode} // Disable customer change in edit mode
+                  disabled={editMode}
                 >
                   <option value="">{t('contracts.selectCustomer')}</option>
                   {customers.map((customer) => (
@@ -819,9 +849,7 @@ const ContractForm = ({
           )}
 
           {/* Location Selection */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('contracts.selectLocation')}</h3>
-            
+          <div className="form-section-clean">
             <div className="form-group">
               <label htmlFor="location_id" className="form-label">
                 {t('contracts.location')} *
@@ -844,10 +872,32 @@ const ContractForm = ({
             </div>
           </div>
 
+
+          {isCustomerMode && hasExistingFreeTrial && (
+            <div style={{
+              backgroundColor: '#fef3c7',
+              border: '1px solid #fbbf24',
+              borderRadius: '0.375rem',
+              padding: '0.75rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'start',
+              gap: '0.75rem'
+            }}>
+              <AlertTriangle size={20} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '0.125rem' }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#92400e', fontWeight: 500 }}>
+                  {t('contracts.freeTrialAlreadyUsed') || 'You have already used your free trial'}
+                </p>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8125rem', color: '#92400e' }}>
+                  {t('contracts.freeTrialOncePerCustomer') || 'Free trial services can only be used once per customer, even if deleted or archived.'}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Service Selection */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('contracts.selectService')}</h3>
-            
+          <div className="form-section-clean">
             <div className="form-group">
               <label htmlFor="service_id" className="form-label">
                 {t('contracts.service')} *
@@ -878,7 +928,6 @@ const ContractForm = ({
 
             {selectedService && (
               <div className="service-details">
-                <h4>{t('contracts.serviceDetails')}</h4>
                 <div className="service-info-display">
                   <div className="service-detail-item">
                     <span className="detail-label">{t('contracts.description')}:</span>
@@ -907,9 +956,7 @@ const ContractForm = ({
           </div>
 
           {/* Start Date Selection */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('contracts.selectStartDate')}</h3>
-            
+          <div className="form-section-clean">
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="start_date" className="form-label">
@@ -954,7 +1001,6 @@ const ContractForm = ({
             {/* Availability Check for Abbonamento */}
             {selectedService?.service_type === 'abbonamento' && calculatedEndDate && (
               <div className="availability-check">
-                <h4>{t('contracts.resourceAvailability')}</h4>
                 {checkingAvailability ? (
                   <div className="availability-loading">
                     <div className="loading-spinner-small"></div>
@@ -1000,7 +1046,7 @@ const ContractForm = ({
             </button>
             <button
               type="submit"
-              className="btn-primary"
+              className="btn-primary-green"
               disabled={loading || !calculatedEndDate}
             >
               {editMode ? t('contracts.reviewUpdate') : t('contracts.reviewContract')}

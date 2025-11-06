@@ -105,6 +105,8 @@
     "errorDeactivatingCustomer": "Errore nella disattivazione del cliente",
     "incomplete_profile": "Profilo Incompleto",
     "customerDetails": "Dettagli Cliente",
+    "delete": "Elimina",
+    "cannotDeleteWithConstraints": "Impossibile eliminare il cliente a causa di vincoli attivi",
     "constraints": {
       "activeBookings": "{{count}} prenotazione/i attiva/e",
       "activeContracts": "{{count}} contratto/i attivo/i",
@@ -126,14 +128,27 @@
     "uploadingLogo": "Caricamento Logo...",
     "processingAndUploading": "Elaborazione e caricamento...",
     "profileSettings": "Impostazioni Profilo",
-    "locationManagement": "Gestione Sedi"
+    "locationManagement": "Gestione Sedi",
+    "language": "Scegli la tua lingua",
+    "emailTemplates": "Template Email",
+    "emailTemplateCustomization": "Personalizzazione Template Email",
+    "customizeEmailBanner": "Personalizza il banner che appare nei tuoi template email",
+    "emailBanner": "Banner Email",
+    "emailBannerDescription": "Carica un'immagine banner che apparirà nella parte superiore dei tuoi template email. Dimensione consigliata: 800x200px. Formati supportati: JPG, PNG, GIF.",
+    "currentBanner": "Banner Attuale",
+    "changeBanner": "Cambia Banner",
+    "removeBanner": "Rimuovi Banner",
+    "uploadingBanner": "Caricamento Banner...",
+    "bannerPreview": "Anteprima Banner",
+    "uploadEmailBanner": "Carica Banner Email",
+    "uploadBanner": "Carica Banner"
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
     "editLocation": "Modifica Sede",
     "locationName": "Nome Sede",
     "locationsFor": "Sedi per",
-    "noLocationsFound": "Nessuna sede trovata per questo partner",
+    "noLocationsFound": "Nessuna sede trovata.",
     "addFirstLocation": "Aggiungi Prima Sede",
     "viewLocations": "Visualizza Sedi",
     "basicInformation": "Informazioni Base",
@@ -521,7 +536,9 @@
     "warning": "Attenzione",
     "add": "Aggiungi",
     "remove": "Rimuovi",
-    "continue": "Continua"
+    "continue": "Continua",
+    "deleting": "In Cancellazione ...",
+    "back": "Indietro"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -776,8 +793,12 @@
     "cannotBook": "Non Disponibile",
     "someEmailsSent": "Partner mail inviata",
     "confirmationEmailsSent": "Email di conferma inviata",
-    "confirmationMessage": "Una volta confermata non potra' essere modificata."
-
+    "confirmationMessage": "Una volta confermata non potra' essere modificata.",
+    "capacityAvailable": "Capacità: {{available}} di {{total}} disponibili",
+    "resourceFullyBooked": "Risorsa completamente prenotata per questa data",
+    "resourceBookedFullDay": "Risorsa prenotata per l'intera giornata in questa data",
+    "timeSlotFullyBooked": "Fascia {{timeSlot}} completamente prenotata",
+    "errorCheckingAvailability": "Errore nel controllo della disponibilità"
   },
   "contracts": {
     "title": "Contratti",
@@ -916,6 +937,9 @@
     "archiveNote2": "Le prenotazioni e le riservazioni correlate verranno preservate",
     "archiveNote3": "Il contratto può essere ripristinato in qualsiasi momento", 
     "archiveNote4": "Nessun dato verrà perso definitivamente",
+    "freeTrialAlreadyUsed": "Hai già utilizzato la tua prova gratuita",
+    "freeTrialOncePerCustomer": "I servizi di prova gratuita possono essere utilizzati una sola volta per cliente, anche se eliminati o archiviati.",
+    "cancelledContracts": "Cancellati",
     "tooltips": {
       "generatePDF": "Scarica ricevuta PDF",
       "editContract": "Modifica dettagli contratto",
@@ -1014,7 +1038,8 @@
     "packageDetails": "Dettagli Pacchetto",
     "entriesRemaining": "ingressi rimanenti",
     "loadingCustomers": "Caricamento clienti...",
-    "loadingPackages": "Caricamento pacchetti..."
+    "loadingPackages": "Caricamento pacchetti...",
+    "newReservation": "Nuova Prenotazione"
   },
   "calendar": {
     "sunday": "Dom",
@@ -1634,6 +1659,86 @@
     "clearFilters": "Cancella Filtri",
     "noResultsFound": "Nessun contratto trovato con i filtri selezionati",
     "showingResults": "Visualizzando {{count}} di {{total}} contratti"
+  },
+  "renewalLogs": {
+    "title": "Registro Rinnovi Contratti",
+    "description": "Visualizza la cronologia dei rinnovi automatici dei contratti",
+    "renewalLogs": "Registro Rinnovi",
+    "viewRenewalLogs": "Visualizza Registro Rinnovi",
+    "refresh": "Aggiorna",
+    "refreshed": "Registro aggiornato con successo",
+    "errorLoading": "Errore nel caricamento del registro rinnovi",
+    "noLogs": "Nessun Registro di Rinnovo",
+    "noLogsDescription": "Non ci sono ancora tentativi di rinnovo registrati. I rinnovi automatici appariranno qui.",
+    
+    "stats": {
+      "total": "Tentativi Totali",
+      "successful": "Riusciti",
+      "failed": "Falliti",
+      "noAvailability": "Non Disponibili"
+    },
+    
+    "statusLabels": {
+      "success": "Successo",
+      "failedNoAvailability": "Non Disponibile",
+      "failedBooking": "Errore Prenotazione",
+      "failedPayment": "Errore Pagamento",
+      "failedError": "Errore Sistema"
+    },
+    
+    "filters": {
+      "status": "Stato",
+      "period": "Periodo",
+      "all": "Tutti",
+      "successful": "Riusciti",
+      "failed": "Falliti",
+      "last7Days": "Ultimi 7 Giorni",
+      "last30Days": "Ultimi 30 Giorni",
+      "last90Days": "Ultimi 90 Giorni",
+      "allTime": "Tutto il Periodo"
+    },
+    
+    "originalContract": "Contratto Originale",
+    "newContract": "Nuovo Contratto",
+    "attemptDate": "Data Tentativo",
+    "statusField": "Stato",
+    "errorMessage": "Messaggio di Errore",
+    "resourceAvailability": "Disponibilità Risorsa",
+    "totalQuantity": "Quantità Totale",
+    "bookedQuantity": "Quantità Prenotata",
+    "availableQuantity": "Quantità Disponibile"
+  },
+  "emailTemplates": {
+    "manageTemplates": "Gestisci Template Email",
+    "manageTemplatesDescription": "Personalizza il contenuto dei tuoi template email automatizzati. Clicca su un template per modificare l'oggetto e il corpo del messaggio.",
+    "customerInvitation": "Invito Cliente",
+    "customerInvitationDesc": "Email inviata quando si invitano nuovi clienti ad unirsi al tuo workspace",
+    "partnerAdminInvitation": "Invito Amministratore Partner",
+    "partnerAdminInvitationDesc": "Email inviata quando si invita un nuovo amministratore",
+    "customerBookingConfirmation": "Conferma Prenotazione Cliente",
+    "customerBookingConfirmationDesc": "Email inviata ai clienti quando completano una prenotazione",
+    "partnerBookingNotification": "Notifica Prenotazione Partner",
+    "partnerBookingNotificationDesc": "Email inviata a te quando un cliente effettua una prenotazione",
+    "subjectLine": "Oggetto",
+    "subjectPlaceholder": "Inserisci l'oggetto dell'email...",
+    "subjectHint": "Puoi usare variabili come {{customer_name}} nell'oggetto",
+    "emailBody": "Corpo Email",
+    "bold": "Grassetto",
+    "italic": "Corsivo",
+    "heading": "Intestazione",
+    "preview": "Anteprima",
+    "saveTemplate": "Salva Template",
+    "resetToDefault": "Ripristina Predefinito",
+    "availableVariables": "Variabili Disponibili",
+    "variablesDescription": "Clicca su una variabile per inserirla nel template",
+    "tip": "Suggerimento",
+    "variablesTip": "Le variabili verranno automaticamente sostituite con i dati reali quando l'email viene inviata",
+    "subjectRequired": "L'oggetto è obbligatorio",
+    "bodyRequired": "Il corpo dell'email è obbligatorio",
+    "templateSavedSuccessfully": "Template salvato con successo!",
+    "errorSavingTemplate": "Errore nel salvataggio del template. Riprova.",
+    "confirmResetTemplate": "Sei sicuro di voler ripristinare questo template alle impostazioni predefinite? Le tue modifiche andranno perse.",
+    "templateReset": "Template ripristinato alle impostazioni predefinite"
   },
   "app": {
     "appName": " ",

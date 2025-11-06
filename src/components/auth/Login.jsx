@@ -70,7 +70,7 @@ const Login = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="form-input input-bottom"
+                className="form-input input-bottom has-right-icon"  // ✅ Added has-right-icon
                 placeholder={t('placeholders.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -78,7 +78,7 @@ const Login = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon input-icon-right"
+                className="input-icon-right"  // ✅ Removed extra input-icon class
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

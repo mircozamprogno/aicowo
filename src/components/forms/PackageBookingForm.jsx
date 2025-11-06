@@ -377,7 +377,7 @@ const PackageBookingForm = ({
               <button
                 type="button"
                 onClick={handleConfirmReservation}
-                className="btn-primary"
+                className="btn-primary-green"
                 disabled={loading}
               >
                 {loading ? (
@@ -409,53 +409,9 @@ const PackageBookingForm = ({
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {/* Contract Info */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('reservations.contractDetails')}</h3>
-            <div style={{ 
-              background: '#f9fafb', 
-              border: '1px solid #e5e7eb', 
-              borderRadius: '0.375rem', 
-              padding: '1rem' 
-            }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.875rem' }}>
-                <div>
-                  <span style={{ color: '#6b7280' }}>Contract:</span>
-                  <div style={{ fontWeight: '600' }}>{contract.contract_number}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280' }}>Service:</span>
-                  <div style={{ fontWeight: '500' }}>{contract.service_name}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280' }}>Resource:</span>
-                  <div style={{ fontWeight: '500' }}>
-                    {getResourceTypeIcon(contract.resource_type)} {contract.resource_name}
-                  </div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280' }}>Location:</span>
-                  <div style={{ fontWeight: '500' }}>{contract.location_name}</div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280' }}>Contract Period:</span>
-                  <div style={{ fontWeight: '500' }}>
-                    {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
-                  </div>
-                </div>
-                <div>
-                  <span style={{ color: '#6b7280' }}>Remaining Entries:</span>
-                  <div style={{ fontWeight: '700', color: remainingEntries > 2 ? '#16a34a' : '#dc2626' }}>
-                    {remainingEntries} / {contract.service_max_entries}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Reservation Form */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('reservations.reservationDetails')}</h3>
+          {/* Reservation Form - Contract Details Section REMOVED */}
+          <div className="form-section-clean">
+            {/* Section Title REMOVED */}
             
             <div className="form-row">
               <div className="form-group">
@@ -552,7 +508,6 @@ const PackageBookingForm = ({
           {/* Availability Check */}
           {formData.reservation_date && (
             <div className="availability-check">
-              <h4>{t('reservations.availabilityCheck')}</h4>
               {checkingAvailability ? (
                 <div className="availability-loading">
                   <div className="loading-spinner-small"></div>
@@ -620,7 +575,7 @@ const PackageBookingForm = ({
             </button>
             <button
               type="submit"
-              className="btn-primary"
+              className="btn-primary-green"
               disabled={loading || !availabilityStatus?.available || remainingEntries < entriesNeeded}
             >
               {t('reservations.confirmReservation')}

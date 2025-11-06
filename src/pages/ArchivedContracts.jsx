@@ -386,7 +386,7 @@ const ArchivedContracts = () => {
                   {t('contracts.archivedInfo') || 'Archived Info'}
                 </th>
                 <th className="contracts-table-header">
-                  {t('contracts.actions')}
+                  {t('contracts.actionsColumn')}
                 </th>
               </tr>
             </thead>

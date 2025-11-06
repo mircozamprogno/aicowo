@@ -1,4 +1,4 @@
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import CustomerForm from '../components/forms/CustomerForm';
@@ -11,10 +11,6 @@ const Customers = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState(null);
-  const [deleteConstraints, setDeleteConstraints] = useState([]);
   const { profile } = useAuth();
   const { t } = useTranslation();
 
@@ -198,37 +194,17 @@ const Customers = () => {
   const handleDeleteCustomer = async (customer) => {
     console.log('=== STARTING DELETE PROCESS FOR CUSTOMER:', customer);
     
-    // Set the customer we're working with
-    setCustomerToDelete(customer);
-    
     // Check constraints first
-    setDeleteLoading(true);
     const constraints = await checkCustomerConstraints(customer.id);
-    setDeleteLoading(false);
     
-    // Set up modal data and show it
-    setDeleteConstraints(constraints);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!customerToDelete) return;
-
-    console.log('=== CONFIRMING DELETE FOR:', customerToDelete);
-    console.log('=== CONSTRAINTS:', deleteConstraints);
-
-    // If there are constraints, don't allow deletion
-    if (deleteConstraints.length > 0) {
+    // If there are constraints, show error and don't proceed
+    if (constraints.length > 0) {
       console.log('=== CANNOT DELETE - HAS CONSTRAINTS');
-      setShowDeleteModal(false);
-      setCustomerToDelete(null);
-      setDeleteConstraints([]);
-      return;
+      toast.error(t('customers.cannotDeleteWithConstraints'));
+      return { success: false, constraints };
     }
 
     try {
-      setDeleteLoading(true);
-
       // Set status to inactive instead of deleting
       const { error } = await supabase
         .from('customers')
@@ -236,7 +212,7 @@ const Customers = () => {
           customer_status: 'inactive',
           updated_at: new Date().toISOString()
         })
-        .eq('id', customerToDelete.id);
+        .eq('id', customer.id);
 
       if (error) {
         console.error('Database error:', error);
@@ -246,24 +222,16 @@ const Customers = () => {
       console.log('=== CUSTOMER STATUS UPDATED TO INACTIVE');
 
       // Remove from UI
-      setCustomers(prev => prev.filter(c => c.id !== customerToDelete.id));
+      setCustomers(prev => prev.filter(c => c.id !== customer.id));
       toast.success(t('customers.customerDeactivatedSuccessfully'));
+      
+      return { success: true };
 
     } catch (error) {
       console.error('Error deactivating customer:', error);
       toast.error(t('customers.errorDeactivatingCustomer'));
-    } finally {
-      setDeleteLoading(false);
-      setShowDeleteModal(false);
-      setCustomerToDelete(null);
-      setDeleteConstraints([]);
+      return { success: false, error: error.message };
     }
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setCustomerToDelete(null);
-    setDeleteConstraints([]);
   };
 
   const handleEditCustomer = (customer) => {
@@ -441,18 +409,6 @@ const Customers = () => {
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button 
-                        className="delete-btn"
-                        onClick={() => handleDeleteCustomer(customer)}
-                        disabled={deleteLoading}
-                        title={t('customers.deleteCustomer')}
-                      >
-                        {deleteLoading && customerToDelete?.id === customer.id ? (
-                          <div className="loading-spinner-small"></div>
-                        ) : (
-                          <Trash2 size={16} />
-                        )}
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -478,83 +434,16 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Customer Form Modal - Only for editing */}
+      {/* Customer Form Modal */}
       <CustomerForm
         isOpen={showForm}
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
+        onDelete={handleDeleteCustomer}
+        checkConstraints={checkCustomerConstraints}
         customer={editingCustomer}
         partnerUuid={profile?.partner_uuid}
       />
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && customerToDelete && (
-        <div className="delete-modal-overlay">
-          <div className="delete-modal">
-            <div className="delete-modal-header">
-              <h3 className="delete-modal-title">
-                {deleteConstraints.length > 0 
-                  ? t('customers.cannotDeleteCustomer')
-                  : t('customers.confirmDelete')
-                }
-              </h3>
-            </div>
-            
-            <div className="delete-modal-content">
-              {deleteConstraints.length > 0 ? (
-                <>
-                  <p className="delete-modal-message">
-                    {t('customers.activeConstraints')}:
-                  </p>
-                  <ul className="constraints-list">
-                    {deleteConstraints.map((constraint, index) => (
-                      <li key={index} className="constraint-item">
-                        {constraint}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="delete-modal-warning">
-                    {t('customers.resolveConstraintsFirst')}
-                  </p>
-                </>
-              ) : (
-                <p className="delete-modal-message">
-                  {t('customers.confirmDeleteCustomer', { 
-                    customerName: `${customerToDelete.first_name} ${customerToDelete.second_name}` 
-                  })}
-                </p>
-              )}
-            </div>
-            
-            <div className="delete-modal-actions">
-              <button
-                className="btn-secondary"
-                onClick={handleCancelDelete}
-                disabled={deleteLoading}
-              >
-                {deleteConstraints.length > 0 ? t('common.close') : t('common.cancel')}
-              </button>
-              
-              {deleteConstraints.length === 0 && (
-                <button
-                  className="btn-danger"
-                  onClick={handleConfirmDelete}
-                  disabled={deleteLoading}
-                >
-                  {deleteLoading ? (
-                    <>
-                      <div className="loading-spinner-small"></div>
-                      {t('common.deleting')}...
-                    </>
-                  ) : (
-                    t('customers.deleteCustomer')
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

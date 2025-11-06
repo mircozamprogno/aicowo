@@ -61,25 +61,12 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       }
     };
 
-    // Remove first_name from custom_data for customer invitations
-    if (!isPartnerAdminInvitation) {
-      // For customer invitations, don't include first_name in the data sent to OneSignal
-      const { invited_first_name, invited_last_name, ...invitationData } = invitationWithPartner;
-      invitationWithPartner.custom_data = invitationData;
-    }
-
     console.log('Sending invitation email with OneSignal:', invitationWithPartner);
 
     try {
-      // Import OneSignal email service (corrected import path)
+      // Import OneSignal email service
       const { default: oneSignalEmailService } = await import('../../services/oneSignalEmailService');
       const success = await oneSignalEmailService.sendInvitation(invitationWithPartner, invitationLink);
-      
-      if (success) {
-        toast.success(t('messages.invitationSentSuccessfully'));
-      } else {
-        toast.error(t('messages.errorSendingInvitation'));
-      }
       
       return success;
     } catch (error) {
@@ -93,10 +80,10 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
         link: invitationLink,
         message: formData.customMessage
       });
-      toast.error(t('messages.errorSendingInvitation'));
       return false;
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();

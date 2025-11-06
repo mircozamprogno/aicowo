@@ -105,6 +105,8 @@
     "errorDeactivatingCustomer": "Error deactivating customer",
     "incomplete_profile": "Incomplete Profile",
     "customerDetails": "Customer Details",
+    "delete": "Delete",
+    "cannotDeleteWithConstraints": "Cannot delete customer due to active constraints",
     "constraints": {
       "activeBookings": "{{count}} active booking(s)",
       "activeContracts": "{{count}} active contract(s)",
@@ -126,14 +128,27 @@
     "uploadingLogo": "Uploading Logo...",
     "processingAndUploading": "Processing and uploading...",
     "profileSettings": "Profile Settings",
-    "locationManagement": "Location Management"
+    "locationManagement": "Location Management",
+    "language": "Choose your language",
+    "emailTemplates": "Email Templates",
+    "emailTemplateCustomization": "Email Template Customization",
+    "customizeEmailBanner": "Customize the banner that appears in your email templates",
+    "emailBanner": "Email Banner",
+    "emailBannerDescription": "Upload a banner image that will appear at the top of your email templates. Recommended size: 800x200px. Supported formats: JPG, PNG, GIF.",
+    "currentBanner": "Current Banner",
+    "changeBanner": "Change Banner",
+    "removeBanner": "Remove Banner",
+    "uploadingBanner": "Uploading Banner...",
+    "bannerPreview": "Banner Preview",
+    "uploadEmailBanner": "Upload Email Banner",
+    "uploadBanner": "Upload Banner"
   },
   "locations": {
     "addLocation": "Add Location",
     "editLocation": "Edit Location",
     "locationName": "Location Name",
     "locationsFor": "Locations for",
-    "noLocationsFound": "No locations found for this partner",
+    "noLocationsFound": "No locations found.",
     "addFirstLocation": "Add First Location",
     "viewLocations": "View Locations",
     "basicInformation": "Basic Information",
@@ -521,7 +536,9 @@
     "warning": "Warning",
     "add": "Add",
     "remove": "Remove",
-    "continue": "Continue"
+    "continue": "Continue",
+    "deleting": "Deleting ...",
+    "back": "Back"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -773,7 +790,12 @@
     "packageReservations": "Package Reservations",
     "bookPackage": "Book Package",
     "cannotBook": "Cannot Book",
-    "confirmationMessage": "Once confirmed, the reservation cannot be modified."
+    "confirmationMessage": "Once confirmed, the reservation cannot be modified.",
+    "capacityAvailable": "Capacity: {{available}} of {{total}} available",
+    "resourceFullyBooked": "Resource fully booked for this date",
+    "resourceBookedFullDay": "Resource booked for full day on this date",
+    "timeSlotFullyBooked": "{{timeSlot}} slot fully booked",
+    "errorCheckingAvailability": "Error checking availability"
   },
   "contracts": {
     "title": "Contracts",
@@ -912,6 +934,9 @@
     "archiveNote2": "Related bookings and reservations will be preserved", 
     "archiveNote3": "Contract can be restored at any time",
     "archiveNote4": "No data will be permanently lost",
+    "freeTrialAlreadyUsed": "You have already used your free trial",
+    "freeTrialOncePerCustomer": "Free trial services can only be used once per customer, even if deleted or archived.",
+    "cancelledContracts": "Cancelled",
     "tooltips": {
       "generatePDF": "Download PDF receipt",
       "editContract": "Edit contract details",
@@ -1010,7 +1035,8 @@
     "packageDetails": "Package Details",
     "entriesRemaining": "entries remaining",
     "loadingCustomers": "Loading customers...",
-    "loadingPackages": "Loading packages..."
+    "loadingPackages": "Loading packages...",
+    "newReservation": "New Booking"
   },
   "calendar": {
     "sunday": "Sun",
@@ -1630,6 +1656,86 @@
     "clearFilters": "Clear Filters",
     "noResultsFound": "No contracts found matching your filters",
     "showingResults": "Showing {{count}} of {{total}} contracts"
+  },
+  "renewalLogs": {
+    "title": "Contract Renewal Logs",
+    "description": "View the history of automatic contract renewals",
+    "renewalLogs": "Renewal Logs",
+    "viewRenewalLogs": "View Renewal Logs",
+    "refresh": "Refresh",
+    "refreshed": "Logs refreshed successfully",
+    "errorLoading": "Error loading renewal logs",
+    "noLogs": "No Renewal Logs",
+    "noLogsDescription": "There are no renewal attempts recorded yet. Automatic renewals will appear here.",
+    
+    "stats": {
+      "total": "Total Attempts",
+      "successful": "Successful",
+      "failed": "Failed",
+      "noAvailability": "No Availability"
+    },
+    
+    "statusLabels": {
+      "success": "Success",
+      "failedNoAvailability": "No Availability",
+      "failedBooking": "Booking Error",
+      "failedPayment": "Payment Error",
+      "failedError": "System Error"
+    },
+    
+    "filters": {
+      "status": "Status",
+      "period": "Period",
+      "all": "All",
+      "successful": "Successful",
+      "failed": "Failed",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "last90Days": "Last 90 Days",
+      "allTime": "All Time"
+    },
+    
+    "originalContract": "Original Contract",
+    "newContract": "New Contract",
+    "attemptDate": "Attempt Date",
+    "statusField": "Status",
+    "errorMessage": "Error Message",
+    "resourceAvailability": "Resource Availability",
+    "totalQuantity": "Total Quantity",
+    "bookedQuantity": "Booked Quantity",
+    "availableQuantity": "Available Quantity"
+  },
+  "emailTemplates": {
+    "manageTemplates": "Manage Email Templates",
+    "manageTemplatesDescription": "Customize the content of your automated email templates. Click on a template to edit its subject line and body content.",
+    "customerInvitation": "Customer Invitation",
+    "customerInvitationDesc": "Email sent when inviting new customers to join your workspace",
+    "partnerAdminInvitation": "Partner Admin Invitation",
+    "partnerAdminInvitationDesc": "Email sent when inviting a new administrator",
+    "customerBookingConfirmation": "Customer Booking Confirmation",
+    "customerBookingConfirmationDesc": "Email sent to customers when they complete a booking",
+    "partnerBookingNotification": "Partner Booking Notification",
+    "partnerBookingNotificationDesc": "Email sent to you when a customer makes a booking",
+    "subjectLine": "Subject Line",
+    "subjectPlaceholder": "Enter email subject...",
+    "subjectHint": "You can use variables like {{customer_name}} in the subject line",
+    "emailBody": "Email Body",
+    "bold": "Bold",
+    "italic": "Italic",
+    "heading": "Heading",
+    "preview": "Preview",
+    "saveTemplate": "Save Template",
+    "resetToDefault": "Reset to Default",
+    "availableVariables": "Available Variables",
+    "variablesDescription": "Click on a variable to insert it into your template",
+    "tip": "Tip",
+    "variablesTip": "Variables will be automatically replaced with actual data when the email is sent",
+    "subjectRequired": "Subject line is required",
+    "bodyRequired": "Email body is required",
+    "templateSavedSuccessfully": "Template saved successfully!",
+    "errorSavingTemplate": "Error saving template. Please try again.",
+    "confirmResetTemplate": "Are you sure you want to reset this template to default? Your changes will be lost.",
+    "templateReset": "Template reset to default"
   },
   "app": {
     "appName": " ",

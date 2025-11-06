@@ -329,3 +329,39 @@
     display: none;
   }
 }
+
+
+/* Hide version on very small screens */
+@media (max-width: 480px) {
+  .sidebar-version {
+    display: none;
+  }
+}
+
+/* Logout Button in Sidebar */
+.sidebar-logout-btn {
+  margin-top: auto;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 0.75rem !important;
+  margin-top: 0.75rem !important;
+}
+
+.sidebar-logout-btn:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.sidebar-logout-btn:hover .sidebar-nav-icon {
+  color: #dc2626;
+}
+
+.sidebar-logout-btn:focus {
+  outline: 2px solid #dc2626;
+  outline-offset: -2px;
+}

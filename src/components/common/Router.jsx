@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ContractRenewalLogs from '../../components/ContractRenewalLogs';
 import { useAuth } from '../../contexts/AuthContext';
 import ArchivedContracts from '../../pages/ArchivedContracts';
 import Bookings from '../../pages/Bookings';
@@ -221,6 +222,12 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['superadmin']}>
           <PartnerDiscountCodes />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/renewal-logs':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin', 'superadmin']}>
+          <ContractRenewalLogs />
         </ProtectedRoute>
       ) : <Login />;
     default:

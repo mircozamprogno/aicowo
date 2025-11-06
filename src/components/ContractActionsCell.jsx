@@ -10,7 +10,7 @@ import {
   Trash2,
   Upload
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import '../styles/components/contractaction.css';
 
 const ContractActionsCell = ({ 
@@ -35,7 +35,10 @@ const ContractActionsCell = ({
   onUploadSuccess
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState('bottom'); // 'bottom' or 'top'
   const [uploading, setUploading] = useState(false);
+  const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
 
   const canBook = canBookPackage(contract);
 
@@ -44,6 +47,28 @@ const ContractActionsCell = ({
   
   // Check if already uploaded to FattureInCloud
   const isUploaded = uploadStatus && uploadStatus.upload_status === 'success';
+
+  // Calculate dropdown position when it opens
+  useEffect(() => {
+    if (showDropdown && triggerRef.current) {
+      const triggerRect = triggerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Estimate dropdown height (based on number of actions * ~40px per item)
+      const estimatedDropdownHeight = secondaryActions.length * 40 + 20; // +20 for padding
+      
+      // Calculate space below and above
+      const spaceBelow = viewportHeight - triggerRect.bottom;
+      const spaceAbove = triggerRect.top;
+      
+      // If not enough space below but enough space above, open upwards
+      if (spaceBelow < estimatedDropdownHeight && spaceAbove > estimatedDropdownHeight) {
+        setDropdownPosition('top');
+      } else {
+        setDropdownPosition('bottom');
+      }
+    }
+  }, [showDropdown]);
 
   const handleFattureInCloudUpload = async () => {
     if (isUploaded || uploading) return;
@@ -158,8 +183,9 @@ const ContractActionsCell = ({
       <div className="contract-actions">
         {/* NO PDF BUTTON OUTSIDE - Only dropdown menu */}
         {secondaryActions.length > 0 && (
-          <div className="actions-dropdown">
+          <div className="actions-dropdown" ref={dropdownRef}>
             <button
+              ref={triggerRef}
               className="action-btn dropdown-trigger"
               onClick={(e) => {
                 e.stopPropagation();
@@ -171,7 +197,7 @@ const ContractActionsCell = ({
             </button>
             
             {showDropdown && (
-              <div className="dropdown-menu">
+              <div className={`dropdown-menu dropdown-${dropdownPosition}`}>
                 {secondaryActions.map(action => (
                   <button
                     key={action.key}

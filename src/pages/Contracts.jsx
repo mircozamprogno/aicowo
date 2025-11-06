@@ -1,4 +1,4 @@
-import { AlertTriangle, Archive, Clock, Download, FileText, Plus, Upload, X } from 'lucide-react';
+import { AlertTriangle, Archive, Clock, Download, FileText, Plus, RefreshCw, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import ContractActionsCell from '../components/ContractActionsCell';
@@ -16,14 +16,14 @@ import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 
 // Add these imports at the top
-import ContractsFilter from '../components/ContractsFilter'; // New import for filter
+import ContractsFilter from '../components/ContractsFilter';
 import { BulkUploadModal } from '../components/fattureincloud/FattureInCloudComponents';
 import { FattureInCloudService } from '../services/fattureInCloudService';
 
 
 const Contracts = () => {
   const [contracts, setContracts] = useState([]);
-  const [filteredContracts, setFilteredContracts] = useState([]); // New state for filtered contracts
+  const [filteredContracts, setFilteredContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -38,7 +38,7 @@ const Contracts = () => {
   const [selectedPackageContract, setSelectedPackageContract] = useState(null);
   
   // PDF generation states
-  const [generatingPDF, setGeneratingPDF] = useState(null); // contract ID being processed
+  const [generatingPDF, setGeneratingPDF] = useState(null);
   
   const { profile, user } = useAuth();
   const { t } = useTranslation();
@@ -55,13 +55,13 @@ const Contracts = () => {
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [paymentToEdit, setPaymentToEdit] = useState(null);
-  const [contractPayments, setContractPayments] = useState({}); // Map of contract ID to payment status
+  const [contractPayments, setContractPayments] = useState({});
   const canManagePayments = isPartnerAdmin || isSuperAdmin;
 
   // CSV Export states
   const [exportingCSV, setExportingCSV] = useState(false);
 
-  // Add these state variables in the Contracts component
+  // FattureInCloud states
   const [partnerSettings, setPartnerSettings] = useState(null);
   const [uploadStatuses, setUploadStatuses] = useState({});
   const [showBulkUpload, setShowBulkUpload] = useState(false);
@@ -69,7 +69,6 @@ const Contracts = () => {
   // Filter states
   const [activeFilters, setActiveFilters] = useState({});
 
-  // Add these functions before the return statement
   const loadPartnerSettings = async () => {
     try {
       const settings = await FattureInCloudService.getPartnerSettings(profile.partner_uuid);
@@ -90,7 +89,6 @@ const Contracts = () => {
   };
 
   const handleUploadSuccess = (result) => {
-    // Refresh upload statuses
     loadUploadStatuses();
   };
 
@@ -100,17 +98,14 @@ const Contracts = () => {
 
   const handleBulkUploadClose = () => {
     setShowBulkUpload(false);
-    // Refresh upload statuses after bulk upload
     loadUploadStatuses();
   };
 
-  // Filter handler
   const handleFilterChange = (filtered, filters) => {
     setFilteredContracts(filtered);
     setActiveFilters(filters);
   };
 
-  // Get payment status for a contract (used by filter)
   const getPaymentStatusForFilter = (contract) => {
     if (contract.service_type === 'free_trial' || !contract.requires_payment) {
       return 'not_required';
@@ -118,7 +113,7 @@ const Contracts = () => {
 
     const paymentInfo = contractPayments[contract.id];
     if (!paymentInfo) {
-      return 'unpaid'; // Default if no payment info loaded yet
+      return 'unpaid';
     }
 
     return paymentInfo.payment_status;
@@ -133,19 +128,16 @@ const Contracts = () => {
     }
   }, [profile]);
 
-  // Initialize filtered contracts when contracts change
   useEffect(() => {
     setFilteredContracts(contracts);
   }, [contracts]);
 
-  // Add this useEffect after the existing ones
   useEffect(() => {
     if (profile?.partner_uuid && (isPartnerAdmin || isSuperAdmin)) {
       loadPartnerSettings();
     }
   }, [profile]);
 
-  // Add this useEffect to load upload statuses when contracts change
   useEffect(() => {
     if (contracts.length > 0 && partnerSettings?.fattureincloud_enabled) {
       loadUploadStatuses();
@@ -177,10 +169,9 @@ const Contracts = () => {
             location_name
           )
         `)
-        .eq('is_archived', false) // Only get non-archived contracts
+        .eq('is_archived', false)
         .order('created_at', { ascending: false });
 
-      // Apply filters based on user role
       if (isCustomer) {
         const { data: customerData } = await supabase
           .from('customers')
@@ -200,7 +191,6 @@ const Contracts = () => {
       if (error) {
         console.error('Error fetching contracts:', error);
         
-        // Mock data for development
         const mockContracts = [
           {
             id: 1,
@@ -268,12 +258,10 @@ const Contracts = () => {
         
         setContracts(mockContracts);
         
-        // Load payment statuses for mock data
         if (canManagePayments) {
           loadPaymentStatuses(mockContracts.map(c => c.id));
         }
       } else {
-        // Process contracts to ensure numeric fields are numbers
         const processedContracts = (data || []).map(contract => ({
           ...contract,
           entries_used: parseFloat(contract.entries_used) || 0,
@@ -345,7 +333,6 @@ const Contracts = () => {
 
   const handleFormSuccess = (savedContract) => {
     setContracts(prev => [savedContract, ...prev]);
-    // Refresh payment statuses
     if (canManagePayments) {
       loadPaymentStatuses([savedContract.id]);
     }
@@ -357,13 +344,11 @@ const Contracts = () => {
         contract.id === updatedContract.id ? updatedContract : contract
       )
     );
-    // Refresh payment statuses
     if (canManagePayments) {
       loadPaymentStatuses([updatedContract.id]);
     }
   };
 
-  // Package booking handlers
   const handlePackageBooking = (contract) => {
     console.log('Opening package booking for contract:', contract);
     setSelectedPackageContract(contract);
@@ -379,11 +364,9 @@ const Contracts = () => {
     console.log('Package booking successful:', reservation);
     
     try {
-      // Send booking confirmation emails
       if (selectedPackageContract) {
         console.log('Sending booking confirmation emails...');
         
-        // Get partner data for partner email (you might need to fetch this)
         let partnerData = null;
         if (profile?.partner_uuid) {
           try {
@@ -401,15 +384,13 @@ const Contracts = () => {
           }
         }
 
-        // Send booking confirmation emails
         const emailResults = await oneSignalEmailService.sendBookingConfirmation(
-          reservation, // booking data
-          selectedPackageContract, // contract data
-          t, // translation function
-          partnerData // partner data (optional)
+          reservation,
+          selectedPackageContract,
+          t,
+          partnerData
         );
 
-        // Log email results
         if (emailResults.customerSuccess) {
           console.log('Customer booking confirmation sent successfully');
         } else {
@@ -422,7 +403,6 @@ const Contracts = () => {
           console.warn('Failed to send partner booking notification');
         }
 
-        // Optionally show toast messages about email status
         if (emailResults.customerSuccess && emailResults.partnerSuccess) {
           toast.success(t('reservations.confirmationEmailsSent') || 'Email di conferma inviate');
         } else if (emailResults.customerSuccess || emailResults.partnerSuccess) {
@@ -431,23 +411,19 @@ const Contracts = () => {
       }
     } catch (error) {
       console.error('Error sending booking confirmation emails:', error);
-      // Don't fail the booking process if emails fail
     }
 
-    // Continue with existing success logic
-    fetchContracts(); // Refresh contracts to update entries_used
+    fetchContracts();
     setShowPackageBooking(false);
     setSelectedPackageContract(null);
   };
 
-  // PDF Generation handler
   const handleGeneratePDF = async (contract) => {
     setGeneratingPDF(contract.id);
     
     try {
       console.log('Generating PDF for contract:', contract);
       
-      // Fetch complete customer data with address information
       let fullCustomerData = contract.customers;
       
       if (contract.customer_id) {
@@ -471,7 +447,6 @@ const Contracts = () => {
         console.warn('No customer_id found in contract:', contract);
       }
       
-      // Fetch location data with VAT information
       let locationData = null;
       if (contract.location_id) {
         console.log('Fetching location data for ID:', contract.location_id);
@@ -494,7 +469,6 @@ const Contracts = () => {
         console.warn('No location_id found in contract:', contract);
       }
       
-      // Create enhanced contract object with full customer and location data
       const enhancedContract = {
         ...contract,
         customers: fullCustomerData,
@@ -503,12 +477,10 @@ const Contracts = () => {
       
       console.log('Enhanced contract with customer and location data:', enhancedContract);
       
-      // Fetch partner data for PDF header
       let partnerData = null;
       let logoUrl = null;
       
       if (profile?.partner_uuid) {
-        // Get partner information
         const { data: partner, error: partnerError } = await supabase
           .from('partners')
           .select('*')
@@ -519,7 +491,6 @@ const Contracts = () => {
           partnerData = partner;
         }
         
-        // Get partner logo
         try {
           const { data: files } = await supabase.storage
             .from('partners')
@@ -541,7 +512,6 @@ const Contracts = () => {
         }
       }
 
-      // Generate PDF with enhanced data
       await generateContractPDF(enhancedContract, partnerData, logoUrl, t);
       
       toast.success(t('contracts.pdfGeneratedSuccessfully') || 'PDF generated successfully!');
@@ -596,7 +566,6 @@ const Contracts = () => {
         return;
       }
 
-      // Convert array to map for easy lookup
       const statusMap = {};
       (data || []).forEach(status => {
         statusMap[status.contract_id] = status;
@@ -608,7 +577,6 @@ const Contracts = () => {
     }
   };
 
-  // Payment handlers
   const handleRecordPayment = (contract) => {
     setSelectedContract(contract);
     setPaymentToEdit(null);
@@ -633,22 +601,17 @@ const Contracts = () => {
   };
 
   const handlePaymentSuccess = async (payment) => {
-    // Close the payment form first
     setShowPaymentForm(false);
     
-    // Wait a moment for database to update
     setTimeout(async () => {
-      // Refresh all contracts and their payment statuses
       await fetchContracts();
       
-      // Also specifically refresh payment statuses
       if (canManagePayments && contracts.length > 0) {
         loadPaymentStatuses(contracts.map(c => c.id));
       }
-    }, 500); // 500ms delay to ensure DB is updated
+    }, 500);
     
     if (paymentToEdit) {
-      // If we were editing, go back to history
       setShowPaymentHistory(true);
     }
   };
@@ -659,11 +622,9 @@ const Contracts = () => {
   };
 
   const handlePaymentRefresh = () => {
-    // Refresh payment statuses and contracts
     fetchContracts();
   };
 
-  // Utility functions
   const formatCurrency = (amount, currency = 'EUR') => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -756,16 +717,10 @@ const Contracts = () => {
   };
 
   const canBookPackage = (contract) => {
-    // Check if it's a package contract
     if (contract.service_type !== 'pacchetto') return false;
-    
-    // Check if contract is active
     if (contract.contract_status !== 'active') return false;
-    
-    // Check if current date is within contract range
     if (!isDateInContractRange(contract.start_date, contract.end_date)) return false;
     
-    // Check if there are remaining entries (at least 0.5 for half day)
     const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
     return remainingEntries >= 0.5;
   };
@@ -785,7 +740,6 @@ const Contracts = () => {
     }
   };
 
-  // Payment status helpers
   const getPaymentStatus = (contract) => {
     if (contract.service_type === 'free_trial' || !contract.requires_payment) {
       return 'not_required';
@@ -793,7 +747,7 @@ const Contracts = () => {
 
     const paymentInfo = contractPayments[contract.id];
     if (!paymentInfo) {
-      return 'unpaid'; // Default if no payment info loaded yet
+      return 'unpaid';
     }
 
     return paymentInfo.payment_status;
@@ -820,14 +774,12 @@ const Contracts = () => {
     return paymentInfo?.next_due_date;
   };
 
-  // CSV Export function
   const handleExportCSV = async () => {
     if (!isPartnerAdmin && !isSuperAdmin) {
       toast.error(t('contracts.exportNotAllowed') || 'Export non consentito');
       return;
     }
 
-    // Export filtered contracts instead of all contracts
     const contractsToExport = filteredContracts.length > 0 ? filteredContracts : contracts;
 
     if (contractsToExport.length === 0) {
@@ -838,13 +790,8 @@ const Contracts = () => {
     setExportingCSV(true);
     
     try {
-      // Generate CSV content
       const csvContent = await CSVExportService.exportContractsToCSV(contractsToExport, t);
-      
-      // Generate filename
       const filename = CSVExportService.generateFilename();
-      
-      // Download CSV file
       CSVExportService.downloadCSV(csvContent, filename);
       
       toast.success(t('contracts.csvExportedSuccessfully') || 'Export CSV completato con successo');
@@ -861,7 +808,6 @@ const Contracts = () => {
     return <div className="contracts-loading">{t('common.loading')}</div>;
   }
 
-  // Use filtered contracts for display
   const contractsToDisplay = filteredContracts.length >= 0 ? filteredContracts : contracts;
 
   return (
@@ -895,6 +841,12 @@ const Contracts = () => {
                 {contractsToDisplay.filter(c => c.contract_status === 'expired').length}
               </span>
             </div>
+            <div className="stat-item">
+              <span className="stat-label">{t('contracts.cancelledContracts') || 'Cancelled'}</span>
+              <span className="stat-value">
+                {contractsToDisplay.filter(c => c.contract_status === 'cancelled').length}
+              </span>
+            </div>
             {canManagePayments && (
               <div className="stat-item">
                 <span className="stat-label">{t('payments.outstanding')}</span>
@@ -915,7 +867,6 @@ const Contracts = () => {
               {t('contracts.createContract')}
             </button>
 
-            {/* CSV Export Button - only for partners */}
             {(isPartnerAdmin || isSuperAdmin) && (
               <button 
                 className="export-csv-btn"
@@ -931,7 +882,6 @@ const Contracts = () => {
               </button>
             )}
 
-            {/* Archived Contracts Button */}
             <button 
               className="archived-contracts-btn"
               onClick={() => window.location.hash = '/archived-contracts'}
@@ -941,7 +891,6 @@ const Contracts = () => {
               {t('contracts.archivedContracts') || 'Archived Contracts'}
             </button>
 
-            {/* FattureInCloud Bulk Upload Button */}
             {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
               <button 
                 className="bulk-upload-btn"
@@ -953,11 +902,24 @@ const Contracts = () => {
                 Upload F.C.
               </button>
             )}
+
+            {/* ADD THIS NEW BUTTON HERE */}
+            {(isPartnerAdmin || isSuperAdmin) && (
+              <button 
+                className="renewal-logs-btn"
+                onClick={() => window.location.hash = '/renewal-logs'}
+                title={t('renewalLogs.viewRenewalLogs') || 'View Renewal Logs'}
+              >
+                <RefreshCw size={16} className="mr-2" />
+                {t('renewalLogs.renewalLogs') || 'Renewal Logs'}
+              </button>
+            )}
+
+
           </div>
         )}
       </div>
 
-      {/* Add the Filters Component */}
       <ContractsFilter
         contracts={contracts}
         customers={customers}
@@ -969,7 +931,6 @@ const Contracts = () => {
         getPaymentStatus={getPaymentStatus}
       />
 
-      {/* Filter Results Info */}
       {Object.values(activeFilters).some(value => value !== '') && (
         <div className="filter-results-info">
           <span className="filter-results-count">
@@ -1182,9 +1143,6 @@ const Contracts = () => {
         </div>
       </div>
 
-      {/* All the existing modals remain the same */}
-      
-      {/* Contract Form Modal */}
       <ContractForm
         isOpen={showForm}
         onClose={handleFormClose}
@@ -1195,7 +1153,6 @@ const Contracts = () => {
         locations={locations}
       />
 
-      {/* Contract Edit Form Modal */}
       <ContractForm
         isOpen={showEditForm}
         onClose={handleEditFormClose}
@@ -1208,7 +1165,6 @@ const Contracts = () => {
         contractToEdit={editingContract}
       />
 
-      {/* Package Booking Modal */}
       <PackageBookingForm
         isOpen={showPackageBooking}
         onClose={handlePackageBookingClose}
@@ -1216,7 +1172,6 @@ const Contracts = () => {
         contract={selectedPackageContract}
       />
 
-      {/* Archive Confirmation Modal */}
       {showArchiveConfirm && contractToArchive && (
         <div className="modal-overlay">
           <div className="modal-container archive-modal">
@@ -1304,7 +1259,6 @@ const Contracts = () => {
         </div>
       )}
 
-      {/* Payment Form Modal */}
       <PaymentForm
         isOpen={showPaymentForm}
         onClose={handlePaymentFormClose}
@@ -1314,7 +1268,6 @@ const Contracts = () => {
         paymentToEdit={paymentToEdit}
       />
 
-      {/* Payment History Modal */}
       <PaymentHistoryModal
         isOpen={showPaymentHistory}
         onClose={handlePaymentHistoryClose}
@@ -1323,7 +1276,6 @@ const Contracts = () => {
         onRefresh={handlePaymentRefresh}
       />
 
-      {/* Bulk Upload Modal */}
       <BulkUploadModal
         isOpen={showBulkUpload}
         onClose={handleBulkUploadClose}

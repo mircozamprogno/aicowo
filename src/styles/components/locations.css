@@ -3740,3 +3740,46 @@ input:focus, select:focus, textarea:focus {
     justify-content: center;
   }
 }
+
+
+/* New MIZ.  */
+
+/* ===== Deleting Image Styles ===== */
+
+/* Deleting spinner */
+.deleting-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Deleting status badge */
+.image-status.deleting {
+  background: #ef4444;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Disabled image action buttons */
+.image-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.alt-text-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f3f4f6;
+}

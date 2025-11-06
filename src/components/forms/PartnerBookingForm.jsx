@@ -14,7 +14,11 @@ const PartnerBookingForm = ({
   const { user, profile } = useAuth();
   const { t } = useTranslation();
   
-  const [step, setStep] = useState(1); // 1: Select Customer, 2: Select Package & Book
+  // Determine if user is a customer (end user) or partner admin
+  const isCustomerUser = profile?.role === 'user';
+  const isPartnerAdmin = profile?.role === 'admin';
+  
+  const [step, setStep] = useState(1); // 1: Select Customer (partner only), 2: Select Package & Book
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [availablePackages, setAvailablePackages] = useState([]);
@@ -36,8 +40,6 @@ const PartnerBookingForm = ({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
-      setSelectedCustomer(null);
       setSelectedPackage(null);
       setAvailablePackages([]);
       setFormData({
@@ -47,9 +49,19 @@ const PartnerBookingForm = ({
       });
       setAvailabilityStatus(null);
       setShowConfirmation(false);
-      fetchCustomersWithPackages();
+      
+      // If customer user, automatically load their data and go to step 2
+      if (isCustomerUser) {
+        setStep(2); // Skip customer selection
+        fetchCurrentCustomerData();
+      } else {
+        // Partner admin - show customer selection
+        setStep(1);
+        setSelectedCustomer(null);
+        fetchCustomersWithPackages();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isCustomerUser]);
 
   // Check availability when form data changes and package is selected
   useEffect(() => {
@@ -59,6 +71,41 @@ const PartnerBookingForm = ({
       setAvailabilityStatus(null);
     }
   }, [formData.reservation_date, formData.duration_type, formData.time_slot, selectedPackage]);
+
+  // Auto-load packages when customer is selected (for both customer users and partner admins)
+  useEffect(() => {
+    if (selectedCustomer && step === 2) {
+      fetchPackagesForCustomer(selectedCustomer.id);
+    }
+  }, [selectedCustomer, step]);
+
+  // Fetch current customer data (for end customers)
+  const fetchCurrentCustomerData = async () => {
+    setLoadingCustomers(true);
+    try {
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('id, first_name, second_name, email, company_name')
+        .eq('user_id', user.id)
+        .single();
+
+      if (customerError) throw customerError;
+
+      if (customerData) {
+        setSelectedCustomer(customerData);
+        // Packages will be loaded by the useEffect above
+      } else {
+        toast.error('Customer profile not found');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      toast.error('Error loading your customer profile');
+      onClose();
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
 
   const fetchCustomersWithPackages = async () => {
     setLoadingCustomers(true);
@@ -129,7 +176,6 @@ const PartnerBookingForm = ({
           )
         `)
         .eq('customer_id', customerId)
-        .eq('partner_uuid', profile.partner_uuid)
         .eq('service_type', 'pacchetto')
         .eq('contract_status', 'active')
         .eq('is_archived', false)
@@ -166,8 +212,8 @@ const PartnerBookingForm = ({
     setSelectedCustomer(customer);
     
     if (customer) {
-      await fetchPackagesForCustomer(customer.id);
       setStep(2);
+      // Packages will be loaded by useEffect
     }
   };
 
@@ -214,7 +260,7 @@ const PartnerBookingForm = ({
           
           if (usedSlots >= totalQuantity) {
             hasConflict = true;
-            conflictReason = 'Resource fully booked for this date';
+            conflictReason = t('reservations.resourceFullyBooked');
           }
         } else {
           const hasFullDayConflict = existingReservations.some(res => res.duration_type === 'full_day');
@@ -224,10 +270,11 @@ const PartnerBookingForm = ({
           
           if (hasFullDayConflict) {
             hasConflict = true;
-            conflictReason = 'Resource booked for full day on this date';
+            conflictReason = t('reservations.resourceBookedFullDay');
           } else if (sameTimeSlotReservations.length >= totalQuantity) {
             hasConflict = true;
-            conflictReason = `${formData.time_slot === 'morning' ? 'Morning' : 'Afternoon'} slot fully booked`;
+            const timeSlotLabel = formData.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon');
+            conflictReason = t('reservations.timeSlotFullyBooked', { timeSlot: timeSlotLabel });
           }
         }
       }
@@ -243,7 +290,7 @@ const PartnerBookingForm = ({
 
     } catch (error) {
       console.error('Error checking availability:', error);
-      setAvailabilityStatus({ available: false, error: 'Error checking availability' });
+      setAvailabilityStatus({ available: false, error: t('reservations.errorCheckingAvailability') });
     } finally {
       setCheckingAvailability(false);
     }
@@ -294,7 +341,7 @@ const PartnerBookingForm = ({
       const reservationData = {
         contract_id: selectedPackage.id,
         location_resource_id: selectedPackage.location_resource_id,
-        partner_uuid: profile.partner_uuid,
+        partner_uuid: selectedPackage.partner_uuid,
         customer_id: selectedCustomer.id,
         reservation_date: formData.reservation_date,
         duration_type: formData.duration_type,
@@ -330,7 +377,7 @@ const PartnerBookingForm = ({
         const { data: partnerData } = await supabase
           .from('partners')
           .select('email, contact_email, first_name, second_name, company_name')
-          .eq('partner_uuid', profile.partner_uuid)
+          .eq('partner_uuid', selectedPackage.partner_uuid)
           .single();
 
         await oneSignalEmailService.sendBookingConfirmation(
@@ -506,7 +553,7 @@ const PartnerBookingForm = ({
       <div className="modal-container">
         <div className="modal-header">
           <h2 className="modal-title">
-            {t('bookings.bookForCustomer')}
+            {isCustomerUser ? t('bookings.newReservation') : t('bookings.bookForCustomer')}
           </h2>
           <button onClick={onClose} className="modal-close-btn">
             <X size={24} />
@@ -514,11 +561,9 @@ const PartnerBookingForm = ({
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {/* Step 1: Customer Selection */}
-          {step === 1 && (
-            <div className="form-section">
-              <h3 className="form-section-title">{t('bookings.selectCustomer')}</h3>
-              
+          {/* Step 1: Customer Selection - ONLY FOR PARTNER ADMINS */}
+          {step === 1 && isPartnerAdmin && (
+            <>
               {loadingCustomers ? (
                 <div className="availability-loading">
                   <div className="loading-spinner-small"></div>
@@ -548,14 +593,14 @@ const PartnerBookingForm = ({
                   </select>
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* Step 2: Package Selection and Booking */}
           {step === 2 && (
             <>
-              {/* Selected Customer Info */}
-              <div className="form-section">
+              {/* Selected Customer Info - Show ONLY for partner admin */}
+              {isPartnerAdmin && selectedCustomer && (
                 <div style={{ 
                   background: '#f9fafb', 
                   border: '1px solid #e5e7eb', 
@@ -563,7 +608,8 @@ const PartnerBookingForm = ({
                   padding: '1rem',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  marginBottom: '1.5rem'
                 }}>
                   <div>
                     <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{t('bookings.bookingFor')}</div>
@@ -584,195 +630,137 @@ const PartnerBookingForm = ({
                     {t('bookings.changeCustomer')}
                   </button>
                 </div>
-              </div>
+              )}
 
               {/* Package Selection */}
-              <div className="form-section">
-                <h3 className="form-section-title">{t('bookings.selectPackage')}</h3>
-                
-                {loadingPackages ? (
-                  <div className="availability-loading">
-                    <div className="loading-spinner-small"></div>
-                    <span>{t('bookings.loadingPackages')}</span>
-                  </div>
-                ) : availablePackages.length === 0 ? (
-                  <div className="day-no-bookings">
-                    <p>{t('bookings.noAvailablePackages')}</p>
-                  </div>
-                ) : (
-                  <div className="form-group">
-                    <label htmlFor="package" className="form-label">
-                      {t('bookings.packageContract')} *
-                    </label>
-                    <select
-                      id="package"
-                      required
-                      value={selectedPackage?.id || ''}
-                      onChange={(e) => handlePackageSelect(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="">{t('bookings.selectAPackage')}</option>
-                      {availablePackages.map(pkg => {
-                        const remaining = pkg.service_max_entries - (pkg.entries_used || 0);
-                        return (
-                          <option key={pkg.id} value={pkg.id}>
-                            {pkg.contract_number} - {pkg.service_name} ({remaining} {t('bookings.entriesRemaining')}) - {pkg.resource_name} @ {pkg.location_name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Package Details */}
-              {selectedPackage && (
-                <div className="form-section">
-                  <h3 className="form-section-title">{t('bookings.packageDetails')}</h3>
-                  <div style={{ 
-                    background: '#f9fafb', 
-                    border: '1px solid #e5e7eb', 
-                    borderRadius: '0.375rem', 
-                    padding: '1rem' 
-                  }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.875rem' }}>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>{t('contracts.contract')}:</span>
-                        <div style={{ fontWeight: '600' }}>{selectedPackage.contract_number}</div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>{t('contracts.service')}:</span>
-                        <div style={{ fontWeight: '500' }}>{selectedPackage.service_name}</div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>{t('contracts.resource')}:</span>
-                        <div style={{ fontWeight: '500' }}>
-                          {getResourceTypeIcon(selectedPackage.resource_type)} {selectedPackage.resource_name}
-                        </div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>{t('contracts.location')}:</span>
-                        <div style={{ fontWeight: '500' }}>{selectedPackage.location_name}</div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>{t('contracts.contractPeriod')}:</span>
-                        <div style={{ fontWeight: '500' }}>
-                          {formatDate(selectedPackage.start_date)} - {formatDate(selectedPackage.end_date)}
-                        </div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280' }}>{t('contracts.remainingEntries')}:</span>
-                        <div style={{ fontWeight: '700', color: remainingEntries > 2 ? '#16a34a' : '#dc2626' }}>
-                          {remainingEntries} / {selectedPackage.service_max_entries}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              {loadingPackages ? (
+                <div className="availability-loading">
+                  <div className="loading-spinner-small"></div>
+                  <span>{t('bookings.loadingPackages')}</span>
+                </div>
+              ) : availablePackages.length === 0 ? (
+                <div className="day-no-bookings">
+                  <p>{t('bookings.noAvailablePackages')}</p>
+                </div>
+              ) : (
+                <div className="form-group">
+                  <label htmlFor="package" className="form-label">
+                    {t('bookings.packageContract')} *
+                  </label>
+                  <select
+                    id="package"
+                    required
+                    value={selectedPackage?.id || ''}
+                    onChange={(e) => handlePackageSelect(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="">{t('bookings.selectAPackage')}</option>
+                    {availablePackages.map(pkg => {
+                      const remaining = pkg.service_max_entries - (pkg.entries_used || 0);
+                      return (
+                        <option key={pkg.id} value={pkg.id}>
+                          {pkg.contract_number} - {pkg.service_name} ({remaining} {t('bookings.entriesRemaining')}) - {pkg.resource_name} @ {pkg.location_name}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
               )}
 
               {/* Reservation Form */}
               {selectedPackage && (
                 <>
-                  <div className="form-section">
-                    <h3 className="form-section-title">{t('reservations.reservationDetails')}</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="reservation_date" className="form-label">
+                        {t('reservations.reservationDate')} *
+                      </label>
+                      <input
+                        id="reservation_date"
+                        type="date"
+                        required
+                        min={getMinSelectableDate()}
+                        max={selectedPackage.end_date}
+                        value={formData.reservation_date}
+                        onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}
+                        className="form-input"
+                      />
+                    </div>
                     
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="reservation_date" className="form-label">
-                          {t('reservations.reservationDate')} *
+                    <div className="form-group">
+                      <label htmlFor="duration_type" className="form-label">
+                        {t('reservations.duration')} *
+                      </label>
+                      <select
+                        id="duration_type"
+                        value={formData.duration_type}
+                        onChange={(e) => setFormData(prev => ({ ...prev, duration_type: e.target.value }))}
+                        className="form-select"
+                      >
+                        <option value="full_day">{t('reservations.fullDayEntry')}</option>
+                        <option value="half_day">{t('reservations.halfDayEntry')}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Time Slot for Half Day */}
+                  {formData.duration_type === 'half_day' && (
+                    <div className="form-group">
+                      <label className="form-label">{t('reservations.timeSlot')} *</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <label style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.75rem', 
+                          padding: '0.75rem', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '0.375rem', 
+                          cursor: 'pointer',
+                          backgroundColor: formData.time_slot === 'morning' ? '#eff6ff' : 'white',
+                          borderColor: formData.time_slot === 'morning' ? '#3b82f6' : '#d1d5db'
+                        }}>
+                          <input
+                            type="radio"
+                            name="time_slot"
+                            value="morning"
+                            checked={formData.time_slot === 'morning'}
+                            onChange={(e) => setFormData(prev => ({ ...prev, time_slot: e.target.value }))}
+                          />
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{t('reservations.morning')}</div>
+                            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>9:00 - 13:00</div>
+                          </div>
                         </label>
-                        <input
-                          id="reservation_date"
-                          type="date"
-                          required
-                          min={getMinSelectableDate()}
-                          max={selectedPackage.end_date}
-                          value={formData.reservation_date}
-                          onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}
-                          className="form-input"
-                        />
-                        <div className="form-help-text">
-                          {t('contracts.availablePeriod')}: {formatDate(selectedPackage.start_date)} {t('contracts.to')} {formatDate(selectedPackage.end_date)}
-                        </div>
-                      </div>
-                      
-                      <div className="form-group">
-                        <label htmlFor="duration_type" className="form-label">
-                          {t('reservations.duration')} *
+                        <label style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.75rem', 
+                          padding: '0.75rem', 
+                          border: '1px solid #d1d5db', 
+                          borderRadius: '0.375rem', 
+                          cursor: 'pointer',
+                          backgroundColor: formData.time_slot === 'afternoon' ? '#eff6ff' : 'white',
+                          borderColor: formData.time_slot === 'afternoon' ? '#3b82f6' : '#d1d5db'
+                        }}>
+                          <input
+                            type="radio"
+                            name="time_slot"
+                            value="afternoon"
+                            checked={formData.time_slot === 'afternoon'}
+                            onChange={(e) => setFormData(prev => ({ ...prev, time_slot: e.target.value }))}
+                          />
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{t('reservations.afternoon')}</div>
+                            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>14:00 - 18:00</div>
+                          </div>
                         </label>
-                        <select
-                          id="duration_type"
-                          value={formData.duration_type}
-                          onChange={(e) => setFormData(prev => ({ ...prev, duration_type: e.target.value }))}
-                          className="form-select"
-                        >
-                          <option value="full_day">{t('reservations.fullDayEntry')}</option>
-                          <option value="half_day">{t('reservations.halfDayEntry')}</option>
-                        </select>
                       </div>
                     </div>
-
-                    {/* Time Slot for Half Day */}
-                    {formData.duration_type === 'half_day' && (
-                      <div className="form-group">
-                        <label className="form-label">{t('reservations.timeSlot')} *</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                          <label style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '0.75rem', 
-                            padding: '0.75rem', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '0.375rem', 
-                            cursor: 'pointer',
-                            backgroundColor: formData.time_slot === 'morning' ? '#eff6ff' : 'white',
-                            borderColor: formData.time_slot === 'morning' ? '#3b82f6' : '#d1d5db'
-                          }}>
-                            <input
-                              type="radio"
-                              name="time_slot"
-                              value="morning"
-                              checked={formData.time_slot === 'morning'}
-                              onChange={(e) => setFormData(prev => ({ ...prev, time_slot: e.target.value }))}
-                            />
-                            <div>
-                              <div style={{ fontWeight: '500' }}>{t('reservations.morning')}</div>
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>9:00 - 13:00</div>
-                            </div>
-                          </label>
-                          <label style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '0.75rem', 
-                            padding: '0.75rem', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '0.375rem', 
-                            cursor: 'pointer',
-                            backgroundColor: formData.time_slot === 'afternoon' ? '#eff6ff' : 'white',
-                            borderColor: formData.time_slot === 'afternoon' ? '#3b82f6' : '#d1d5db'
-                          }}>
-                            <input
-                              type="radio"
-                              name="time_slot"
-                              value="afternoon"
-                              checked={formData.time_slot === 'afternoon'}
-                              onChange={(e) => setFormData(prev => ({ ...prev, time_slot: e.target.value }))}
-                            />
-                            <div>
-                              <div style={{ fontWeight: '500' }}>{t('reservations.afternoon')}</div>
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>14:00 - 18:00</div>
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {/* Availability Check */}
                   {formData.reservation_date && (
                     <div className="availability-check">
-                      <h4>{t('reservations.availabilityCheck')}</h4>
                       {checkingAvailability ? (
                         <div className="availability-loading">
                           <div className="loading-spinner-small"></div>
@@ -785,9 +773,14 @@ const PartnerBookingForm = ({
                               <CheckCircle size={20} />
                               <div className="availability-details">
                                 <p><strong>{t('reservations.resourceAvailable')}</strong></p>
-                                <p>{availabilityStatus.resourceName} is available for your selected time</p>
+                                <p>{availabilityStatus.resourceName}</p>
                                 {availabilityStatus.totalQuantity > 1 && (
-                                  <p>Capacity: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} of {availabilityStatus.totalQuantity} available</p>
+                                  <p>
+                                    {t('reservations.capacityAvailable', {
+                                      available: availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0),
+                                      total: availabilityStatus.totalQuantity
+                                    })}
+                                  </p>
                                 )}
                               </div>
                             </div>
@@ -802,30 +795,6 @@ const PartnerBookingForm = ({
                           )}
                         </div>
                       ) : null}
-                    </div>
-                  )}
-
-                  {/* Booking Summary */}
-                  {formData.reservation_date && availabilityStatus?.available && (
-                    <div style={{ 
-                      background: '#eff6ff', 
-                      border: '1px solid #bfdbfe', 
-                      borderRadius: '0.375rem', 
-                      padding: '1rem',
-                      borderLeft: '4px solid #3b82f6'
-                    }}>
-                      <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e40af' }}>{t('reservations.bookingSummary')}</h4>
-                      <div style={{ fontSize: '0.875rem', color: '#1e40af' }}>
-                        <p>{t('reservations.dateLabel')}: <strong>{formatDate(formData.reservation_date)}</strong></p>
-                        <p>{t('reservations.durationLabel')}: <strong>
-                          {formData.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
-                          {formData.duration_type === 'half_day' && (
-                            <span> - <strong>{formData.time_slot === 'morning' ? t('reservations.morningSlot') : t('reservations.afternoonSlot')}</strong></span>
-                          )}
-                        </strong></p>
-                        <p>{t('reservations.entriesToUse')}: <strong>{entriesNeeded}</strong></p>
-                        <p>{t('reservations.remainingAfter')}: <strong>{remainingEntries - entriesNeeded}</strong></p>
-                      </div>
                     </div>
                   )}
                 </>

@@ -8,14 +8,16 @@ const ImageUpload = ({
   onImagesChange, 
   maxImages = 10, 
   disabled = false,
-  showAltText = false 
+  showAltText = false,
+  onImageDelete = null // Callback for deleting existing images from storage
 }) => {
   const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState(null);
   const dropZoneRef = useRef(null);
 
-  // Handle drag events - now properly dependent on category and disabled state
+  // Handle drag events
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -28,7 +30,7 @@ const ImageUpload = ({
     }
   }, [disabled]);
 
-  // Handle drop event - now properly dependent on category and disabled state
+  // Handle drop event
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -40,7 +42,7 @@ const ImageUpload = ({
     handleFiles(files);
   }, [disabled, images.length, maxImages, category]);
 
-  // Process selected files - now properly dependent on category and images
+  // Process selected files
   const handleFiles = useCallback((files) => {
     const imageFiles = files.filter(file => {
       if (!file.type.startsWith('image/')) {
@@ -94,7 +96,7 @@ const ImageUpload = ({
       dropZone.removeEventListener('dragover', handleDrag);
       dropZone.removeEventListener('drop', handleDrop);
     };
-  }, [handleDrag, handleDrop, category]); // Re-attach when category changes
+  }, [handleDrag, handleDrop, category]);
 
   // Handle file input change
   const handleFileInput = (e) => {
@@ -107,14 +109,32 @@ const ImageUpload = ({
     e.target.value = '';
   };
 
-  // Remove image
-  const removeImage = (imageId) => {
+  // Remove image - now handles both new and existing images
+  const removeImage = async (imageId) => {
+    const imageToRemove = images.find(img => img.id === imageId);
+    
+    if (!imageToRemove) return;
+
+    // If it's an existing image (not new), call the delete callback
+    if (!imageToRemove.isNew && onImageDelete) {
+      setDeletingImageId(imageId);
+      try {
+        // Call the parent's delete handler
+        await onImageDelete(imageToRemove);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        setDeletingImageId(null);
+        return; // Don't remove from UI if deletion failed
+      }
+      setDeletingImageId(null);
+    }
+
+    // Remove from UI
     const updatedImages = images.filter(img => img.id !== imageId);
     
     // Clean up preview URLs for new images
-    const removedImage = images.find(img => img.id === imageId);
-    if (removedImage && removedImage.preview && removedImage.isNew) {
-      URL.revokeObjectURL(removedImage.preview);
+    if (imageToRemove.preview && imageToRemove.isNew) {
+      URL.revokeObjectURL(imageToRemove.preview);
     }
     
     onImagesChange(updatedImages);
@@ -210,12 +230,6 @@ const ImageUpload = ({
                 <img 
                   src={getImageUrl(image)} 
                   alt={image.alt_text || 'Location image'}
-                  onLoad={() => {
-                    // Cleanup preview URL after image loads (for new uploads)
-                    if (image.preview && image.isNew) {
-                      // Don't revoke immediately, let it stay for the preview
-                    }
-                  }}
                 />
                 
                 {/* Image overlay */}
@@ -227,6 +241,7 @@ const ImageUpload = ({
                         onClick={() => moveImage(index, index - 1)}
                         className="image-action-btn move-left"
                         title={t('locations.moveLeft')}
+                        disabled={deletingImageId === image.id}
                       >
                         ←
                       </button>
@@ -238,6 +253,7 @@ const ImageUpload = ({
                         onClick={() => moveImage(index, index + 1)}
                         className="image-action-btn move-right"
                         title={t('locations.moveRight')}
+                        disabled={deletingImageId === image.id}
                       >
                         →
                       </button>
@@ -248,8 +264,13 @@ const ImageUpload = ({
                       onClick={() => removeImage(image.id)}
                       className="image-action-btn remove"
                       title={t('common.delete')}
+                      disabled={deletingImageId === image.id}
                     >
-                      <Trash2 size={14} />
+                      {deletingImageId === image.id ? (
+                        <div className="deleting-spinner" />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -258,6 +279,13 @@ const ImageUpload = ({
                 {image.isNew && (
                   <div className="image-status new">
                     {t('locations.newImage')}
+                  </div>
+                )}
+
+                {/* Deleting indicator */}
+                {deletingImageId === image.id && (
+                  <div className="image-status deleting">
+                    {t('common.deleting') || 'Deleting...'}
                   </div>
                 )}
 
@@ -274,6 +302,7 @@ const ImageUpload = ({
                     value={image.alt_text || ''}
                     onChange={(e) => updateAltText(image.id, e.target.value)}
                     className="alt-text-input"
+                    disabled={deletingImageId === image.id}
                   />
                 </div>
               )}

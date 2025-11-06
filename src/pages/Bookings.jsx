@@ -24,6 +24,9 @@ const Bookings = () => {
   // Partner booking modal state
   const [showPartnerBooking, setShowPartnerBooking] = useState(false);
   
+  // Customer available packages state
+  const [hasAvailablePackages, setHasAvailablePackages] = useState(false);
+  
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
@@ -37,12 +40,99 @@ const Bookings = () => {
       if (isPartnerAdmin) {
         fetchFilterOptions();
       }
+      if (isCustomer) {
+        checkAvailablePackages();
+      }
     }
   }, [profile]);
 
   useEffect(() => {
     applyFilters();
   }, [bookings, filters]);
+
+  const checkAvailablePackages = async () => {
+    try {
+      console.log('Checking available packages for user:', user.id);
+      
+      // Get customer ID
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (customerError) {
+        console.error('Error fetching customer:', customerError);
+        return;
+      }
+
+      if (!customerData) {
+        console.log('No customer data found for user');
+        return;
+      }
+
+      console.log('Customer ID:', customerData.id);
+
+      // Check for active package contracts with available reservations
+      const { data: packageContracts, error } = await supabase
+        .from('contracts')
+        .select(`
+          id,
+          contract_number,
+          service_name,
+          service_max_entries,
+          contract_status,
+          is_archived,
+          package_reservations (
+            id,
+            reservation_status
+          )
+        `)
+        .eq('customer_id', customerData.id)
+        .eq('service_type', 'pacchetto')
+        .eq('contract_status', 'active')
+        .eq('is_archived', false);
+
+      if (error) {
+        console.error('Error fetching package contracts:', error);
+        throw error;
+      }
+
+      console.log('Package contracts found:', packageContracts);
+
+      if (!packageContracts || packageContracts.length === 0) {
+        console.log('No active package contracts found');
+        setHasAvailablePackages(false);
+        return;
+      }
+
+      // Check if any package has available reservations
+      const hasAvailable = packageContracts.some(contract => {
+        // Count confirmed reservations
+        const usedReservations = contract.package_reservations?.filter(
+          r => r.reservation_status === 'confirmed'
+        ).length || 0;
+        
+        // Use service_max_entries as the total (this is what's used in Contracts.jsx)
+        const totalReservations = contract.service_max_entries || 0;
+        const available = usedReservations < totalReservations;
+        
+        console.log(`Contract ${contract.contract_number}:`, {
+          total: totalReservations,
+          used: usedReservations,
+          available: available
+        });
+        
+        return available;
+      });
+
+      console.log('Has available packages:', hasAvailable);
+      setHasAvailablePackages(hasAvailable);
+    } catch (error) {
+      console.error('Error checking available packages:', error);
+      setHasAvailablePackages(false);
+    }
+  };
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -221,10 +311,13 @@ const Bookings = () => {
   };
 
   const handlePartnerBookingSuccess = (reservation) => {
-    console.log('Partner booking successful:', reservation);
+    console.log('Booking successful:', reservation);
     fetchBookings(); // Refresh bookings
+    if (isCustomer) {
+      checkAvailablePackages(); // Refresh available packages for customer
+    }
     setShowPartnerBooking(false);
-    toast.success('Booking created successfully for customer');
+    toast.success(isCustomer ? 'Reservation created successfully' : 'Booking created successfully for customer');
   };
 
   const formatDate = (date) => {
@@ -471,6 +564,9 @@ const Bookings = () => {
 
   if (loading) return <div className="bookings-loading">{t('common.loading')}</div>;
 
+  // Show booking button if partner admin OR customer with available packages
+  const showBookingButton = isPartnerAdmin || (isCustomer && hasAvailablePackages);
+
   return (
     <div className="bookings-page">
       {/* Header */}
@@ -485,18 +581,17 @@ const Bookings = () => {
           </p>
         </div>
         <div className="bookings-controls">
-          {/* Partner Booking Button - Only visible to partner admins */}
-          {isPartnerAdmin && (
+          {/* Booking Button - Visible to partner admins AND customers with available packages */}
+          {showBookingButton && (
             <button 
               className="partner-booking-btn" 
               onClick={() => setShowPartnerBooking(true)}
-              title={t('bookings.bookForCustomer')}
+              title={isCustomer ? t('bookings.bookPackage') : t('bookings.bookForCustomer')}
             >
               <Plus size={16} />
-              {t('bookings.bookForCustomer')}
+              {isCustomer ? t('bookings.newReservation') : t('bookings.bookForCustomer')}
             </button>
           )}
-
 
           <div className="view-selector">
             <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>
@@ -610,7 +705,7 @@ const Bookings = () => {
         </div>
       </div>
 
-      {/* Partner Booking Modal */}
+      {/* Partner/Customer Booking Modal */}
       <PartnerBookingForm
         isOpen={showPartnerBooking}
         onClose={() => setShowPartnerBooking(false)}

@@ -74,7 +74,6 @@
 
 .dropdown-menu {
   position: absolute;
-  top: 100%;
   right: 0;
   background: white;
   border: 1px solid #e5e7eb;
@@ -85,7 +84,46 @@
   max-height: 300px;
   overflow-y: auto;
   overflow-x: visible;
+}
+
+/* DYNAMIC POSITIONING - Opens downward by default */
+.dropdown-menu.dropdown-bottom {
+  top: 100%;
+  bottom: auto;
   margin-top: 0.25rem;
+  animation: dropdownSlideDown 0.15s ease-out;
+}
+
+/* DYNAMIC POSITIONING - Opens upward when at bottom of page */
+.dropdown-menu.dropdown-top {
+  top: auto;
+  bottom: 100%;
+  margin-bottom: 0.25rem;
+  animation: dropdownSlideUp 0.15s ease-out;
+}
+
+/* Animation for dropdown opening downward */
+@keyframes dropdownSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation for dropdown opening upward */
+@keyframes dropdownSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-item {

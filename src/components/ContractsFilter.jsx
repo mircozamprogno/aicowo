@@ -1,4 +1,4 @@
-import { Filter, RotateCcw, X } from 'lucide-react';
+import { RotateCcw, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import '../styles/components/contractsfilter.css';
@@ -14,7 +14,7 @@ const ContractsFilter = ({
   getPaymentStatus
 }) => {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState(false);
+  // const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState({
     customer: '',
     location: '',
@@ -234,223 +234,207 @@ const ContractsFilter = ({
 
   return (
     <div className="contracts-filter">
-      <div className="filter-header">
-        <button 
-          className={`filter-toggle-btn ${isExpanded ? 'active' : ''}`}
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <Filter size={16} />
-          <span>{t('filters.filters')}</span>
-          {activeFilterCount > 0 && (
-            <span className="filter-count-badge">{activeFilterCount}</span>
-          )}
-        </button>
-        
-        {hasActiveFilters && (
-          <button 
-            className="clear-filters-btn"
-            onClick={clearAllFilters}
-            title={t('filters.clearAll')}
-          >
-            <RotateCcw size={14} />
-            <span>{t('filters.clearAll')}</span>
-          </button>
-        )}
-      </div>
-
-      {isExpanded && (
-        <div className="filter-content">
-          <div className="filter-grid">
-            {/* Customer Filter - Hidden for customer users */}
-            {!isCustomerMode && uniqueCustomers.length > 0 && (
-              <div className="filter-group">
-                <label className="filter-label">
-                  {t('filters.customer')}
-                </label>
-                <select
-                  className="filter-select"
-                  value={filters.customer}
-                  onChange={(e) => handleFilterChange('customer', e.target.value)}
-                >
-                  <option value="">{t('filters.allCustomers')}</option>
-                  {uniqueCustomers.map(customer => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.display_name || customer.company_name || 
-                       `${customer.first_name} ${customer.second_name}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Location Filter */}
-            {uniqueLocations.length > 0 && (
-              <div className="filter-group">
-                <label className="filter-label">
-                  {t('filters.location')}
-                </label>
-                <select
-                  className="filter-select"
-                  value={filters.location}
-                  onChange={(e) => handleFilterChange('location', e.target.value)}
-                >
-                  <option value="">{t('filters.allLocations')}</option>
-                  {uniqueLocations.map(location => (
-                    <option key={location.id} value={location.id}>
-                      {location.location_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Date Range Filters */}
+      <div className="filter-content">
+        <div className="filter-grid">
+          {/* Customer Filter - Hidden for customer users */}
+          {!isCustomerMode && uniqueCustomers.length > 0 && (
             <div className="filter-group">
               <label className="filter-label">
-                {t('filters.dateFrom')}
-              </label>
-              <input
-                type="date"
-                className="filter-input"
-                value={filters.dateFrom}
-                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">
-                {t('filters.dateTo')}
-              </label>
-              <input
-                type="date"
-                className="filter-input"
-                value={filters.dateTo}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="filter-group">
-              <label className="filter-label">
-                {t('filters.status')}
+                {t('filters.customer')}
               </label>
               <select
                 className="filter-select"
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
+                value={filters.customer}
+                onChange={(e) => handleFilterChange('customer', e.target.value)}
               >
-                <option value="">{t('filters.allStatuses')}</option>
-                {statusOptions.map(option => (
+                <option value="">{t('filters.allCustomers')}</option>
+                {uniqueCustomers.map(customer => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.display_name || customer.company_name || 
+                    `${customer.first_name} ${customer.second_name}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Location Filter */}
+          {uniqueLocations.length > 0 && (
+            <div className="filter-group">
+              <label className="filter-label">
+                {t('filters.location')}
+              </label>
+              <select
+                className="filter-select"
+                value={filters.location}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+              >
+                <option value="">{t('filters.allLocations')}</option>
+                {uniqueLocations.map(location => (
+                  <option key={location.id} value={location.id}>
+                    {location.location_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Date Range Filters */}
+          <div className="filter-group">
+            <label className="filter-label">
+              {t('filters.dateFrom')}
+            </label>
+            <input
+              type="date"
+              className="filter-input"
+              value={filters.dateFrom}
+              onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+            />
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">
+              {t('filters.dateTo')}
+            </label>
+            <input
+              type="date"
+              className="filter-input"
+              value={filters.dateTo}
+              onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="filter-group">
+            <label className="filter-label">
+              {t('filters.status')}
+            </label>
+            <select
+              className="filter-select"
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+            >
+              <option value="">{t('filters.allStatuses')}</option>
+              {statusOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Payment Status Filter - Only show if user can manage payments */}
+          {canManagePayments && (
+            <div className="filter-group">
+              <label className="filter-label">
+                {t('filters.paymentStatus')}
+              </label>
+              <select
+                className="filter-select"
+                value={filters.paymentStatus}
+                onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+              >
+                <option value="">{t('filters.allPaymentStatuses')}</option>
+                {paymentStatusOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
             </div>
-
-            {/* Payment Status Filter - Only show if user can manage payments */}
-            {canManagePayments && (
-              <div className="filter-group">
-                <label className="filter-label">
-                  {t('filters.paymentStatus')}
-                </label>
-                <select
-                  className="filter-select"
-                  value={filters.paymentStatus}
-                  onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
-                >
-                  <option value="">{t('filters.allPaymentStatuses')}</option>
-                  {paymentStatusOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <div className="active-filters">
-              <span className="active-filters-label">{t('filters.activeFilters')}:</span>
-              <div className="active-filters-list">
-                {filters.customer && (
-                  <span className="filter-tag">
-                    {t('filters.customer')}: {uniqueCustomers.find(c => c.id.toString() === filters.customer)?.display_name}
-                    <button 
-                      className="filter-tag-remove"
-                      onClick={() => handleFilterChange('customer', '')}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-                
-                {filters.location && (
-                  <span className="filter-tag">
-                    {t('filters.location')}: {uniqueLocations.find(l => l.id.toString() === filters.location)?.location_name}
-                    <button 
-                      className="filter-tag-remove"
-                      onClick={() => handleFilterChange('location', '')}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {filters.dateFrom && (
-                  <span className="filter-tag">
-                    {t('filters.dateFrom')}: {new Date(filters.dateFrom).toLocaleDateString('it-IT')}
-                    <button 
-                      className="filter-tag-remove"
-                      onClick={() => handleFilterChange('dateFrom', '')}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {filters.dateTo && (
-                  <span className="filter-tag">
-                    {t('filters.dateTo')}: {new Date(filters.dateTo).toLocaleDateString('it-IT')}
-                    <button 
-                      className="filter-tag-remove"
-                      onClick={() => handleFilterChange('dateTo', '')}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {filters.status && (
-                  <span className="filter-tag">
-                    {t('filters.status')}: {statusOptions.find(s => s.value === filters.status)?.label}
-                    <button 
-                      className="filter-tag-remove"
-                      onClick={() => handleFilterChange('status', '')}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-
-                {filters.paymentStatus && (
-                  <span className="filter-tag">
-                    {t('filters.paymentStatus')}: {paymentStatusOptions.find(p => p.value === filters.paymentStatus)?.label}
-                    <button 
-                      className="filter-tag-remove"
-                      onClick={() => handleFilterChange('paymentStatus', '')}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
           )}
         </div>
-      )}
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <div className="active-filters">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <span className="active-filters-label">{t('filters.activeFilters')}:</span>
+              <button 
+                className="clear-filters-btn"
+                onClick={clearAllFilters}
+                title={t('filters.clearAll')}
+              >
+                <RotateCcw size={14} />
+                <span>{t('filters.clearAll')}</span>
+              </button>
+            </div>
+            <div className="active-filters-list">
+              {filters.customer && (
+                <span className="filter-tag">
+                  {t('filters.customer')}: {uniqueCustomers.find(c => c.id.toString() === filters.customer)?.display_name}
+                  <button 
+                    className="filter-tag-remove"
+                    onClick={() => handleFilterChange('customer', '')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+              
+              {filters.location && (
+                <span className="filter-tag">
+                  {t('filters.location')}: {uniqueLocations.find(l => l.id.toString() === filters.location)?.location_name}
+                  <button 
+                    className="filter-tag-remove"
+                    onClick={() => handleFilterChange('location', '')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {filters.dateFrom && (
+                <span className="filter-tag">
+                  {t('filters.dateFrom')}: {new Date(filters.dateFrom).toLocaleDateString('it-IT')}
+                  <button 
+                    className="filter-tag-remove"
+                    onClick={() => handleFilterChange('dateFrom', '')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {filters.dateTo && (
+                <span className="filter-tag">
+                  {t('filters.dateTo')}: {new Date(filters.dateTo).toLocaleDateString('it-IT')}
+                  <button 
+                    className="filter-tag-remove"
+                    onClick={() => handleFilterChange('dateTo', '')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {filters.status && (
+                <span className="filter-tag">
+                  {t('filters.status')}: {statusOptions.find(s => s.value === filters.status)?.label}
+                  <button 
+                    className="filter-tag-remove"
+                    onClick={() => handleFilterChange('status', '')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+
+              {filters.paymentStatus && (
+                <span className="filter-tag">
+                  {t('filters.paymentStatus')}: {paymentStatusOptions.find(p => p.value === filters.paymentStatus)?.label}
+                  <button 
+                    className="filter-tag-remove"
+                    onClick={() => handleFilterChange('paymentStatus', '')}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

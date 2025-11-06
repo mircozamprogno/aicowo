@@ -1,6 +1,7 @@
-import { Image, MapPin, Save, Upload, User, X } from 'lucide-react';
+import { Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
+import EmailTemplateList from '../components/email/EmailTemplateList';
 import LocationsList from '../components/partners/LocationsList';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -8,7 +9,7 @@ import { supabase } from '../services/supabase';
 
 const Settings = () => {
   const { profile, user } = useAuth();
-  const { t } = useTranslation();
+  const { t, language, changeLanguage } = useTranslation();
   const [customerData, setCustomerData] = useState(null);
   const [partnerData, setPartnerData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,13 @@ const Settings = () => {
   
   // Location management states
   const [showLocations, setShowLocations] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'locations'
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'locations', or 'email-templates'
+  
+  // Email banner upload states
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [currentBannerUrl, setCurrentBannerUrl] = useState(null);
   
   // Determine if user is admin partner or regular user
   const isAdminPartner = profile?.role === 'admin';
@@ -53,7 +60,9 @@ const Settings = () => {
     notes: '',
     // Partner-specific fields
     partner_type: 'company',
-    partner_status: 'active'
+    partner_status: 'active',
+    // Language preference
+    preferred_language: language || 'it'
   });
 
   useEffect(() => {
@@ -61,6 +70,7 @@ const Settings = () => {
       if (isAdminPartner || isSuperAdmin) {
         fetchPartnerData();
         loadCurrentLogo();
+        loadCurrentBanner();
       } else {
         fetchCustomerData();
       }
@@ -95,6 +105,37 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Error loading current logo:', error);
+    }
+  };
+
+  const loadCurrentBanner = async () => {
+    if (!profile?.partner_uuid) return;
+
+    try {
+      // Check if email banner exists in storage
+      const { data: files, error } = await supabase.storage
+        .from('partners')
+        .list(`${profile.partner_uuid}`, {
+          search: 'email_banner'
+        });
+
+      if (error) {
+        console.log('No existing email banner found or error:', error);
+        return;
+      }
+
+      // Find email banner file
+      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+      
+      if (bannerFile) {
+        const { data } = supabase.storage
+          .from('partners')
+          .getPublicUrl(`${profile.partner_uuid}/${bannerFile.name}`);
+        
+        setCurrentBannerUrl(data.publicUrl);
+      }
+    } catch (error) {
+      console.error('Error loading current email banner:', error);
     }
   };
 
@@ -286,6 +327,143 @@ const Settings = () => {
     }
   };
 
+  // Banner upload handlers
+  const handleBannerSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 10MB original)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image file size must be less than 10MB');
+      return;
+    }
+
+    setBannerUploading(true);
+
+    try {
+      // Process and compress image
+      const processedBlob = await processImage(file);
+      
+      // Create File object from blob
+      const processedFile = new File([processedBlob], 'email_banner.png', {
+        type: 'image/png'
+      });
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(processedBlob);
+      setBannerPreview(previewUrl);
+
+      // Automatically upload after processing
+      await uploadBannerFile(processedFile);
+
+    } catch (error) {
+      console.error('Error processing banner image:', error);
+      toast.error('Error processing image. Please try another file.');
+      setBannerUploading(false);
+    }
+  };
+
+  const uploadBannerFile = async (file) => {
+    if (!file || !profile?.partner_uuid) return;
+
+    try {
+      // Delete existing banner first
+      try {
+        const { data: existingFiles } = await supabase.storage
+          .from('partners')
+          .list(`${profile.partner_uuid}`, {
+            search: 'email_banner'
+          });
+
+        if (existingFiles && existingFiles.length > 0) {
+          for (const existingFile of existingFiles) {
+            await supabase.storage
+              .from('partners')
+              .remove([`${profile.partner_uuid}/${existingFile.name}`]);
+          }
+        }
+      } catch (deleteError) {
+        console.log('No existing banner to delete or error:', deleteError);
+      }
+
+      // Upload new banner
+      const fileName = 'email_banner.png';
+      const filePath = `${profile.partner_uuid}/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('partners')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('partners')
+        .getPublicUrl(filePath);
+
+      setCurrentBannerUrl(urlData.publicUrl);
+      setBannerPreview(null); // Clear preview since we now have current banner
+
+      toast.success('Email banner uploaded successfully!');
+
+    } catch (error) {
+      console.error('Error uploading email banner:', error);
+      
+      // Provide more specific error messages
+      if (error.message?.includes('row-level security policy')) {
+        toast.error('Storage permission error. Please contact support to configure bucket policies.');
+      } else if (error.message?.includes('storage')) {
+        toast.error('Storage error. Please try again or contact support.');
+      } else {
+        toast.error('Error uploading email banner. Please try again.');
+      }
+      
+      // Clear preview on error
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+        setBannerPreview(null);
+      }
+    } finally {
+      setBannerUploading(false);
+    }
+  };
+
+  const handleBannerRemove = async () => {
+    if (!profile?.partner_uuid || !currentBannerUrl) return;
+
+    try {
+      const { error } = await supabase.storage
+        .from('partners')
+        .remove([`${profile.partner_uuid}/email_banner.png`]);
+
+      if (error) throw error;
+
+      setCurrentBannerUrl(null);
+      toast.success('Email banner removed successfully!');
+
+    } catch (error) {
+      console.error('Error removing email banner:', error);
+      toast.error('Error removing email banner. Please try again.');
+    }
+  };
+
+  const cancelBannerSelection = () => {
+    setBannerUploading(false);
+    if (bannerPreview) {
+      URL.revokeObjectURL(bannerPreview);
+      setBannerPreview(null);
+    }
+  };
+
   const fetchPartnerData = async () => {
     try {
       console.log('Fetching partner data for admin:', profile.partner_uuid);
@@ -329,7 +507,8 @@ const Settings = () => {
           billing_country: 'Italy', // Default
           notes: '', // Not in partners table
           partner_type: data.partner_type || 'company',
-          partner_status: data.partner_status || 'active'
+          partner_status: data.partner_status || 'active',
+          preferred_language: language || 'it'
         });
       }
     } catch (error) {
@@ -382,7 +561,8 @@ const Settings = () => {
           billing_country: data.billing_country || 'Italy',
           notes: data.notes || '',
           partner_type: 'company',
-          partner_status: 'active'
+          partner_status: 'active',
+          preferred_language: language || 'it'
         });
       } else {
         console.log('No customer data found, will create new record');
@@ -390,7 +570,8 @@ const Settings = () => {
           ...prev,
           first_name: profile.first_name || '',
           second_name: profile.last_name || '',
-          email: user.email || ''
+          email: user.email || '',
+          preferred_language: language || 'it'
         }));
       }
     } catch (error) {
@@ -407,6 +588,15 @@ const Settings = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleLanguageChange = (e) => {
+    const newLanguage = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      preferred_language: newLanguage
+    }));
+    changeLanguage(newLanguage);
   };
 
   const handleSubmit = async (e) => {
@@ -527,6 +717,14 @@ const Settings = () => {
             >
               <MapPin size={20} />
               {t('locations.locations') || 'Locations'}
+            </button>
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'email-templates' ? 'active' : ''}`}
+              onClick={() => setActiveTab('email-templates')}
+            >
+              <Mail size={20} />
+              {t('settings.emailTemplates') || 'Email Templates'}
             </button>
           </div>
         </div>
@@ -741,6 +939,24 @@ const Settings = () => {
                     onChange={handleChange}
                   />
                 </div>
+              </div>
+
+              {/* Language Selection */}
+              <div className="form-group">
+                <label htmlFor="preferred_language" className="form-label">
+                  <Globe size={16} style={{ marginRight: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
+                  {t('settings.language') || 'Language'}
+                </label>
+                <select
+                  id="preferred_language"
+                  name="preferred_language"
+                  className="form-select"
+                  value={formData.preferred_language}
+                  onChange={handleLanguageChange}
+                >
+                  <option value="it">Italiano</option>
+                  <option value="en">English</option>
+                </select>
               </div>
 
               {/* Codice Fiscale only for users, not partners */}
@@ -1132,6 +1348,160 @@ const Settings = () => {
               onClose={handleLocationsModalClose}
               embedded={true}
             />
+          </div>
+        )}
+
+        {/* Email Templates Tab Content - Only for admin partners */}
+        {activeTab === 'email-templates' && (isAdminPartner || isSuperAdmin) && (
+          <div className="email-templates-tab-content">
+            <div className="email-templates-tab-header">
+              <h3 className="email-templates-tab-title">
+                <Mail size={20} />
+                {t('settings.emailTemplateCustomization') || 'Email Template Customization'}
+              </h3>
+              <p className="email-templates-tab-description">
+                {t('settings.customizeEmailBanner') || 'Customize the banner and content that appears in your email templates'}
+              </p>
+            </div>
+
+            <div className="email-templates-content">
+              {/* Email Banner Upload Section */}
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <Image size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
+                  {t('settings.emailBanner') || 'Email Banner'}
+                </h3>
+                <p className="form-section-description">
+                  {t('settings.emailBannerDescription') || 'Upload a banner image that will appear at the top of your email templates. Recommended size: 800x200px. Supported formats: JPG, PNG, GIF.'}
+                </p>
+
+                <div className="banner-upload-section">
+                  {/* Current Banner Display */}
+                  {currentBannerUrl && !bannerPreview && (
+                    <div className="current-banner-container">
+                      <div className="banner-display-card">
+                        <div className="banner-header">
+                          <h4 className="banner-section-subtitle">
+                            {t('settings.currentBanner') || 'Current Banner'}
+                          </h4>
+                        </div>
+                        <div className="banner-image-container">
+                          <img 
+                            src={currentBannerUrl} 
+                            alt="Current email banner" 
+                            className="banner-image"
+                          />
+                        </div>
+                      </div>
+                      <div className="banner-actions-container">
+                        <label 
+                          htmlFor="banner-upload-change" 
+                          className="banner-btn banner-btn-primary"
+                        >
+                          <Upload size={16} />
+                          {t('settings.changeBanner') || 'Change Banner'}
+                        </label>
+                        <input
+                          id="banner-upload-change"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBannerSelect}
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleBannerRemove}
+                          className="banner-btn banner-btn-danger"
+                        >
+                          <X size={16} />
+                          {t('settings.removeBanner') || 'Remove Banner'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Banner Preview */}
+                  {bannerPreview && (
+                    <div className="banner-preview-container">
+                      <div className="banner-display-card">
+                        <div className="banner-header">
+                          <h4 className="banner-section-subtitle">
+                            {bannerUploading ? 
+                              (t('settings.uploadingBanner') || 'Uploading Banner...') : 
+                              (t('settings.bannerPreview') || 'Banner Preview')
+                            }
+                          </h4>
+                          {bannerUploading && (
+                            <div className="upload-status">
+                              <div className="loading-spinner-small"></div>
+                              <span className="upload-status-text">
+                                {t('settings.processingAndUploading') || 'Processing and uploading...'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="banner-image-container">
+                          <img 
+                            src={bannerPreview} 
+                            alt="Banner preview" 
+                            className={`banner-image ${bannerUploading ? 'uploading' : ''}`}
+                          />
+                        </div>
+                      </div>
+                      {!bannerUploading && (
+                        <div className="banner-actions-container">
+                          <button
+                            type="button"
+                            onClick={cancelBannerSelection}
+                            className="banner-btn banner-btn-secondary"
+                          >
+                            <X size={16} />
+                            {t('common.cancel') || 'Cancel'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Upload Banner Input - First time */}
+                  {!bannerPreview && !currentBannerUrl && (
+                    <div className="banner-upload-empty">
+                      <div className="upload-placeholder">
+                        <div className="upload-icon">
+                          <Upload size={32} />
+                        </div>
+                        <div className="upload-text">
+                          <h4>{t('settings.uploadEmailBanner') || 'Upload Email Banner'}</h4>
+                          <p>JPG, PNG, GIF up to 10MB</p>
+                          <p className="upload-recommendation">Recommended: 800x200px</p>
+                        </div>
+                      </div>
+                      <div className="banner-actions-container">
+                        <label 
+                          htmlFor="banner-upload-new" 
+                          className="banner-btn banner-btn-primary banner-btn-large"
+                        >
+                          <Upload size={16} />
+                          {t('settings.uploadBanner') || 'Upload Banner'}
+                        </label>
+                        <input
+                          id="banner-upload-new"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBannerSelect}
+                          style={{ display: 'none' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email Template Management Section */}
+              <div className="form-section">
+                <EmailTemplateList partnerUuid={profile.partner_uuid} />
+              </div>
+            </div>
           </div>
         )}
       </div>

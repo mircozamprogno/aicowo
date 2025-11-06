@@ -9,6 +9,7 @@ class OneSignalEmailService {
     this.userTemplateId = import.meta.env.VITE_ONESIGNAL_USER_TEMPLATE_ID;
     this.customerBookingTemplateId = import.meta.env.VITE_ONESIGNAL_CUSTOMER_BOOKING_TEMPLATE_ID;
     this.partnerBookingTemplateId = import.meta.env.VITE_ONESIGNAL_PARTNER_BOOKING_TEMPLATE_ID;
+    this.uniqueTemplateId = import.meta.env.VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID;
     this.useOneSignal = import.meta.env.VITE_USE_ONESIGNAL === 'true';
     
     // OneSignal API endpoint
@@ -40,43 +41,176 @@ class OneSignalEmailService {
     }
   }
 
-  /**
-   * Send invitation email via OneSignal
-   * @param {Object} invitationData - The invitation data
-   * @param {string} invitationLink - The invitation registration link
-   * @returns {Promise<boolean>} - Success status
-   */
-  async sendInvitation(invitationData, invitationLink) {
-    if (!this.isConfigured) {
-      console.error('OneSignal email service not configured');
-      // In development, just log the email details
-      this.logEmailDetails(invitationData, invitationLink);
-      return false;
-    }
-
-    try {
-      // Determine which template to use based on role
-      const templateId = invitationData.invited_role === 'admin' 
-        ? this.adminTemplateId 
-        : this.userTemplateId;
-
-      // Prepare template substitutions
-      const templateSubstitutions = this.prepareTemplateSubstitutions(invitationData, invitationLink);
-
-      // Send notification via OneSignal
-      const success = await this.sendOneSignalNotification({
-        email: invitationData.invited_email,
-        templateId: templateId,
-        substitutions: templateSubstitutions,
-        invitationData: invitationData
-      });
-
-      return success;
-    } catch (error) {
-      console.error('Error sending invitation via OneSignal:', error);
-      return false;
-    }
+/**
+ * Send invitation email via OneSignal
+ * @param {Object} invitationData - The invitation data
+ * @param {string} invitationLink - The invitation registration link
+ * @returns {Promise<boolean>} - Success status
+ */
+async sendInvitation(invitationData, invitationLink) {
+  if (!this.isConfigured) {
+    console.error('OneSignal email service not configured');
+    this.logEmailDetails(invitationData, invitationLink);
+    return false;
   }
+
+  try {
+    // For user invitations, use unique template with custom body
+    if (invitationData.invited_role === 'user') {
+      return await this.sendCustomerInvitation(invitationData, invitationLink);
+    }
+
+    // For admin invitations, keep legacy system (for now)
+    const templateId = this.adminTemplateId;
+    const partnerName = invitationData.partners?.company_name ||
+                       (invitationData.partners?.first_name && invitationData.partners?.second_name 
+                         ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                         : invitationData.partners?.first_name || 'the partner');
+    
+    const firstName = invitationData.invited_first_name || 'User';
+    const lastName = invitationData.invited_last_name || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    const userUUID = invitationData.partner_uuid;
+    const emailSubject = `Invito a unirti a ${partnerName}`;
+
+    const payload = {
+      app_id: this.appId,
+      email_from_name: "PowerCowo",
+      email_subject: emailSubject,
+      email_from_address: "info@tuttoapposto.info",
+      email_reply_to_address: "noreply@proton.me",
+      template_id: templateId,
+      target_channel: "email",
+      include_email_tokens: [invitationData.invited_email],
+      include_aliases: {
+        external_id: [userUUID]
+      },
+      custom_data: {
+        partner_name: partnerName,
+        link_contract: invitationLink,
+        personal_msg: invitationData.custom_message || ''
+      }
+    };
+
+    console.log('Sending admin invitation with legacy template:', payload);
+    return await this.sendOneSignalRequest(payload);
+  } catch (error) {
+    console.error('Error in sendInvitation:', error);
+    return false;
+  }
+}
+
+/**
+ * Send customer invitation using unique template with custom body
+ * @param {Object} invitationData - The invitation data
+ * @param {string} invitationLink - The invitation registration link
+ * @returns {Promise<boolean>} - Success status
+ */
+async sendCustomerInvitation(invitationData, invitationLink) {
+  if (!this.uniqueTemplateId) {
+    console.error('Unique template ID not configured');
+    return false;
+  }
+
+  try {
+    // Dynamic import to avoid circular dependencies
+    const { supabase } = await import('./supabase');
+    const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
+
+    // Fetch partner data for email settings
+    const { data: partnerData, error: partnerError } = await supabase
+      .from('partners')
+      .select('company_name, email')
+      .eq('partner_uuid', invitationData.partner_uuid)
+      .single();
+
+    if (partnerError || !partnerData) {
+      console.error('Error fetching partner data:', partnerError);
+      return false;
+    }
+
+    // Fetch custom template from database
+    const { data: templateData, error: templateError } = await supabase
+      .from('email_templates')
+      .select('body_html')
+      .eq('partner_uuid', invitationData.partner_uuid)
+      .eq('template_type', 'customer_invitation')
+      .single();
+
+    // Use custom template or fallback to default
+    let bodyHtml;
+    if (templateData && !templateError) {
+      bodyHtml = templateData.body_html;
+      console.log('Using custom customer_invitation template');
+    } else {
+      // Fallback to default template (assuming language is 'it')
+      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_invitation || 
+                             DEFAULT_EMAIL_TEMPLATES.en?.customer_invitation;
+      bodyHtml = defaultTemplate?.body || '<p>Welcome!</p>';
+      console.log('Using default customer_invitation template');
+    }
+
+    // Replace variables with actual data
+    const partnerName = partnerData.company_name || 
+                       invitationData.partners?.company_name ||
+                       (invitationData.partners?.first_name && invitationData.partners?.second_name 
+                         ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+                         : invitationData.partners?.first_name || 'Partner');
+    
+    bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+    bodyHtml = bodyHtml.replace(/\{\{invitation_link\}\}/g, invitationLink);
+    bodyHtml = bodyHtml.replace(/\{\{custom_message\}\}/g, invitationData.custom_message || '');
+
+    // Fetch banner URL
+    const { data: files } = await supabase.storage
+      .from('partners')
+      .list(`${invitationData.partner_uuid}`, { search: 'email_banner' });
+
+    const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+    let bannerUrl = '';
+    
+    if (bannerFile) {
+      const { data } = supabase.storage
+        .from('partners')
+        .getPublicUrl(`${invitationData.partner_uuid}/${bannerFile.name}`);
+      bannerUrl = data.publicUrl;
+    }
+
+    // Send using unique template with partner email settings
+    const emailSubject = `Invito a unirti a ${partnerName}`;
+
+    const payload = {
+      app_id: this.appId,
+      email_from_name: partnerData.company_name || partnerName,
+      email_subject: emailSubject,
+      email_from_address: "info@tuttoapposto.info",
+      email_reply_to_address: "noreply@proton.me",
+      template_id: this.uniqueTemplateId,
+      target_channel: "email",
+      include_email_tokens: [invitationData.invited_email],
+      include_aliases: {
+        external_id: [invitationData.partner_uuid]
+      },
+      custom_data: {
+        banner_url: bannerUrl,
+        body_html: bodyHtml
+      }
+    };
+
+    console.log('Sending customer invitation with unique template:', {
+      email: invitationData.invited_email,
+      fromName: partnerData.company_name,
+      fromEmail: partnerData.email,
+      bannerUrl,
+      bodyLength: bodyHtml.length
+    });
+
+    return await this.sendOneSignalRequest(payload);
+  } catch (error) {
+    console.error('Error sending customer invitation:', error);
+    return false;
+  }
+}
 
   /**
    * Send booking confirmation emails to both customer and partner
@@ -427,6 +561,57 @@ class OneSignalEmailService {
     };
   }
 
+
+  /**
+   * Send test email using unique template
+   * @param {string} recipientEmail - Recipient email
+   * @param {string} bannerUrl - Banner URL
+   * @param {string} bodyHtml - HTML body content
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendTestEmail(recipientEmail, bannerUrl, bodyHtml) {
+    if (!this.isConfigured || !this.uniqueTemplateId) {
+      console.error('OneSignal unique template not configured');
+      console.log('Config check:', {
+        isConfigured: this.isConfigured,
+        uniqueTemplateId: this.uniqueTemplateId,
+        appId: this.appId,
+        apiKey: this.apiKey ? 'SET' : 'NOT SET'
+      });
+      return false;
+    }
+
+    try {
+      const payload = {
+        app_id: this.appId,
+        email_from_name: "PowerCowo",
+        email_subject: "Test Email - Template Preview",
+        email_from_address: "info@tuttoapposto.info",
+        email_reply_to_address: "noreply@proton.me",
+        template_id: this.uniqueTemplateId,
+        target_channel: "email",
+        include_email_tokens: [recipientEmail],
+        custom_data: {
+          banner_url: bannerUrl || '',
+          body_html: bodyHtml
+        }
+      };
+
+      // DEBUG: Log complete payload
+      console.log('=== ONESIGNAL TEST EMAIL PAYLOAD ===');
+      console.log('Full JSON payload:', JSON.stringify(payload, null, 2));
+      console.log('Banner URL:', bannerUrl);
+      console.log('Body HTML length:', bodyHtml?.length);
+      console.log('Body HTML preview:', bodyHtml?.substring(0, 200));
+      console.log('====================================');
+
+      return await this.sendOneSignalRequest(payload);
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      return false;
+    }
+  }
+
   /**
    * Create a OneSignal user for email tracking (optional)
    * @param {string} email - User email
@@ -550,6 +735,7 @@ class OneSignalEmailService {
     }
   }
 }
+
 
 // Export singleton instance
 export const oneSignalEmailService = new OneSignalEmailService();

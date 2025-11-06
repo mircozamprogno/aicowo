@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.11.06 V 0.700 Mail con templates interne 
 2025.09.26 V 0.670 Prenotazione dal calendario prenotazioni per partners 
 2025.09.26 V 0.660 Modifiche e miglioramenti 
 2025.09.20 V 0.650 Modifiche Dashboard e altro Andrea 

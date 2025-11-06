@@ -147,16 +147,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }
   }, [location, partnerData, profile?.role]);
 
-  // Update VAT when country changes (only for new locations)
-  useEffect(() => {
-    if (!isEditing) {
-      setFormData(prev => ({
-        ...prev,
-        vat_percentage: getDefaultVatByCountry(prev.country)
-      }));
-    }
-  }, [formData.country, isEditing]);
-
   const loadExistingImages = async () => {
     if (!location?.id) return;
 
@@ -181,11 +171,27 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       if (value !== '' && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
         return; // Don't update if invalid
       }
+      setFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? 0 : parseFloat(value)
+      }));
+      return;
     }
     
+    // Special handling for country - update VAT when country changes (only for new locations)
+    if (name === 'country' && !isEditing) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        vat_percentage: getDefaultVatByCountry(value)
+      }));
+      return;
+    }
+    
+    // Standard handling for other fields
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'vat_percentage' ? (value === '' ? 0 : parseFloat(value)) : value
+      [name]: value
     }));
   };
 
@@ -269,6 +275,30 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       ...prev,
       [category]: newImages
     }));
+  };
+
+  // Handle image deletion from storage
+  const handleImageDelete = async (image) => {
+    if (!image.id) {
+      throw new Error('Cannot delete image: missing image ID');
+    }
+
+    try {
+      console.log('Deleting image:', image.id, image.image_name);
+
+      // Use imageService to delete the image
+      const result = await imageService.deleteLocationImage(image.id);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete image');
+      }
+
+      toast.success(t('locations.imageDeletedSuccessfully') || 'Image deleted successfully');
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast.error(t('locations.errorDeletingImage') || 'Error deleting image');
+      throw error; // Re-throw to prevent UI update
+    }
   };
 
   // Handle coordinates change from map
@@ -587,7 +617,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   if (!isOpen) return null;
 
   return (
-    <div className="locations-modal-backdrop">
+    <div className="locations-modal-backdrop location-form-modal-backdrop">
       <div className="location-form-modal-container">
         {/* Header */}
         <div className="location-form-header">
@@ -1239,6 +1269,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                             category={category}
                             images={categoryImages}
                             onImagesChange={(newImages) => handleImagesChange(category, newImages)}
+                            onImageDelete={isEditing ? handleImageDelete : null}
                             maxImages={10}
                             disabled={loading || uploadingImages}
                             showAltText={true}

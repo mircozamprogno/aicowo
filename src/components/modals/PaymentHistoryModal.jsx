@@ -272,7 +272,7 @@ const PaymentHistoryModal = ({
                         <th>{t('payments.paymentDate')}</th>
                         <th>{t('payments.paymentStatus')}</th>
                         <th>{t('payments.transactionRef')}</th>
-                        {canEditPayments && <th>{t('contracts.actions')}</th>}
+                        {canEditPayments && <th>{t('contracts.actionsColumn')}</th>}
                       </tr>
                     </thead>
                     <tbody>

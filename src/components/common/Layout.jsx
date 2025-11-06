@@ -1,26 +1,14 @@
-import { LogOut, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import Sidebar from './Sidebar';
-import { toast } from './ToastContainer';
 
 const Layout = ({ children, pageTitle }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
   const { t } = useTranslation();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      window.location.hash = '/login';
-      toast.success(t('messages.signedOutSuccessfully'));
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast.error(t('messages.errorSigningOut'));
-    }
-  };
 
   return (
     <div className="layout">
@@ -62,13 +50,6 @@ const Layout = ({ children, pageTitle }) => {
                 <span className="user-name">
                   {profile?.first_name} {profile?.last_name} ({t(`roles.${profile?.role}`)})
                 </span>
-                <button
-                  onClick={handleSignOut}
-                  className="logout-btn"
-                  title={t('auth.signOut')}
-                >
-                  <LogOut size={24} />
-                </button>
               </div>
             </div>
           </div>

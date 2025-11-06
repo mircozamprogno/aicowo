@@ -1,9 +1,10 @@
-import { Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, Mail, Settings, Tag, Users, X } from 'lucide-react';
+import { Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import Link from './Link';
+import { toast } from './ToastContainer';
 
 // Add these imports at the top:
 import { useTour } from '../../contexts/TourContext';
@@ -11,7 +12,7 @@ import TourNotificationBadge from '../tour/TourNotificationBadge';
 
 const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   const currentPath = window.location.hash.slice(1) || '/dashboard';
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const { t } = useTranslation();
   
   // State for partner branding
@@ -37,6 +38,18 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   // Alternative: Check if in development mode
   const isDevelopment = () => {
     return process.env.NODE_ENV === 'development' || isLocalhost();
+  };
+
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      window.location.hash = '/login';
+      toast.success(t('messages.signedOutSuccessfully'));
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error(t('messages.errorSigningOut'));
+    }
   };
   
   // Define navigation items based on user role
@@ -290,6 +303,16 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
           return NavItem;
         })}
+
+        {/* Logout button as last item */}
+        <button
+          onClick={handleSignOut}
+          className="sidebar-nav-item sidebar-logout-btn"
+          title={t('auth.signOut')}
+        >
+          <LogOut size={24} className="sidebar-nav-icon" />
+          {t('auth.signOut')}
+        </button>
       </nav>
 
       {/* Version Info - Only show in production/non-localhost */}
