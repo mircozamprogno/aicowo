@@ -115,6 +115,13 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
     loadBannerUrl();
   }, [template.id, partnerUuid]);
 
+ // ADD THIS NEW useEffect:
+  useEffect(() => {
+    // Update editor content when bodyHtml changes and ref is ready
+    if (editorRef.current && bodyHtml && !loading) {
+      editorRef.current.innerHTML = bodyHtml;
+    }
+  }, [bodyHtml, loading]); 
 
   const loadTemplate = async () => {
     setLoading(true);
@@ -136,17 +143,17 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
         setSubject(data.subject_line);
         setBodyHtml(data.body_html);
         // Set editor content directly
-        if (editorRef.current) {
-          editorRef.current.innerHTML = data.body_html;
-        }
+        // if (editorRef.current) {
+        //  editorRef.current.innerHTML = data.body_html;
+        // }
       } else {
         // Use default template
         setSubject(defaultTemplate.subject);
         setBodyHtml(defaultTemplate.body);
         // Set editor content directly
-        if (editorRef.current) {
-          editorRef.current.innerHTML = defaultTemplate.body;
-        }
+        // if (editorRef.current) {
+        //  editorRef.current.innerHTML = defaultTemplate.body;
+        // }
       }
     } catch (error) {
       console.error('Error loading template:', error);
