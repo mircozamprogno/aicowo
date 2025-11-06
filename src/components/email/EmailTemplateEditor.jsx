@@ -205,7 +205,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       setBodyHtml(defaultTemplate.body);
       // Set editor content directly
       if (editorRef.current) {
-        editorRef.current.innerHTML = defaultTemplate.body;
+        editorRef.current.innerHTML = defaultTemplate.body;s
       }
       toast.success(t('emailTemplates.templateReset'));
     }
