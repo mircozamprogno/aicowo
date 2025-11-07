@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { customerService } from '../services/customerService';
 import { supabase } from '../services/supabase';
 
@@ -8,12 +8,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false); // ← ADD THIS
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // ← CRITICAL FIX: Track initialization
+
+  // ← CRITICAL FIX: Add refs to prevent race conditions and duplicate operations
+  const lastUserIdRef = useRef(null);
+  const profileFetchingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     console.log('AuthProvider: Starting auth initialization');
     
-    let isMounted = true;
+    mountedRef.current = true; // ← Track if component is mounted
     let loadingTimeout = null;
 
     // Add a safety timeout for loading state
@@ -28,7 +34,7 @@ export const AuthProvider = ({ children }) => {
         // Force loading to false after 5 seconds to prevent infinite loading
         loadingTimeout = setTimeout(() => {
           console.warn('AuthProvider: Loading timeout reached, forcing loading to false');
-          if (isMounted) {
+          if (mountedRef.current) {
             setLoading(false);
           }
         }, 5000);
@@ -43,7 +49,13 @@ export const AuthProvider = ({ children }) => {
         console.log('AuthProvider: Checking session...');
         console.log('Current URL when checking session:', window.location.href);
         
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // ← FIX: Add timeout to prevent hanging
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout after 5 seconds')), 5000)
+        );
+        
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
         
         console.log('=== SESSION CHECK DEBUG ===');
         console.log('Session error:', error);
@@ -53,7 +65,7 @@ export const AuthProvider = ({ children }) => {
         console.log('Session access token length:', session?.access_token?.length);
         console.log('============================');
         
-        if (!isMounted) return;
+        if (!mountedRef.current) return;
 
         console.log('Session check result:', { hasSession: !!session, error });
 
@@ -61,20 +73,30 @@ export const AuthProvider = ({ children }) => {
           console.log('No valid session, clearing auth state');
           setUser(null);
           setProfile(null);
+          lastUserIdRef.current = null; // ← Track user ID
         } else {
           console.log('Valid session found, setting user');
           setUser(session.user);
+          lastUserIdRef.current = session.user.id; // ← Track user ID
           // Don't await fetchProfile here to avoid blocking the loading state
           fetchProfile(session.user.id).catch(err => {
             console.error('Initial profile fetch failed:', err);
+            if (mountedRef.current) {
+              setLoadingWithTimeout(false); // ← Ensure loading stops on error
+            }
           });
         }
+        
+        setIsInitialized(true); // ← CRITICAL FIX: Mark as initialized
       } catch (err) {
         console.error('Session check error:', err);
-        setUser(null);
-        setProfile(null);
+        if (mountedRef.current) {
+          setUser(null);
+          setProfile(null);
+          lastUserIdRef.current = null;
+        }
       } finally {
-        if (isMounted) {
+        if (mountedRef.current) {
           console.log('Setting loading to false');
           setLoadingWithTimeout(false);
         }
@@ -92,12 +114,19 @@ export const AuthProvider = ({ children }) => {
       console.log('Current URL:', window.location.href);
       console.log('URL Hash:', window.location.hash);
       console.log('URL Search:', window.location.search);
+      console.log('Is Initialized:', isInitialized);
       console.log('================================');
       
-      if (!isMounted) return;
+      if (!mountedRef.current) return;
+
+      // ← CRITICAL FIX: Ignore duplicate INITIAL_SESSION events after initialization
+      if (event === 'INITIAL_SESSION' && isInitialized) {
+        console.log('🚫 IGNORING DUPLICATE INITIAL_SESSION - App already initialized');
+        return;
+      }
 
       try {
-        // ← ADD PASSWORD_RECOVERY DETECTION HERE
+        // Handle PASSWORD_RECOVERY event
         if (event === 'PASSWORD_RECOVERY') {
           console.log('🔐 PASSWORD RECOVERY EVENT DETECTED');
           console.log('Session in recovery:', session);
@@ -107,50 +136,68 @@ export const AuthProvider = ({ children }) => {
           if (session?.user) {
             console.log('Setting user from password recovery session');
             setUser(session.user);
+            lastUserIdRef.current = session.user.id; // ← Track user ID
           }
           setLoadingWithTimeout(false);
           console.log('Password recovery setup complete');
           return; // Don't continue with normal auth flow
         }
 
-        if (event === 'SIGNED_OUT' || !session) {
-          console.log('User signed out or no session');
-          setLoadingWithTimeout(true);
-          setUser(null);
-          setProfile(null);
-          setIsPasswordRecovery(false); // ← RESET PASSWORD RECOVERY FLAG
-          setLoadingWithTimeout(false);
-        } else if (event === 'SIGNED_IN' && session) {
-          // Only fetch profile if we don't already have one for this user
-          if (!user || user.id !== session.user.id) {
+        const newUserId = session?.user?.id || null;
+        
+        // ← CRITICAL FIX: Check if user actually changed using ref
+        if (lastUserIdRef.current !== newUserId) {
+          console.log('User actually changed, updating state');
+          
+          if (event === 'SIGNED_OUT' || !session) {
+            console.log('User signed out or no session');
+            setLoadingWithTimeout(true);
+            setUser(null);
+            setProfile(null);
+            setIsPasswordRecovery(false);
+            lastUserIdRef.current = null;
+            setLoadingWithTimeout(false);
+          } else if (event === 'SIGNED_IN' && session) {
             console.log('New user signed in, setting user and fetching profile');
             setLoadingWithTimeout(true);
             setUser(session.user);
-            // Fetch profile with timeout protection - always fetch for SIGNED_IN
+            lastUserIdRef.current = session.user.id;
+            // Fetch profile with timeout protection
             await Promise.race([
               fetchProfile(session.user.id),
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
               )
-            ]);
+            ]).catch(err => {
+              console.error('Profile fetch error:', err);
+            });
+            setLoadingWithTimeout(false);
+          } else if (event === 'INITIAL_SESSION' && session) {
+            console.log('Initial session with new user, fetching profile');
+            setUser(session.user);
+            lastUserIdRef.current = session.user.id;
+            await fetchProfile(session.user.id).catch(err => {
+              console.error('Initial profile fetch failed:', err);
+            });
+            setLoadingWithTimeout(false);
+          }
+        } else {
+          // ← CRITICAL FIX: Same user - just update without refetching
+          console.log('Same user, no state update needed');
+          
+          if (event === 'TOKEN_REFRESHED' && session) {
+            console.log('Token refreshed for same user, skipping profile fetch');
+            setUser(session.user); // Update user object with fresh token
+            setLoadingWithTimeout(false);
+          } else if (event === 'SIGNED_OUT') {
+            console.log('User signed out');
+            setUser(null);
+            setProfile(null);
+            setIsPasswordRecovery(false);
+            lastUserIdRef.current = null;
             setLoadingWithTimeout(false);
           } else {
-            // Same user, just update user object without loading
-            console.log('Same user, just updating user object');
-            setUser(session.user);
-          }
-        } else if (event === 'TOKEN_REFRESHED' && session) {
-          console.log('Token refreshed, updating user without loading');
-          setUser(session.user);
-          // Only fetch profile if we don't have one
-          if (!profile) {
-            setLoadingWithTimeout(true);
-            await Promise.race([
-              fetchProfile(session.user.id),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
-              )
-            ]);
+            console.log('Same user, no action needed');
             setLoadingWithTimeout(false);
           }
         }
@@ -163,26 +210,55 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       console.log('AuthProvider: Cleanup');
-      isMounted = false;
+      mountedRef.current = false;
       if (loadingTimeout) {
         clearTimeout(loadingTimeout);
       }
       subscription.unsubscribe();
     };
-  }, []); // REMOVED dependencies - this was causing infinite re-renders!
+  }, []); // Keep empty dependencies to prevent infinite re-renders!
 
   const fetchProfile = async (userId) => {
+    // ← CRITICAL FIX: Prevent duplicate profile fetches
+    if (profileFetchingRef.current) {
+      console.log('Profile fetch already in progress, skipping');
+      return;
+    }
+
     try {
+      profileFetchingRef.current = true;
       console.log('Fetching profile for user:', userId);
       
-      const { data, error } = await supabase
+      // ← FIX: Add 5-second timeout to prevent hanging
+      const queryPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile query timeout after 5 seconds')), 5000)
+      );
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
+      if (!mountedRef.current) return;
 
       if (error) {
-        console.log('Profile fetch error, using default:', error.message);
+        console.log('Profile fetch error:', error.message);
+        
+        // ← FIX: Create emergency profile on error
+        const emergencyProfile = {
+          id: userId,
+          first_name: user?.email?.split('@')[0] || 'User',
+          last_name: '',
+          role: 'user',
+          partner_uuid: null
+        };
+        
+        console.log('Using emergency profile:', emergencyProfile);
+        setProfile(emergencyProfile);
+        return;
       }
 
       const userProfile = data || {
@@ -213,14 +289,22 @@ export const AuthProvider = ({ children }) => {
 
     } catch (error) {
       console.error('Profile fetch failed:', error);
-      setProfile({
-        id: userId,
-        first_name: 'User',
-        last_name: '',
-        role: 'user',
-        partner_uuid: null
-      });
+      
+      if (mountedRef.current) {
+        // ← FIX: Create emergency profile on timeout/network errors
+        const emergencyProfile = {
+          id: userId,
+          first_name: user?.email?.split('@')[0] || 'User',
+          last_name: '',
+          role: 'user',
+          partner_uuid: null
+        };
+        setProfile(emergencyProfile);
+      }
+      
       throw error; // Re-throw to be caught by the timeout wrapper
+    } finally {
+      profileFetchingRef.current = false;
     }
   };
 
@@ -244,7 +328,7 @@ export const AuthProvider = ({ children }) => {
     
     if (data.user) {
       try {
-        // CRITICAL FIX: Ensure partner_uuid is included in the profile creation
+        // Ensure partner_uuid is included in the profile creation
         const profileData = {
           id: data.user.id,
           email,
@@ -252,7 +336,7 @@ export const AuthProvider = ({ children }) => {
           last_name: userData.last_name,
           username: userData.username,
           role: userData.role || 'user',
-          partner_uuid: userData.partner_uuid || null // ← THIS IS THE CRITICAL FIX
+          partner_uuid: userData.partner_uuid || null
         };
 
         console.log('Creating profile with data:', profileData);
@@ -270,7 +354,7 @@ export const AuthProvider = ({ children }) => {
 
         console.log('Profile created successfully:', profileResult);
 
-        // IMPORTANT: Create customer record automatically for regular users
+        // Create customer record automatically for regular users
         if (profileResult.role === 'user' && profileResult.partner_uuid) {
           try {
             const customerData = {
@@ -289,14 +373,11 @@ export const AuthProvider = ({ children }) => {
           } catch (customerError) {
             console.error('Customer creation error:', customerError);
             // Don't fail the signup process if customer creation fails
-            // The customer record can be created later
           }
         }
 
       } catch (profileError) {
         console.error('Profile creation error:', profileError);
-        // Don't throw here to avoid breaking the signup flow
-        // The user can still sign in, but we should log this error
         throw new Error(`Account created but profile setup failed: ${profileError.message}`);
       }
     }
@@ -306,9 +387,15 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     console.log('Signing out...');
+    
+    // Clear refs
+    lastUserIdRef.current = null;
+    profileFetchingRef.current = false;
+    
     setUser(null);
     setProfile(null);
-    setIsPasswordRecovery(false); // ← RESET PASSWORD RECOVERY FLAG
+    setIsPasswordRecovery(false);
+    
     await supabase.auth.signOut();
   };
 
@@ -317,7 +404,6 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
-  // Add this method to your AuthContext
   const updatePassword = async (newPassword) => {
     try {
       const { error } = await supabase.auth.updateUser({
@@ -335,13 +421,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
-  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid, 'IsPasswordRecovery:', isPasswordRecovery); // ← ADD RECOVERY TO LOG
+  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid, 'IsPasswordRecovery:', isPasswordRecovery, 'IsInitialized:', isInitialized);
 
   const value = {
     user,
     profile,
     loading,
-    isPasswordRecovery, // ← ADD THIS TO CONTEXT VALUE
+    isPasswordRecovery,
     signIn,
     signUp,
     signOut,
