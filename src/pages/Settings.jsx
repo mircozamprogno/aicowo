@@ -47,6 +47,7 @@ const Settings = () => {
     codice_fiscale: '',
     customer_type: 'individual',
     company_name: '',
+    structure_name: '', // ADD THIS LINE
     piva: '',
     pec: '',
     sdi_code: '',
@@ -495,6 +496,7 @@ const Settings = () => {
           codice_fiscale: '', // Partners don't have codice_fiscale in partners table
           customer_type: 'company', // Partners are always companies in settings
           company_name: data.company_name || '',
+          structure_name: data.structure_name || '', // ADD THIS LINE
           piva: data.piva || '',
           pec: data.pec || '',
           sdi_code: '', // Not in partners table
@@ -616,6 +618,7 @@ const Settings = () => {
           city: formData.city,
           country: formData.country,
           company_name: formData.company_name,
+          structure_name: formData.structure_name, // ADD THIS LINE
           piva: formData.piva,
           pec: formData.pec,
           website: formData.website,
@@ -1137,6 +1140,22 @@ const Settings = () => {
                     className="form-input"
                     placeholder={t('placeholders.companyNamePlaceholder')}
                     value={formData.company_name}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* ADD THIS NEW FIELD */}
+                <div className="form-group">
+                  <label htmlFor="structure_name" className="form-label">
+                    {t('customers.structureName')}
+                  </label>
+                  <input
+                    id="structure_name"
+                    name="structure_name"
+                    type="text"
+                    className="form-input"
+                    placeholder={t('placeholders.structureNamePlaceholder')}
+                    value={formData.structure_name}
                     onChange={handleChange}
                   />
                 </div>

@@ -74,9 +74,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       console.log('Fallback - logging invitation details:', {
         to: invitation.invited_email,
         role: invitation.invited_role,
-        partner: partner?.first_name && partner?.second_name 
-          ? `${partner.first_name} ${partner.second_name}`
-          : partner?.first_name || partner?.company_name,
+        partner: partner?.company_name || partner?.first_name,
         link: invitationLink,
         message: formData.customMessage
       });
@@ -173,16 +171,8 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                 }
               </h3>
               <p className="partner-info-name">
-                {partner?.first_name && partner?.second_name 
-                  ? `${partner.first_name} ${partner.second_name}`
-                  : partner?.first_name || partner?.company_name
-                }
+                {partner?.company_name}
               </p>
-              <div className="role-badge">
-                <span className="role-badge-text">
-                  {t(`roles.${targetRole}`)}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -271,9 +261,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
               <h4 className="preview-title">{t('invitations.emailPreview')}</h4>
               <div className="preview-content">
                 <p><strong>{t('invitations.subject')}:</strong> {t('invitations.emailSubject', { 
-                  partnerName: partner?.first_name && partner?.second_name 
-                    ? `${partner.first_name} ${partner.second_name}`
-                    : partner?.first_name || partner?.company_name,
+                  partnerName: partner?.company_name,
                   role: t(`roles.${targetRole}`)
                 })}</p>
                 <p><strong>{t('invitations.recipient')}:</strong> 

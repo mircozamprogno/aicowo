@@ -34,7 +34,7 @@
     "customer": "Cliente",
     "firstName": "Nome",
     "secondName": "Cognome",
-    "companyName": "Nome Azienda",
+    "companyName": "Ragione Sociale",
     "phone": "Telefono",
     "type": "Tipo",
     "status": "Stato",
@@ -107,6 +107,7 @@
     "customerDetails": "Dettagli Cliente",
     "delete": "Elimina",
     "cannotDeleteWithConstraints": "Impossibile eliminare il cliente a causa di vincoli attivi",
+    "structureName": "Nome Struttura",
     "constraints": {
       "activeBookings": "{{count}} prenotazione/i attiva/e",
       "activeContracts": "{{count}} contratto/i attivo/i",
@@ -427,7 +428,7 @@
     "partner": "Partner",
     "firstName": "Nome",
     "secondName": "Secondo Nome",
-    "companyName": "Nome Azienda",
+    "companyName": "Ragione Sociale",
     "status": "Stato",
     "type": "Tipo",
     "actions": "Azioni",
@@ -966,7 +967,7 @@
     "firstNamePlaceholder": "Nome",
     "lastNamePlaceholder": "Cognome",
     "secondNamePlaceholder": "Secondo Nome",
-    "companyNamePlaceholder": "Inserisci nome azienda",
+    "companyNamePlaceholder": "Inserisci la ragione sociale",
     "phonePlaceholder": "Numero di telefono",
     "addressPlaceholder": "Indirizzo",
     "zipPlaceholder": "CAP",
@@ -997,7 +998,8 @@
     "newPasswordPlaceholder": "Inserisci la tua nuova password",
     "vatPercentagePlaceholder": "22,00",
     "fattureincloudApiTokenPlaceholder": "Inserisci Token API FattureInCloud",
-    "fattureincloudCompanyIdPlaceholder": "Inserisci ID Azienda"
+    "fattureincloudCompanyIdPlaceholder": "Inserisci ID Azienda",
+    "structureNamePlaceholder": "Inserisci il nome della struttura"
   },
   "bookings": {
     "title": "Calendario Prenotazioni",

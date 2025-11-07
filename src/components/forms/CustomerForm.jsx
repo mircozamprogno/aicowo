@@ -397,13 +397,12 @@ const CustomerForm = ({
               
               <div className="form-group">
                 <label htmlFor="address" className="form-label">
-                  {t('customers.address')} *
+                  {t('customers.address')}
                 </label>
                 <input
                   id="address"
                   name="address"
                   type="text"
-                  required
                   className="form-input"
                   placeholder={t('placeholders.addressPlaceholder')}
                   value={formData.address}
@@ -414,13 +413,12 @@ const CustomerForm = ({
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="zip" className="form-label">
-                    {t('customers.zip')} *
+                    {t('customers.zip')}
                   </label>
                   <input
                     id="zip"
                     name="zip"
                     type="text"
-                    required
                     className="form-input"
                     placeholder={t('placeholders.zipPlaceholder')}
                     value={formData.zip}
@@ -429,13 +427,12 @@ const CustomerForm = ({
                 </div>
                 <div className="form-group">
                   <label htmlFor="city" className="form-label">
-                    {t('customers.city')} *
+                    {t('customers.city')}
                   </label>
                   <input
                     id="city"
                     name="city"
                     type="text"
-                    required
                     className="form-input"
                     placeholder={t('placeholders.cityPlaceholder')}
                     value={formData.city}
@@ -444,13 +441,12 @@ const CustomerForm = ({
                 </div>
                 <div className="form-group">
                   <label htmlFor="country" className="form-label">
-                    {t('customers.country')} *
+                    {t('customers.country')}
                   </label>
                   <input
                     id="country"
                     name="country"
                     type="text"
-                    required
                     className="form-input"
                     placeholder={t('placeholders.countryPlaceholder')}
                     value={formData.country}

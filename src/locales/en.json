@@ -107,6 +107,7 @@
     "customerDetails": "Customer Details",
     "delete": "Delete",
     "cannotDeleteWithConstraints": "Cannot delete customer due to active constraints",
+    "structureName": "Structure Name",
     "constraints": {
       "activeBookings": "{{count}} active booking(s)",
       "activeContracts": "{{count}} active contract(s)",
@@ -994,7 +995,8 @@
     "newPasswordPlaceholder": "Enter your new password",
     "vatPercentagePlaceholder": "22.00",
     "fattureincloudApiTokenPlaceholder": "Enter FattureInCloud API Token",
-    "fattureincloudCompanyIdPlaceholder": "Enter Company ID"
+    "fattureincloudCompanyIdPlaceholder": "Enter Company ID",
+    "structureNamePlaceholder": "Enter structure name"
   },
   "bookings": {
     "title": "Bookings Calendar",
