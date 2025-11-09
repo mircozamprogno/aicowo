@@ -16,3 +16,16 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Force everything to light mode. */
+
+:root {
+  color-scheme: light !important;
+}
+
+/* Force light mode */
+@media (prefers-color-scheme: dark) {
+  * {
+    color-scheme: light !important;
+  }
+}
