@@ -485,11 +485,13 @@ const Invitations = () => {
                   {t('invitations.invitee')}
                 </th>
                 {/* Remove email column for superadmin, keep for admin */}
+                {/*
                 {profile?.role === 'admin' && (
                   <th className="invitations-table-header">
                     {t('auth.email')}
                   </th>
                 )}
+                */}
                 {profile?.role === 'superadmin' && (
                   <th className="invitations-table-header hide-on-mobile">
                     {t('partners.partner')}
@@ -537,11 +539,13 @@ const Invitations = () => {
                     </div>
                   </td>
                   {/* Keep email column for admin */}
+                  {/*
                   {profile?.role === 'admin' && (
                     <td className="invitations-table-cell">
                       {invitation.invited_email}
                     </td>
                   )}
+                  */}
                   {/* Updated Partner column for superadmin */}
                   {profile?.role === 'superadmin' && (
                     <td className="invitations-table-cell hide-on-mobile">
