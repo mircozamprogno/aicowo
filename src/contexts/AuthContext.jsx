@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { customerService } from '../services/customerService';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
 
 const AuthContext = createContext({});
 
@@ -9,227 +10,180 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false); // ← CRITICAL FIX: Track initialization
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // ← CRITICAL FIX: Add refs to prevent race conditions and duplicate operations
+  // Refs to prevent race conditions
   const lastUserIdRef = useRef(null);
   const profileFetchingRef = useRef(false);
   const mountedRef = useRef(true);
+  const initializingRef = useRef(false);
 
   useEffect(() => {
-    console.log('AuthProvider: Starting auth initialization');
+    logger.log('🚀 AuthProvider: Starting initialization');
     
-    mountedRef.current = true; // ← Track if component is mounted
-    let loadingTimeout = null;
+    // Prevent double initialization
+    if (initializingRef.current) {
+      logger.log('⚠️ Already initializing, skipping');
+      return;
+    }
+    
+    initializingRef.current = true;
+    mountedRef.current = true;
 
-    // Add a safety timeout for loading state
-    const setLoadingWithTimeout = (isLoading) => {
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-        loadingTimeout = null;
-      }
-
-      if (isLoading) {
-        setLoading(true);
-        // Force loading to false after 5 seconds to prevent infinite loading
-        loadingTimeout = setTimeout(() => {
-          console.warn('AuthProvider: Loading timeout reached, forcing loading to false');
-          if (mountedRef.current) {
-            setLoading(false);
-          }
-        }, 5000);
-      } else {
-        setLoading(false);
-      }
-    };
-
-    // Simple session check
     const checkSession = async () => {
       try {
-        console.log('AuthProvider: Checking session...');
-        console.log('Current URL when checking session:', window.location.href);
+        logger.log('🔍 Checking session...');
         
-        // ← FIX: Add timeout to prevent hanging
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout after 5 seconds')), 5000)
-        );
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
-        
-        console.log('=== SESSION CHECK DEBUG ===');
-        console.log('Session error:', error);
-        console.log('Session exists:', !!session);
-        console.log('Session user:', session?.user?.id);
-        console.log('Session expires at:', session?.expires_at);
-        console.log('Session access token length:', session?.access_token?.length);
-        console.log('============================');
+        logger.log('=== SESSION CHECK ===');
+        logger.log('Has session:', !!session);
+        logger.log('User ID:', session?.user?.id);
+        logger.log('Error:', error);
+        logger.log('===================');
         
         if (!mountedRef.current) return;
 
-        console.log('Session check result:', { hasSession: !!session, error });
-
         if (error || !session) {
-          console.log('No valid session, clearing auth state');
+          logger.log('❌ No valid session');
           setUser(null);
           setProfile(null);
-          lastUserIdRef.current = null; // ← Track user ID
+          lastUserIdRef.current = null;
         } else {
-          console.log('Valid session found, setting user');
+          logger.log('✅ Valid session found');
           setUser(session.user);
-          lastUserIdRef.current = session.user.id; // ← Track user ID
-          // Don't await fetchProfile here to avoid blocking the loading state
-          fetchProfile(session.user.id).catch(err => {
-            console.error('Initial profile fetch failed:', err);
-            if (mountedRef.current) {
-              setLoadingWithTimeout(false); // ← Ensure loading stops on error
-            }
+          lastUserIdRef.current = session.user.id;
+          
+          // Fetch profile
+          await fetchProfile(session.user.id).catch(err => {
+            logger.error('❌ Profile fetch failed:', err);
           });
         }
         
-        setIsInitialized(true); // ← CRITICAL FIX: Mark as initialized
+        setIsInitialized(true);
       } catch (err) {
-        console.error('Session check error:', err);
+        logger.error('❌ Session check error:', err);
         if (mountedRef.current) {
           setUser(null);
           setProfile(null);
           lastUserIdRef.current = null;
+          setIsInitialized(true);
         }
       } finally {
         if (mountedRef.current) {
-          console.log('Setting loading to false');
-          setLoadingWithTimeout(false);
+          setLoading(false);
+          initializingRef.current = false;
         }
       }
     };
 
     checkSession();
 
-    // Listen for auth changes
+    // Auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('=== AUTH STATE CHANGE DEBUG ===');
-      console.log('Event:', event);
-      console.log('Session exists:', !!session);
-      console.log('Session user:', session?.user?.id);
-      console.log('Current URL:', window.location.href);
-      console.log('URL Hash:', window.location.hash);
-      console.log('URL Search:', window.location.search);
-      console.log('Is Initialized:', isInitialized);
-      console.log('================================');
+      logger.log('=== AUTH STATE CHANGE ===');
+      logger.log('Event:', event);
+      logger.log('Has session:', !!session);
+      logger.log('User ID:', session?.user?.id);
+      logger.log('Is initialized:', isInitialized);
+      logger.log('========================');
       
       if (!mountedRef.current) return;
 
-      // ← CRITICAL FIX: Ignore duplicate INITIAL_SESSION events after initialization
+      // CRITICAL: Ignore duplicate INITIAL_SESSION after initialization
       if (event === 'INITIAL_SESSION' && isInitialized) {
-        console.log('🚫 IGNORING DUPLICATE INITIAL_SESSION - App already initialized');
+        logger.log('🚫 Ignoring duplicate INITIAL_SESSION');
         return;
       }
 
-      try {
-        // Handle PASSWORD_RECOVERY event
-        if (event === 'PASSWORD_RECOVERY') {
-          console.log('🔐 PASSWORD RECOVERY EVENT DETECTED');
-          console.log('Session in recovery:', session);
-          console.log('User in recovery:', session?.user);
-          setIsPasswordRecovery(true);
-          // Set the user but don't fetch profile yet
-          if (session?.user) {
-            console.log('Setting user from password recovery session');
-            setUser(session.user);
-            lastUserIdRef.current = session.user.id; // ← Track user ID
-          }
-          setLoadingWithTimeout(false);
-          console.log('Password recovery setup complete');
-          return; // Don't continue with normal auth flow
+      // Handle password recovery
+      if (event === 'PASSWORD_RECOVERY') {
+        logger.log('🔐 Password recovery mode');
+        setIsPasswordRecovery(true);
+        if (session?.user) {
+          setUser(session.user);
+          lastUserIdRef.current = session.user.id;
         }
+        setLoading(false);
+        return;
+      }
 
-        const newUserId = session?.user?.id || null;
+      const newUserId = session?.user?.id || null;
+      
+      // Check if user actually changed
+      if (lastUserIdRef.current !== newUserId) {
+        logger.log('👤 User changed, updating state');
         
-        // ← CRITICAL FIX: Check if user actually changed using ref
-        if (lastUserIdRef.current !== newUserId) {
-          console.log('User actually changed, updating state');
+        if (event === 'SIGNED_OUT' || !session) {
+          logger.log('👋 User signed out');
+          setUser(null);
+          setProfile(null);
+          setIsPasswordRecovery(false);
+          lastUserIdRef.current = null;
+          setLoading(false);
+        } else if (event === 'SIGNED_IN' && session) {
+          logger.log('🔑 User signed in');
+          setUser(session.user);
+          lastUserIdRef.current = session.user.id;
           
-          if (event === 'SIGNED_OUT' || !session) {
-            console.log('User signed out or no session');
-            setLoadingWithTimeout(true);
-            setUser(null);
-            setProfile(null);
-            setIsPasswordRecovery(false);
-            lastUserIdRef.current = null;
-            setLoadingWithTimeout(false);
-          } else if (event === 'SIGNED_IN' && session) {
-            console.log('New user signed in, setting user and fetching profile');
-            setLoadingWithTimeout(true);
-            setUser(session.user);
-            lastUserIdRef.current = session.user.id;
-            // Fetch profile with timeout protection
-            await Promise.race([
-              fetchProfile(session.user.id),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
-              )
-            ]).catch(err => {
-              console.error('Profile fetch error:', err);
+          await fetchProfile(session.user.id)
+            .catch(err => logger.error('❌ Profile fetch error:', err))
+            .finally(() => {
+              if (mountedRef.current) setLoading(false);
             });
-            setLoadingWithTimeout(false);
-          } else if (event === 'INITIAL_SESSION' && session) {
-            console.log('Initial session with new user, fetching profile');
-            setUser(session.user);
-            lastUserIdRef.current = session.user.id;
-            await fetchProfile(session.user.id).catch(err => {
-              console.error('Initial profile fetch failed:', err);
-            });
-            setLoadingWithTimeout(false);
-          }
-        } else {
-          // ← CRITICAL FIX: Same user - just update without refetching
-          console.log('Same user, no state update needed');
+        } else if (event === 'INITIAL_SESSION' && session) {
+          logger.log('🎬 Initial session');
+          setUser(session.user);
+          lastUserIdRef.current = session.user.id;
           
-          if (event === 'TOKEN_REFRESHED' && session) {
-            console.log('Token refreshed for same user, skipping profile fetch');
-            setUser(session.user); // Update user object with fresh token
-            setLoadingWithTimeout(false);
-          } else if (event === 'SIGNED_OUT') {
-            console.log('User signed out');
-            setUser(null);
-            setProfile(null);
-            setIsPasswordRecovery(false);
-            lastUserIdRef.current = null;
-            setLoadingWithTimeout(false);
-          } else {
-            console.log('Same user, no action needed');
-            setLoadingWithTimeout(false);
-          }
+          await fetchProfile(session.user.id)
+            .catch(err => logger.error('❌ Profile fetch error:', err))
+            .finally(() => {
+              if (mountedRef.current) setLoading(false);
+            });
         }
-      } catch (error) {
-        console.error('Error handling auth state change:', error);
-        // Don't clear user/profile on profile fetch errors, just stop loading
-        setLoadingWithTimeout(false);
+      } else {
+        // Same user - minimal update
+        logger.log('👤 Same user, minimal update');
+        
+        if (event === 'TOKEN_REFRESHED' && session) {
+          logger.log('🔄 Token refreshed');
+          setUser(session.user);
+          setLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          logger.log('👋 User signed out');
+          setUser(null);
+          setProfile(null);
+          setIsPasswordRecovery(false);
+          lastUserIdRef.current = null;
+          setLoading(false);
+        } else {
+          logger.log('⏭️ No action needed');
+          setLoading(false);
+        }
       }
     });
 
     return () => {
-      console.log('AuthProvider: Cleanup');
+      logger.log('🧹 AuthProvider cleanup');
       mountedRef.current = false;
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-      }
+      initializingRef.current = false;
       subscription.unsubscribe();
     };
-  }, []); // Keep empty dependencies to prevent infinite re-renders!
+  }, []); // Empty dependencies - run once!
 
   const fetchProfile = async (userId) => {
-    // ← CRITICAL FIX: Prevent duplicate profile fetches
+    // Prevent duplicate fetches
     if (profileFetchingRef.current) {
-      console.log('Profile fetch already in progress, skipping');
+      logger.log('⏳ Profile fetch already in progress');
       return;
     }
 
     try {
       profileFetchingRef.current = true;
-      console.log('Fetching profile for user:', userId);
+      logger.log('📥 Fetching profile for:', userId);
       
-      // ← FIX: Add 5-second timeout to prevent hanging
+      // Add timeout protection
       const queryPromise = supabase
         .from('profiles')
         .select('*')
@@ -237,7 +191,7 @@ export const AuthProvider = ({ children }) => {
         .single();
       
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile query timeout after 5 seconds')), 5000)
+        setTimeout(() => reject(new Error('Profile query timeout')), 5000)
       );
       
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
@@ -245,9 +199,9 @@ export const AuthProvider = ({ children }) => {
       if (!mountedRef.current) return;
 
       if (error) {
-        console.log('Profile fetch error:', error.message);
+        logger.error('❌ Profile fetch error:', error);
         
-        // ← FIX: Create emergency profile on error
+        // Create emergency profile
         const emergencyProfile = {
           id: userId,
           first_name: user?.email?.split('@')[0] || 'User',
@@ -256,42 +210,41 @@ export const AuthProvider = ({ children }) => {
           partner_uuid: null
         };
         
-        console.log('Using emergency profile:', emergencyProfile);
+        logger.log('🆘 Using emergency profile:', emergencyProfile);
         setProfile(emergencyProfile);
         return;
       }
 
-      const userProfile = data || {
-        id: userId,
-        first_name: 'User',
-        last_name: '',
-        role: 'user',
-        partner_uuid: null
-      };
+      logger.log('✅ Profile fetched:', {
+        id: data.id,
+        role: data.role,
+        partner_uuid: data.partner_uuid,
+        first_name: data.first_name,
+        last_name: data.last_name
+      });
+      
+      setProfile(data);
 
-      console.log('Profile fetched successfully:', userProfile);
-      setProfile(userProfile);
-
-      // Ensure customer record exists for users (not for superadmins)
-      if (userProfile.role === 'user' && userProfile.partner_uuid) {
+      // Ensure customer record for regular users
+      if (data.role === 'user' && data.partner_uuid) {
         try {
+          logger.log('👥 Ensuring customer record...');
           await customerService.ensureCustomerRecord(
             userId, 
-            userProfile.partner_uuid, 
-            userProfile
+            data.partner_uuid, 
+            data
           );
-          console.log('Customer record ensured for user');
+          logger.log('✅ Customer record ensured');
         } catch (error) {
-          console.error('Error ensuring customer record:', error);
-          // Don't fail the auth process if customer creation fails
+          logger.error('❌ Customer record error:', error);
+          // Don't fail auth if customer creation fails
         }
       }
 
     } catch (error) {
-      console.error('Profile fetch failed:', error);
+      logger.error('❌ Profile fetch exception:', error);
       
       if (mountedRef.current) {
-        // ← FIX: Create emergency profile on timeout/network errors
         const emergencyProfile = {
           id: userId,
           first_name: user?.email?.split('@')[0] || 'User',
@@ -301,24 +254,28 @@ export const AuthProvider = ({ children }) => {
         };
         setProfile(emergencyProfile);
       }
-      
-      throw error; // Re-throw to be caught by the timeout wrapper
     } finally {
       profileFetchingRef.current = false;
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const signIn = async (email, password) => {
+    logger.log('🔑 Signing in:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
     if (error) throw error;
+    logger.log('✅ Sign in successful');
     return data;
   };
 
   const signUp = async (email, password, userData) => {
+    logger.log('📝 Signing up:', email);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -328,7 +285,6 @@ export const AuthProvider = ({ children }) => {
     
     if (data.user) {
       try {
-        // Ensure partner_uuid is included in the profile creation
         const profileData = {
           id: data.user.id,
           email,
@@ -339,7 +295,7 @@ export const AuthProvider = ({ children }) => {
           partner_uuid: userData.partner_uuid || null
         };
 
-        console.log('Creating profile with data:', profileData);
+        logger.log('📝 Creating profile:', profileData);
 
         const { data: profileResult, error: profileError } = await supabase
           .from('profiles')
@@ -348,13 +304,13 @@ export const AuthProvider = ({ children }) => {
           .single();
 
         if (profileError) {
-          console.error('Profile creation error:', profileError);
+          logger.error('❌ Profile creation error:', profileError);
           throw new Error(`Profile creation failed: ${profileError.message}`);
         }
 
-        console.log('Profile created successfully:', profileResult);
+        logger.log('✅ Profile created:', profileResult);
 
-        // Create customer record automatically for regular users
+        // Create customer record for regular users
         if (profileResult.role === 'user' && profileResult.partner_uuid) {
           try {
             const customerData = {
@@ -363,65 +319,93 @@ export const AuthProvider = ({ children }) => {
               email: email
             };
 
+            logger.log('👥 Creating customer record...');
             await customerService.createCustomerFromRegistration(
               customerData, 
               data.user.id, 
               profileResult.partner_uuid
             );
             
-            console.log('Customer record created for new user');
+            logger.log('✅ Customer record created');
           } catch (customerError) {
-            console.error('Customer creation error:', customerError);
-            // Don't fail the signup process if customer creation fails
+            logger.error('❌ Customer creation error:', customerError);
+            // Don't fail signup if customer creation fails
           }
         }
 
       } catch (profileError) {
-        console.error('Profile creation error:', profileError);
+        logger.error('❌ Profile setup error:', profileError);
         throw new Error(`Account created but profile setup failed: ${profileError.message}`);
       }
     }
     
+    logger.log('✅ Sign up complete');
     return data;
   };
 
   const signOut = async () => {
-    console.log('Signing out...');
+    logger.log('👋 Signing out...');
     
-    // Clear refs
-    lastUserIdRef.current = null;
-    profileFetchingRef.current = false;
-    
-    setUser(null);
-    setProfile(null);
-    setIsPasswordRecovery(false);
-    
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        logger.warn('⚠️ Supabase signout error (will clear local state anyway):', error);
+      } else {
+        logger.log('✅ Server signout successful');
+      }
+    } catch (error) {
+      logger.warn('⚠️ Signout exception (will clear local state anyway):', error);
+    } finally {
+      // ALWAYS clear state and redirect
+      logger.log('🧹 Clearing local state and redirecting...');
+      
+      lastUserIdRef.current = null;
+      profileFetchingRef.current = false;
+      
+      if (mountedRef.current) {
+        setUser(null);
+        setProfile(null);
+        setIsPasswordRecovery(false);
+        setLoading(false);
+      }
+      
+      // Redirect to login
+      window.location.href = '/#/login';
+    }
   };
 
   const resetPassword = async (email) => {
+    logger.log('🔐 Resetting password for:', email);
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) throw error;
+    logger.log('✅ Password reset email sent');
   };
 
   const updatePassword = async (newPassword) => {
     try {
+      logger.log('🔐 Updating password...');
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
+      logger.log('✅ Password updated');
       return { success: true };
     } catch (error) {
-      console.error('Error updating password:', error);
+      logger.error('❌ Password update error:', error);
       throw error;
     }
   };
-  
-  console.log('AuthProvider render - User:', !!user, 'Loading:', loading, 'Profile role:', profile?.role, 'Partner UUID:', profile?.partner_uuid, 'IsPasswordRecovery:', isPasswordRecovery, 'IsInitialized:', isInitialized);
+
+  logger.log('🔍 AuthProvider state:', {
+    hasUser: !!user,
+    hasProfile: !!profile,
+    profileRole: profile?.role,
+    partnerUuid: profile?.partner_uuid,
+    loading,
+    isPasswordRecovery,
+    isInitialized
+  });
 
   const value = {
     user,

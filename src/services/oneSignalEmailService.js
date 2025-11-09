@@ -132,15 +132,20 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     // Fetch custom template from database
     const { data: templateData, error: templateError } = await supabase
       .from('email_templates')
-      .select('body_html')
+      .select('body_html, subject_line')
       .eq('partner_uuid', invitationData.partner_uuid)
       .eq('template_type', 'customer_invitation')
       .single();
 
     // Use custom template or fallback to default
     let bodyHtml;
+    let emailSubject = `Invito a unirti a ${partnerData.company_name || 'PowerCowo'}`;
+    
     if (templateData && !templateError) {
       bodyHtml = templateData.body_html;
+      if (templateData.subject_line) {
+        emailSubject = templateData.subject_line;
+      }
       console.log('Using custom customer_invitation template');
     } else {
       // Fallback to default template (assuming language is 'it')
@@ -157,6 +162,11 @@ async sendCustomerInvitation(invitationData, invitationLink) {
                          ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
                          : invitationData.partners?.first_name || 'Partner');
     
+    // Replace variables in subject
+    emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+    emailSubject = emailSubject.replace(/\{\{invitation_link\}\}/g, invitationLink);
+    
+    // Replace variables in body
     bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
     bodyHtml = bodyHtml.replace(/\{\{invitation_link\}\}/g, invitationLink);
     bodyHtml = bodyHtml.replace(/\{\{custom_message\}\}/g, invitationData.custom_message || '');
@@ -177,8 +187,6 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     }
 
     // Send using unique template with partner email settings
-    const emailSubject = `Invito a unirti a ${partnerName}`;
-
     const payload = {
       app_id: this.appId,
       email_from_name: partnerData.company_name || partnerName,
@@ -213,175 +221,231 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 }
 
   /**
-   * Send booking confirmation emails to both customer and partner
-   * @param {Object} bookingData - The booking/reservation data
+   * Send booking confirmation email to customer using internal template
+   * @param {Object} bookingData - The booking/reservation data from package_reservations table
    * @param {Object} contractData - The contract data
    * @param {Function} t - Translation function
-   * @param {Object} partnerData - Partner data (optional, for partner email)
-   * @returns {Promise<{customerSuccess: boolean, partnerSuccess: boolean}>} - Success status for both emails
+   * @param {Object} partnerData - Partner data
+   * @returns {Promise<boolean>} - Success status
    */
   async sendBookingConfirmation(bookingData, contractData, t, partnerData = null) {
-    if (!this.isBookingConfigured) {
-      console.error('OneSignal booking templates not configured');
-      // In development, log the booking email details
-      this.logBookingEmailDetails(bookingData, contractData, t);
-      return { customerSuccess: false, partnerSuccess: false };
-    }
-
-    try {
-      // Prepare booking confirmation data
-      const bookingConfirmationData = this.prepareBookingData(bookingData, contractData, t);
-
-      // Send customer confirmation
-      const customerSuccess = await this.sendCustomerBookingConfirmation(
-        contractData.customers.email,
-        bookingConfirmationData,
-        contractData
-      );
-
-      // Send partner notification
-      const partnerSuccess = await this.sendPartnerBookingNotification(
-        bookingConfirmationData,
-        contractData,
-        partnerData
-      );
-
-      return { customerSuccess, partnerSuccess };
-    } catch (error) {
-      console.error('Error sending booking confirmations:', error);
-      return { customerSuccess: false, partnerSuccess: false };
-    }
-  }
-
-  /**
-   * Send booking confirmation to customer
-   * @param {string} customerEmail - Customer email address
-   * @param {Object} bookingData - Prepared booking data
-   * @param {Object} contractData - Contract data
-   * @returns {Promise<boolean>} - Success status
-   */
-  async sendCustomerBookingConfirmation(customerEmail, bookingData, contractData) {
-    try {
-      // Create email subject
-      const emailSubject = `Conferma prenotazione - ${contractData.service_name}`;
-
-      const payload = {
-        app_id: this.appId,
-        email_from_name: "PowerCowo",
-        email_subject: emailSubject,
-        email_from_address: "info@tuttoapposto.info",
-        email_reply_to_address: "noreply@proton.me",
-        template_id: this.customerBookingTemplateId,
-        target_channel: "email",
-        include_email_tokens: [customerEmail],
-        include_aliases: {
-          external_id: [contractData.customer_id?.toString()]
-        },
-        custom_data: {
-          customer_name: bookingData.customer_name,
-          booking_date: bookingData.booking_date,
-          resource: bookingData.resource,
-          remaining_count: bookingData.remaining_count
-        }
-      };
-
-      console.log('Sending customer booking confirmation:', {
-        email: customerEmail,
-        templateId: this.customerBookingTemplateId,
-        customData: payload.custom_data
-      });
-
-      return await this.sendOneSignalRequest(payload);
-    } catch (error) {
-      console.error('Error sending customer booking confirmation:', error);
+    if (!this.uniqueTemplateId) {
+      console.error('Unique template ID not configured');
       return false;
     }
-  }
 
-  /**
-   * Send booking notification to partner
-   * @param {Object} bookingData - Prepared booking data
-   * @param {Object} contractData - Contract data
-   * @param {Object} partnerData - Partner data (optional)
-   * @returns {Promise<boolean>} - Success status
-   */
-  async sendPartnerBookingNotification(bookingData, contractData, partnerData = null) {
     try {
-      // Get partner email - only check the 'email' field since contact_email doesn't exist
-      let partnerEmail = partnerData?.email;
+      // Dynamic import to avoid circular dependencies
+      const { supabase } = await import('./supabase');
+      const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
+
+      console.log('=== BOOKING CONFIRMATION DEBUG ===');
+      console.log('bookingData:', bookingData);
+      console.log('contractData:', contractData);
+      console.log('partnerData:', partnerData);
+
+      // Fetch partner data if not provided (for FROM name and banner)
+      if (!partnerData) {
+        const { data: fetchedPartnerData, error: partnerError } = await supabase
+          .from('partners')
+          .select('company_name, email')
+          .eq('partner_uuid', contractData.partner_uuid)
+          .single();
+
+        if (partnerError || !fetchedPartnerData) {
+          console.error('Error fetching partner data:', partnerError);
+          return false;
+        }
+        partnerData = fetchedPartnerData;
+      }
+
+      // Fetch custom template from database
+      const { data: templateData, error: templateError } = await supabase
+        .from('email_templates')
+        .select('body_html, subject_line')
+        .eq('partner_uuid', contractData.partner_uuid)
+        .eq('template_type', 'customer_booking_confirmation')
+        .single();
+
+      // Use custom template or fallback to default
+      let bodyHtml;
+      let emailSubject = 'Prenotazione Confermata'; // Default subject
       
-      if (!partnerEmail) {
-        console.warn('Partner email not available for booking notification. Partner data:', partnerData);
+      if (templateData && !templateError) {
+        bodyHtml = templateData.body_html;
+        emailSubject = templateData.subject_line || 'Prenotazione Confermata';
+        console.log('Using custom customer_booking_confirmation template');
+      } else {
+        console.log('No custom template, using default. Error:', templateError);
+        const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_booking_confirmation || 
+                               DEFAULT_EMAIL_TEMPLATES.en?.customer_booking_confirmation;
+        bodyHtml = defaultTemplate?.body || '<p>Booking confirmed</p>';
+        if (defaultTemplate?.subject) {
+          emailSubject = defaultTemplate.subject;
+        }
+        console.log('Using default customer_booking_confirmation template');
+      }
+
+      // Extract CUSTOMER data - this is WHO receives the email
+      let customerFirstName = '';
+      let customerLastName = '';
+      let customerEmail = '';
+
+      // Try bookingData first (has nested contracts.customers from the select query)
+      if (bookingData.contracts?.customers) {
+        customerFirstName = bookingData.contracts.customers.first_name || '';
+        customerLastName = bookingData.contracts.customers.second_name || '';
+        customerEmail = bookingData.contracts.customers.email || '';
+        console.log('✅ Customer from bookingData.contracts.customers');
+      } 
+      // Fallback to contractData.customers
+      else if (contractData.customers) {
+        customerFirstName = contractData.customers.first_name || '';
+        customerLastName = contractData.customers.second_name || '';
+        customerEmail = contractData.customers.email || '';
+        console.log('✅ Customer from contractData.customers');
+      }
+
+      const customerName = `${customerFirstName} ${customerLastName}`.trim();
+
+      if (!customerEmail) {
+        console.error('❌ CUSTOMER EMAIL NOT FOUND!');
+        console.log('Available data:', {
+          'bookingData.contracts': bookingData.contracts,
+          'contractData.customers': contractData.customers
+        });
         return false;
       }
 
-      // Create email subject
-      const emailSubject = `Nuova prenotazione - ${bookingData.customer_name}`;
+      console.log('✅ Customer data:', { customerName, customerEmail });
 
+      // Get contract/service info early for subject
+      const contractNumber = bookingData.contracts?.contract_number || contractData.contract_number || '';
+      const serviceName = bookingData.contracts?.service_name || contractData.service_name || '';
+      const partnerName = partnerData.company_name || 'PowerCowo';
+
+      // Replace variables in subject
+      emailSubject = emailSubject.replace(/\{\{service_name\}\}/g, serviceName);
+      emailSubject = emailSubject.replace(/\{\{contract_number\}\}/g, contractNumber);
+      emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+      emailSubject = emailSubject.replace(/\{\{customer_name\}\}/g, customerName);
+
+      console.log('✅ Email subject:', emailSubject);
+
+      // Format booking date
+      const bookingDate = new Date(bookingData.reservation_date).toLocaleDateString('it-IT', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Get resource info
+      const resourceName = bookingData.location_resources?.resource_name 
+        || contractData.services?.location_resources?.resource_name
+        || contractData.resource_name 
+        || '';
+      
+      const locationName = bookingData.location_resources?.locations?.location_name 
+        || contractData.services?.location_resources?.locations?.location_name
+        || contractData.location_name 
+        || '';
+
+      // Calculate remaining entries
+      const entriesUsed = bookingData.entries_used || (bookingData.duration_type === 'full_day' ? 1 : 0.5);
+      const currentEntriesUsed = contractData.entries_used || 0;
+      const maxEntries = contractData.service_max_entries || 0;
+      const remainingEntries = maxEntries - (currentEntriesUsed + entriesUsed);
+
+      // Duration and time slot info
+      const durationType = bookingData.duration_type === 'full_day' 
+        ? (t('reservations.fullDay') || 'Giornata intera')
+        : (t('reservations.halfDay') || 'Mezza giornata');
+      
+      let timeSlotInfo = '';
+      if (bookingData.duration_type === 'half_day' && bookingData.time_slot) {
+        timeSlotInfo = bookingData.time_slot === 'morning' 
+          ? `${t('reservations.morning') || 'Mattina'} (9:00 - 13:00)`
+          : `${t('reservations.afternoon') || 'Pomeriggio'} (14:00 - 18:00)`;
+      }
+
+      console.log('=== TEMPLATE VARIABLES ===');
+      const templateVars = {
+        partnerName,
+        customerName,
+        bookingDate,
+        resourceName,
+        locationName,
+        contractNumber,
+        serviceName,
+        durationType,
+        timeSlotInfo,
+        entriesUsed,
+        remainingEntries
+      };
+      console.log(templateVars);
+
+      // Replace ALL possible variable names in template
+      bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+      bodyHtml = bodyHtml.replace(/\{\{customer_name\}\}/g, customerName);
+      bodyHtml = bodyHtml.replace(/\{\{booking_date\}\}/g, bookingDate);
+      bodyHtml = bodyHtml.replace(/\{\{resource\}\}/g, resourceName);
+      bodyHtml = bodyHtml.replace(/\{\{resource_name\}\}/g, resourceName);
+      bodyHtml = bodyHtml.replace(/\{\{location_name\}\}/g, locationName);
+      bodyHtml = bodyHtml.replace(/\{\{contract_number\}\}/g, contractNumber);
+      bodyHtml = bodyHtml.replace(/\{\{service_name\}\}/g, serviceName);
+      bodyHtml = bodyHtml.replace(/\{\{duration_type\}\}/g, durationType);
+      bodyHtml = bodyHtml.replace(/\{\{time_slot\}\}/g, timeSlotInfo);
+      bodyHtml = bodyHtml.replace(/\{\{entries_used\}\}/g, entriesUsed.toString());
+      bodyHtml = bodyHtml.replace(/\{\{remaining_count\}\}/g, Math.max(0, remainingEntries).toString());
+      bodyHtml = bodyHtml.replace(/\{\{remaining_entries\}\}/g, Math.max(0, remainingEntries).toString());
+
+      // Fetch banner URL
+      const { data: files } = await supabase.storage
+        .from('partners')
+        .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+
+      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+      let bannerUrl = '';
+      
+      if (bannerFile) {
+        const { data } = supabase.storage
+          .from('partners')
+          .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
+        bannerUrl = data.publicUrl;
+      }
+
+      // Send email using unique template
       const payload = {
         app_id: this.appId,
-        email_from_name: "PowerCowo",
+        email_from_name: partnerName,
         email_subject: emailSubject,
         email_from_address: "info@tuttoapposto.info",
         email_reply_to_address: "noreply@proton.me",
-        template_id: this.partnerBookingTemplateId,
+        template_id: this.uniqueTemplateId,
         target_channel: "email",
-        include_email_tokens: [partnerEmail],
+        include_email_tokens: [customerEmail],
         include_aliases: {
           external_id: [contractData.partner_uuid]
         },
         custom_data: {
-          customer_name: bookingData.customer_name,
-          booking_date: bookingData.booking_date,
-          resource: bookingData.resource,
-          remaining_count: bookingData.remaining_count
+          banner_url: bannerUrl,
+          body_html: bodyHtml
         }
       };
 
-      console.log('Sending partner booking notification:', {
-        email: partnerEmail,
-        templateId: this.partnerBookingTemplateId,
-        customData: payload.custom_data
+      console.log('📧 Sending booking confirmation:', {
+        to: customerEmail,
+        from: partnerName,
+        subject: emailSubject,
+        bannerUrl
       });
 
       return await this.sendOneSignalRequest(payload);
     } catch (error) {
-      console.error('Error sending partner booking notification:', error);
+      console.error('Error sending booking confirmation:', error);
       return false;
     }
-  }
-
-  /**
-   * Prepare booking data for templates
-   * @param {Object} bookingData - Raw booking data
-   * @param {Object} contractData - Contract data
-   * @param {Function} t - Translation function
-   * @returns {Object} - Prepared booking data
-   */
-  prepareBookingData(bookingData, contractData, t) {
-    // Prepare customer name
-    const customerName = `${contractData.customers.first_name} ${contractData.customers.second_name}`.trim();
-
-    // Format booking date (assuming bookingData has the reservation date)
-    const bookingDate = this.formatBookingDate(bookingData.reservation_date || bookingData.date);
-
-    // Translate resource type
-    const resourceTypeNames = {
-      'scrivania': t('locations.scrivania'),
-      'sala_riunioni': t('locations.salaRiunioni')
-    };
-    const resource = resourceTypeNames[contractData.resource_type] || contractData.resource_name || t('services.resource');
-
-    // Calculate remaining entries after this booking
-    const entriesUsedAfterBooking = (contractData.entries_used || 0) + (bookingData.entries_consumed || 1);
-    const remainingCount = (contractData.service_max_entries || 0) - entriesUsedAfterBooking;
-
-    return {
-      customer_name: customerName,
-      booking_date: bookingDate,
-      resource: resource,
-      remaining_count: Math.max(0, remainingCount) // Ensure non-negative
-    };
   }
 
   /**
@@ -679,22 +743,6 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     console.log('Role:', invitationData.invited_role);
     console.log('Custom Message:', invitationData.custom_message || 'None');
     console.log('========================================');
-  }
-
-  /**
-   * Log booking email details for development
-   */
-  logBookingEmailDetails(bookingData, contractData, t) {
-    const preparedData = this.prepareBookingData(bookingData, contractData, t);
-    
-    console.log('=== BOOKING CONFIRMATION EMAILS WOULD BE SENT ===');
-    console.log('Customer Email:', contractData.customers.email);
-    console.log('Customer Template ID:', this.customerBookingTemplateId);
-    console.log('Partner Template ID:', this.partnerBookingTemplateId);
-    console.log('Booking Data:', preparedData);
-    console.log('Contract:', contractData.contract_number);
-    console.log('Service:', contractData.service_name);
-    console.log('================================================');
   }
 
   /**

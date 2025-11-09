@@ -1,10 +1,14 @@
-import { Edit2 } from 'lucide-react';
+import { Download, Edit2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
+import FattureInCloudImportModal from '../components/fattureincloud/FattureInCloudImportModal';
 import CustomerForm from '../components/forms/CustomerForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+
+// Logger
+import logger from '../utils/logger';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -14,18 +18,23 @@ const Customers = () => {
   const { profile } = useAuth();
   const { t } = useTranslation();
 
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [partnerSettings, setPartnerSettings] = useState(null);
+
+
   useEffect(() => {
     fetchCustomers();
+    fetchPartnerSettings();
   }, [profile]);
 
   const fetchCustomers = async () => {
     if (!profile?.partner_uuid) {
-      console.warn('No partner_uuid found for user');
+      logger.warn('No partner_uuid found for user');
       setLoading(false);
       return;
     }
 
-    console.log('Starting to fetch customers for partner:', profile.partner_uuid);
+    logger.log('Starting to fetch customers for partner:', profile.partner_uuid);
     try {
       let query = supabase
         .from('customers')
@@ -36,12 +45,12 @@ const Customers = () => {
 
       const { data, error } = await query;
 
-      console.log('Supabase response:', { data, error });
+      logger.log('Supabase response:', { data, error });
 
       if (error) {
-        console.error('Supabase error:', error);
+        logger.error('Supabase error:', error);
         // Provide mock data if the table doesn't exist or there's an error
-        console.log('Using mock data for customers');
+        logger.log('Using mock data for customers');
         setCustomers([
           {
             id: 1,
@@ -93,78 +102,105 @@ const Customers = () => {
           }
         ]);
       } else {
-        console.log('Setting real customers data:', data);
+        logger.log('Setting real customers data:', data);
         setCustomers(data || []);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
       toast.error(t('messages.errorLoadingCustomers'));
       setCustomers([]);
     } finally {
-      console.log('Setting loading to false');
+      logger.log('Setting loading to false');
       setLoading(false);
     }
   };
 
+  const fetchPartnerSettings = async () => {
+    if (!profile?.partner_uuid) return;
+    
+    logger.log('Fetching partner settings for:', profile.partner_uuid);
+    
+    const { data, error } = await supabase
+      .from('partners')
+      .select('fattureincloud_enabled, fattureincloud_company_id, fattureincloud_api_token')
+      .eq('partner_uuid', profile.partner_uuid)
+      .single();
+    
+    logger.log('Partner settings result:', { data, error });
+      
+    if (!error && data) {
+      setPartnerSettings(data);
+      logger.log('✅ Partner settings loaded:', data);
+    } else {
+      logger.error('❌ Error loading partner settings:', error);
+    }
+  };
+
+  // Add handler:
+  const handleImportSuccess = () => {
+    fetchCustomers();
+    setShowImportModal(false);
+  };
+
   const checkCustomerConstraints = async (customerId) => {
-    console.log('=== CHECKING CONSTRAINTS FOR CUSTOMER ID:', customerId);
+    logger.log('=== CHECKING CONSTRAINTS FOR CUSTOMER ID:', customerId);
     const constraints = [];
 
     try {
       // Check for active bookings
-      console.log('Checking bookings...');
+      logger.log('Checking bookings...');
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('id, booking_status')
         .eq('customer_id', customerId);
 
-      console.log('Bookings result:', { data: bookings, error: bookingsError });
+      logger.log('Bookings result:', { data: bookings, error: bookingsError });
       
       if (!bookingsError && bookings && bookings.length > 0) {
         const activeBookings = bookings.filter(b => b.booking_status === 'active');
         if (activeBookings.length > 0) {
           constraints.push(t('customers.constraints.activeBookings', { count: activeBookings.length }));
-          console.log('Found active bookings:', activeBookings.length);
+          logger.log('Found active bookings:', activeBookings.length);
         }
       }
 
       // Check for active contracts
-      console.log('Checking contracts...');
+      logger.log('Checking contracts...');
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
         .select('id, contract_status')
         .eq('customer_id', customerId);
 
-      console.log('Contracts result:', { data: contracts, error: contractsError });
+      logger.log('Contracts result:', { data: contracts, error: contractsError });
       
       if (!contractsError && contracts && contracts.length > 0) {
         const activeContracts = contracts.filter(c => c.contract_status === 'active');
         if (activeContracts.length > 0) {
           constraints.push(t('customers.constraints.activeContracts', { count: activeContracts.length }));
-          console.log('Found active contracts:', activeContracts.length);
+          logger.log('Found active contracts:', activeContracts.length);
         }
       }
 
       // Check for package reservations
-      console.log('Checking package reservations...');
+      logger.log('Checking package reservations...');
       const { data: reservations, error: reservationsError } = await supabase
         .from('package_reservations')
         .select('id, reservation_status')
         .eq('customer_id', customerId);
 
-      console.log('Reservations result:', { data: reservations, error: reservationsError });
+      logger.log('Reservations result:', { data: reservations, error: reservationsError });
       
       if (!reservationsError && reservations && reservations.length > 0) {
         const activeReservations = reservations.filter(r => r.reservation_status === 'confirmed');
         if (activeReservations.length > 0) {
           constraints.push(t('customers.constraints.activeReservations', { count: activeReservations.length }));
-          console.log('Found active reservations:', activeReservations.length);
+          logger.log('Found active reservations:', activeReservations.length);
         }
       }
 
       // Check for payments through contracts
       if (contracts && contracts.length > 0) {
-        console.log('Checking payments for contracts...');
+        logger.log('Checking payments for contracts...');
         const contractIds = contracts.map(c => c.id);
         
         const { data: payments, error: paymentsError } = await supabase
@@ -172,34 +208,34 @@ const Customers = () => {
           .select('id, payment_status')
           .in('contract_id', contractIds);
 
-        console.log('Payments result:', { data: payments, error: paymentsError });
+        logger.log('Payments result:', { data: payments, error: paymentsError });
         
         if (!paymentsError && payments && payments.length > 0) {
           const activePayments = payments.filter(p => ['pending', 'completed'].includes(p.payment_status));
           if (activePayments.length > 0) {
             constraints.push(t('customers.constraints.relatedPayments', { count: activePayments.length }));
-            console.log('Found related payments:', activePayments.length);
+            logger.log('Found related payments:', activePayments.length);
           }
         }
       }
 
     } catch (error) {
-      console.error('CONSTRAINT CHECK ERROR:', error);
+      logger.error('CONSTRAINT CHECK ERROR:', error);
     }
 
-    console.log('=== FINAL CONSTRAINTS:', constraints);
+    logger.log('=== FINAL CONSTRAINTS:', constraints);
     return constraints;
   };
 
   const handleDeleteCustomer = async (customer) => {
-    console.log('=== STARTING DELETE PROCESS FOR CUSTOMER:', customer);
+    logger.log('=== STARTING DELETE PROCESS FOR CUSTOMER:', customer);
     
     // Check constraints first
     const constraints = await checkCustomerConstraints(customer.id);
     
     // If there are constraints, show error and don't proceed
     if (constraints.length > 0) {
-      console.log('=== CANNOT DELETE - HAS CONSTRAINTS');
+      logger.log('=== CANNOT DELETE - HAS CONSTRAINTS');
       toast.error(t('customers.cannotDeleteWithConstraints'));
       return { success: false, constraints };
     }
@@ -215,11 +251,11 @@ const Customers = () => {
         .eq('id', customer.id);
 
       if (error) {
-        console.error('Database error:', error);
+        logger.error('Database error:', error);
         throw error;
       }
 
-      console.log('=== CUSTOMER STATUS UPDATED TO INACTIVE');
+      logger.log('=== CUSTOMER STATUS UPDATED TO INACTIVE');
 
       // Remove from UI
       setCustomers(prev => prev.filter(c => c.id !== customer.id));
@@ -228,7 +264,7 @@ const Customers = () => {
       return { success: true };
 
     } catch (error) {
-      console.error('Error deactivating customer:', error);
+      logger.error('Error deactivating customer:', error);
       toast.error(t('customers.errorDeactivatingCustomer'));
       return { success: false, error: error.message };
     }
@@ -311,11 +347,22 @@ const Customers = () => {
             <div className="stat-item">
               <span className="stat-label">{t('customers.companies')}</span>
               <span className="stat-value">
-                {customers.filter(c => c.customer_type === 'company').length}
+                {customers.filter(c => c.customer_type === 'entrepeneur').length}
               </span>
             </div>
           </div>
         </div>
+        
+        {partnerSettings?.fattureincloud_enabled && (
+          <button
+            className="btn-primary"
+            onClick={() => setShowImportModal(true)}
+            style={{ alignSelf: 'flex-start' }}
+          >
+            <Download size={16} style={{ marginRight: '0.5rem' }} />
+            {t('customers.importFromFC')}
+          </button>
+        )}
       </div>
 
       <div className="customers-table-container">
@@ -444,6 +491,16 @@ const Customers = () => {
         customer={editingCustomer}
         partnerUuid={profile?.partner_uuid}
       />
+
+      
+      <FattureInCloudImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        partnerSettings={partnerSettings}
+        partnerUuid={profile?.partner_uuid}
+        onImportSuccess={handleImportSuccess}
+      />
+
     </div>
   );
 };

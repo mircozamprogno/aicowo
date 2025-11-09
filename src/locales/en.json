@@ -108,6 +108,23 @@
     "delete": "Delete",
     "cannotDeleteWithConstraints": "Cannot delete customer due to active constraints",
     "structureName": "Structure Name",
+    "importFromFC": "Import Clients from FC",
+    "importClientsTitle": "Import Clients from FattureInCloud",
+    "loadingClients": "Loading clients...",
+    "noClientsAvailable": "No clients available to import.",
+    "selectAllClients": "Select All ({count} clients)",
+    "importSelected": "Import Selected ({count})",
+    "importing": "Importing...",
+    "importSuccess": "Successfully imported {count} clients!",
+    "importPartial": "Imported {success}/{total} clients",
+    "importError": "Import error: {error}",
+    "fetchClientsError": "Failed to fetch clients: {error}",
+    "selectAtLeastOne": "Please select at least one client to import",
+    "clientImported": "Imported",
+    "clientFailed": "Failed",
+    "profileNotFound": "Customer profile not found",
+    "errorLoadingProfile": "Error loading your customer profile",
+    "errorLoadingCustomers": "Error loading customers",
     "constraints": {
       "activeBookings": "{{count}} active booking(s)",
       "activeContracts": "{{count}} active contract(s)",
@@ -539,7 +556,10 @@
     "remove": "Remove",
     "continue": "Continue",
     "deleting": "Deleting ...",
-    "back": "Back"
+    "back": "Back",
+    "understood": "Understood",
+    "to": "to",
+    "of": "of"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -666,7 +686,13 @@
     "errorCreatingPartnerContract": "Error creating partner contract",
     "errorUpdatingPartnerContract": "Error updating partner contract",
     "errorDeletingPartnerContract": "Error deleting partner contract",
-    "errorUpdatingStatus": "Error updating status"
+    "errorUpdatingStatus": "Error updating status",
+    "serviceDeletedSuccessfully": "Service deleted successfully",
+    "errorDeletingService": "Error deleting service",
+    "errorCheckingContracts": "Error checking for associated contracts",
+    "endDateRequired": "End date is required",
+    "endDateMustBeAfterStartDate": "End date must be after start date",
+    "priceInvalid": "Price must be a valid number greater than zero"
   },
   "services": {
     "title": "Services",
@@ -747,7 +773,15 @@
     "packageDescription": "Access tickets that can be used within the expiration date",
     "serviceInfoModalDescription": "Understanding the different service types available in your coworking space",
     "subscriptionExample": "Example: Monthly desk access, yearly meeting room subscription",
-    "packageExample": "Example: 10-visit package, day pass bundle"
+    "packageExample": "Example: 10-visit package, day pass bundle",
+    "confirmDelete": "Confirm Deletion",
+    "confirmDeleteMessage": "Are you sure you want to delete this service? This action cannot be undone.",
+    "cannotDeleteTitle": "Cannot Delete Service",
+    "cannotDeleteMessage": "This service cannot be deleted because it has {{count}} active contract(s) associated with it.",
+    "cannotDeleteHint": "Please cancel or expire all contracts before deleting this service.",
+    "halfDay": "Half Day",
+    "oneDay": "1 Day",
+    "daysCount": "{{count}} Days"
   },
   "reservations": {
     "title": "Package Reservations",
@@ -796,7 +830,16 @@
     "resourceFullyBooked": "Resource fully booked for this date",
     "resourceBookedFullDay": "Resource booked for full day on this date",
     "timeSlotFullyBooked": "{{timeSlot}} slot fully booked",
-    "errorCheckingAvailability": "Error checking availability"
+    "errorCheckingAvailability": "Error checking availability",
+    "insufficientEntries": "Insufficient entries remaining in package",
+    "dateOutsideContract": "Reservation date must be within contract period",
+    "resourceNotAvailableError": "Resource not available for selected date and time",
+    "errorCreatingReservation": "Error creating reservation",
+    "availablePeriod": "Available period",
+    "selectDuration": "Select duration",
+    "available": "Available",
+    "resourceAvailableFor": "{{resource}} is available for your selected time",
+    "capacity": "Capacity"
   },
   "contracts": {
     "title": "Contracts",
@@ -938,6 +981,14 @@
     "freeTrialAlreadyUsed": "You have already used your free trial",
     "freeTrialOncePerCustomer": "Free trial services can only be used once per customer, even if deleted or archived.",
     "cancelledContracts": "Cancelled",
+    "pricesExcludeVAT": "Prices are without VAT",
+    "overridePrice": "Override price",
+    "enterCustomPrice": "Enter custom price",
+    "customEndDate": "Custom end date",
+    "customDuration": "Custom duration",
+    "customPrice": "Custom price",
+    "price": "Prezzo",
+    "errorLoadingPackages": "Error loading packages",
     "tooltips": {
       "generatePDF": "Download PDF receipt",
       "editContract": "Edit contract details",

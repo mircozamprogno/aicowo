@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import '../styles/components/contractaction.css';
+import logger from '../utils/logger';
 
 const ContractActionsCell = ({ 
   contract, 
@@ -42,8 +43,8 @@ const ContractActionsCell = ({
 
   const canBook = canBookPackage(contract);
 
-  console.log('Testing translation:', t('contracts.actions.downloadPDF'));
-  console.log('Testing translation type:', typeof t('contracts.actions.downloadPDF'));
+  logger.log('Testing translation:', t('contracts.actions.downloadPDF'));
+  logger.log('Testing translation type:', typeof t('contracts.actions.downloadPDF'));
   
   // Check if already uploaded to FattureInCloud
   const isUploaded = uploadStatus && uploadStatus.upload_status === 'success';
@@ -81,13 +82,13 @@ const ContractActionsCell = ({
       
       if (result.success) {
         // Show success feedback
-        console.log(`Invoice uploaded successfully! Number: ${result.invoice_number}`);
+        logger.log(`Invoice uploaded successfully! Number: ${result.invoice_number}`);
         onUploadSuccess && onUploadSuccess(result);
       } else {
-        console.error(`Upload failed: ${result.error}`);
+        logger.error(`Upload failed: ${result.error}`);
       }
     } catch (error) {
-      console.error(`Upload error: ${error.message}`);
+      logger.error(`Upload error: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -130,7 +131,7 @@ const ContractActionsCell = ({
       label: t('contracts.actions.recordPayment'),
       className: 'payment-btn',
       onClick: () => {
-        console.log('Recording payment for contract:', contract.id);
+        logger.log('Recording payment for contract:', contract.id);
         onRecordPayment(contract);
       },
       show: canManagePayments && contract.requires_payment !== false && contract.service_type !== 'free_trial'
@@ -141,7 +142,7 @@ const ContractActionsCell = ({
       label: t('contracts.actions.paymentHistory'), 
       className: 'history-btn',
       onClick: () => {
-        console.log('Opening payment history for contract:', contract.id);
+        logger.log('Opening payment history for contract:', contract.id);
         onPaymentHistory(contract);
       },
       show: canManagePayments && contract.requires_payment !== false && contract.service_type !== 'free_trial'
@@ -161,7 +162,7 @@ const ContractActionsCell = ({
       className: 'package-booking-btn',
       onClick: () => {
         if (canBook) {
-          console.log('Booking package for contract:', contract.id);
+          logger.log('Booking package for contract:', contract.id);
           onPackageBooking(contract);
         }
       },

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
+import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
 const PartnerBookingForm = ({ 
@@ -95,12 +96,12 @@ const PartnerBookingForm = ({
         setSelectedCustomer(customerData);
         // Packages will be loaded by the useEffect above
       } else {
-        toast.error('Customer profile not found');
+        toast.error(t('customers.profileNotFound'));
         onClose();
       }
     } catch (error) {
       console.error('Error fetching customer data:', error);
-      toast.error('Error loading your customer profile');
+      toast.error(t('customers.errorLoadingProfile'));
       onClose();
     } finally {
       setLoadingCustomers(false);
@@ -145,7 +146,7 @@ const PartnerBookingForm = ({
       setCustomers(customersWithPackages);
     } catch (error) {
       console.error('Error fetching customers:', error);
-      toast.error('Error loading customers');
+      toast.error(t('customers.errorLoadingCustomers'));
     } finally {
       setLoadingCustomers(false);
     }
@@ -200,14 +201,15 @@ const PartnerBookingForm = ({
       setAvailablePackages(availablePackages);
     } catch (error) {
       console.error('Error fetching packages:', error);
-      toast.error('Error loading packages');
+      toast.error(t('contracts.errorLoadingPackages'));
       setAvailablePackages([]);
     } finally {
       setLoadingPackages(false);
     }
   };
 
-  const handleCustomerSelect = async (customerId) => {
+  const handleCustomerSelect = async (e) => {
+    const customerId = e.target.value;
     const customer = customers.find(c => c.id === parseInt(customerId));
     setSelectedCustomer(customer);
     
@@ -217,7 +219,8 @@ const PartnerBookingForm = ({
     }
   };
 
-  const handlePackageSelect = (packageId) => {
+  const handlePackageSelect = (e) => {
+    const packageId = e.target.value;
     const pkg = availablePackages.find(p => p.id === parseInt(packageId));
     setSelectedPackage(pkg);
     setFormData({
@@ -301,7 +304,7 @@ const PartnerBookingForm = ({
     const remainingEntries = selectedPackage.service_max_entries - (selectedPackage.entries_used || 0);
     
     if (remainingEntries < entriesNeeded) {
-      toast.error('Insufficient entries remaining in package');
+      toast.error(t('reservations.insufficientEntries'));
       return false;
     }
 
@@ -310,12 +313,12 @@ const PartnerBookingForm = ({
     const contractEnd = new Date(selectedPackage.end_date);
     
     if (reservationDate < contractStart || reservationDate > contractEnd) {
-      toast.error('Reservation date must be within contract period');
+      toast.error(t('reservations.dateOutsideContract'));
       return false;
     }
 
     if (!availabilityStatus?.available) {
-      toast.error('Resource not available for selected date and time');
+      toast.error(t('reservations.resourceNotAvailableError'));
       return false;
     }
 
@@ -358,7 +361,14 @@ const PartnerBookingForm = ({
           *,
           contracts (
             contract_number,
-            service_name
+            service_name,
+            service_max_entries,
+            entries_used,
+            customers (
+              first_name,
+              second_name,
+              email
+            )
           ),
           location_resources (
             resource_name,
@@ -372,22 +382,26 @@ const PartnerBookingForm = ({
 
       if (error) throw error;
 
-      // Send booking confirmation emails
+      // Send booking confirmation email
       try {
         const { data: partnerData } = await supabase
           .from('partners')
-          .select('email, contact_email, first_name, second_name, company_name')
+          .select('company_name, email')
           .eq('partner_uuid', selectedPackage.partner_uuid)
           .single();
 
-        await oneSignalEmailService.sendBookingConfirmation(
+        const emailSent = await oneSignalEmailService.sendBookingConfirmation(
           data,
           selectedPackage,
           t,
           partnerData
         );
+
+        if (!emailSent) {
+          console.warn('Booking confirmation email not sent');
+        }
       } catch (emailError) {
-        console.error('Error sending emails:', emailError);
+        console.error('Error sending booking confirmation:', emailError);
       }
 
       toast.success(t('reservations.bookingConfirmed'));
@@ -396,7 +410,7 @@ const PartnerBookingForm = ({
       
     } catch (error) {
       console.error('Error creating reservation:', error);
-      toast.error('Error creating reservation: ' + error.message);
+      toast.error(t('reservations.errorCreatingReservation') + ': ' + error.message);
     } finally {
       setLoading(false);
       setShowConfirmation(false);
@@ -429,6 +443,27 @@ const PartnerBookingForm = ({
     : 0;
   const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
 
+  // Prepare customer options for SearchableSelect
+  const customerOptions = customers.map(customer => ({
+    value: customer.id.toString(),
+    label: `${customer.company_name || `${customer.first_name} ${customer.second_name}`} - ${customer.email}`
+  }));
+
+  // Prepare package options for SearchableSelect
+  const packageOptions = availablePackages.map(pkg => {
+    const remaining = pkg.service_max_entries - (pkg.entries_used || 0);
+    return {
+      value: pkg.id.toString(),
+      label: `${pkg.contract_number} - ${pkg.service_name} (${remaining} ${t('bookings.entriesRemaining')}) - ${pkg.resource_name} @ ${pkg.location_name}`
+    };
+  });
+
+  // Prepare duration options for SearchableSelect
+  const durationOptions = [
+    { value: 'full_day', label: t('reservations.fullDayEntry') },
+    { value: 'half_day', label: t('reservations.halfDayEntry') }
+  ];
+
   // Confirmation modal
   if (showConfirmation) {
     return (
@@ -453,8 +488,6 @@ const PartnerBookingForm = ({
             </div>
 
             <div className="contract-summary">
-              <h4>{t('reservations.bookingSummary')}</h4>
-              
               <div className="summary-section">
                 <h5>{t('customers.customerDetails')}</h5>
                 <div className="summary-item">
@@ -470,7 +503,7 @@ const PartnerBookingForm = ({
               </div>
 
               <div className="summary-section">
-                <h5>{t('reservations.contractDetails')}</h5>
+                <h5>{t('reservations.reservationDetails')}</h5>
                 <div className="summary-item">
                   <span className="summary-label">{t('contracts.contract')}:</span>
                   <span className="summary-value">{selectedPackage.contract_number}</span>
@@ -489,10 +522,6 @@ const PartnerBookingForm = ({
                   <span className="summary-label">{t('contracts.location')}:</span>
                   <span className="summary-value">{selectedPackage.location_name}</span>
                 </div>
-              </div>
-
-              <div className="summary-section">
-                <h5>{t('reservations.reservationDetails')}</h5>
                 <div className="summary-item">
                   <span className="summary-label">{t('reservations.dateLabel')}:</span>
                   <span className="summary-value">{formatDate(formData.reservation_date)}</span>
@@ -578,19 +607,13 @@ const PartnerBookingForm = ({
                   <label htmlFor="customer" className="form-label">
                     {t('customers.customer')} *
                   </label>
-                  <select
-                    id="customer"
+                  <SearchableSelect
+                    options={customerOptions}
+                    value={selectedCustomer?.id?.toString() || ''}
+                    onChange={handleCustomerSelect}
+                    placeholder={t('bookings.selectACustomer')}
                     required
-                    onChange={(e) => handleCustomerSelect(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="">{t('bookings.selectACustomer')}</option>
-                    {customers.map(customer => (
-                      <option key={customer.id} value={customer.id}>
-                        {customer.company_name || `${customer.first_name} ${customer.second_name}`} - {customer.email}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               )}
             </>
@@ -647,23 +670,13 @@ const PartnerBookingForm = ({
                   <label htmlFor="package" className="form-label">
                     {t('bookings.packageContract')} *
                   </label>
-                  <select
-                    id="package"
+                  <SearchableSelect
+                    options={packageOptions}
+                    value={selectedPackage?.id?.toString() || ''}
+                    onChange={handlePackageSelect}
+                    placeholder={t('bookings.selectAPackage')}
                     required
-                    value={selectedPackage?.id || ''}
-                    onChange={(e) => handlePackageSelect(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="">{t('bookings.selectAPackage')}</option>
-                    {availablePackages.map(pkg => {
-                      const remaining = pkg.service_max_entries - (pkg.entries_used || 0);
-                      return (
-                        <option key={pkg.id} value={pkg.id}>
-                          {pkg.contract_number} - {pkg.service_name} ({remaining} {t('bookings.entriesRemaining')}) - {pkg.resource_name} @ {pkg.location_name}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  />
                 </div>
               )}
 
@@ -685,21 +698,24 @@ const PartnerBookingForm = ({
                         onChange={(e) => setFormData(prev => ({ ...prev, reservation_date: e.target.value }))}
                         className="form-input"
                       />
+                      {selectedPackage.start_date && selectedPackage.end_date && (
+                        <small style={{ display: 'block', marginTop: '0.25rem', color: '#6b7280' }}>
+                          {t('reservations.availablePeriod')}: {formatDate(selectedPackage.start_date)} {t('common.to')} {formatDate(selectedPackage.end_date)}
+                        </small>
+                      )}
                     </div>
                     
                     <div className="form-group">
                       <label htmlFor="duration_type" className="form-label">
                         {t('reservations.duration')} *
                       </label>
-                      <select
-                        id="duration_type"
+                      <SearchableSelect
+                        options={durationOptions}
                         value={formData.duration_type}
                         onChange={(e) => setFormData(prev => ({ ...prev, duration_type: e.target.value }))}
-                        className="form-select"
-                      >
-                        <option value="full_day">{t('reservations.fullDayEntry')}</option>
-                        <option value="half_day">{t('reservations.halfDayEntry')}</option>
-                      </select>
+                        placeholder={t('reservations.selectDuration')}
+                        required
+                      />
                     </div>
                   </div>
 
@@ -772,14 +788,11 @@ const PartnerBookingForm = ({
                             <div className="availability-success">
                               <CheckCircle size={20} />
                               <div className="availability-details">
-                                <p><strong>{t('reservations.resourceAvailable')}</strong></p>
-                                <p>{availabilityStatus.resourceName}</p>
+                                <p><strong>{t('reservations.available')}</strong></p>
+                                <p>{t('reservations.resourceAvailableFor', { resource: availabilityStatus.resourceName })}</p>
                                 {availabilityStatus.totalQuantity > 1 && (
                                   <p>
-                                    {t('reservations.capacityAvailable', {
-                                      available: availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0),
-                                      total: availabilityStatus.totalQuantity
-                                    })}
+                                    {t('reservations.capacity')}: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} {t('common.of')} {availabilityStatus.totalQuantity} {t('reservations.available')}
                                   </p>
                                 )}
                               </div>

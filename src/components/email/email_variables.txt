@@ -1,0 +1,43 @@
+TEMPLATE VARIABLES FOR BOOKING CONFIRMATION EMAIL
+===================================================
+
+Use these EXACT variable names in your email template in the database:
+
+CUSTOMER & PARTNER:
+  {{customer_name}}        - Full name of the customer (e.g., "Mario Rossi")
+  {{partner_name}}         - Company/partner name (e.g., "MLM GmbH")
+
+BOOKING DETAILS:
+  {{booking_date}}         - Formatted date (e.g., "mercoledì 19 novembre 2025")
+  {{resource}}             - Resource name (e.g., "Hot Desk A1")
+  {{location_name}}        - Location name (e.g., "Milano Centro")
+
+CONTRACT INFO:
+  {{contract_number}}      - Contract number (e.g., "MLM-20250119-001")
+  {{service_name}}         - Service name (e.g., "Pacchetto 10 entrate")
+
+DURATION:
+  {{duration_type}}        - "Giornata intera" or "Mezza giornata"
+  {{time_slot}}            - If half day: "Mattina (9:00 - 13:00)" or "Pomeriggio (14:00 - 18:00)"
+
+ENTRIES:
+  {{entries_used}}         - Entries consumed by this booking (1 or 0.5)
+  {{remaining_count}}      - Entries remaining after this booking
+
+EXAMPLE TEMPLATE:
+=================
+
+Ciao {{customer_name}},
+
+Ottima notizia! La tua prenotazione è stata confermata con successo.
+
+Dettagli Prenotazione:
+- Servizio: {{service_name}}
+- Data: {{booking_date}}
+- Risorsa: {{resource}}
+- Ingressi Rimanenti: {{remaining_count}}
+
+Non vediamo l'ora di vederti!
+
+Cordiali saluti,
+Il Tuo Team {{partner_name}}

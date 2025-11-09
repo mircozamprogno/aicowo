@@ -16,6 +16,7 @@ import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
 import Support from '../../pages/Support'; // ← ADD THIS IMPORT
 import Users from '../../pages/Users';
+import logger from '../../utils/logger';
 import ForgotPassword from '../auth/ForgotPassword';
 import InvitationRegister from '../auth/InvitationRegister';
 import Login from '../auth/Login';
@@ -35,7 +36,7 @@ const Router = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const newPath = window.location.hash.slice(1) || '/login';
-      console.log('Router: Hash changed to:', newPath);
+      logger.log('Router: Hash changed to:', newPath);
       setCurrentPath(newPath);
     };
 
@@ -54,16 +55,16 @@ const Router = () => {
     const hasError = urlParams.get('error') || hashParams.get('error');
     const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
     
-    console.log('=== RECOVERY FLOW DEBUG ===');
-    console.log('Full URL:', window.location.href);
-    console.log('Hash:', window.location.hash);
-    console.log('Search:', window.location.search);
-    console.log('Recovery type found:', isRecoveryType);
-    console.log('Access token found:', !!hasAccessToken);
-    console.log('Error found:', hasError);
-    console.log('Error code:', errorCode);
-    console.log('isPasswordRecovery from context:', isPasswordRecovery);
-    console.log('==========================');
+    logger.log('=== RECOVERY FLOW DEBUG ===');
+    logger.log('Full URL:', window.location.href);
+    logger.log('Hash:', window.location.hash);
+    logger.log('Search:', window.location.search);
+    logger.log('Recovery type found:', isRecoveryType);
+    logger.log('Access token found:', !!hasAccessToken);
+    logger.log('Error found:', hasError);
+    logger.log('Error code:', errorCode);
+    logger.log('isPasswordRecovery from context:', isPasswordRecovery);
+    logger.log('==========================');
     
     // Return true if any recovery indicator is present
     return isRecoveryType || hasAccessToken || isPasswordRecovery || (hasError && errorCode === 'otp_expired');
@@ -73,16 +74,16 @@ const Router = () => {
   useEffect(() => {
     if (loading) return; // Wait for auth check to complete
 
-    console.log('Router: Checking redirects - User:', !!user, 'Path:', currentPath, 'IsRecovery:', isRecoveryFlow());
+    logger.log('Router: Checking redirects - User:', !!user, 'Path:', currentPath, 'IsRecovery:', isRecoveryFlow());
 
     // If this is a recovery flow, always go to reset password page regardless of auth state
     if (isRecoveryFlow()) {
       if (!currentPath.startsWith('/reset-password') && !currentPath.startsWith('/ResetPassword')) {
-        console.log('Router: Recovery flow detected, redirecting to reset password');
+        logger.log('Router: Recovery flow detected, redirecting to reset password');
         // PRESERVE URL parameters when redirecting
         const currentParams = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
         const redirectUrl = currentParams ? `/ResetPassword?${currentParams}` : '/ResetPassword';
-        console.log('Router: Redirecting to:', redirectUrl);
+        logger.log('Router: Redirecting to:', redirectUrl);
         window.location.hash = redirectUrl;
         return;
       }
@@ -98,21 +99,21 @@ const Router = () => {
 
     // If user is logged in but on auth pages, redirect to dashboard
     if (user && !isPasswordRecovery && ['/login', '/register', '/forgot-password'].includes(currentPath)) {
-      console.log('Router: User logged in, redirecting to dashboard');
+      logger.log('Router: User logged in, redirecting to dashboard');
       window.location.hash = '/dashboard';
       return;
     }
 
     // If user is not logged in and not on auth pages, redirect to login
     if (!user && !['/login', '/register', '/forgot-password', '/reset-password', '/ResetPassword'].includes(currentPath)) {
-      console.log('Router: User not logged in, redirecting to login');
+      logger.log('Router: User not logged in, redirecting to login');
       window.location.hash = '/login';
       return;
     }
   }, [user, loading, currentPath, isPasswordRecovery]);
 
   if (loading) {
-    console.log('Router: Showing loading spinner');
+    logger.log('Router: Showing loading spinner');
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -120,7 +121,7 @@ const Router = () => {
     );
   }
 
-  console.log('Router: Rendering page - User:', !!user, 'Path:', currentPath);
+  logger.log('Router: Rendering page - User:', !!user, 'Path:', currentPath);
 
   // Handle invitation registration route (can include query parameters)
   if (currentPath.startsWith('/invitation-register')) {

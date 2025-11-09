@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
 const ContractForm = ({ 
@@ -39,6 +40,21 @@ const ContractForm = ({
   const [hasExistingFreeTrial, setHasExistingFreeTrial] = useState(false);
   const [checkingFreeTrial, setCheckingFreeTrial] = useState(false);
 
+  // Price and date override states (for partners only)
+  const [overrideEndDate, setOverrideEndDate] = useState(false);
+  const [manualEndDate, setManualEndDate] = useState('');
+  const [overridePrice, setOverridePrice] = useState(false);
+  const [manualPrice, setManualPrice] = useState('');
+
+  // Determine if user can override
+  const isPartnerAdmin = profile?.role === 'admin';
+  const isSuperAdmin = profile?.role === 'superadmin';
+  const canOverride = isPartnerAdmin || isSuperAdmin;
+
+  // Separate state for tracking if we're loading a contract for edit
+  const [loadingEditContract, setLoadingEditContract] = useState(false);
+  const [pendingServiceId, setPendingServiceId] = useState(null);
+
   // Get customer ID for customer mode
   useEffect(() => {
     if (isCustomerMode && user && isOpen) {
@@ -60,6 +76,18 @@ const ContractForm = ({
     }
   }, [isOpen, editMode, contractToEdit]);
 
+  // Set service_id AFTER availableServices is populated in edit mode
+  useEffect(() => {
+    if (loadingEditContract && availableServices.length > 0 && pendingServiceId) {
+      setFormData(prev => ({
+        ...prev,
+        service_id: pendingServiceId
+      }));
+      setLoadingEditContract(false);
+      setPendingServiceId(null);
+    }
+  }, [availableServices, loadingEditContract, pendingServiceId]);
+
   // Fetch services when location changes
   useEffect(() => {
     if (formData.location_id) {
@@ -72,26 +100,26 @@ const ContractForm = ({
     }
   }, [formData.location_id, customerLocations, locations]);
 
-  // Calculate end date when service or start date changes
+  // Calculate end date when service or start date changes (only if not overriding)
   useEffect(() => {
-    if (selectedService && formData.start_date) {
+    if (selectedService && formData.start_date && !overrideEndDate) {
       calculateEndDate();
-    } else {
+    } else if (!overrideEndDate) {
       setCalculatedEndDate('');
       setAvailabilityStatus(null);
     }
-  }, [selectedService, formData.start_date]);
+  }, [selectedService, formData.start_date, overrideEndDate]);
 
   // Check availability when we have service, dates, and it's an abbonamento
   useEffect(() => {
-    if (selectedService && formData.start_date && calculatedEndDate && 
+    const endDate = overrideEndDate ? manualEndDate : calculatedEndDate;
+    if (selectedService && formData.start_date && endDate && 
         selectedService.service_type === 'abbonamento') {
       checkResourceAvailability();
     } else {
       setAvailabilityStatus(null);
     }
-  }, [selectedService, formData.start_date, calculatedEndDate]);
-
+  }, [selectedService, formData.start_date, calculatedEndDate, overrideEndDate, manualEndDate]);
 
   useEffect(() => {
     if (isCustomerMode && formData.customer_id && isOpen) {
@@ -103,43 +131,71 @@ const ContractForm = ({
     if (!contractToEdit) return;
 
     try {
-      // Set form data from existing contract
+      setLoadingEditContract(true);
+      
+      // Load ALL services for this location first
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select(`
+          *,
+          location_resources!fk_services_location_resource (
+            id,
+            resource_name,
+            resource_type,
+            locations (
+              id,
+              location_name
+            )
+          )
+        `)
+        .eq('location_resources.location_id', parseInt(contractToEdit.location_id))
+        .eq('partner_uuid', partnerUuid)
+        .eq('service_status', 'active')
+        .order('service_name');
+
+      if (!servicesError && servicesData) {
+        // Set available services first
+        setAvailableServices(servicesData);
+        
+        // Find and set the selected service
+        const selectedSvc = servicesData.find(s => s.id === contractToEdit.service_id);
+        if (selectedSvc) {
+          setSelectedService(selectedSvc);
+          
+          // Check if dates or price were manually overridden
+          const calculatedEnd = new Date(contractToEdit.start_date);
+          calculatedEnd.setDate(calculatedEnd.getDate() + selectedSvc.duration_days);
+          const calculatedEndStr = calculatedEnd.toISOString().split('T')[0];
+          
+          if (contractToEdit.end_date !== calculatedEndStr && canOverride) {
+            setOverrideEndDate(true);
+            setManualEndDate(contractToEdit.end_date);
+          }
+          
+          if (parseFloat(contractToEdit.service_cost) !== parseFloat(selectedSvc.cost) && canOverride) {
+            setOverridePrice(true);
+            setManualPrice(contractToEdit.service_cost.toString());
+          }
+        }
+        
+        // Store the service_id to be set after services are loaded
+        setPendingServiceId(contractToEdit.service_id?.toString() || '');
+      }
+
+      // Set form data WITHOUT service_id (will be set by useEffect)
       setFormData({
         customer_id: contractToEdit.customer_id?.toString() || '',
         location_id: contractToEdit.location_id?.toString() || '',
-        service_id: contractToEdit.service_id?.toString() || '',
+        service_id: '', // Will be set by useEffect after services load
         start_date: contractToEdit.start_date || ''
       });
-
-      // Load the service details if we have a service_id
-      if (contractToEdit.service_id) {
-        const { data: serviceData, error } = await supabase
-          .from('services')
-          .select(`
-            *,
-            location_resources!fk_services_location_resource (
-              id,
-              resource_name,
-              resource_type,
-              locations (
-                id,
-                location_name
-              )
-            )
-          `)
-          .eq('id', contractToEdit.service_id)
-          .single();
-
-        if (!error && serviceData) {
-          setSelectedService(serviceData);
-        }
-      }
 
       // Set calculated end date from existing contract
       setCalculatedEndDate(contractToEdit.end_date || '');
     } catch (error) {
       console.error('Error loading contract for editing:', error);
       toast.error('Error loading contract data');
+      setLoadingEditContract(false);
     }
   };
 
@@ -155,6 +211,12 @@ const ContractForm = ({
     setSelectedLocation(null);
     setCalculatedEndDate('');
     setShowConfirmation(false);
+    setOverrideEndDate(false);
+    setManualEndDate('');
+    setOverridePrice(false);
+    setManualPrice('');
+    setLoadingEditContract(false);
+    setPendingServiceId(null);
   };
 
   const fetchCustomerData = async () => {
@@ -259,7 +321,6 @@ const ContractForm = ({
     }
   };
 
-
   const checkExistingFreeTrial = async () => {
     setCheckingFreeTrial(true);
     try {
@@ -300,7 +361,8 @@ const ContractForm = ({
   };
 
   const checkResourceAvailability = async () => {
-    if (!selectedService || !formData.start_date || !calculatedEndDate) return;
+    const endDate = overrideEndDate ? manualEndDate : calculatedEndDate;
+    if (!selectedService || !formData.start_date || !endDate) return;
 
     setCheckingAvailability(true);
     
@@ -337,7 +399,7 @@ const ContractForm = ({
         .select('id')
         .eq('location_resource_id', locationResource.id)
         .eq('booking_status', 'active')
-        .or(`and(start_date.lte.${calculatedEndDate},end_date.gte.${formData.start_date})`);
+        .or(`and(start_date.lte.${endDate},end_date.gte.${formData.start_date})`);
 
       if (bookingsError) {
         console.error('Error checking existing bookings:', bookingsError);
@@ -395,6 +457,12 @@ const ContractForm = ({
     if (name === 'service_id') {
       const service = availableServices.find(s => s.id.toString() === value);
       setSelectedService(service);
+      
+      // Reset price override when service changes
+      if (!editMode) {
+        setOverridePrice(false);
+        setManualPrice('');
+      }
     }
   };
 
@@ -416,13 +484,44 @@ const ContractForm = ({
       return false;
     }
 
-    const startDate = new Date(formData.start_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // For edit mode, allow past dates if they were already set
-    if (!editMode && startDate < today) {
-      toast.error(t('messages.startDateCannotBeInPast'));
+    // Only restrict past dates for customers in create mode
+    if (!editMode && isCustomerMode) {
+      const startDate = new Date(formData.start_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (startDate < today) {
+        toast.error(t('messages.startDateCannotBeInPast'));
+        return false;
+      }
+    }
+
+    // Validate manual end date if overriding
+    if (overrideEndDate) {
+      if (!manualEndDate) {
+        toast.error(t('messages.endDateRequired'));
+        return false;
+      }
+      const endDate = new Date(manualEndDate);
+      if (endDate <= startDate) {
+        toast.error(t('messages.endDateMustBeAfterStartDate'));
+        return false;
+      }
+    }
+
+    // Validate manual price if overriding
+    if (overridePrice) {
+      const price = parseFloat(manualPrice);
+      if (isNaN(price) || price <= 0) {
+        toast.error(t('messages.priceInvalid'));
+        return false;
+      }
+    }
+
+    // Check we have an end date (calculated or manual)
+    const endDate = overrideEndDate ? manualEndDate : calculatedEndDate;
+    if (!endDate) {
+      toast.error(t('messages.endDateRequired'));
       return false;
     }
 
@@ -461,18 +560,21 @@ const ContractForm = ({
     setLoading(true);
 
     try {
+      const finalEndDate = overrideEndDate ? manualEndDate : calculatedEndDate;
+      const finalPrice = overridePrice ? parseFloat(manualPrice) : selectedService.cost;
+
       let contractData = {
         customer_id: parseInt(formData.customer_id),
         service_id: parseInt(formData.service_id),
         location_id: parseInt(formData.location_id),
         partner_uuid: partnerUuid,
         start_date: formData.start_date,
-        end_date: calculatedEndDate,
+        end_date: finalEndDate,
         
         // Service snapshot
         service_name: selectedService.service_name,
         service_type: selectedService.service_type,
-        service_cost: selectedService.cost,
+        service_cost: finalPrice,
         service_currency: selectedService.currency,
         service_duration_days: selectedService.duration_days,
         service_max_entries: selectedService.max_entries,
@@ -528,7 +630,7 @@ const ContractForm = ({
         if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
           const bookingEndDate = selectedService.service_type === 'free_trial' 
             ? formData.start_date
-            : calculatedEndDate;
+            : finalEndDate;
             
           await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
         }
@@ -573,7 +675,7 @@ const ContractForm = ({
         if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
           const bookingEndDate = selectedService.service_type === 'free_trial' 
             ? formData.start_date
-            : calculatedEndDate;
+            : finalEndDate;
             
           await createBookingForContract(data.id, formData.start_date, bookingEndDate);
         }
@@ -698,6 +800,33 @@ const ContractForm = ({
     return type === 'scrivania' ? '🖥️' : '🏢';
   };
 
+  const getFinalPrice = () => {
+    if (overridePrice && manualPrice) {
+      return parseFloat(manualPrice);
+    }
+    return selectedService?.cost || 0;
+  };
+
+  const getFinalEndDate = () => {
+    return overrideEndDate ? manualEndDate : calculatedEndDate;
+  };
+
+  // Prepare options for SearchableSelect components
+  const customerOptions = customers.map(customer => ({
+    value: customer.id.toString(),
+    label: customer.company_name || `${customer.first_name} ${customer.second_name} (${customer.email})`
+  }));
+
+  const locationOptions = (isCustomerMode ? customerLocations : locations).map(location => ({
+    value: location.id.toString(),
+    label: location.location_name
+  }));
+
+  const serviceOptions = availableServices.map(service => ({
+    value: service.id.toString(),
+    label: `${service.service_name} - ${formatCurrency(service.cost, service.currency)} (${getServiceTypeLabel(service.service_type)})`
+  }));
+
   if (!isOpen) return null;
 
   if (showConfirmation) {
@@ -758,14 +887,16 @@ const ContractForm = ({
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.period')}:</span>
                 <span className="summary-value">
-                  {formData.start_date} - {calculatedEndDate} ({selectedService?.duration_days} {t('contracts.days')})
+                  {formData.start_date} - {getFinalEndDate()} 
+                  {overrideEndDate && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customDuration')})</span>}
                 </span>
               </div>
               
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.cost')}:</span>
                 <span className="summary-value cost">
-                  {formatCurrency(selectedService?.cost, selectedService?.currency)}
+                  {formatCurrency(getFinalPrice(), selectedService?.currency)}
+                  {overridePrice && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customPrice')})</span>}
                 </span>
               </div>
 
@@ -828,22 +959,14 @@ const ContractForm = ({
                 <label htmlFor="customer_id" className="form-label">
                   {t('contracts.customer')} *
                 </label>
-                <select
-                  id="customer_id"
-                  name="customer_id"
-                  required
-                  className="form-select"
+                <SearchableSelect
                   value={formData.customer_id}
-                  onChange={handleChange}
-                  disabled={editMode}
-                >
-                  <option value="">{t('contracts.selectCustomer')}</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.company_name || `${customer.first_name} ${customer.second_name}`} ({customer.email})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(e) => handleChange({ target: { name: 'customer_id', value: e.target.value } })}
+                  options={customerOptions}
+                  placeholder={t('contracts.selectCustomer')}
+                  emptyMessage={t('common.noResultsFound')}
+                  className={editMode ? 'disabled' : ''}
+                />
               </div>
             </div>
           )}
@@ -854,24 +977,15 @@ const ContractForm = ({
               <label htmlFor="location_id" className="form-label">
                 {t('contracts.location')} *
               </label>
-              <select
-                id="location_id"
-                name="location_id"
-                required
-                className="form-select"
+              <SearchableSelect
                 value={formData.location_id}
-                onChange={handleChange}
-              >
-                <option value="">{t('contracts.selectLocation')}</option>
-                {(isCustomerMode ? customerLocations : locations).map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.location_name}
-                  </option>
-                ))}
-              </select>
+                onChange={(e) => handleChange({ target: { name: 'location_id', value: e.target.value } })}
+                options={locationOptions}
+                placeholder={t('contracts.selectLocation')}
+                emptyMessage={t('common.noResultsFound')}
+              />
             </div>
           </div>
-
 
           {isCustomerMode && hasExistingFreeTrial && (
             <div style={{
@@ -902,28 +1016,28 @@ const ContractForm = ({
               <label htmlFor="service_id" className="form-label">
                 {t('contracts.service')} *
               </label>
-              <select
-                id="service_id"
-                name="service_id"
-                required
-                className="form-select"
+              <SearchableSelect
                 value={formData.service_id}
-                onChange={handleChange}
-                disabled={!formData.location_id}
-              >
-                <option value="">
-                  {!formData.location_id 
-                    ? t('contracts.selectLocationFirst')
-                    : t('contracts.selectService')
-                  }
-                </option>
-                {availableServices.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.service_name} - {formatCurrency(service.cost, service.currency)} 
-                    ({getServiceTypeLabel(service.service_type)})
-                  </option>
-                ))}
-              </select>
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleChange({ target: { name: 'service_id', value } });
+                }}
+                options={serviceOptions}
+                placeholder={!formData.location_id 
+                  ? t('contracts.selectLocationFirst')
+                  : t('contracts.selectService')
+                }
+                emptyMessage={t('common.noResultsFound')}
+              />
+              <p style={{ 
+                fontSize: '0.8125rem', 
+                color: '#6b7280', 
+                fontStyle: 'italic', 
+                marginTop: '0.375rem',
+                marginBottom: 0 
+              }}>
+                {t('contracts.pricesExcludeVAT')}
+              </p>
             </div>
 
             {selectedService && (
@@ -950,10 +1064,66 @@ const ContractForm = ({
                       <span className="detail-value">{selectedService.max_entries}</span>
                     </div>
                   )}
+                  <div className="service-detail-item">
+                    <span className="detail-label">{t('contracts.cost')}:</span>
+                    <span className="detail-value" style={{ fontWeight: 600 }}>
+                      {formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}
+                      {overridePrice && <span style={{ color: '#f59e0b', marginLeft: '0.5rem', fontSize: '0.875rem' }}>({t('contracts.customPrice')})</span>}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Price Override Section - Partner Only */}
+          {canOverride && selectedService && (
+            <div className="form-section-clean">
+              <div className="form-group">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>
+                    {t('contracts.price')}
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={overridePrice}
+                      onChange={(e) => {
+                        setOverridePrice(e.target.checked);
+                        if (!e.target.checked) {
+                          setManualPrice('');
+                        } else {
+                          setManualPrice(selectedService.cost.toString());
+                        }
+                      }}
+                      style={{ width: 'auto', margin: 0 }}
+                    />
+                    <span>{t('contracts.overridePrice')}</span>
+                  </label>
+                </div>
+                
+                {overridePrice ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    className="form-input"
+                    value={manualPrice}
+                    onChange={(e) => setManualPrice(e.target.value)}
+                    placeholder={t('contracts.enterCustomPrice')}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formatCurrency(selectedService.cost, selectedService.currency)}
+                    disabled
+                    style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Start Date Selection */}
           <div className="form-section-clean">
@@ -962,23 +1132,52 @@ const ContractForm = ({
                 <label htmlFor="start_date" className="form-label">
                   {t('contracts.startDate')} *
                 </label>
-                <input
-                  id="start_date"
-                  name="start_date"
-                  type="date"
-                  required
-                  className="form-input"
-                  value={formData.start_date}
-                  onChange={handleChange}
-                  min={editMode ? undefined : new Date().toISOString().split('T')[0]}
-                />
+                  <input
+                    id="start_date"
+                    name="start_date"
+                    type="date"
+                    required
+                    className="form-input"
+                    value={formData.start_date}
+                    onChange={handleChange}
+                    min={!isCustomerMode || editMode ? undefined : new Date().toISOString().split('T')[0]}
+                  />
               </div>
               
-              {calculatedEndDate && (
-                <div className="form-group">
-                  <label className="form-label">
-                    {t('contracts.endDate')}
+              <div className="form-group">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>
+                    {t('contracts.endDate')} *
                   </label>
+                  {canOverride && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={overrideEndDate}
+                        onChange={(e) => {
+                          setOverrideEndDate(e.target.checked);
+                          if (!e.target.checked) {
+                            setManualEndDate('');
+                          } else if (calculatedEndDate) {
+                            setManualEndDate(calculatedEndDate);
+                          }
+                        }}
+                        style={{ width: 'auto', margin: 0 }}
+                      />
+                      <span>{t('contracts.customEndDate')}</span>
+                    </label>
+                  )}
+                </div>
+                
+                {canOverride && overrideEndDate ? (
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={manualEndDate}
+                    onChange={(e) => setManualEndDate(e.target.value)}
+                    min={formData.start_date || new Date().toISOString().split('T')[0]}
+                  />
+                ) : (
                   <input
                     type="date"
                     className="form-input"
@@ -986,11 +1185,11 @@ const ContractForm = ({
                     disabled
                     style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {calculatedEndDate && (
+            {!overrideEndDate && calculatedEndDate && (
               <div className="date-calculation">
                 <p className="calculation-note">
                   {t('contracts.endDateCalculated')}
@@ -999,7 +1198,7 @@ const ContractForm = ({
             )}
 
             {/* Availability Check for Abbonamento */}
-            {selectedService?.service_type === 'abbonamento' && calculatedEndDate && (
+            {selectedService?.service_type === 'abbonamento' && getFinalEndDate() && (
               <div className="availability-check">
                 {checkingAvailability ? (
                   <div className="availability-loading">
@@ -1047,7 +1246,7 @@ const ContractForm = ({
             <button
               type="submit"
               className="btn-primary-green"
-              disabled={loading || !calculatedEndDate}
+              disabled={loading || !getFinalEndDate()}
             >
               {editMode ? t('contracts.reviewUpdate') : t('contracts.reviewContract')}
             </button>

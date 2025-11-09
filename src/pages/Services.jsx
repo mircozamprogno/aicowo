@@ -6,6 +6,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
+// Logger
+import logger from '../utils/logger';
+
 const Services = () => {
   const [services, setServices] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -33,7 +36,7 @@ const Services = () => {
         .order('location_name');
 
       if (locationsError) {
-        console.error('Error fetching locations:', locationsError);
+        logger.error('Error fetching locations:', locationsError);
         // Only show error for actual errors, not empty results
         if (locationsError.code !== 'PGRST116') {
           toast.error(t('messages.errorLoadingLocations'));
@@ -64,7 +67,7 @@ const Services = () => {
         .order('created_at', { ascending: false });
 
       if (servicesError) {
-        console.error('Error fetching services:', servicesError);
+        logger.error('Error fetching services:', servicesError);
         // Only show error for actual errors, not empty results
         if (servicesError.code !== 'PGRST116') {
           toast.error(t('messages.errorLoadingServices'));
@@ -74,7 +77,7 @@ const Services = () => {
         setServices(servicesData || []);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      logger.error('Error fetching data:', error);
       toast.error(t('messages.errorLoadingServices'));
     } finally {
       setLoading(false);
@@ -97,6 +100,12 @@ const Services = () => {
   };
 
   const handleFormSuccess = (savedService) => {
+    // If savedService is null, it means a service was deleted - refetch the list
+    if (savedService === null) {
+      fetchServicesAndLocations();
+      return;
+    }
+    
     if (editingService) {
       // Update existing service in the list
       setServices(prev => 

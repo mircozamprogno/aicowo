@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.11.07 V 0.740 Moltissimi miglioramenti, vedi Asana 
 2025.11.07 V 0.730 Little improvements 
 2025.11.06 V 0.710 Mail con templates interne 
 2025.11.06 V 0.700 Mail con templates interne 

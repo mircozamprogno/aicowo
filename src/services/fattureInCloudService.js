@@ -346,4 +346,151 @@ export class FattureInCloudService {
 
     return results;
   }
+
+  // Add after bulkUploadContracts method:
+
+  static async fetchClients(companyId, accessToken, partnerUuid) {
+    try {
+      const { data: existingCustomers } = await supabase
+        .from('customers')
+        .select('fattureincloud_client_id')
+        .eq('partner_uuid', partnerUuid)
+        .not('fattureincloud_client_id', 'is', null);
+
+      const existingClientIds = new Set(existingCustomers?.map(c => c.fattureincloud_client_id) || []);
+
+      // Get user session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      // Call through Supabase Edge Function instead of direct API
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/fattureincloud`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'fetch_clients',
+            companyId,
+            accessToken
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Edge function error response:', errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      const availableClients = result.data.filter(
+        client => !existingClientIds.has(client.id)
+      );
+
+      return { success: true, clients: availableClients };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  static async fetchClientDetails(companyId, clientId, accessToken) {
+    try {
+      // Get user session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/fattureincloud`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'fetch_client_details',
+            companyId,
+            clientId,
+            accessToken
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Edge function error response:', errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+      
+      const result = await response.json();
+      return { success: true, data: result.data };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  static async importClients(selectedClientIds, companyId, accessToken, partnerUuid) {
+    const results = [];
+
+    for (const clientId of selectedClientIds) {
+      try {
+        const detailsResult = await this.fetchClientDetails(companyId, clientId, accessToken);
+        
+        if (!detailsResult.success) {
+          results.push({ clientId, success: false, error: detailsResult.error });
+          continue;
+        }
+
+        const client = detailsResult.data;
+        const customerData = {
+          partner_uuid: partnerUuid,
+          fattureincloud_client_id: client.id,  // ✅ ADD THIS
+          company_name: client.name || '',
+          first_name: client.first_name || '',
+          second_name: client.last_name || '',
+          piva: client.vat_number || null,
+          codice_fiscale: client.tax_code || null,
+          address: client.address_street || '',
+          zip: client.address_postal_code || '',
+          city: client.address_city || '',
+          country: client.country || '',
+          email: client.email || `noemail-${client.id}@imported.fc`,
+          pec: client.certified_email || '',
+          phone: client.phone || '',
+          sdi_code: client.ei_code || '',
+          customer_status: 'tobequalified',
+          customer_type: client.name ? 'entrepeneur' : 'individual',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+
+        console.log('🔍 Inserting customer:', {
+          name: customerData.company_name,
+          email: customerData.email,
+          piva: customerData.piva,
+          pec: customerData.pec
+        });
+
+        const { data, error } = await supabase
+          .from('customers')
+          .insert(customerData)
+          .select()
+          .single();
+
+        results.push(error ? 
+          { clientId, success: false, error: error.message } : 
+          { clientId, success: true, data }
+        );
+      } catch (error) {
+        results.push({ clientId, success: false, error: error.message });
+      }
+    }
+
+    return results;
+  }
 }

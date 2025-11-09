@@ -14,13 +14,25 @@ import SetupProgressIndicator from '../components/tour/SetupProgressIndicator';
 import TourOverlay from '../components/tour/TourOverlay';
 import WelcomeModal from '../components/tour/WelcomeModal';
 import { useTour } from '../contexts/TourContext';
+import logger from '../utils/logger';
 
 // Add this import to the top of Dashboard.jsx with your other imports:
 import oneSignalEmailService from '../services/oneSignalEmailService';
 
+
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const { t } = useTranslation();
+
+  const [profileCheckRetries, setProfileCheckRetries] = useState(0);
+  const MAX_PROFILE_CHECK_RETRIES = 3;  
+
+  // ADD THIS DEBUG LOG
+  logger.log('🔍 DASHBOARD DEBUG - Profile object:', profile);
+  logger.log('🔍 Role:', profile?.role);
+  logger.log('🔍 Partner UUID:', profile?.partner_uuid);
+  logger.log('🔍 isCustomer calculation:', profile?.role === 'user');
   
   const [stats, setStats] = useState({
     totalPartners: 0,
@@ -110,31 +122,51 @@ const Dashboard = () => {
   const [profileCheckComplete, setProfileCheckComplete] = useState(false);
 
   // Modified useEffect with better dependency management
+  // Modified useEffect with better dependency management and profile loading check
   useEffect(() => {
-    console.log('Dashboard useEffect triggered - Profile:', !!profile, 'User:', !!user, 'IsCustomer:', isCustomer);
+    logger.log('Dashboard useEffect triggered - Profile:', !!profile, 'User:', !!user);
     
-    // Only proceed if we have both user and profile
-    if (profile && user) {
-      if (isCustomer) {
-        console.log('Customer detected, checking profile completion...');
-        checkProfileCompletion();
-      } else {
-        console.log('Non-customer user, proceeding with normal flow...');
-        setProfileCheckComplete(true);
-        fetchStats();
-        if (isPartnerAdmin || isSuperAdmin) {
-          fetchContractsChartData();
-          // Fetch enhanced business metrics for partner admins
-          if (isPartnerAdmin) {
-            fetchBusinessMetrics();
-          }
-        }
-      }
-    } else {
-      console.log('Waiting for user and profile to be available...');
+    // ✅ Wait for BOTH user and profile to be fully loaded
+    if (!profile || !user) {
+      logger.log('⏳ Waiting for user and profile...');
       setProfileCheckComplete(false);
+      return;
     }
-  }, [profile?.id, user?.id]); // Use specific IDs to avoid unnecessary re-renders
+
+    // ✅ Ensure profile has essential fields
+    if (!profile.role || !profile.id) {
+      logger.log('⏳ Profile incomplete, waiting...');
+      setProfileCheckComplete(false);
+      return;
+    }
+
+    // ✅ CHECK ROLE HERE, NOT USING PRE-CALCULATED isCustomer
+    const currentRole = profile.role;
+    logger.log('✅ Profile fully loaded with role:', currentRole);
+
+    if (currentRole === 'user') {
+      // This is a CUSTOMER
+      logger.log('👤 Customer detected, checking profile completion...');
+      checkProfileCompletion();
+    } else if (currentRole === 'admin') {
+      // This is a PARTNER ADMIN
+      logger.log('👔 Partner admin detected, loading dashboard...');
+      setProfileCheckComplete(true);
+      fetchStats();
+      fetchContractsChartData();
+      fetchBusinessMetrics();
+    } else if (currentRole === 'superadmin') {
+      // This is a SUPER ADMIN
+      logger.log('👑 Super admin detected, loading dashboard...');
+      setProfileCheckComplete(true);
+      fetchStats();
+      fetchContractsChartData();
+    } else {
+      // Unknown role
+      logger.warn('⚠️ Unknown role:', currentRole);
+      setProfileCheckComplete(true);
+    }
+  }, [profile?.id, user?.id, profile?.role]); // Include role in dependencies
 
   // Enhanced Business Metrics Fetching
   const fetchBusinessMetrics = async () => {
@@ -150,7 +182,7 @@ const Dashboard = () => {
       // Fetch utilization metrics
       await fetchUtilizationMetrics();
     } catch (error) {
-      console.error('Error fetching business metrics:', error);
+      logger.error('Error fetching business metrics:', error);
     }
   };
 
@@ -214,7 +246,7 @@ const Dashboard = () => {
         }
       }));
     } catch (error) {
-      console.error('Error fetching expiring contracts:', error);
+      logger.error('Error fetching expiring contracts:', error);
       setBusinessMetrics(prev => ({
         ...prev,
         expiringContracts: { ...prev.expiringContracts, loading: false }
@@ -286,7 +318,7 @@ const Dashboard = () => {
         }
       }));
     } catch (error) {
-      console.error('Error fetching payment status:', error);
+      logger.error('Error fetching payment status:', error);
       setBusinessMetrics(prev => ({
         ...prev,
         paymentStatus: { ...prev.paymentStatus, loading: false }
@@ -363,7 +395,7 @@ const Dashboard = () => {
         }));
       }
     } catch (error) {
-      console.error('Error fetching revenue metrics:', error);
+      logger.error('Error fetching revenue metrics:', error);
       setBusinessMetrics(prev => ({
         ...prev,
         revenueMetrics: { ...prev.revenueMetrics, loading: false }
@@ -424,7 +456,7 @@ const Dashboard = () => {
         }));
       }
     } catch (error) {
-      console.error('Error fetching utilization metrics:', error);
+      logger.error('Error fetching utilization metrics:', error);
       setBusinessMetrics(prev => ({
         ...prev,
         utilizationMetrics: { ...prev.utilizationMetrics, loading: false }
@@ -445,7 +477,7 @@ const Dashboard = () => {
         .single();
 
       if (customerError || !customerData) {
-        console.error('Error fetching customer data:', customerError);
+        logger.error('Error fetching customer data:', customerError);
         // NO MORE MOCK DATA - just set empty array
         setContracts([]);
         setContractsLoading(false);
@@ -476,7 +508,7 @@ const Dashboard = () => {
         .order('created_at', { ascending: false });
 
       if (contractsError) {
-        console.error('Error fetching contracts:', contractsError);
+        logger.error('Error fetching contracts:', contractsError);
         throw contractsError;
       }
 
@@ -487,11 +519,11 @@ const Dashboard = () => {
         service_max_entries: contract.service_max_entries ? parseFloat(contract.service_max_entries) : null
       }));
 
-      console.log('Processed contracts:', processedContracts);
+      logger.log('Processed contracts:', processedContracts);
       setContracts(processedContracts);
       
     } catch (error) {
-      console.error('Error fetching customer contracts:', error);
+      logger.error('Error fetching customer contracts:', error);
       // NO MORE MOCK DATA FALLBACK - just set empty array
       setContracts([]);
     } finally {
@@ -501,41 +533,70 @@ const Dashboard = () => {
 
   // Form success handlers
   const handleFormSuccess = (newContract) => {
-    console.log('Contract created successfully:', newContract);
+    logger.log('Contract created successfully:', newContract);
     fetchCustomerContracts(); // Refresh contracts
     setShowForm(false);
     setEditingContract(null);
     toast.success(t('messages.contractCreatedSuccessfully') || 'Contract created successfully');
   };
 
+
   // Improved checkProfileCompletion function with better error handling
-  const checkProfileCompletion = async () => {
-    console.log('=== STARTING PROFILE COMPLETION CHECK ===');
-    console.log('User ID:', user?.id);
-    console.log('Profile partner_uuid:', profile?.partner_uuid);
+  const checkProfileCompletion = async (retryCount = 0) => {
+    // ✅ FIX: Get FRESH values from context/state, NOT from parameters!
+    const currentProfile = profile;
+    const currentUser = user;
     
-    if (!user?.id) {
-      console.warn('No user ID available for profile check');
+    logger.log('=== STARTING PROFILE COMPLETION CHECK ===');
+    logger.log('User ID:', currentUser?.id);
+    logger.log('Profile partner_uuid:', currentProfile?.partner_uuid);
+    logger.log('Profile role:', currentProfile?.role);
+    logger.log('Retry count:', retryCount);
+
+    // ✅ IMMEDIATE EXIT: If not a customer, don't even continue
+    if (currentProfile?.role !== 'user') {
+      logger.log('❌ NOT A CUSTOMER (role is', currentProfile?.role, ') - EXITING IMMEDIATELY');
       setProfileCheckComplete(true);
+      setContractsLoading(false);
+      return;
+    }
+
+    // ✅ SAFETY: Check if profile is fully loaded (including partner_uuid for customers)
+    if (!currentProfile || !currentProfile.role || !currentProfile.id || !currentProfile.partner_uuid) {
+      logger.warn('⚠️ Profile not fully loaded yet (missing partner_uuid), waiting...');
+      setProfileCheckComplete(false);
+      return;
+    }
+    
+    if (!currentUser?.id) {
+      logger.warn('No user ID available for profile check');
+      setProfileCheckComplete(true);
+      return;
+    }
+
+    // Check retry limit
+    if (retryCount >= MAX_PROFILE_CHECK_RETRIES) {
+      logger.error('❌ MAX RETRIES REACHED');
+      setProfileCheckComplete(true);
+      setContractsLoading(false);
+      toast.error('Unable to load customer profile. Please refresh.');
       return;
     }
 
     try {
       setContractsLoading(true);
       
-      // Get customer data to check status
-      console.log('Fetching customer data for user:', user.id);
+      logger.log('Fetching customer data for user:', currentUser.id, `(attempt ${retryCount + 1}/${MAX_PROFILE_CHECK_RETRIES})`);
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle(); // Use maybeSingle to avoid errors if no record
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
 
-      console.log('Customer fetch result:', { data: customerData, error: customerError });
+      logger.log('Customer fetch result:', { data: customerData, error: customerError });
 
       if (customerError) {
-        console.error('Error fetching customer data:', customerError);
-        // On error, proceed with normal flow but don't fail
+        logger.error('Error fetching customer data:', customerError);
         setProfileCheckComplete(true);
         setContractsLoading(false);
         fetchCustomerContracts();
@@ -543,45 +604,52 @@ const Dashboard = () => {
       }
 
       if (!customerData) {
-        console.log('No customer record found - this might be a new user, waiting for customer creation...');
-        // Wait a bit for the customer record to be created by AuthContext
-        setTimeout(() => {
-          console.log('Retrying profile completion check after delay...');
-          checkProfileCompletion();
-        }, 1000);
+        logger.log('No customer record found - waiting for creation...');
+        
+        if (retryCount < MAX_PROFILE_CHECK_RETRIES) {
+          logger.log(`⏳ Will retry in 1 second (${retryCount + 1}/${MAX_PROFILE_CHECK_RETRIES})...`);
+          setTimeout(() => {
+            logger.log('🔄 Retrying profile completion check...');
+            checkProfileCompletion(retryCount + 1); // ✅ ONLY pass retry count, NOT profile/user!
+          }, 1000);
+        } else {
+          logger.error('❌ Customer record not found after retries');
+          setProfileCheckComplete(true);
+          setContractsLoading(false);
+          toast.error('Customer profile not found. Please contact support.');
+        }
         return;
       }
 
-      console.log('Customer profile status:', customerData.customer_status);
+      logger.log('✅ Customer profile status:', customerData.customer_status);
 
-      // Check if profile needs completion
       if (customerData.customer_status === 'incomplete_profile') {
-        console.log('🚨 PROFILE INCOMPLETE - SHOWING COMPLETION FORM');
+        logger.log('🚨 PROFILE INCOMPLETE - SHOWING COMPLETION FORM');
         setCustomerProfileData(customerData);
         setShowProfileCompletion(true);
         setProfileCheckComplete(true);
         setContractsLoading(false);
       } else {
-        console.log('✅ PROFILE COMPLETE - PROCEEDING WITH NORMAL FLOW');
+        logger.log('✅ PROFILE COMPLETE - PROCEEDING');
         setShowProfileCompletion(false);
         setCustomerProfileData(null);
         setProfileCheckComplete(true);
         fetchCustomerContracts();
       }
     } catch (error) {
-      console.error('Error in profile completion check:', error);
-      // On error, still try to proceed to not break the flow
+      logger.error('Error in profile completion check:', error);
       setProfileCheckComplete(true);
       setContractsLoading(false);
       fetchCustomerContracts();
     }
 
-    console.log('=== PROFILE COMPLETION CHECK COMPLETE ===');
+    logger.log('=== PROFILE COMPLETION CHECK COMPLETE ===');
   };
+
 
   // Modified success handler for profile completion
   const handleProfileCompletionSuccess = async (updatedCustomer) => {
-    console.log('🎉 PROFILE COMPLETION SUCCESSFUL:', updatedCustomer);
+    logger.log('🎉 PROFILE COMPLETION SUCCESSFUL:', updatedCustomer);
     
     try {
       // Update customer status to 'tobequalified'
@@ -594,14 +662,14 @@ const Dashboard = () => {
         .eq('id', updatedCustomer.id);
 
       if (error) {
-        console.error('Error updating customer status:', error);
+        logger.error('Error updating customer status:', error);
         toast.error(t('messages.errorUpdatingStatus') || 'Error updating status');
       } else {
-        console.log('✅ Customer status updated to tobequalified');
+        logger.log('✅ Customer status updated to tobequalified');
         toast.success(t('customers.profileCompletedSuccessfully') || 'Profile completed successfully');
       }
     } catch (error) {
-      console.error('Error in profile completion handler:', error);
+      logger.error('Error in profile completion handler:', error);
     }
 
     // Close the profile completion form
@@ -609,18 +677,18 @@ const Dashboard = () => {
     setCustomerProfileData(null);
     
     // Now fetch contracts normally
-    console.log('Fetching contracts after profile completion...');
+    logger.log('Fetching contracts after profile completion...');
     fetchCustomerContracts();
   };
 
   const handlePackageBookingSuccess = async (reservation) => {
-    console.log('🎯 BOOKING SUCCESS HANDLER CALLED!', reservation);
-    console.log('📧 Selected package contract:', selectedPackageContract);
+    logger.log('🎯 BOOKING SUCCESS HANDLER CALLED!', reservation);
+    logger.log('📧 Selected package contract:', selectedPackageContract);
     
     try {
       // Send booking confirmation emails if we have contract data
       if (selectedPackageContract) {
-        console.log('📧 About to send emails for contract:', selectedPackageContract);
+        logger.log('📧 About to send emails for contract:', selectedPackageContract);
         
         // Get partner data for partner email
         let partnerData = null;
@@ -636,7 +704,7 @@ const Dashboard = () => {
               partnerData = partner;
             }
           } catch (error) {
-            console.warn('📧 Could not fetch partner data for email:', error);
+            logger.warn('📧 Could not fetch partner data for email:', error);
           }
         }
 
@@ -672,7 +740,7 @@ const Dashboard = () => {
             fullContractData = contractData;
           }
         } catch (error) {
-          console.warn('📧 Error fetching full contract data:', error);
+          logger.warn('📧 Error fetching full contract data:', error);
         }
 
         // Send booking confirmation emails
@@ -691,7 +759,7 @@ const Dashboard = () => {
         }
       }
     } catch (error) {
-      console.error('❌ Error sending booking confirmation emails:', error);
+      logger.error('❌ Error sending booking confirmation emails:', error);
       // Don't fail the booking process if emails fail
     }
 
@@ -734,7 +802,7 @@ const Dashboard = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching contracts chart data:', error);
+        logger.error('Error fetching contracts chart data:', error);
         // NO MORE MOCK DATA - just set empty and indicate no data
         setContractsChartData([]);
         setHasContractData(false);
@@ -751,7 +819,7 @@ const Dashboard = () => {
       }
 
     } catch (error) {
-      console.error('Error in fetchContractsChartData:', error);
+      logger.error('Error in fetchContractsChartData:', error);
       // NO MORE MOCK DATA - just set empty
       setContractsChartData([]);
       setHasContractData(false);
@@ -828,7 +896,7 @@ const Dashboard = () => {
     setStats(prev => ({ ...prev, loading: true }));
 
     try {
-      console.log('Fetching dashboard stats for role:', profile.role);
+      logger.log('Fetching dashboard stats for role:', profile.role);
 
       let partnersCount = 0;
       let locationsCount = 0;
@@ -982,7 +1050,7 @@ setStats({
       }
 
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      logger.error('Error fetching dashboard stats:', error);
       
       // Set all stats to 0 instead of using mock data
       setStats({ 
@@ -1492,7 +1560,7 @@ const renderEnhancedPartnerDashboard = () => {
             : t('messages.autoRenewDisabled') || 'Rinnovo automatico disattivato'
         );
       } catch (error) {
-        console.error('Error updating auto-renewal:', error);
+        logger.error('Error updating auto-renewal:', error);
         toast.error(t('messages.errorUpdatingAutoRenew') || 'Errore nell\'aggiornamento del rinnovo automatico');
       } finally {
         setUpdatingAutoRenew(prev => ({ ...prev, [contractId]: false }));
@@ -1501,14 +1569,14 @@ const renderEnhancedPartnerDashboard = () => {
     
     // Handle package booking
     const handleBookPackage = (contract) => {
-      console.log('Opening package booking for contract:', contract);
+      logger.log('Opening package booking for contract:', contract);
       setSelectedPackageContract(contract);
       setShowPackageBooking(true);
     };
     
     // Handle purchase more entries or new package
     const handlePurchaseMore = (contract = null) => {
-      console.log('Opening contract form for new purchase');
+      logger.log('Opening contract form for new purchase');
       if (contract) {
         setEditingContract({
           service_id: contract.service_id,
@@ -1842,7 +1910,7 @@ const renderEnhancedPartnerDashboard = () => {
             <CustomerForm
               isOpen={true} // Always open when showProfileCompletion is true
               onClose={() => {
-                console.log('Profile completion form close attempted - but it should be mandatory');
+                logger.log('Profile completion form close attempted - but it should be mandatory');
                 // Don't allow closing during profile completion
               }}
               onSuccess={handleProfileCompletionSuccess}

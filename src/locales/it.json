@@ -108,6 +108,23 @@
     "delete": "Elimina",
     "cannotDeleteWithConstraints": "Impossibile eliminare il cliente a causa di vincoli attivi",
     "structureName": "Nome Struttura",
+    "importFromFC": "Importa Clienti da FC",
+    "importClientsTitle": "Importa Clienti da FattureInCloud",
+    "loadingClients": "Caricamento clienti...",
+    "noClientsAvailable": "Nessun cliente disponibile per l'importazione.",
+    "selectAllClients": "Seleziona Tutti ({count} clienti)",
+    "importSelected": "Importa Selezionati ({count})",
+    "importing": "Importazione in corso...",
+    "importSuccess": "{count} clienti importati con successo!",
+    "importPartial": "Importati {success}/{total} clienti",
+    "importError": "Errore di importazione: {error}",
+    "fetchClientsError": "Impossibile recuperare i clienti: {error}",
+    "selectAtLeastOne": "Seleziona almeno un cliente da importare",
+    "clientImported": "Importato",
+    "clientFailed": "Fallito",
+    "profileNotFound": "Profilo cliente non trovato",
+    "errorLoadingProfile": "Errore nel caricamento del profilo cliente",
+    "errorLoadingCustomers": "Errore nel caricamento dei clienti",
     "constraints": {
       "activeBookings": "{{count}} prenotazione/i attiva/e",
       "activeContracts": "{{count}} contratto/i attivo/i",
@@ -539,7 +556,10 @@
     "remove": "Rimuovi",
     "continue": "Continua",
     "deleting": "In Cancellazione ...",
-    "back": "Indietro"
+    "back": "Indietro",
+    "understood": "Ho Capito",
+    "to": "al",
+    "of": "di"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -667,7 +687,13 @@
     "errorCreatingPartnerContract": "Errore nella creazione del contratto partner",
     "errorUpdatingPartnerContract": "Errore nell'aggiornamento del contratto partner",
     "errorDeletingPartnerContract": "Errore nell'eliminazione del contratto partner",
-    "errorUpdatingStatus": "Errore nell'aggiornamento dello stato"
+    "errorUpdatingStatus": "Errore nell'aggiornamento dello stato",
+    "serviceDeletedSuccessfully": "Servizio eliminato con successo",
+    "errorDeletingService": "Errore nell'eliminazione del servizio",
+    "errorCheckingContracts": "Errore nel controllo dei contratti associati",
+    "endDateRequired": "La data di fine è obbligatoria",
+    "endDateMustBeAfterStartDate": "La data di fine deve essere successiva alla data di inizio",
+    "priceInvalid": "Il prezzo deve essere un numero valido maggiore di zero"
   },
   "services": {
     "title": "Servizi",
@@ -748,7 +774,15 @@
     "packageDescription": "ticket di accesso utilizzabili entro la scadenza",
     "serviceInfoModalDescription": "Comprendi i diversi tipi di servizio disponibili nel tuo spazio di coworking",
     "subscriptionExample": "Esempio: Accesso mensile scrivania, abbonamento annuale sala riunioni",
-    "packageExample": "Esempio: Pacchetto 10 visite, bundle giornaliero"
+    "packageExample": "Esempio: Pacchetto 10 visite, bundle giornaliero",
+    "confirmDelete": "Conferma Eliminazione",
+    "confirmDeleteMessage": "Sei sicuro di voler eliminare questo servizio? Questa azione non può essere annullata.",
+    "cannotDeleteTitle": "Impossibile Eliminare il Servizio",
+    "cannotDeleteMessage": "Questo servizio non può essere eliminato perché ha {{count}} contratto/i attivo/i associato/i.",
+    "cannotDeleteHint": "Si prega di cancellare o far scadere tutti i contratti prima di eliminare questo servizio.",
+    "halfDay": "Mezza Giornata",
+    "oneDay": "1 Giorno",
+    "daysCount": "{{count}} Giorni"
   },
   "reservations": {
     "title": "Prenotazioni Pacchetto",
@@ -799,7 +833,16 @@
     "resourceFullyBooked": "Risorsa completamente prenotata per questa data",
     "resourceBookedFullDay": "Risorsa prenotata per l'intera giornata in questa data",
     "timeSlotFullyBooked": "Fascia {{timeSlot}} completamente prenotata",
-    "errorCheckingAvailability": "Errore nel controllo della disponibilità"
+    "errorCheckingAvailability": "Errore nel controllo della disponibilità",
+    "insufficientEntries": "Ingressi rimanenti insufficienti nel pacchetto",
+    "dateOutsideContract": "La data di prenotazione deve essere nel periodo del contratto",
+    "resourceNotAvailableError": "Risorsa non disponibile per data e ora selezionate",
+    "errorCreatingReservation": "Errore nella creazione della prenotazione",
+    "availablePeriod": "Periodo disponibile",
+    "selectDuration": "Seleziona durata",
+    "available": "Disponibile",
+    "resourceAvailableFor": "{{resource}} è disponibile per l'orario selezionato",
+    "capacity": "Capacità"
   },
   "contracts": {
     "title": "Contratti",
@@ -941,6 +984,14 @@
     "freeTrialAlreadyUsed": "Hai già utilizzato la tua prova gratuita",
     "freeTrialOncePerCustomer": "I servizi di prova gratuita possono essere utilizzati una sola volta per cliente, anche se eliminati o archiviati.",
     "cancelledContracts": "Cancellati",
+    "pricesExcludeVAT": "I prezzi sono senza IVA",
+    "overridePrice": "Personalizza prezzo",
+    "enterCustomPrice": "Inserisci prezzo personalizzato",
+    "customEndDate": "Personalizza data fine",
+    "customDuration": "Durata personalizzata",
+    "customPrice": "Prezzo personalizzato",
+    "price": "Prezzo",
+    "errorLoadingPackages": "Errore nel caricamento dei pacchetti",
     "tooltips": {
       "generatePDF": "Scarica ricevuta PDF",
       "editContract": "Modifica dettagli contratto",

@@ -22,8 +22,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.[template.id] || 
                           DEFAULT_EMAIL_TEMPLATES.en[template.id];
 
-
-
   const loadPartnerData = async () => {
     try {
       const { data, error } = await supabase
@@ -115,14 +113,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
     loadBannerUrl();
   }, [template.id, partnerUuid]);
 
- // ADD THIS NEW useEffect:
-  useEffect(() => {
-    // Update editor content when bodyHtml changes and ref is ready
-    if (editorRef.current && bodyHtml && !loading) {
-      editorRef.current.innerHTML = bodyHtml;
-    }
-  }, [bodyHtml, loading]); 
-
   const loadTemplate = async () => {
     setLoading(true);
     try {
@@ -142,25 +132,25 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
         // Use saved template
         setSubject(data.subject_line);
         setBodyHtml(data.body_html);
-        // Set editor content directly
-        // if (editorRef.current) {
-        //  editorRef.current.innerHTML = data.body_html;
-        // }
+        // Set editor content directly ONLY on load
+        if (editorRef.current) {
+          editorRef.current.innerHTML = data.body_html;
+        }
       } else {
         // Use default template
         setSubject(defaultTemplate.subject);
         setBodyHtml(defaultTemplate.body);
-        // Set editor content directly
-        // if (editorRef.current) {
-        //  editorRef.current.innerHTML = defaultTemplate.body;
-        // }
+        // Set editor content directly ONLY on load
+        if (editorRef.current) {
+          editorRef.current.innerHTML = defaultTemplate.body;
+        }
       }
     } catch (error) {
       console.error('Error loading template:', error);
       // Use default on error
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
-      // Set editor content directly
+      // Set editor content directly ONLY on load
       if (editorRef.current) {
         editorRef.current.innerHTML = defaultTemplate.body;
       }
@@ -212,7 +202,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       setBodyHtml(defaultTemplate.body);
       // Set editor content directly
       if (editorRef.current) {
-        editorRef.current.innerHTML = defaultTemplate.body;s
+        editorRef.current.innerHTML = defaultTemplate.body;
       }
       toast.success(t('emailTemplates.templateReset'));
     }
@@ -287,7 +277,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       </div>
     );
   }
-
 
   return (
     <div className="email-template-editor">

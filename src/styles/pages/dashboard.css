@@ -2397,3 +2397,32 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+
+/* fix rendering */
+
+/* Fix for Recharts ResponsiveContainer dimension issue */
+.chart-container {
+  width: 100%;
+  min-height: 350px; /* Ensure minimum height */
+  height: 350px; /* Or set explicit height */
+  position: relative;
+}
+
+.chart-container.utilization {
+  min-height: 400px;
+  height: 400px;
+}
+
+/* Ensure the dashboard chart section has proper layout */
+.dashboard-chart {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.dashboard-analytics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}

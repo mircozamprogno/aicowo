@@ -19,6 +19,8 @@ import { supabase } from '../services/supabase';
 import ContractsFilter from '../components/ContractsFilter';
 import { BulkUploadModal } from '../components/fattureincloud/FattureInCloudComponents';
 import { FattureInCloudService } from '../services/fattureInCloudService';
+// Logger
+import logger from '../utils/logger';
 
 
 const Contracts = () => {
@@ -74,7 +76,7 @@ const Contracts = () => {
       const settings = await FattureInCloudService.getPartnerSettings(profile.partner_uuid);
       setPartnerSettings(settings);
     } catch (error) {
-      console.error('Error loading partner settings:', error);
+      logger.error('Error loading partner settings:', error);
     }
   };
 
@@ -84,7 +86,7 @@ const Contracts = () => {
       const statuses = await FattureInCloudService.getUploadStatus(contractIds);
       setUploadStatuses(statuses);
     } catch (error) {
-      console.error('Error loading upload statuses:', error);
+      logger.error('Error loading upload statuses:', error);
     }
   };
 
@@ -146,7 +148,7 @@ const Contracts = () => {
 
   const fetchContracts = async () => {
     try {
-      console.log('Fetching contracts for user:', profile);
+      logger.log('Fetching contracts for user:', profile);
       
       let query = supabase
         .from('contracts')
@@ -189,7 +191,7 @@ const Contracts = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching contracts:', error);
+        logger.error('Error fetching contracts:', error);
         
         const mockContracts = [
           {
@@ -276,7 +278,7 @@ const Contracts = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching contracts:', error);
+      logger.error('Error fetching contracts:', error);
       toast.error(t('messages.errorLoadingContracts'));
     } finally {
       setLoading(false);
@@ -292,7 +294,7 @@ const Contracts = () => {
         .order('first_name');
 
       if (customersError) {
-        console.error('Error fetching customers:', customersError);
+        logger.error('Error fetching customers:', customersError);
       } else {
         setCustomers(customersData || []);
       }
@@ -304,12 +306,12 @@ const Contracts = () => {
         .order('location_name');
 
       if (locationsError) {
-        console.error('Error fetching locations:', locationsError);
+        logger.error('Error fetching locations:', locationsError);
       } else {
         setLocations(locationsData || []);
       }
     } catch (error) {
-      console.error('Error fetching customers and locations:', error);
+      logger.error('Error fetching customers and locations:', error);
     }
   };
 
@@ -350,7 +352,7 @@ const Contracts = () => {
   };
 
   const handlePackageBooking = (contract) => {
-    console.log('Opening package booking for contract:', contract);
+    logger.log('Opening package booking for contract:', contract);
     setSelectedPackageContract(contract);
     setShowPackageBooking(true);
   };
@@ -361,18 +363,18 @@ const Contracts = () => {
   };
 
   const handlePackageBookingSuccess = async (reservation) => {
-    console.log('Package booking successful:', reservation);
+    logger.log('Package booking successful:', reservation);
     
     try {
       if (selectedPackageContract) {
-        console.log('Sending booking confirmation emails...');
+        logger.log('Sending booking confirmation emails...');
         
         let partnerData = null;
         if (profile?.partner_uuid) {
           try {
             const { data: partner, error: partnerError } = await supabase
               .from('partners')
-              .select('email, contact_email, first_name, second_name, company_name')
+              .select('company_name, email')
               .eq('partner_uuid', profile.partner_uuid)
               .single();
             
@@ -380,37 +382,26 @@ const Contracts = () => {
               partnerData = partner;
             }
           } catch (error) {
-            console.warn('Could not fetch partner data for email:', error);
+            logger.warn('Could not fetch partner data for email:', error);
           }
         }
 
-        const emailResults = await oneSignalEmailService.sendBookingConfirmation(
+        const emailSent = await oneSignalEmailService.sendBookingConfirmation(
           reservation,
           selectedPackageContract,
           t,
           partnerData
         );
 
-        if (emailResults.customerSuccess) {
-          console.log('Customer booking confirmation sent successfully');
+        if (emailSent) {
+          logger.log('✅ Booking confirmation sent');
+          toast.success('Email di conferma inviata');
         } else {
-          console.warn('Failed to send customer booking confirmation');
-        }
-
-        if (emailResults.partnerSuccess) {
-          console.log('Partner booking notification sent successfully');
-        } else {
-          console.warn('Failed to send partner booking notification');
-        }
-
-        if (emailResults.customerSuccess && emailResults.partnerSuccess) {
-          toast.success(t('reservations.confirmationEmailsSent') || 'Email di conferma inviate');
-        } else if (emailResults.customerSuccess || emailResults.partnerSuccess) {
-          toast.info(t('reservations.someEmailsSent') || 'Alcune email di conferma inviate');
+          logger.warn('❌ Email not sent');
         }
       }
     } catch (error) {
-      console.error('Error sending booking confirmation emails:', error);
+      logger.error('Error sending booking confirmation emails:', error);
     }
 
     fetchContracts();
@@ -422,12 +413,12 @@ const Contracts = () => {
     setGeneratingPDF(contract.id);
     
     try {
-      console.log('Generating PDF for contract:', contract);
+      logger.log('Generating PDF for contract:', contract);
       
       let fullCustomerData = contract.customers;
       
       if (contract.customer_id) {
-        console.log('Fetching customer data for ID:', contract.customer_id);
+        logger.log('Fetching customer data for ID:', contract.customer_id);
         
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
@@ -436,20 +427,20 @@ const Contracts = () => {
           .single();
         
         if (customerError) {
-          console.error('Error fetching customer data:', customerError);
+          logger.error('Error fetching customer data:', customerError);
         } else if (customerData) {
-          console.log('Found customer data:', customerData);
+          logger.log('Found customer data:', customerData);
           fullCustomerData = customerData;
         } else {
-          console.warn('No customer data found for ID:', contract.customer_id);
+          logger.warn('No customer data found for ID:', contract.customer_id);
         }
       } else {
-        console.warn('No customer_id found in contract:', contract);
+        logger.warn('No customer_id found in contract:', contract);
       }
       
       let locationData = null;
       if (contract.location_id) {
-        console.log('Fetching location data for ID:', contract.location_id);
+        logger.log('Fetching location data for ID:', contract.location_id);
         
         const { data: locationInfo, error: locationError } = await supabase
           .from('locations')
@@ -458,15 +449,15 @@ const Contracts = () => {
           .single();
         
         if (locationError) {
-          console.error('Error fetching location data:', locationError);
+          logger.error('Error fetching location data:', locationError);
         } else if (locationInfo) {
-          console.log('Found location data:', locationInfo);
+          logger.log('Found location data:', locationInfo);
           locationData = locationInfo;
         } else {
-          console.warn('No location data found for ID:', contract.location_id);
+          logger.warn('No location data found for ID:', contract.location_id);
         }
       } else {
-        console.warn('No location_id found in contract:', contract);
+        logger.warn('No location_id found in contract:', contract);
       }
       
       const enhancedContract = {
@@ -475,7 +466,7 @@ const Contracts = () => {
         location_data: locationData
       };
       
-      console.log('Enhanced contract with customer and location data:', enhancedContract);
+      logger.log('Enhanced contract with customer and location data:', enhancedContract);
       
       let partnerData = null;
       let logoUrl = null;
@@ -508,7 +499,7 @@ const Contracts = () => {
             logoUrl = data.publicUrl;
           }
         } catch (logoError) {
-          console.log('No logo found:', logoError);
+          logger.log('No logo found:', logoError);
         }
       }
 
@@ -517,7 +508,7 @@ const Contracts = () => {
       toast.success(t('contracts.pdfGeneratedSuccessfully') || 'PDF generated successfully!');
       
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error(t('contracts.errorGeneratingPDF') || 'Error generating PDF. Please try again.');
     } finally {
       setGeneratingPDF(null);
@@ -547,7 +538,7 @@ const Contracts = () => {
         toast.error(result.error || t('contracts.errorArchivingContract') || 'Error archiving contract');
       }
     } catch (error) {
-      console.error('Error archiving contract:', error);
+      logger.error('Error archiving contract:', error);
       toast.error(t('contracts.errorArchivingContract') || 'Error archiving contract');
     }
   };
@@ -562,7 +553,7 @@ const Contracts = () => {
       const { data, error } = await PaymentService.getContractPaymentStatus(contractIds);
       
       if (error) {
-        console.error('Error loading payment statuses:', error);
+        logger.error('Error loading payment statuses:', error);
         return;
       }
 
@@ -573,7 +564,7 @@ const Contracts = () => {
       
       setContractPayments(statusMap);
     } catch (error) {
-      console.error('Error loading payment statuses:', error);
+      logger.error('Error loading payment statuses:', error);
     }
   };
 
@@ -797,7 +788,7 @@ const Contracts = () => {
       toast.success(t('contracts.csvExportedSuccessfully') || 'Export CSV completato con successo');
       
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      logger.error('Error exporting CSV:', error);
       toast.error(t('contracts.errorExportingCSV') || 'Errore durante l\'export CSV. Riprova.');
     } finally {
       setExportingCSV(false);
