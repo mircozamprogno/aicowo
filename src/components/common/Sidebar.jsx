@@ -76,6 +76,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
+      { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
       
       // Regular users see limited options and settings
       { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },

@@ -1,3 +1,4 @@
+// src/components/contracts/ContractForm.jsx
 import { AlertTriangle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -45,6 +46,12 @@ const ContractForm = ({
   const [manualEndDate, setManualEndDate] = useState('');
   const [overridePrice, setOverridePrice] = useState(false);
   const [manualPrice, setManualPrice] = useState('');
+
+  // Discount code states
+  const [discountCode, setDiscountCode] = useState('');
+  const [validatingDiscount, setValidatingDiscount] = useState(false);
+  const [discountValidation, setDiscountValidation] = useState(null);
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
 
   // Determine if user can override
   const isPartnerAdmin = profile?.role === 'admin';
@@ -127,6 +134,23 @@ const ContractForm = ({
     }
   }, [formData.customer_id, isOpen, isCustomerMode]);
 
+  // Validate discount code when it changes or service changes
+  useEffect(() => {
+    if (discountCode && selectedService && formData.customer_id) {
+      validateDiscountCode();
+    } else {
+      setDiscountValidation(null);
+      setAppliedDiscount(null);
+    }
+  }, [discountCode, selectedService, formData.customer_id]);
+
+  // Calculate discount when price changes
+  useEffect(() => {
+    if (appliedDiscount && selectedService) {
+      calculateDiscount();
+    }
+  }, [appliedDiscount, selectedService, overridePrice, manualPrice]);
+
   const loadContractForEditing = async () => {
     if (!contractToEdit) return;
 
@@ -182,6 +206,11 @@ const ContractForm = ({
         setPendingServiceId(contractToEdit.service_id?.toString() || '');
       }
 
+      // Load discount code if present
+      if (contractToEdit.discount_code) {
+        setDiscountCode(contractToEdit.discount_code);
+      }
+
       // Set form data WITHOUT service_id (will be set by useEffect)
       setFormData({
         customer_id: contractToEdit.customer_id?.toString() || '',
@@ -217,6 +246,10 @@ const ContractForm = ({
     setManualPrice('');
     setLoadingEditContract(false);
     setPendingServiceId(null);
+    setDiscountCode('');
+    setValidatingDiscount(false);
+    setDiscountValidation(null);
+    setAppliedDiscount(null);
   };
 
   const fetchCustomerData = async () => {
@@ -350,6 +383,113 @@ const ContractForm = ({
     }
   };
 
+  const validateDiscountCode = async () => {
+    if (!discountCode || !selectedService || !formData.customer_id) return;
+
+    // No discount on free_trial
+    if (selectedService.service_type === 'free_trial') {
+      setDiscountValidation({ valid: false, error: t('contracts.noDiscountOnFreeTrial') || 'Discount codes cannot be applied to free trial services' });
+      setAppliedDiscount(null);
+      return;
+    }
+
+    // Only for abbonamento and pacchetto
+    if (selectedService.service_type !== 'abbonamento' && selectedService.service_type !== 'pacchetto') {
+      setDiscountValidation({ valid: false, error: t('contracts.discountOnlyForPaidServices') || 'Discount codes can only be applied to subscriptions and packages' });
+      setAppliedDiscount(null);
+      return;
+    }
+
+    setValidatingDiscount(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('customers_discount_codes')
+        .select('*')
+        .eq('partner_uuid', partnerUuid)
+        .eq('code', discountCode.trim().toUpperCase())
+        .single();
+
+      if (error || !data) {
+        setDiscountValidation({ valid: false, error: t('contracts.discountCodeNotFound') || 'Discount code not found' });
+        setAppliedDiscount(null);
+        return;
+      }
+
+      // Check if active
+      if (!data.is_active) {
+        setDiscountValidation({ valid: false, error: t('contracts.discountCodeInactive') || 'This discount code is inactive' });
+        setAppliedDiscount(null);
+        return;
+      }
+
+      // Check dates
+      const now = new Date();
+      const validFrom = new Date(data.valid_from);
+      const validUntil = new Date(data.valid_until);
+
+      if (now < validFrom) {
+        setDiscountValidation({ valid: false, error: t('contracts.discountCodeNotYetValid') || 'This discount code is not yet valid' });
+        setAppliedDiscount(null);
+        return;
+      }
+
+      if (now > validUntil) {
+        setDiscountValidation({ valid: false, error: t('contracts.discountCodeExpired') || 'This discount code has expired' });
+        setAppliedDiscount(null);
+        return;
+      }
+
+      // Check usage limit
+      if (data.usage_limit && data.usage_count >= data.usage_limit) {
+        setDiscountValidation({ valid: false, error: t('contracts.discountCodeUsageLimitReached') || 'This discount code has reached its usage limit' });
+        setAppliedDiscount(null);
+        return;
+      }
+
+      // Check if applies to this service type
+      if (data.applies_to_plans && data.applies_to_plans.length > 0) {
+        if (!data.applies_to_plans.includes(selectedService.service_type)) {
+          setDiscountValidation({ valid: false, error: t('contracts.discountCodeNotApplicable') || 'This discount code does not apply to this service type' });
+          setAppliedDiscount(null);
+          return;
+        }
+      }
+
+      // Valid!
+      setDiscountValidation({ valid: true });
+      setAppliedDiscount(data);
+
+    } catch (error) {
+      console.error('Error validating discount code:', error);
+      setDiscountValidation({ valid: false, error: t('contracts.errorValidatingDiscount') || 'Error validating discount code' });
+      setAppliedDiscount(null);
+    } finally {
+      setValidatingDiscount(false);
+    }
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedDiscount || !selectedService) return null;
+
+    const basePrice = overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost;
+    let discountAmount = 0;
+
+    if (appliedDiscount.discount_type === 'percentage') {
+      discountAmount = (basePrice * appliedDiscount.discount_value) / 100;
+    } else if (appliedDiscount.discount_type === 'fixed_amount') {
+      discountAmount = Math.min(appliedDiscount.discount_value, basePrice);
+    }
+
+    const finalPrice = Math.max(basePrice - discountAmount, 0);
+
+    return {
+      originalPrice: basePrice,
+      discountAmount: discountAmount,
+      finalPrice: finalPrice
+    };
+  };
+
   const calculateEndDate = () => {
     if (!selectedService || !formData.start_date) return;
 
@@ -458,10 +598,13 @@ const ContractForm = ({
       const service = availableServices.find(s => s.id.toString() === value);
       setSelectedService(service);
       
-      // Reset price override when service changes
+      // Reset price override and discount when service changes
       if (!editMode) {
         setOverridePrice(false);
         setManualPrice('');
+        setDiscountCode('');
+        setDiscountValidation(null);
+        setAppliedDiscount(null);
       }
     }
   };
@@ -502,6 +645,7 @@ const ContractForm = ({
         toast.error(t('messages.endDateRequired'));
         return false;
       }
+      const startDate = new Date(formData.start_date);
       const endDate = new Date(manualEndDate);
       if (endDate <= startDate) {
         toast.error(t('messages.endDateMustBeAfterStartDate'));
@@ -523,6 +667,18 @@ const ContractForm = ({
     if (!endDate) {
       toast.error(t('messages.endDateRequired'));
       return false;
+    }
+
+    // Validate discount code if provided
+    if (discountCode && discountCode.trim()) {
+      if (validatingDiscount) {
+        toast.error(t('contracts.discountValidationInProgress') || 'Please wait for discount validation to complete');
+        return false;
+      }
+      if (!discountValidation || !discountValidation.valid) {
+        toast.error(t('contracts.invalidDiscountCode') || 'Invalid discount code');
+        return false;
+      }
     }
 
     // Check availability for abbonamento services
@@ -561,7 +717,10 @@ const ContractForm = ({
 
     try {
       const finalEndDate = overrideEndDate ? manualEndDate : calculatedEndDate;
-      const finalPrice = overridePrice ? parseFloat(manualPrice) : selectedService.cost;
+      const basePrice = overridePrice ? parseFloat(manualPrice) : selectedService.cost;
+      
+      // Calculate discount if applied
+      const discountCalc = appliedDiscount ? calculateDiscount() : null;
 
       let contractData = {
         customer_id: parseInt(formData.customer_id),
@@ -574,7 +733,7 @@ const ContractForm = ({
         // Service snapshot
         service_name: selectedService.service_name,
         service_type: selectedService.service_type,
-        service_cost: finalPrice,
+        service_cost: discountCalc ? discountCalc.finalPrice : basePrice,
         service_currency: selectedService.currency,
         service_duration_days: selectedService.duration_days,
         service_max_entries: selectedService.max_entries,
@@ -583,6 +742,14 @@ const ContractForm = ({
         location_name: selectedLocation?.location_name || 'Unknown Location',
         resource_name: selectedService.location_resources?.resource_name || 'Unknown Resource',
         resource_type: selectedService.location_resources?.resource_type || 'scrivania',
+        
+        // Discount fields
+        discount_code: appliedDiscount ? discountCode.trim().toUpperCase() : null,
+        discount_type: appliedDiscount ? appliedDiscount.discount_type : null,
+        discount_value: appliedDiscount ? appliedDiscount.discount_value : null,
+        original_price: discountCalc ? discountCalc.originalPrice : null,
+        discount_amount: discountCalc ? discountCalc.discountAmount : null,
+        final_price: discountCalc ? discountCalc.finalPrice : null,
         
         // Contract settings
         contract_status: 'active',
@@ -635,6 +802,27 @@ const ContractForm = ({
           await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
         }
 
+        // Handle discount usage count update
+        if (appliedDiscount) {
+          // Check if discount changed
+          const oldDiscount = contractToEdit.discount_code;
+          const newDiscount = discountCode.trim().toUpperCase();
+          
+          if (oldDiscount !== newDiscount) {
+            // Decrement old discount if it had usage_limit
+            if (oldDiscount) {
+              await decrementDiscountUsage(oldDiscount);
+            }
+            // Increment new discount if it has usage_limit
+            if (appliedDiscount.usage_limit !== null) {
+              await incrementDiscountUsage(newDiscount);
+            }
+          }
+        } else if (contractToEdit.discount_code) {
+          // Discount was removed, decrement old discount
+          await decrementDiscountUsage(contractToEdit.discount_code);
+        }
+
         result = data;
         toast.success(t('messages.contractUpdatedSuccessfully'));
       } else {
@@ -680,6 +868,11 @@ const ContractForm = ({
           await createBookingForContract(data.id, formData.start_date, bookingEndDate);
         }
 
+        // Increment discount usage count if it has usage_limit
+        if (appliedDiscount && appliedDiscount.usage_limit !== null) {
+          await incrementDiscountUsage(discountCode.trim().toUpperCase());
+        }
+
         result = data;
         toast.success(t('messages.contractCreatedSuccessfully'));
       }
@@ -692,6 +885,36 @@ const ContractForm = ({
     } finally {
       setLoading(false);
       setShowConfirmation(false);
+    }
+  };
+
+  const incrementDiscountUsage = async (code) => {
+    try {
+      const { error } = await supabase.rpc('increment_discount_usage', {
+        p_partner_uuid: partnerUuid,
+        p_code: code
+      });
+
+      if (error) {
+        console.error('Error incrementing discount usage:', error);
+      }
+    } catch (error) {
+      console.error('Error incrementing discount usage:', error);
+    }
+  };
+
+  const decrementDiscountUsage = async (code) => {
+    try {
+      const { error } = await supabase.rpc('decrement_discount_usage', {
+        p_partner_uuid: partnerUuid,
+        p_code: code
+      });
+
+      if (error) {
+        console.error('Error decrementing discount usage:', error);
+      }
+    } catch (error) {
+      console.error('Error decrementing discount usage:', error);
     }
   };
 
@@ -801,6 +1024,10 @@ const ContractForm = ({
   };
 
   const getFinalPrice = () => {
+    const discountCalc = appliedDiscount ? calculateDiscount() : null;
+    if (discountCalc) {
+      return discountCalc.finalPrice;
+    }
     if (overridePrice && manualPrice) {
       return parseFloat(manualPrice);
     }
@@ -826,6 +1053,9 @@ const ContractForm = ({
     value: service.id.toString(),
     label: `${service.service_name} - ${formatCurrency(service.cost, service.currency)} (${getServiceTypeLabel(service.service_type)})`
   }));
+
+  // Calculate discount info for display
+  const discountCalc = appliedDiscount ? calculateDiscount() : null;
 
   if (!isOpen) return null;
 
@@ -891,6 +1121,22 @@ const ContractForm = ({
                   {overrideEndDate && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customDuration')})</span>}
                 </span>
               </div>
+              
+              {discountCalc && (
+                <>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('contracts.originalPrice')}:</span>
+                    <span className="summary-value">{formatCurrency(discountCalc.originalPrice, selectedService?.currency)}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('contracts.discount')}:</span>
+                    <span className="summary-value" style={{ color: '#059669' }}>
+                      -{formatCurrency(discountCalc.discountAmount, selectedService?.currency)}
+                      {' '}({appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.discount_value}%` : t('contracts.fixedAmount')})
+                    </span>
+                  </div>
+                </>
+              )}
               
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.cost')}:</span>
@@ -1067,8 +1313,19 @@ const ContractForm = ({
                   <div className="service-detail-item">
                     <span className="detail-label">{t('contracts.cost')}:</span>
                     <span className="detail-value" style={{ fontWeight: 600 }}>
-                      {formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}
-                      {overridePrice && <span style={{ color: '#f59e0b', marginLeft: '0.5rem', fontSize: '0.875rem' }}>({t('contracts.customPrice')})</span>}
+                      {discountCalc ? (
+                        <>
+                          <span style={{ textDecoration: 'line-through', color: '#9ca3af', marginRight: '0.5rem' }}>
+                            {formatCurrency(discountCalc.originalPrice, selectedService.currency)}
+                          </span>
+                          <span style={{ color: '#059669' }}>
+                            {formatCurrency(discountCalc.finalPrice, selectedService.currency)}
+                          </span>
+                        </>
+                      ) : (
+                        formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)
+                      )}
+                      {overridePrice && !discountCalc && <span style={{ color: '#f59e0b', marginLeft: '0.5rem', fontSize: '0.875rem' }}>({t('contracts.customPrice')})</span>}
                     </span>
                   </div>
                 </div>
@@ -1076,8 +1333,94 @@ const ContractForm = ({
             )}
           </div>
 
+          {/* Discount Code Section - Only for abbonamento and pacchetto */}
+          {selectedService && (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'pacchetto') && (
+            <div className="form-section-clean">
+              <div className="form-group">
+                <label htmlFor="discount_code" className="form-label">
+                  {t('contracts.discountCode')} ({t('common.optional')})
+                  {!canOverride && isCustomerMode && (
+                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal', marginLeft: '0.5rem' }}>
+                      ({t('contracts.askPartnerForCode') || 'Ask your partner for discount codes'})
+                    </span>
+                  )}
+                </label>
+                <input
+                  id="discount_code"
+                  type="text"
+                  className="form-input"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                  placeholder={t('contracts.enterDiscountCode') || 'SUMMER2024'}
+                  style={{ textTransform: 'uppercase' }}
+                  disabled={!canOverride && isCustomerMode && editMode}
+                />
+                {validatingDiscount && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <div className="loading-spinner-small"></div>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                      {t('contracts.validatingCode') || 'Validating code...'}
+                    </span>
+                  </div>
+                )}
+                {discountValidation && !validatingDiscount && (
+                  <div style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
+                    backgroundColor: discountValidation.valid ? '#d1fae5' : '#fee2e2',
+                    color: discountValidation.valid ? '#065f46' : '#991b1b',
+                    border: `1px solid ${discountValidation.valid ? '#6ee7b7' : '#fca5a5'}`
+                  }}>
+                    {discountValidation.valid ? (
+                      <span>✅ {t('contracts.validDiscountCode') || 'Valid discount code'}</span>
+                    ) : (
+                      <span>❌ {discountValidation.error}</span>
+                    )}
+                  </div>
+                )}
+                {discountCalc && (
+                  <div style={{
+                    marginTop: '0.75rem',
+                    padding: '0.75rem',
+                    backgroundColor: '#d1fae5',
+                    border: '1px solid #6ee7b7',
+                    borderRadius: '0.375rem'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: '#065f46', marginBottom: '0.5rem', fontWeight: 600 }}>
+                      {t('contracts.discountApplied') || 'Discount Applied'}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.875rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#047857' }}>{t('contracts.originalPrice')}:</span>
+                        <span style={{ color: '#047857', textDecoration: 'line-through' }}>
+                          {formatCurrency(discountCalc.originalPrice, selectedService.currency)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#047857' }}>
+                          {t('contracts.discount')} ({appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.discount_value}%` : t('contracts.fixedAmount')}):
+                        </span>
+                        <span style={{ color: '#047857', fontWeight: 600 }}>
+                          -{formatCurrency(discountCalc.discountAmount, selectedService.currency)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #6ee7b7' }}>
+                        <span style={{ color: '#065f46', fontWeight: 700 }}>{t('contracts.finalPrice')}:</span>
+                        <span style={{ color: '#065f46', fontWeight: 700, fontSize: '1rem' }}>
+                          {formatCurrency(discountCalc.finalPrice, selectedService.currency)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Price Override Section - Partner Only */}
-          {canOverride && selectedService && (
+          {canOverride && selectedService && !appliedDiscount && (
             <div className="form-section-clean">
               <div className="form-group">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>

@@ -21,7 +21,8 @@
     "pricingPlans": "Piani Tariffari",
     "partnerContracts": "Contratti Partner",
     "discountCodes": "Codici Sconto",
-    "support": "Supporto"
+    "support": "Supporto",
+    "customersDiscountCodes": "Codici Sconto"
   },
   "customers": {
     "title": "Clienti",
@@ -565,7 +566,8 @@
     "understood": "Ho Capito",
     "to": "al",
     "of": "di",
-    "confirm": "Conferma"
+    "confirm": "Conferma",
+    "accessDenied": "Accesso negato"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -1016,7 +1018,16 @@
       "paymentHistory": "Storico Pagamenti",
       "editContract": "Modifica Contratto",
       "archiveContract": "Archivia Contratto"
-    }
+    },
+    "discountCode": "Codice Sconto",
+    "askPartnerForCode": "Chiedi al tuo partner il codice sconto",
+    "discountCodeNotFound": "Codice non trovato",
+    "enterDiscountCode": "Inserisci il codice sconto",
+    "validDiscountCode": "Codice valido",
+    "discountApplied": "Sconto applicato",
+    "originalPrice": "Prezzo originale",
+    "discount": "Sconto",
+    "finalPrice": "Prezzo finale"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",
@@ -1798,6 +1809,11 @@
     "errorSavingTemplate": "Errore nel salvataggio del template. Riprova.",
     "confirmResetTemplate": "Sei sicuro di voler ripristinare questo template alle impostazioni predefinite? Le tue modifiche andranno perse.",
     "templateReset": "Template ripristinato alle impostazioni predefinite"
+  },
+  "customersDiscountCodes": {
+    "title": "Codici Sconto Clienti",
+    "subtitle": "Crea e gestisci i codici sconto per i tuoi clienti",
+    "accessDeniedMessage": "Solo i partner possono gestire i codici sconto per i clienti."
   },
   "app": {
     "appName": " ",

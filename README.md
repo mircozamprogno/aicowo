@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.11.10 V 0.760 Discount Code for Partners
 2025.11.10 V 0.750 Login Logo and phone number in registration
 2025.11.09 V 0.740 Moltissimi miglioramenti, vedi Asana 
 2025.11.07 V 0.730 Little improvements 

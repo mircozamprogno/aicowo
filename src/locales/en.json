@@ -21,7 +21,8 @@
     "pricingPlans": "Pricing Plans", 
     "partnerContracts": "Partner Contracts",
     "discountCodes": "Discount Codes",
-    "support": "Support"
+    "support": "Support",
+    "customersDiscountCodes": "Discount Codes"
   },
   "customers": {
     "title": "Customers",
@@ -565,7 +566,8 @@
     "understood": "Understood",
     "to": "to",
     "of": "of",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "accessDenied": "Access denied"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -1013,7 +1015,16 @@
       "paymentHistory": "Payment History",
       "editContract": "Edit Contract", 
       "archiveContract": "Archive Contract"
-    }
+    },
+    "discountCode": "Discount Code",
+    "askPartnerForCode": "Ask your partner for the discount code",
+    "discountCodeNotFound": "Code not found",
+    "enterDiscountCode": "Enter discount code",
+    "validDiscountCode": "Code is valid",
+    "discountApplied": "Discount applied",
+    "originalPrice": "Original Price",
+    "discount": "Discount",
+    "finalPrice": "Final Price"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -1795,6 +1806,11 @@
     "errorSavingTemplate": "Error saving template. Please try again.",
     "confirmResetTemplate": "Are you sure you want to reset this template to default? Your changes will be lost.",
     "templateReset": "Template reset to default"
+  },
+  "customersDiscountCodes": {
+    "title": "Customer Discount Codes",
+    "subtitle": "Create and manage discount codes for your customers",
+    "accessDeniedMessage": "Only partners can manage customer discount codes."
   },
   "app": {
     "appName": " ",

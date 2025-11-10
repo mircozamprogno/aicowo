@@ -24,6 +24,7 @@ import Register from '../auth/Register';
 import ResetPassword from '../auth/ResetPassword';
 import ProtectedRoute from './ProtectedRoute';
 // Add these imports
+import CustomersDiscountCodes from '../../pages/CustomersDiscountCodes';
 import PartnerDiscountCodes from '../../pages/PartnerDiscountCodes';
 
 const Router = () => {
@@ -223,6 +224,12 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['superadmin']}>
           <PartnerDiscountCodes />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/customers-discount-codes':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <CustomersDiscountCodes />
         </ProtectedRoute>
       ) : <Login />;
     case '/renewal-logs':
