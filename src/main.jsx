@@ -4,6 +4,7 @@ import App from './App.jsx'
 
 // Import CSS files in order
 import './styles/components/auth.css'
+import './styles/components/ConfirmModal.css'
 import './styles/components/fattureincloudimportmodal.css'
 import './styles/components/invitation-register.css'
 import './styles/components/layout.css'

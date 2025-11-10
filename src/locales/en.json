@@ -357,7 +357,8 @@
     "invalidResetLink": "Invalid Reset Link",
     "invalidResetLinkMessage": "This password reset link is invalid or has expired. Please request a new one.",
     "requestNewResetLink": "Request New Reset Link",
-    "goToLogin": "Go to Login"
+    "goToLogin": "Go to Login",
+    "phone": "Phone Number"
   },
   "roles": {
     "superadmin": "Super Admin",
@@ -529,7 +530,11 @@
     "itemsPerPage": "Items per page",
     "previous": "Previous",
     "next": "Next",
-    "pageOfPages": "Page {{current}} of {{total}}"
+    "pageOfPages": "Page {{current}} of {{total}}",
+    "confirmCancelTitle": "Cancel Invitation",
+    "confirmCancelMessage": "Are you sure you want to cancel this invitation? This action cannot be undone.",
+    "confirmDeleteTitle": "Delete Invitations",
+    "confirmDeleteMessage": "Are you sure you want to delete {{count}} invitation(s)? This action cannot be undone."
   },
   "common": {
     "loading": "Loading...",
@@ -559,7 +564,8 @@
     "back": "Back",
     "understood": "Understood",
     "to": "to",
-    "of": "of"
+    "of": "of",
+    "confirm": "Confirm"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",

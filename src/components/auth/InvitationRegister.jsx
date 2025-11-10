@@ -1,4 +1,4 @@
-import { Building, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Phone, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -6,13 +6,17 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import Link from '../common/Link';
 import { toast } from '../common/ToastContainer';
 
+// Logger 
+import logger from '../../utils/logger';
+
 const InvitationRegister = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     firstName: '',
-    lastName: ''
+    lastName: '',
+    phone: ''
   });
   const [invitation, setInvitation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,14 +26,12 @@ const InvitationRegister = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
 
-  // Get invitation token from URL - Fixed parsing
   const getInvitationTokenFromURL = () => {
-    // Check both hash parameters and regular URL parameters
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
     const urlParams = new URLSearchParams(window.location.search);
     
     const token = hashParams.get('token') || urlParams.get('token');
-    console.log('Invitation token from URL:', {
+    logger.log('Invitation token from URL:', {
       hash: window.location.hash,
       search: window.location.search,
       token: token
@@ -77,7 +79,7 @@ const InvitationRegister = () => {
         setFormData(prev => ({ ...prev, email: data.invited_email }));
       }
     } catch (error) {
-      console.error('Error validating invitation:', error);
+      logger.error('Error validating invitation:', error);
       toast.error(t('messages.errorValidatingInvitation'));
       window.location.hash = '/login';
     } finally {
@@ -103,25 +105,29 @@ const InvitationRegister = () => {
     setSubmitting(true);
 
     try {
-      // CRITICAL FIX: Include partner_uuid in the user metadata
-      const { data, error } = await supabase.auth.signUp({
+      // Create auth user with phone in metadata
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        phone: formData.phone, // Set phone at auth level
         options: {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
+            phone: formData.phone, // Also in metadata for trigger function
             role: invitation.invited_role,
-            partner_uuid: invitation.partner_uuid, // ← THIS IS THE CRITICAL FIX
+            partner_uuid: invitation.partner_uuid,
             username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
           }
         }
       });
 
-      if (error) {
-        console.error('Registration error:', error);
-        throw error;
+      if (authError) {
+        logger.error('Registration error:', authError);
+        throw authError;
       }
+
+      logger.log('User created successfully:', authData);
 
       // Mark invitation as used
       await supabase
@@ -132,13 +138,12 @@ const InvitationRegister = () => {
         })
         .eq('invitation_uuid', invitationToken);
       
-      // Show success message instead of auto-login
       setUserEmail(formData.email);
       setRegistrationComplete(true);
       
       toast.success(t('messages.registrationCompletePleaseVerify'));
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       toast.error(error.message || t('messages.errorCreatingAccount'));
     } finally {
       setSubmitting(false);
@@ -163,7 +168,12 @@ const InvitationRegister = () => {
       <div className="auth-page">
         <div className="auth-container">
           <div className="auth-header">
-            <Building size={48} color="#10b981" className="auth-logo" />
+            <div className="auth-logo">
+              <img src="/logo.svg" alt="Logo" style={{ height: '48px' }} />
+            </div>
+            <h1 className="auth-app-name">
+              {t('app.appShortName')}
+            </h1>
             <h2 className="auth-title" style={{ color: '#10b981' }}>
               {t('auth.registrationComplete')}
             </h2>
@@ -223,8 +233,11 @@ const InvitationRegister = () => {
         <div className="auth-container">
           <div className="auth-header">
             <div className="auth-logo">
-              <Building size={48} color="#dc2626" />
+              <img src="/logo.svg" alt="Logo" style={{ height: '48px' }} />
             </div>
+            <h1 className="auth-app-name">
+              {t('app.appShortName')}
+            </h1>
             <h2 className="auth-title auth-title-error">
               {t('auth.invalidInvitation')}
             </h2>
@@ -247,8 +260,11 @@ const InvitationRegister = () => {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <Building size={48} color="#4f46e5" />
+            <img src="/logo.svg" alt="Logo" style={{ height: '48px' }} />
           </div>
+          <h1 className="auth-app-name">
+            {t('app.appShortName')}
+          </h1>
           <h2 className="auth-title">
             {t('auth.completeRegistration')}
           </h2>
@@ -330,6 +346,26 @@ const InvitationRegister = () => {
           </div>
 
           <div className="form-group">
+            <label htmlFor="phone" className="form-label">
+              {t('auth.phone')} *
+            </label>
+            <div className="input-group">
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
+                required
+                className="form-input"
+                placeholder={t('placeholders.phonePlaceholder')}
+                value={formData.phone}
+                onChange={handleChange}
+              />
+              <Phone size={16} className="input-icon input-icon-left" />
+            </div>
+          </div>
+
+          <div className="form-group">
             <label htmlFor="password" className="form-label">
               {t('auth.password')} *
             </label>
@@ -340,7 +376,7 @@ const InvitationRegister = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className="form-input has-right-icon"  // ADD has-right-icon
+                className="form-input has-right-icon"
                 placeholder={t('placeholders.passwordPlaceholder')}
                 value={formData.password}
                 onChange={handleChange}
@@ -348,7 +384,7 @@ const InvitationRegister = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon-right"  // REMOVE input-icon class
+                className="input-icon-right"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -367,7 +403,7 @@ const InvitationRegister = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className="form-input has-right-icon"  // ADD has-right-icon
+                className="form-input has-right-icon"
                 placeholder={t('auth.confirmPassword')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -375,7 +411,7 @@ const InvitationRegister = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon-right"  // ADD the button
+                className="input-icon-right"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

@@ -1,5 +1,6 @@
 import { ChevronDown, Search, Send, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import ConfirmModal from '../components/common/ConfirmModal';
 import { toast } from '../components/common/ToastContainer';
 import SendInvitationModal from '../components/invitations/SendInvitationModal';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +18,7 @@ const Invitations = () => {
   const [deleting, setDeleting] = useState(false);
   const [showInvitation, setShowInvitation] = useState(false);
   const [currentPartner, setCurrentPartner] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, invitation: null, isBulk: false });
   
   const { profile } = useAuth();
   const { t } = useTranslation();
@@ -231,10 +233,6 @@ const Invitations = () => {
       return;
     }
 
-    if (!window.confirm(t('messages.confirmCancelInvitation'))) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('invitations')
@@ -263,15 +261,6 @@ const Invitations = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedInvitations.size === 0) {
-      toast.error(t('invitations.noInvitationsSelected'));
-      return;
-    }
-
-    if (!window.confirm(t('invitations.confirmDeleteSelected', { count: selectedInvitations.size }))) {
-      return;
-    }
-
     setDeleting(true);
 
     try {
@@ -454,7 +443,13 @@ const Invitations = () => {
               {t('invitations.selectedCount', { count: selectedInvitations.size })}
             </span>
             <button
-              onClick={handleBulkDelete}
+              onClick={() => {
+                if (selectedInvitations.size === 0) {
+                  toast.error(t('invitations.noInvitationsSelected'));
+                  return;
+                }
+                setConfirmModal({ isOpen: true, invitation: null, isBulk: true });
+              }}
               disabled={deleting}
               className="bulk-delete-btn"
             >
@@ -481,17 +476,12 @@ const Invitations = () => {
                     className="checkbox-input"
                   />
                 </th>
-                <th className="invitations-table-header">
-                  {t('invitations.invitee')}
-                </th>
-                {/* Remove email column for superadmin, keep for admin */}
-                {/*
                 {profile?.role === 'admin' && (
                   <th className="invitations-table-header">
                     {t('auth.email')}
                   </th>
                 )}
-                */}
+                
                 {profile?.role === 'superadmin' && (
                   <th className="invitations-table-header hide-on-mobile">
                     {t('partners.partner')}
@@ -525,28 +515,12 @@ const Invitations = () => {
                       className="checkbox-input"
                     />
                   </td>
-                  <td className="invitations-table-cell">
-                    <div className="invitee-info">
-                      <div className="invitee-name">
-                        {invitation.invited_first_name} {invitation.invited_last_name}
-                      </div>
-                      <div className="invitee-created">
-                        {invitation.invited_email}
-                      </div>
-                      <div className="invitee-created">
-                        {t('common.createdAt')}: {formatDate(invitation.created_at)}
-                      </div>
-                    </div>
-                  </td>
-                  {/* Keep email column for admin */}
-                  {/*
                   {profile?.role === 'admin' && (
                     <td className="invitations-table-cell">
                       {invitation.invited_email}
                     </td>
                   )}
-                  */}
-                  {/* Updated Partner column for superadmin */}
+                  
                   {profile?.role === 'superadmin' && (
                     <td className="invitations-table-cell hide-on-mobile">
                       <div className="partner-info">
@@ -585,7 +559,7 @@ const Invitations = () => {
                     <div className="invitation-actions">
                       {invitation.status === 'pending' && (
                         <button
-                          onClick={() => handleCancelInvitation(invitation)}
+                          onClick={() => setConfirmModal({ isOpen: true, invitation, isBulk: false })}
                           className="cancel-btn"
                           title={t('invitations.cancelInvitation')}
                         >
@@ -668,6 +642,29 @@ const Invitations = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, invitation: null, isBulk: false })}
+        onConfirm={() => {
+          if (confirmModal.isBulk) {
+            handleBulkDelete();
+          } else if (confirmModal.invitation) {
+            handleCancelInvitation(confirmModal.invitation);
+          }
+        }}
+        title={confirmModal.isBulk 
+          ? t('invitations.confirmDeleteTitle') 
+          : t('invitations.confirmCancelTitle')
+        }
+        message={confirmModal.isBulk 
+          ? t('invitations.confirmDeleteMessage', { count: selectedInvitations.size })
+          : t('invitations.confirmCancelMessage')
+        }
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+      />
 
       {/* Send Invitation Modal - Only for partner admins */}
       {profile?.role === 'admin' && currentPartner && (

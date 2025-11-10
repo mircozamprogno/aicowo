@@ -1,4 +1,4 @@
-import { Building, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -34,8 +34,11 @@ const Login = () => {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <Building size={48} color="#4f46e5" />
+            <img src="/logo.svg" alt="Logo" style={{ height: '48px' }} />
           </div>
+          <h1 className="auth-app-name">
+            {t('app.appShortName')}
+          </h1>
           <h2 className="auth-title">
             {t('auth.signIn')}
           </h2>
@@ -70,7 +73,7 @@ const Login = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="form-input input-bottom has-right-icon"  // ✅ Added has-right-icon
+                className="form-input input-bottom has-right-icon"
                 placeholder={t('placeholders.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -78,7 +81,7 @@ const Login = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon-right"  // ✅ Removed extra input-icon class
+                className="input-icon-right"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -102,6 +105,7 @@ const Login = () => {
             </button>
           </div>
 
+          {/* Keep email column for admin 
           <div className="auth-switch">
             <span className="auth-switch-text">
               {t('auth.dontHaveAccount')}{' '}
@@ -110,6 +114,7 @@ const Login = () => {
               </Link>
             </span>
           </div>
+          */}
         </form>
       </div>
       <div className="auth-language-switcher">

@@ -1,4 +1,4 @@
-import { Building, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -33,7 +33,12 @@ const ForgotPassword = () => {
       <div className="auth-page">
         <div className="auth-container">
           <div className="auth-header">
-            <Building size={48} color="#4f46e5" className="auth-logo" />
+            <div className="auth-logo">
+              <img src="/logo.svg" alt="Logo" style={{ height: '48px' }} />
+            </div>
+            <h1 className="auth-app-name">
+              {t('app.appShortName')}
+            </h1>
             <h2 className="auth-title">Check your email</h2>
             <p className="auth-instructions">
               {t('auth.checkEmailInstructions')} {email}
@@ -60,8 +65,11 @@ const ForgotPassword = () => {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <Building size={48} color="#4f46e5" />
+            <img src="/logo.svg" alt="Logo" style={{ height: '48px' }} />
           </div>
+          <h1 className="auth-app-name">
+            {t('app.appShortName')}
+          </h1>
           <h2 className="auth-title">
             {t('auth.resetPassword')}
           </h2>

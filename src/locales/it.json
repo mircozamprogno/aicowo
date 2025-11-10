@@ -357,7 +357,8 @@
     "invalidResetLink": "Link di Reset Non Valido",
     "invalidResetLinkMessage": "Questo link per il reset della password non è valido o è scaduto. Per favore richiedine uno nuovo.",
     "requestNewResetLink": "Richiedi Nuovo Link di Reset",
-    "goToLogin": "Vai al Login"
+    "goToLogin": "Vai al Login",
+    "phone": "Numero di Telefono"
   },
   "roles": {
     "superadmin": "Super Amministratore",
@@ -529,7 +530,11 @@
     "itemsPerPage": "Elementi per pagina",
     "previous": "Precedente",
     "next": "Successivo",
-    "pageOfPages": "Pagina {{current}} di {{total}}"
+    "pageOfPages": "Pagina {{current}} di {{total}}",
+    "confirmCancelTitle": "Annulla Invito",
+    "confirmCancelMessage": "Sei sicuro di voler annullare questo invito? Questa azione non può essere annullata.",
+    "confirmDeleteTitle": "Elimina Inviti",
+    "confirmDeleteMessage": "Sei sicuro di voler eliminare {{count}} invito/i? Questa azione non può essere annullata."
   },
   "common": {
     "loading": "Caricamento...",
@@ -559,7 +564,8 @@
     "back": "Indietro",
     "understood": "Ho Capito",
     "to": "al",
-    "of": "di"
+    "of": "di",
+    "confirm": "Conferma"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
