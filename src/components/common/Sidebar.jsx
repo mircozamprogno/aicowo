@@ -320,7 +320,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       {!isLocalhost() && versionInfo && (
         <div className="sidebar-version">
           <div className="version-info">
-            <span className="version-commit">{versionInfo.commit}</span>
+            {/* <span className="version-commit">{versionInfo.commit}</span> */}
             {versionInfo.message && (
               <span className="version-message" title={versionInfo.message}>
                 {versionInfo.message.length > 30 
