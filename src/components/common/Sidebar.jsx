@@ -1,4 +1,4 @@
-import { Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, Users, X } from 'lucide-react';
+import { Activity, Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -75,8 +75,10 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
-      { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
       { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
+      { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
+      { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
+
       
       // Regular users see limited options and settings
       { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },

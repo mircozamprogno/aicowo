@@ -1,3 +1,4 @@
+// src/pages/Contracts.jsx
 import { AlertTriangle, Archive, Clock, Download, FileText, Plus, RefreshCw, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
@@ -15,11 +16,11 @@ import { PaymentService } from '../services/paymentService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 
-// Add these imports at the top
 import ContractsFilter from '../components/ContractsFilter';
 import { BulkUploadModal } from '../components/fattureincloud/FattureInCloudComponents';
 import { FattureInCloudService } from '../services/fattureInCloudService';
-// Logger
+
+import { logActivity } from '../utils/activityLogger';
 import logger from '../utils/logger';
 
 
@@ -35,24 +36,20 @@ const Contracts = () => {
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
   
-  // Package booking states
   const [showPackageBooking, setShowPackageBooking] = useState(false);
   const [selectedPackageContract, setSelectedPackageContract] = useState(null);
   
-  // PDF generation states
   const [generatingPDF, setGeneratingPDF] = useState(null);
   
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
-  // Determine user capabilities
   const isCustomer = profile?.role === 'user';
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
   const canCreateContracts = isCustomer || isPartnerAdmin;
   const canEditContracts = isPartnerAdmin || isSuperAdmin;
 
-  // Payment states
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
@@ -60,15 +57,12 @@ const Contracts = () => {
   const [contractPayments, setContractPayments] = useState({});
   const canManagePayments = isPartnerAdmin || isSuperAdmin;
 
-  // CSV Export states
   const [exportingCSV, setExportingCSV] = useState(false);
 
-  // FattureInCloud states
   const [partnerSettings, setPartnerSettings] = useState(null);
   const [uploadStatuses, setUploadStatuses] = useState({});
   const [showBulkUpload, setShowBulkUpload] = useState(false);
 
-  // Filter states
   const [activeFilters, setActiveFilters] = useState({});
 
   const loadPartnerSettings = async () => {
@@ -529,6 +523,25 @@ const Contracts = () => {
       );
 
       if (result.success) {
+        // Log activity
+        await logActivity({
+          action_category: 'contract',
+          action_type: 'deleted',
+          entity_id: contractToArchive.id.toString(),
+          entity_type: 'contracts',
+          description: `Archived contract ${contractToArchive.contract_number} for ${contractToArchive.customers?.company_name || `${contractToArchive.customers?.first_name} ${contractToArchive.customers?.second_name}`}`,
+          metadata: {
+            contract_number: contractToArchive.contract_number,
+            customer_id: contractToArchive.customer_id,
+            service_name: contractToArchive.service_name,
+            service_type: contractToArchive.service_type,
+            location_name: contractToArchive.location_name,
+            start_date: contractToArchive.start_date,
+            end_date: contractToArchive.end_date,
+            archive_reason: 'Contract archived by user'
+          }
+        });
+
         setContracts(prev => prev.filter(c => c.id !== contractToArchive.id));
         setShowArchiveConfirm(false);
         setContractToArchive(null);
@@ -894,7 +907,6 @@ const Contracts = () => {
               </button>
             )}
 
-            {/* ADD THIS NEW BUTTON HERE */}
             {(isPartnerAdmin || isSuperAdmin) && (
               <button 
                 className="renewal-logs-btn"
@@ -905,8 +917,6 @@ const Contracts = () => {
                 {t('renewalLogs.renewalLogs') || 'Renewal Logs'}
               </button>
             )}
-
-
           </div>
         )}
       </div>
@@ -957,9 +967,6 @@ const Contracts = () => {
                 </th>
                 <th className="contracts-table-header">
                   {t('contracts.cost')}
-                </th>
-                <th className="contracts-table-header">
-                  {t('contracts.status')}
                 </th>
                 {canManagePayments && (
                   <th className="contracts-table-header">
@@ -1053,14 +1060,14 @@ const Contracts = () => {
                       </div>
                     </td>
                     <td className="contracts-table-cell">
-                      <div className="cost-info">
-                        {formatCurrency(contract.service_cost, contract.service_currency)}
+                      <div className="cost-status-info">
+                        <div className="cost-info">
+                          {formatCurrency(contract.service_cost, contract.service_currency)}
+                        </div>
+                        <span className={`status-badge ${getStatusBadgeClass(contract.contract_status)}`}>
+                          {t(`contracts.${contract.contract_status}`)}
+                        </span>
                       </div>
-                    </td>
-                    <td className="contracts-table-cell">
-                      <span className={`status-badge ${getStatusBadgeClass(contract.contract_status)}`}>
-                        {t(`contracts.${contract.contract_status}`)}
-                      </span>
                     </td>
                     {canManagePayments && (
                       <td className="contracts-table-cell">

@@ -7,6 +7,9 @@ import { supabase } from '../../services/supabase';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
+import { logActivity } from '../../utils/activityLogger';
+import logger from '../../utils/logger';
+
 const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, locations = [] }) => {
   const { t } = useTranslation();
   const isEditing = !!service;
@@ -44,7 +47,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
   useEffect(() => {
     if (service) {
-      console.log('Loading service data for editing:', service);
+      logger.log('Loading service data for editing:', service);
       setFormData({
         service_name: service.service_name || '',
         service_description: service.service_description || '',
@@ -65,7 +68,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         fetchLocationResources(service.location_id.toString());
       }
     } else {
-      console.log('Resetting form for new service');
+      logger.log('Resetting form for new service');
       setFormData({
         service_name: '',
         service_description: '',
@@ -104,7 +107,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         .order('resource_type', { ascending: true });
 
       if (error) {
-        console.error('Error fetching location resources:', error);
+        logger.error('Error fetching location resources:', error);
         if (error.code !== 'PGRST116') {
           toast.error('Error loading resources for this location');
         }
@@ -113,7 +116,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         setLocationResources(data || []);
       }
     } catch (error) {
-      console.error('Error fetching location resources:', error);
+      logger.error('Error fetching location resources:', error);
       setLocationResources([]);
     } finally {
       setLoadingResources(false);
@@ -245,6 +248,36 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               )
             )
           `);
+
+        const { data, error } = result;
+
+        if (error) {
+          logger.error('Service save error:', error);
+          throw error;
+        }
+
+        // Log activity for update
+        await logActivity({
+          action_category: 'service',
+          action_type: 'updated',
+          entity_id: data[0].id.toString(),
+          entity_type: 'services',
+          description: `Updated service: ${data[0].service_name}`,
+          metadata: {
+            service_name: data[0].service_name,
+            service_type: data[0].service_type,
+            location_id: data[0].location_id,
+            resource_id: data[0].location_resource_id,
+            cost: data[0].cost,
+            currency: data[0].currency,
+            duration_days: data[0].duration_days,
+            status: data[0].service_status,
+            is_private: data[0].private
+          }
+        });
+
+        toast.success(t('messages.serviceUpdatedSuccessfully'));
+        onSuccess(data[0]);
       } else {
         result = await supabase
           .from('services')
@@ -263,29 +296,45 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               )
             )
           `);
-        const { data } = result;
+
+        const { data, error } = result;
+
+        if (error) {
+          logger.error('Service save error:', error);
+          throw error;
+        }
+
         if (data && data[0]) {
           await onServiceCreated(data[0]);
+          
+          // Log activity for creation
+          await logActivity({
+            action_category: 'service',
+            action_type: 'created',
+            entity_id: data[0].id.toString(),
+            entity_type: 'services',
+            description: `Created service: ${data[0].service_name}`,
+            metadata: {
+              service_name: data[0].service_name,
+              service_type: data[0].service_type,
+              location_id: data[0].location_id,
+              resource_id: data[0].location_resource_id,
+              cost: data[0].cost,
+              currency: data[0].currency,
+              duration_days: data[0].duration_days,
+              status: data[0].service_status,
+              is_private: data[0].private
+            }
+          });
         }
+
+        toast.success(t('messages.serviceCreatedSuccessfully'));
+        onSuccess(data[0]);
       }
 
-      const { data, error } = result;
-
-      if (error) {
-        console.error('Service save error:', error);
-        throw error;
-      }
-
-      toast.success(
-        isEditing 
-          ? t('messages.serviceUpdatedSuccessfully') 
-          : t('messages.serviceCreatedSuccessfully')
-      );
-      
-      onSuccess(data[0]);
       onClose();
     } catch (error) {
-      console.error('Error saving service:', error);
+      logger.error('Error saving service:', error);
       toast.error(error.message || t('messages.errorSavingService'));
     } finally {
       setLoading(false);
@@ -302,9 +351,25 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         .eq('id', service.id);
 
       if (error) {
-        console.error('Service delete error:', error);
+        logger.error('Service delete error:', error);
         throw error;
       }
+
+      // Log activity for deletion
+      await logActivity({
+        action_category: 'service',
+        action_type: 'deleted',
+        entity_id: service.id.toString(),
+        entity_type: 'services',
+        description: `Deleted service: ${service.service_name}`,
+        metadata: {
+          service_name: service.service_name,
+          service_type: service.service_type,
+          location_id: service.location_id,
+          cost: service.cost,
+          currency: service.currency
+        }
+      });
 
       toast.success(t('messages.serviceDeletedSuccessfully'));
       setShowDeleteConfirm(false);
@@ -312,7 +377,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       
       onSuccess(null);
     } catch (error) {
-      console.error('Error deleting service:', error);
+      logger.error('Error deleting service:', error);
       toast.error(error.message || t('messages.errorDeletingService'));
     } finally {
       setLoading(false);
@@ -329,7 +394,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         .eq('service_id', service.id);
 
       if (error) {
-        console.error('Error checking contracts:', error);
+        logger.error('Error checking contracts:', error);
         throw error;
       }
 
@@ -340,7 +405,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         setShowDeleteConfirm(true);
       }
     } catch (error) {
-      console.error('Error checking for contracts:', error);
+      logger.error('Error checking for contracts:', error);
       toast.error(t('messages.errorCheckingContracts'));
     } finally {
       setLoading(false);

@@ -198,6 +198,7 @@ Built with ❤️ using React and Supabase
 
 Version:
 
+2025.11.11 V 0.780 Logs for admin e superadmin + fix 
 2025.11.10 V 0.770 Invisible Service + New Booking
 2025.11.10 V 0.760 Discount Code for Partners
 2025.11.10 V 0.750 Login Logo and phone number in registration

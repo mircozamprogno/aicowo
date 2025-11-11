@@ -1,248 +1,204 @@
-// src/components/contracts/ContractForm.jsx
-import { AlertTriangle, X } from 'lucide-react';
+// src/components/services/ServiceForm.jsx
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { useTourIntegration } from '../../hooks/useTourIntegration';
 import { supabase } from '../../services/supabase';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 import { logActivity } from '../../utils/activityLogger';
 
-const ContractForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  partnerUuid, 
-  isCustomerMode = false,
-  customers = [],
-  locations = [],
-  editMode = false,
-  contractToEdit = null
-}) => {
-  const { profile, user } = useAuth();
+const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, locations = [] }) => {
   const { t } = useTranslation();
+  const isEditing = !!service;
   
-  // ... [keep all existing state declarations]
+  // ... [keep all existing state and useEffect hooks]
 
-  // ... [keep all existing useEffect hooks and functions until handleConfirmContract]
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
 
-  const handleConfirmContract = async () => {
     setLoading(true);
 
     try {
-      const finalEndDate = overrideEndDate ? manualEndDate : calculatedEndDate;
-      const basePrice = overridePrice ? parseFloat(manualPrice) : selectedService.cost;
-      
-      // Calculate discount if applied
-      const discountCalc = appliedDiscount ? calculateDiscount() : null;
-
-      let contractData = {
-        customer_id: parseInt(formData.customer_id),
-        service_id: parseInt(formData.service_id),
+      const serviceData = {
+        service_name: formData.service_name.trim(),
+        service_description: formData.service_description.trim(),
+        service_type: formData.service_type,
         location_id: parseInt(formData.location_id),
-        partner_uuid: partnerUuid,
-        start_date: formData.start_date,
-        end_date: finalEndDate,
-        
-        // Service snapshot
-        service_name: selectedService.service_name,
-        service_type: selectedService.service_type,
-        service_cost: discountCalc ? discountCalc.finalPrice : basePrice,
-        service_currency: selectedService.currency,
-        service_duration_days: selectedService.duration_days,
-        service_max_entries: selectedService.max_entries,
-        
-        // Location snapshot
-        location_name: selectedLocation?.location_name || 'Unknown Location',
-        resource_name: selectedService.location_resources?.resource_name || 'Unknown Resource',
-        resource_type: selectedService.location_resources?.resource_type || 'scrivania',
-        
-        // Discount fields
-        discount_code: appliedDiscount ? discountCode.trim().toUpperCase() : null,
-        discount_type: appliedDiscount ? appliedDiscount.discount_type : null,
-        discount_value: appliedDiscount ? appliedDiscount.discount_value : null,
-        original_price: discountCalc ? discountCalc.originalPrice : null,
-        discount_amount: discountCalc ? discountCalc.discountAmount : null,
-        final_price: discountCalc ? discountCalc.finalPrice : null,
-        
-        // Contract settings
-        contract_status: 'active',
-        is_renewable: selectedService.is_renewable || false,
-        auto_renew: selectedService.auto_renew || false,
-        
-        updated_at: new Date().toISOString()
+        location_resource_id: parseInt(formData.location_resource_id),
+        cost: parseFloat(formData.cost),
+        currency: formData.currency,
+        duration_days: parseFloat(formData.duration_days),
+        max_entries: formData.service_type === 'pacchetto' ? parseInt(formData.max_entries) || null : null,
+        service_status: formData.service_status,
+        is_renewable: formData.is_renewable,
+        auto_renew: formData.auto_renew,
+        private: formData.private,
+        partner_uuid: partnerUuid
       };
 
       let result;
       
-      if (editMode && contractToEdit) {
-        // Update existing contract
-        const { data, error } = await supabase
-          .from('contracts')
-          .update(contractData)
-          .eq('id', contractToEdit.id)
+      if (isEditing) {
+        result = await supabase
+          .from('services')
+          .update(serviceData)
+          .eq('id', service.id)
           .select(`
             *,
-            customers (
+            location_resources!fk_services_location_resource (
               id,
-              first_name,
-              second_name,
-              email,
-              company_name
-            ),
-            services (
-              id,
-              service_name,
-              service_type
-            ),
-            locations (
-              id,
-              location_name
+              resource_name,
+              resource_type,
+              quantity,
+              location_id,
+              locations (
+                id,
+                location_name
+              )
             )
-          `)
-          .single();
+          `);
+
+        const { data, error } = result;
 
         if (error) {
-          console.error('Contract update error:', error);
+          console.error('Service save error:', error);
           throw error;
         }
 
-        // Update booking for abbonamento and free_trial services
-        if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
-          const bookingEndDate = selectedService.service_type === 'free_trial' 
-            ? formData.start_date
-            : finalEndDate;
-            
-          await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
-        }
-
-        // Handle discount usage count update
-        if (appliedDiscount) {
-          const oldDiscount = contractToEdit.discount_code;
-          const newDiscount = discountCode.trim().toUpperCase();
-          
-          if (oldDiscount !== newDiscount) {
-            if (oldDiscount) {
-              await decrementDiscountUsage(oldDiscount);
-            }
-            if (appliedDiscount.usage_limit !== null) {
-              await incrementDiscountUsage(newDiscount);
-            }
-          }
-        } else if (contractToEdit.discount_code) {
-          await decrementDiscountUsage(contractToEdit.discount_code);
-        }
-
-        result = data;
-
-        // Log activity
+        // Log activity for update
         await logActivity({
-          action_category: 'contract',
+          action_category: 'service',
           action_type: 'updated',
-          entity_id: result.id,
-          entity_type: 'contracts',
-          description: `Updated contract ${result.contract_number} for ${result.customers.company_name || `${result.customers.first_name} ${result.customers.second_name}`}`,
+          entity_id: data[0].id.toString(),
+          entity_type: 'services',
+          description: `Updated service: ${data[0].service_name}`,
           metadata: {
-            contract_number: result.contract_number,
-            customer_id: result.customer_id,
-            service_name: result.service_name,
-            service_type: result.service_type,
-            location_name: result.location_name,
-            cost: result.service_cost,
-            currency: result.service_currency,
-            start_date: result.start_date,
-            end_date: result.end_date,
-            discount_applied: !!appliedDiscount,
-            price_overridden: overridePrice,
-            end_date_overridden: overrideEndDate
+            service_name: data[0].service_name,
+            service_type: data[0].service_type,
+            location_id: data[0].location_id,
+            resource_id: data[0].location_resource_id,
+            cost: data[0].cost,
+            currency: data[0].currency,
+            duration_days: data[0].duration_days,
+            status: data[0].service_status,
+            is_private: data[0].private
           }
         });
 
-        toast.success(t('messages.contractUpdatedSuccessfully'));
+        toast.success(t('messages.serviceUpdatedSuccessfully'));
+        onSuccess(data[0]);
       } else {
-        // Create new contract
-        const contractNumber = await generateContractNumber();
-        contractData.contract_number = contractNumber;
-
-        const { data, error } = await supabase
-          .from('contracts')
-          .insert([contractData])
+        result = await supabase
+          .from('services')
+          .insert([serviceData])
           .select(`
             *,
-            customers (
+            location_resources!fk_services_location_resource (
               id,
-              first_name,
-              second_name,
-              email,
-              company_name
-            ),
-            services (
-              id,
-              service_name,
-              service_type
-            ),
-            locations (
-              id,
-              location_name
+              resource_name,
+              resource_type,
+              quantity,
+              location_id,
+              locations (
+                id,
+                location_name
+              )
             )
-          `)
-          .single();
+          `);
+
+        const { data, error } = result;
 
         if (error) {
-          console.error('Contract creation error:', error);
+          console.error('Service save error:', error);
           throw error;
         }
 
-        // Create booking for abbonamento and free_trial services
-        if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
-          const bookingEndDate = selectedService.service_type === 'free_trial' 
-            ? formData.start_date
-            : finalEndDate;
-            
-          await createBookingForContract(data.id, formData.start_date, bookingEndDate);
+        if (data && data[0]) {
+          await onServiceCreated(data[0]);
+          
+          // Log activity for creation
+          await logActivity({
+            action_category: 'service',
+            action_type: 'created',
+            entity_id: data[0].id.toString(),
+            entity_type: 'services',
+            description: `Created service: ${data[0].service_name}`,
+            metadata: {
+              service_name: data[0].service_name,
+              service_type: data[0].service_type,
+              location_id: data[0].location_id,
+              resource_id: data[0].location_resource_id,
+              cost: data[0].cost,
+              currency: data[0].currency,
+              duration_days: data[0].duration_days,
+              status: data[0].service_status,
+              is_private: data[0].private
+            }
+          });
         }
 
-        // Increment discount usage count if it has usage_limit
-        if (appliedDiscount && appliedDiscount.usage_limit !== null) {
-          await incrementDiscountUsage(discountCode.trim().toUpperCase());
-        }
-
-        result = data;
-
-        // Log activity
-        await logActivity({
-          action_category: 'contract',
-          action_type: 'created',
-          entity_id: result.id,
-          entity_type: 'contracts',
-          description: `Created contract ${result.contract_number} for ${result.customers.company_name || `${result.customers.first_name} ${result.customers.second_name}`}`,
-          metadata: {
-            contract_number: result.contract_number,
-            customer_id: result.customer_id,
-            service_name: result.service_name,
-            service_type: result.service_type,
-            location_name: result.location_name,
-            cost: result.service_cost,
-            currency: result.service_currency,
-            start_date: result.start_date,
-            end_date: result.end_date,
-            discount_applied: !!appliedDiscount,
-            created_by_customer: isCustomerMode
-          }
-        });
-
-        toast.success(t('messages.contractCreatedSuccessfully'));
+        toast.success(t('messages.serviceCreatedSuccessfully'));
+        onSuccess(data[0]);
       }
 
-      onSuccess(result);
       onClose();
     } catch (error) {
-      console.error('Error saving contract:', error);
-      toast.error(error.message || (editMode ? t('messages.errorUpdatingContract') : t('messages.errorCreatingContract')));
+      console.error('Error saving service:', error);
+      toast.error(error.message || t('messages.errorSavingService'));
     } finally {
       setLoading(false);
-      setShowConfirmation(false);
     }
   };
 
-  // ... [keep all remaining functions and return statement exactly as they are]
+  const handleDelete = async () => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', service.id);
+
+      if (error) {
+        console.error('Service delete error:', error);
+        throw error;
+      }
+
+      // Log activity for deletion
+      await logActivity({
+        action_category: 'service',
+        action_type: 'deleted',
+        entity_id: service.id.toString(),
+        entity_type: 'services',
+        description: `Deleted service: ${service.service_name}`,
+        metadata: {
+          service_name: service.service_name,
+          service_type: service.service_type,
+          location_id: service.location_id,
+          cost: service.cost,
+          currency: service.currency
+        }
+      });
+
+      toast.success(t('messages.serviceDeletedSuccessfully'));
+      setShowDeleteConfirm(false);
+      onClose();
+      
+      onSuccess(null);
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast.error(error.message || t('messages.errorDeletingService'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ... [keep all remaining code exactly as is]
+};
+
+export default ServiceForm;

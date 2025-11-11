@@ -501,8 +501,9 @@ const ContractForm = ({
     if (!selectedService || !formData.start_date) return;
 
     const startDate = new Date(formData.start_date);
+    const daysToAdd = Math.ceil(selectedService.duration_days); // Round up to next full day
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + selectedService.duration_days);
+    endDate.setDate(startDate.getDate() + daysToAdd);
     
     setCalculatedEndDate(endDate.toISOString().split('T')[0]);
   };
