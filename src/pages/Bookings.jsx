@@ -1,4 +1,5 @@
-import { Calendar, ChevronLeft, ChevronRight, Filter, Home, Plus } from 'lucide-react';
+// src/pages/Bookings.jsx
+import { AlertTriangle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Filter, Home, Package, Plus, TrendingDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import PartnerBookingForm from '../components/forms/PartnerBookingForm';
@@ -27,6 +28,9 @@ const Bookings = () => {
   // Customer available packages state
   const [hasAvailablePackages, setHasAvailablePackages] = useState(false);
   
+  // Customer contracts for enhanced details
+  const [customerContracts, setCustomerContracts] = useState([]);
+  
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
@@ -42,6 +46,7 @@ const Bookings = () => {
       }
       if (isCustomer) {
         checkAvailablePackages();
+        fetchCustomerContracts();
       }
     }
   }, [profile]);
@@ -50,11 +55,52 @@ const Bookings = () => {
     applyFilters();
   }, [bookings, filters]);
 
+  const fetchCustomerContracts = async () => {
+    try {
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!customerData) return;
+
+      const { data: contractsData, error } = await supabase
+        .from('contracts')
+        .select(`
+          id,
+          contract_number,
+          service_name,
+          service_type,
+          service_max_entries,
+          contract_status,
+          start_date,
+          end_date,
+          service_cost,
+          service_currency,
+          entries_used,
+          requires_payment,
+          is_archived,
+          resource_name,
+          resource_type,
+          location_name
+        `)
+        .eq('customer_id', customerData.id)
+        .eq('is_archived', false)
+        .eq('contract_status', 'active');
+
+      if (error) throw error;
+
+      setCustomerContracts(contractsData || []);
+    } catch (error) {
+      console.error('Error fetching customer contracts:', error);
+    }
+  };
+
   const checkAvailablePackages = async () => {
     try {
       console.log('Checking available packages for user:', user.id);
       
-      // Get customer ID
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('id')
@@ -73,7 +119,6 @@ const Bookings = () => {
 
       console.log('Customer ID:', customerData.id);
 
-      // Check for active package contracts with available reservations
       const { data: packageContracts, error } = await supabase
         .from('contracts')
         .select(`
@@ -106,14 +151,11 @@ const Bookings = () => {
         return;
       }
 
-      // Check if any package has available reservations
       const hasAvailable = packageContracts.some(contract => {
-        // Count confirmed reservations
         const usedReservations = contract.package_reservations?.filter(
           r => r.reservation_status === 'confirmed'
         ).length || 0;
         
-        // Use service_max_entries as the total (this is what's used in Contracts.jsx)
         const totalReservations = contract.service_max_entries || 0;
         const available = usedReservations < totalReservations;
         
@@ -232,7 +274,6 @@ const Bookings = () => {
         packagesQuery = packagesQuery.eq('partner_uuid', profile.partner_uuid);
       }
 
-      // Execute both queries in parallel
       const [
         { data: bookingsData, error: bookingsError },
         { data: packagesData, error: packagesError }
@@ -241,7 +282,6 @@ const Bookings = () => {
       if (bookingsError) throw bookingsError;
       if (packagesError) throw packagesError;
 
-      // Normalize package reservations to match bookings structure
       const normalizedPackages = (packagesData || []).map(pkg => ({
         id: `pkg-${pkg.id}`,
         start_date: pkg.reservation_date,
@@ -254,13 +294,11 @@ const Bookings = () => {
         booking_type: 'package'
       }));
 
-      // Add booking_type to regular bookings
       const normalizedBookings = (bookingsData || []).map(booking => ({
         ...booking,
         booking_type: 'subscription'
       }));
 
-      // Merge and sort all results
       const combined = [...normalizedBookings, ...normalizedPackages].sort(
         (a, b) => new Date(a.start_date) - new Date(b.start_date)
       );
@@ -312,9 +350,10 @@ const Bookings = () => {
 
   const handlePartnerBookingSuccess = (reservation) => {
     console.log('Booking successful:', reservation);
-    fetchBookings(); // Refresh bookings
+    fetchBookings();
     if (isCustomer) {
-      checkAvailablePackages(); // Refresh available packages for customer
+      checkAvailablePackages();
+      fetchCustomerContracts();
     }
     setShowPartnerBooking(false);
     toast.success(isCustomer ? 'Reservation created successfully' : 'Booking created successfully for customer');
@@ -383,19 +422,48 @@ const Bookings = () => {
     });
   };
 
-  const getResourceTypeIcon = (type) => (type === 'scrivania' ? '🖥️' : '🏢');
-
   const getBookingDisplayText = (booking) => {
-    const customerName = booking.customers?.company_name || booking.customers?.first_name;
+    // For partners: show customer name
+    if (!isCustomer) {
+      const customerName = booking.customers?.company_name || booking.customers?.first_name;
+      
+      if (booking.booking_type === 'package') {
+        const durationText = booking.duration_type === 'full_day' 
+          ? t('reservations.fullDay') 
+          : `${t('reservations.halfDay')} (${booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`;
+        return `${customerName} - ${durationText}`;
+      }
+      
+      return customerName;
+    }
+    
+    // For customers: show resource + location
+    const resourceName = booking.location_resources?.resource_name;
+    const locationName = booking.location_resources?.locations?.location_name;
     
     if (booking.booking_type === 'package') {
       const durationText = booking.duration_type === 'full_day' 
         ? t('reservations.fullDay') 
-        : `${t('reservations.halfDay')} (${booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`;
-      return `${customerName} - ${durationText}`;
+        : booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon');
+      return `${resourceName} - ${durationText}`;
     }
     
-    return customerName;
+    return `${resourceName} - ${locationName}`;
+  };
+
+  const calculateDaysRemaining = (endDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+    const diffTime = end - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getContractForBooking = (booking) => {
+    if (!isCustomer) return null;
+    return customerContracts.find(c => c.id === booking.contracts?.id);
   };
 
   const renderMonthView = () => {
@@ -428,16 +496,24 @@ const Bookings = () => {
               >
                 <div className="calendar-day-number">{day.getDate()}</div>
                 <div className="calendar-day-bookings">
-                  {dayBookings.slice(0, 3).map(b => (
-                    <div
-                      key={b.id}
-                      className="calendar-booking-item"
-                      style={{ backgroundColor: getResourceColor(b) }}
-                      title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
-                    >
-                      <span className="booking-title">{getBookingDisplayText(b)}</span>
-                    </div>
-                  ))}
+                  {dayBookings.slice(0, 3).map(b => {
+                    const contract = getContractForBooking(b);
+                    return (
+                      <div
+                        key={b.id}
+                        className="calendar-booking-item"
+                        style={{ backgroundColor: getResourceColor(b) }}
+                        title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                      >
+                        <span className="booking-title">{getBookingDisplayText(b)}</span>
+                        {isCustomer && contract && contract.service_type === 'pacchetto' && (
+                          <span className="booking-entries-badge">
+                            {(contract.service_max_entries - contract.entries_used)} {t('bookings.left')}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                   {dayBookings.length > 3 && (
                     <div className="calendar-more-bookings">
                       +{dayBookings.length - 3} {t('bookings.more')}
@@ -490,17 +566,25 @@ const Bookings = () => {
                 onClick={() => { setCurrentDate(new Date(day)); setViewType('day'); }}
               >
                 <div className="week-day-bookings">
-                  {dayBookings.map(b => (
-                    <div
-                      key={b.id}
-                      className="week-booking-item"
-                      style={{ backgroundColor: getResourceColor(b) }}
-                      title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
-                    >
-                      <div className="week-booking-title">{getBookingDisplayText(b)}</div>
-                      <div className="week-booking-resource">{b.location_resources?.resource_name}</div>
-                    </div>
-                  ))}
+                  {dayBookings.map(b => {
+                    const contract = getContractForBooking(b);
+                    return (
+                      <div
+                        key={b.id}
+                        className="week-booking-item"
+                        style={{ backgroundColor: getResourceColor(b) }}
+                        title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                      >
+                        <div className="week-booking-title">{getBookingDisplayText(b)}</div>
+                        <div className="week-booking-resource">{b.location_resources?.resource_name}</div>
+                        {isCustomer && contract && contract.service_type === 'pacchetto' && (
+                          <div className="week-booking-entries">
+                            {(contract.service_max_entries - contract.entries_used)} {t('bookings.entriesLeft')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -510,7 +594,238 @@ const Bookings = () => {
     );
   };
 
-  const renderDayView = () => {
+  const renderCustomerDayView = () => {
+    const dayBookings = getBookingsForDate(currentDate);
+    const subscriptions = dayBookings.filter(b => b.booking_type === 'subscription');
+    const packages = dayBookings.filter(b => b.booking_type === 'package');
+
+    return (
+      <div className="customer-day-view">
+        <div className="day-view-header">
+          <h2>{formatDisplayDate(currentDate)}</h2>
+        </div>
+
+        {dayBookings.length === 0 ? (
+          <div className="day-no-bookings">
+            <Calendar size={48} className="empty-icon" />
+            <p>{t('bookings.noBookingsForDay')}</p>
+          </div>
+        ) : (
+          <>
+            {/* Active Subscriptions Section */}
+            {subscriptions.length > 0 && (
+              <div className="customer-section">
+                <h3 className="section-title">
+                  <CheckCircle size={20} />
+                  {t('bookings.activeSubscriptions')}
+                </h3>
+                <div className="customer-cards">
+                  {subscriptions.map(booking => {
+                    const contract = getContractForBooking(booking);
+                    const daysRemaining = contract ? calculateDaysRemaining(contract.end_date) : 0;
+                    
+                    return (
+                      <div key={booking.id} className="customer-booking-card subscription-card">
+                        <div className="card-header">
+                          <div className="card-color-bar" style={{ backgroundColor: getResourceColor(booking) }} />
+                          <div className="card-title-section">
+                            <h4>{booking.contracts?.service_name}</h4>
+                            <span className="service-type-badge">{t('services.subscription')}</span>
+                          </div>
+                        </div>
+
+                        <div className="card-section">
+                          <h5 className="card-section-title">{t('bookings.whatYouCanAccess')}</h5>
+                          <div className="access-details">
+                            <div className="detail-row">
+                              <span className="detail-label">{t('bookings.resource')}:</span>
+                              <span className="detail-value">{booking.location_resources?.resource_name}</span>
+                            </div>
+                            <div className="detail-row">
+                              <span className="detail-label">{t('bookings.location')}:</span>
+                              <span className="detail-value">{booking.location_resources?.locations?.location_name}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {contract && (
+                          <div className="card-section">
+                            <h5 className="card-section-title">{t('bookings.contractStatus')}</h5>
+                            <div className="contract-status-details">
+                              <div className="status-row">
+                                <Clock size={16} />
+                                <span className={`days-remaining ${daysRemaining <= 7 ? 'warning' : ''}`}>
+                                  {daysRemaining > 0 
+                                    ? `${daysRemaining} ${t('contracts.daysRemaining')}`
+                                    : t('contracts.expired')
+                                  }
+                                </span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="detail-label">{t('bookings.validUntil')}:</span>
+                                <span className="detail-value">
+                                  {new Date(contract.end_date).toLocaleDateString(
+                                    t('app.locale') === 'it' ? 'it-IT' : 'en-US'
+                                  )}
+                                </span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="detail-label">{t('bookings.contractValue')}:</span>
+                                <span className="detail-value">
+                                  {new Intl.NumberFormat('it-IT', {
+                                    style: 'currency',
+                                    currency: contract.service_currency || 'EUR'
+                                  }).format(contract.service_cost)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Active Packages Section */}
+            {packages.length > 0 && (
+              <div className="customer-section">
+                <h3 className="section-title">
+                  <Package size={20} />
+                  {t('bookings.packageBookings')}
+                </h3>
+                <div className="customer-cards">
+                  {packages.map(booking => {
+                    const contract = getContractForBooking(booking);
+                    const daysRemaining = contract ? calculateDaysRemaining(contract.end_date) : 0;
+                    const entriesRemaining = contract 
+                      ? (contract.service_max_entries - contract.entries_used) 
+                      : 0;
+                    const utilizationPercent = contract 
+                      ? ((contract.entries_used / contract.service_max_entries) * 100).toFixed(0)
+                      : 0;
+                    
+                    return (
+                      <div key={booking.id} className="customer-booking-card package-card">
+                        <div className="card-header">
+                          <div className="card-color-bar" style={{ backgroundColor: getResourceColor(booking) }} />
+                          <div className="card-title-section">
+                            <h4>{booking.contracts?.service_name}</h4>
+                            <span className="service-type-badge package-badge">{t('services.package')}</span>
+                          </div>
+                        </div>
+
+                        {contract && (
+                          <>
+                            <div className="card-section">
+                              <h5 className="card-section-title">{t('bookings.packageOverview')}</h5>
+                              <div className="package-overview">
+                                <div className="entries-display">
+                                  <div className="entries-progress-bar">
+                                    <div 
+                                      className="entries-progress-fill" 
+                                      style={{ 
+                                        width: `${utilizationPercent}%`,
+                                        backgroundColor: entriesRemaining <= 2 ? '#ef4444' : entriesRemaining <= 5 ? '#f59e0b' : '#10b981'
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="entries-text">
+                                    <span className="entries-count">
+                                      {entriesRemaining} {t('bookings.of')} {contract.service_max_entries} {t('bookings.entriesRemaining')}
+                                    </span>
+                                    <span className="entries-percent">{utilizationPercent}% {t('bookings.used')}</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="package-alerts">
+                                  {daysRemaining <= 14 && daysRemaining > 0 && (
+                                    <div className="alert-item warning">
+                                      <AlertTriangle size={16} />
+                                      <span>{t('bookings.packageExpiringSoon', { days: daysRemaining })}</span>
+                                    </div>
+                                  )}
+                                  {entriesRemaining <= 2 && entriesRemaining > 0 && (
+                                    <div className="alert-item warning">
+                                      <TrendingDown size={16} />
+                                      <span>{t('bookings.lowEntriesRemaining', { entries: entriesRemaining })}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="package-stats">
+                                  <div className="stat-item">
+                                    <span className="stat-label">{t('bookings.costPerEntry')}:</span>
+                                    <span className="stat-value">
+                                      {new Intl.NumberFormat('it-IT', {
+                                        style: 'currency',
+                                        currency: contract.service_currency || 'EUR'
+                                      }).format(contract.service_cost / contract.service_max_entries)}
+                                    </span>
+                                  </div>
+                                  <div className="stat-item">
+                                    <span className="stat-label">{t('bookings.remainingValue')}:</span>
+                                    <span className="stat-value">
+                                      {new Intl.NumberFormat('it-IT', {
+                                        style: 'currency',
+                                        currency: contract.service_currency || 'EUR'
+                                      }).format((contract.service_cost / contract.service_max_entries) * entriesRemaining)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="card-section">
+                              <h5 className="card-section-title">{t('bookings.todayBooking')}</h5>
+                              <div className="booking-details">
+                                <div className="detail-row">
+                                  <span className="detail-label">{t('bookings.timeSlot')}:</span>
+                                  <span className="detail-value">
+                                    {booking.duration_type === 'full_day' 
+                                      ? t('reservations.fullDay')
+                                      : `${t('reservations.halfDay')} (${booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`
+                                    }
+                                  </span>
+                                </div>
+                                <div className="detail-row">
+                                  <span className="detail-label">{t('bookings.resource')}:</span>
+                                  <span className="detail-value">{booking.location_resources?.resource_name}</span>
+                                </div>
+                                <div className="detail-row">
+                                  <span className="detail-label">{t('bookings.location')}:</span>
+                                  <span className="detail-value">{booking.location_resources?.locations?.location_name}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {entriesRemaining > 0 && (
+                              <div className="card-actions">
+                                <button 
+                                  className="action-button primary"
+                                  onClick={() => setShowPartnerBooking(true)}
+                                >
+                                  <Plus size={16} />
+                                  {t('bookings.bookAnother')}
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderPartnerDayView = () => {
     const dayBookings = getBookingsForDate(currentDate);
     return (
       <div className="calendar-day-view">
@@ -543,7 +858,7 @@ const Bookings = () => {
                   </div>
                   <div className="day-booking-details">
                     <div className="day-booking-service"><strong>{b.contracts?.service_name}</strong></div>
-                    <div className="day-booking-resource">{getResourceTypeIcon(b.location_resources?.resource_type)} {b.location_resources?.resource_name}</div>
+                    <div className="day-booking-resource">{b.location_resources?.resource_name}</div>
                     <div className="day-booking-location">📍 {b.location_resources?.locations?.location_name}</div>
                     <div className="day-booking-period">📅 {b.start_date} - {b.end_date}</div>
                     {b.duration_type && (
@@ -562,14 +877,16 @@ const Bookings = () => {
     );
   };
 
+  const renderDayView = () => {
+    return isCustomer ? renderCustomerDayView() : renderPartnerDayView();
+  };
+
   if (loading) return <div className="bookings-loading">{t('common.loading')}</div>;
 
-  // Show booking button if partner admin OR customer with available packages
   const showBookingButton = isPartnerAdmin || (isCustomer && hasAvailablePackages);
 
   return (
     <div className="bookings-page">
-      {/* Header */}
       <div className="bookings-header">
         <div className="bookings-header-content">
           <h1 className="bookings-title">
@@ -581,7 +898,6 @@ const Bookings = () => {
           </p>
         </div>
         <div className="bookings-controls">
-          {/* Booking Button - Visible to partner admins AND customers with available packages */}
           {showBookingButton && (
             <button 
               className="partner-booking-btn" 
@@ -617,7 +933,6 @@ const Bookings = () => {
         </div>
       </div>
 
-      {/* Filters */}
       {showFilters && isPartnerAdmin && (
         <div className="filters-panel">
           <div className="filters-row">
@@ -632,8 +947,8 @@ const Bookings = () => {
               <label>{t('bookings.resourceType')}:</label>
               <select value={filters.resourceType} onChange={(e) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}>
                 <option value="">{t('bookings.allResources')}</option>
-                <option value="scrivania">🖥️ {t('locations.scrivania')}</option>
-                <option value="sala_riunioni">🏢 {t('locations.salaRiunioni')}</option>
+                <option value="scrivania">{t('locations.scrivania')}</option>
+                <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
               </select>
             </div>
             <div className="filter-group">
@@ -653,7 +968,6 @@ const Bookings = () => {
         </div>
       )}
 
-      {/* Navigation */}
       <div className="calendar-navigation">
         <button className="nav-btn" onClick={() => navigateDate(-1)}>
           <ChevronLeft size={20} />
@@ -666,7 +980,6 @@ const Bookings = () => {
         </button>
       </div>
 
-      {/* Calendar */}
       <div className="calendar-container">
         {filteredBookings.length === 0 ? (
           <div className="day-no-bookings">
@@ -682,30 +995,28 @@ const Bookings = () => {
         )}
       </div>
 
-      {/* Legend */}
       <div className="calendar-legend">
         <h4>{t('bookings.legend')}:</h4>
         <div className="legend-items">
           <div className="legend-item">
             <div className="legend-color" style={{ backgroundColor: '#3b82f6' }}></div>
-            <span>🖥️ {t('services.subscription')} {t('locations.scrivania')}</span>
+            <span>{t('services.subscription')} {t('locations.scrivania')}</span>
           </div>
           <div className="legend-item">
             <div className="legend-color" style={{ backgroundColor: '#8b5cf6' }}></div>
-            <span>🏢 {t('services.subscription')} {t('locations.salaRiunioni')}</span>
+            <span>{t('services.subscription')} {t('locations.salaRiunioni')}</span>
           </div>
           <div className="legend-item">
             <div className="legend-color" style={{ backgroundColor: '#10b981' }}></div>
-            <span>🖥️ {t('services.package')} {t('locations.scrivania')}</span>
+            <span>{t('services.package')} {t('locations.scrivania')}</span>
           </div>
           <div className="legend-item">
             <div className="legend-color" style={{ backgroundColor: '#f59e0b' }}></div>
-            <span>🏢 {t('services.package')} {t('locations.salaRiunioni')}</span>
+            <span>{t('services.package')} {t('locations.salaRiunioni')}</span>
           </div>
         </div>
       </div>
 
-      {/* Partner/Customer Booking Modal */}
       <PartnerBookingForm
         isOpen={showPartnerBooking}
         onClose={() => setShowPartnerBooking(false)}

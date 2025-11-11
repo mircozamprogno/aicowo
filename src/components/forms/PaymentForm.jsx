@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { PaymentService } from '../../services/paymentService';
+import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 
 const PaymentForm = ({ 
@@ -34,6 +35,21 @@ const PaymentForm = ({
 
   const { user } = useAuth();
   const { t } = useTranslation();
+
+  // Payment method options
+  const paymentMethodOptions = [
+    { value: 'bank_transfer', label: t('payments.methods.bank_transfer') },
+    { value: 'cash', label: t('payments.methods.cash') },
+    { value: 'credit_card', label: t('payments.methods.credit_card') },
+    { value: 'paypal', label: t('payments.methods.paypal') },
+    { value: 'other', label: t('payments.methods.other') }
+  ];
+
+  // Payment status options
+  const paymentStatusOptions = [
+    { value: 'completed', label: t('payments.status.completed') },
+    { value: 'pending', label: t('payments.status.pending') }
+  ];
 
   useEffect(() => {
     if (isOpen && contract) {
@@ -321,19 +337,12 @@ const PaymentForm = ({
                 <label htmlFor="payment_method" className="form-label">
                   {t('payments.paymentMethod')} *
                 </label>
-                <select
-                  id="payment_method"
+                <Select
                   value={formData.payment_method}
                   onChange={(e) => handleInputChange('payment_method', e.target.value)}
-                  className="form-select"
-                  required
-                >
-                  <option value="bank_transfer">{t('payments.methods.bank_transfer')}</option>
-                  <option value="cash">{t('payments.methods.cash')}</option>
-                  <option value="credit_card">{t('payments.methods.credit_card')}</option>
-                  <option value="paypal">{t('payments.methods.paypal')}</option>
-                  <option value="other">{t('payments.methods.other')}</option>
-                </select>
+                  options={paymentMethodOptions}
+                  placeholder={t('payments.selectPaymentMethod')}
+                />
               </div>
             </div>
 
@@ -355,15 +364,12 @@ const PaymentForm = ({
                 <label htmlFor="payment_status" className="form-label">
                   {t('payments.paymentStatus')}
                 </label>
-                <select
-                  id="payment_status"
+                <Select
                   value={formData.payment_status}
                   onChange={(e) => handleInputChange('payment_status', e.target.value)}
-                  className="form-select"
-                >
-                  <option value="completed">{t('payments.status.completed')}</option>
-                  <option value="pending">{t('payments.status.pending')}</option>
-                </select>
+                  options={paymentStatusOptions}
+                  placeholder={t('payments.selectPaymentStatus')}
+                />
               </div>
             </div>
 

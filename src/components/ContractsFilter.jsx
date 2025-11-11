@@ -1,7 +1,10 @@
+// src/components/ContractsFilter.jsx
 import { RotateCcw, X } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import '../styles/components/contractsfilter.css';
+import SearchableSelect from './common/SearchableSelect';
+import Select from './common/Select';
 
 const ContractsFilter = ({ 
   contracts, 
@@ -14,7 +17,6 @@ const ContractsFilter = ({
   getPaymentStatus
 }) => {
   const { t } = useTranslation();
-  // const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState({
     customer: '',
     location: '',
@@ -94,56 +96,53 @@ const ContractsFilter = ({
   const uniqueCustomers = getUniqueCustomers();
   const uniqueLocations = getUniqueLocations();
 
+  // Prepare options for SearchableSelect components
+  const customerOptions = uniqueCustomers.map(customer => ({
+    value: customer.id.toString(),
+    label: customer.display_name || customer.company_name || 
+      `${customer.first_name} ${customer.second_name}`
+  }));
+
+  const locationOptions = uniqueLocations.map(location => ({
+    value: location.id.toString(),
+    label: location.location_name
+  }));
+
   // Helper function to get payment status
   const getPaymentStatusForContract = (contract) => {
-    // First, try using the passed getPaymentStatus function
     if (getPaymentStatus && typeof getPaymentStatus === 'function') {
       const status = getPaymentStatus(contract);
-      console.log(`getPaymentStatus for contract ${contract.contract_number}:`, status);
       return status;
     }
     
-    // Fallback logic
     if (contract.service_type === 'free_trial' || contract.requires_payment === false) {
       return 'not_required';
     }
     
-    // Use contractPayments if available
     const paymentInfo = contractPayments[contract.id];
     if (paymentInfo && paymentInfo.payment_status) {
-      console.log(`contractPayments for contract ${contract.contract_number}:`, paymentInfo.payment_status);
       return paymentInfo.payment_status;
     }
     
-    // Default fallback
-    console.log(`No payment info found for contract ${contract.contract_number}, defaulting to unpaid`);
     return 'unpaid';
   };
 
   // Apply filters function
   const applyFilters = (filtersToApply) => {
     let filteredContracts = [...contracts];
-    
-    console.log('Applying filters:', filtersToApply);
-    console.log('Total contracts before filtering:', filteredContracts.length);
 
-    // Customer filter
     if (filtersToApply.customer) {
       filteredContracts = filteredContracts.filter(contract => 
         contract.customer_id?.toString() === filtersToApply.customer
       );
-      console.log('After customer filter:', filteredContracts.length);
     }
 
-    // Location filter
     if (filtersToApply.location) {
       filteredContracts = filteredContracts.filter(contract => 
         contract.location_id?.toString() === filtersToApply.location
       );
-      console.log('After location filter:', filteredContracts.length);
     }
 
-    // Date range filter
     if (filtersToApply.dateFrom || filtersToApply.dateTo) {
       filteredContracts = filteredContracts.filter(contract => {
         const contractStart = new Date(contract.start_date);
@@ -163,42 +162,21 @@ const ContractsFilter = ({
         
         return matchesDateRange;
       });
-      console.log('After date range filter:', filteredContracts.length);
     }
 
-    // Status filter
     if (filtersToApply.status) {
       filteredContracts = filteredContracts.filter(contract => 
         contract.contract_status === filtersToApply.status
       );
-      console.log('After status filter:', filteredContracts.length);
     }
 
-    // Payment status filter (only if payment management is enabled)
     if (filtersToApply.paymentStatus && canManagePayments) {
-      console.log('Applying payment status filter:', filtersToApply.paymentStatus);
-      
-      // Debug: Show payment status for all contracts before filtering
-      filteredContracts.forEach(contract => {
-        const contractPaymentStatus = getPaymentStatusForContract(contract);
-        console.log(`Contract ${contract.contract_number}: Expected=${filtersToApply.paymentStatus}, Actual=${contractPaymentStatus}`);
-      });
-
       filteredContracts = filteredContracts.filter(contract => {
         const contractPaymentStatus = getPaymentStatusForContract(contract);
-        const matches = contractPaymentStatus === filtersToApply.paymentStatus;
-        
-        if (!matches) {
-          console.log(`Contract ${contract.contract_number} filtered out: expected ${filtersToApply.paymentStatus}, got ${contractPaymentStatus}`);
-        }
-        
-        return matches;
+        return contractPaymentStatus === filtersToApply.paymentStatus;
       });
-      
-      console.log('After payment status filter:', filteredContracts.length);
     }
 
-    console.log('Final filtered contracts:', filteredContracts.length);
     return filteredContracts;
   };
 
@@ -207,7 +185,6 @@ const ContractsFilter = ({
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     
-    console.log('Filter changed:', key, '=', value);
     const filteredContracts = applyFilters(newFilters);
     onFilterChange(filteredContracts, newFilters);
   };
@@ -229,9 +206,6 @@ const ContractsFilter = ({
   // Check if any filters are active
   const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
-  // Count active filters
-  const activeFilterCount = Object.values(filters).filter(value => value !== '').length;
-
   return (
     <div className="contracts-filter">
       <div className="filter-content">
@@ -242,19 +216,13 @@ const ContractsFilter = ({
               <label className="filter-label">
                 {t('filters.customer')}
               </label>
-              <select
-                className="filter-select"
+              <SearchableSelect
                 value={filters.customer}
                 onChange={(e) => handleFilterChange('customer', e.target.value)}
-              >
-                <option value="">{t('filters.allCustomers')}</option>
-                {uniqueCustomers.map(customer => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.display_name || customer.company_name || 
-                    `${customer.first_name} ${customer.second_name}`}
-                  </option>
-                ))}
-              </select>
+                options={customerOptions}
+                placeholder={t('filters.allCustomers')}
+                emptyMessage={t('filters.noCustomersFound') || 'No customers found'}
+              />
             </div>
           )}
 
@@ -264,18 +232,13 @@ const ContractsFilter = ({
               <label className="filter-label">
                 {t('filters.location')}
               </label>
-              <select
-                className="filter-select"
+              <SearchableSelect
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
-              >
-                <option value="">{t('filters.allLocations')}</option>
-                {uniqueLocations.map(location => (
-                  <option key={location.id} value={location.id}>
-                    {location.location_name}
-                  </option>
-                ))}
-              </select>
+                options={locationOptions}
+                placeholder={t('filters.allLocations')}
+                emptyMessage={t('filters.noLocationsFound') || 'No locations found'}
+              />
             </div>
           )}
 
@@ -309,18 +272,12 @@ const ContractsFilter = ({
             <label className="filter-label">
               {t('filters.status')}
             </label>
-            <select
-              className="filter-select"
+            <Select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-            >
-              <option value="">{t('filters.allStatuses')}</option>
-              {statusOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              options={statusOptions}
+              placeholder={t('filters.allStatuses')}
+            />
           </div>
 
           {/* Payment Status Filter - Only show if user can manage payments */}
@@ -329,18 +286,12 @@ const ContractsFilter = ({
               <label className="filter-label">
                 {t('filters.paymentStatus')}
               </label>
-              <select
-                className="filter-select"
+              <Select
                 value={filters.paymentStatus}
                 onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
-              >
-                <option value="">{t('filters.allPaymentStatuses')}</option>
-                {paymentStatusOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                options={paymentStatusOptions}
+                placeholder={t('filters.allPaymentStatuses')}
+              />
             </div>
           )}
         </div>

@@ -1,3 +1,4 @@
+// src/components/services/ServiceForm.jsx
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -22,7 +23,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     max_entries: '',
     service_status: 'active',
     is_renewable: true,
-    auto_renew: false
+    auto_renew: false,
+    private: false
   });
   
   const [locationResources, setLocationResources] = useState([]);
@@ -33,7 +35,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
   const [showContractsExist, setShowContractsExist] = useState(false);
   const [contractCount, setContractCount] = useState(0);
 
-  // Helper function to format duration display
   const formatDuration = (days) => {
     const numDays = parseFloat(days);
     if (numDays === 0.5) return t('services.halfDay');
@@ -41,7 +42,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     return t('services.daysCount', { count: numDays });
   };
 
-  // Update form data when service changes
   useEffect(() => {
     if (service) {
       console.log('Loading service data for editing:', service);
@@ -57,7 +57,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         max_entries: service.max_entries?.toString() || '',
         service_status: service.service_status || 'active',
         is_renewable: service.is_renewable !== false,
-        auto_renew: service.auto_renew || false
+        auto_renew: service.auto_renew || false,
+        private: service.private || false
       });
       
       if (service.location_id) {
@@ -77,7 +78,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         max_entries: '',
         service_status: 'active',
         is_renewable: true,
-        auto_renew: false
+        auto_renew: false,
+        private: false
       });
       
       if (locations.length > 0) {
@@ -158,7 +160,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     }));
   };
 
-  // Wrapper handlers for SearchableSelect components
   const handleServiceStatusChange = (e) => {
     setFormData(prev => ({ ...prev, service_status: e.target.value }));
   };
@@ -219,6 +220,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_status: formData.service_status,
         is_renewable: formData.is_renewable,
         auto_renew: formData.auto_renew,
+        private: formData.private,
         partner_uuid: partnerUuid
       };
 
@@ -647,6 +649,25 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   </p>
                 </div>
               )}
+
+              <div className="form-checkbox-group">
+                <div className="checkbox-wrapper">
+                  <input
+                    id="private"
+                    name="private"
+                    type="checkbox"
+                    className="form-checkbox"
+                    checked={formData.private}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="private" className="form-checkbox-label">
+                    {t('services.privateService')}
+                  </label>
+                </div>
+                <p className="form-help-text">
+                  {t('services.privateServiceHelp')}
+                </p>
+              </div>
             </div>
           </div>
 

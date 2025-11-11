@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import { logActivity } from '../../utils/activityLogger';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
@@ -299,7 +300,7 @@ const ContractForm = ({
 
   const fetchServicesForLocation = async (locationId) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('services')
         .select(`
           *,
@@ -315,12 +316,19 @@ const ContractForm = ({
         `)
         .eq('location_resources.location_id', parseInt(locationId))
         .eq('partner_uuid', partnerUuid)
-        .eq('service_status', 'active')
-        .order('service_name');
+        .eq('service_status', 'active');
+
+      // Filter out private services for customers
+      if (isCustomerMode) {
+        query = query.eq('private', false);
+      }
+
+      query = query.order('service_name');
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching services:', error);
-        // Mock data for development
         const mockServices = [
           {
             id: 1,
@@ -339,7 +347,6 @@ const ContractForm = ({
         ];
         setAvailableServices(mockServices);
       } else {
-        // Filter out free trial services if customer already had one
         let filteredServices = data || [];
         
         if (isCustomerMode && hasExistingFreeTrial) {
@@ -804,26 +811,46 @@ const ContractForm = ({
 
         // Handle discount usage count update
         if (appliedDiscount) {
-          // Check if discount changed
           const oldDiscount = contractToEdit.discount_code;
           const newDiscount = discountCode.trim().toUpperCase();
           
           if (oldDiscount !== newDiscount) {
-            // Decrement old discount if it had usage_limit
             if (oldDiscount) {
               await decrementDiscountUsage(oldDiscount);
             }
-            // Increment new discount if it has usage_limit
             if (appliedDiscount.usage_limit !== null) {
               await incrementDiscountUsage(newDiscount);
             }
           }
         } else if (contractToEdit.discount_code) {
-          // Discount was removed, decrement old discount
           await decrementDiscountUsage(contractToEdit.discount_code);
         }
 
         result = data;
+
+        // Log activity
+        await logActivity({
+          action_category: 'contract',
+          action_type: 'updated',
+          entity_id: result.id,
+          entity_type: 'contracts',
+          description: `Updated contract ${result.contract_number} for ${result.customers.company_name || `${result.customers.first_name} ${result.customers.second_name}`}`,
+          metadata: {
+            contract_number: result.contract_number,
+            customer_id: result.customer_id,
+            service_name: result.service_name,
+            service_type: result.service_type,
+            location_name: result.location_name,
+            cost: result.service_cost,
+            currency: result.service_currency,
+            start_date: result.start_date,
+            end_date: result.end_date,
+            discount_applied: !!appliedDiscount,
+            price_overridden: overridePrice,
+            end_date_overridden: overrideEndDate
+          }
+        });
+
         toast.success(t('messages.contractUpdatedSuccessfully'));
       } else {
         // Create new contract
@@ -874,6 +901,29 @@ const ContractForm = ({
         }
 
         result = data;
+
+        // Log activity
+        await logActivity({
+          action_category: 'contract',
+          action_type: 'created',
+          entity_id: result.id,
+          entity_type: 'contracts',
+          description: `Created contract ${result.contract_number} for ${result.customers.company_name || `${result.customers.first_name} ${result.customers.second_name}`}`,
+          metadata: {
+            contract_number: result.contract_number,
+            customer_id: result.customer_id,
+            service_name: result.service_name,
+            service_type: result.service_type,
+            location_name: result.location_name,
+            cost: result.service_cost,
+            currency: result.service_currency,
+            start_date: result.start_date,
+            end_date: result.end_date,
+            discount_applied: !!appliedDiscount,
+            created_by_customer: isCustomerMode
+          }
+        });
+
         toast.success(t('messages.contractCreatedSuccessfully'));
       }
 
@@ -887,6 +937,7 @@ const ContractForm = ({
       setShowConfirmation(false);
     }
   };
+
 
   const incrementDiscountUsage = async (code) => {
     try {

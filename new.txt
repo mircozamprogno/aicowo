@@ -1,25 +1,248 @@
-{
-  "common": {
-    "to": "al",
-    "of": "di"
-  },
-  "customers": {
-    "profileNotFound": "Profilo cliente non trovato",
-    "errorLoadingProfile": "Errore nel caricamento del profilo cliente",
-    "errorLoadingCustomers": "Errore nel caricamento dei clienti"
-  },
-  "contracts": {
-    "errorLoadingPackages": "Errore nel caricamento dei pacchetti"
-  },
-  "reservations": {
-    "insufficientEntries": "Ingressi rimanenti insufficienti nel pacchetto",
-    "dateOutsideContract": "La data di prenotazione deve essere nel periodo del contratto",
-    "resourceNotAvailableError": "Risorsa non disponibile per data e ora selezionate",
-    "errorCreatingReservation": "Errore nella creazione della prenotazione",
-    "availablePeriod": "Periodo disponibile",
-    "selectDuration": "Seleziona durata",
-    "available": "Disponibile",
-    "resourceAvailableFor": "{{resource}} è disponibile per l'orario selezionato",
-    "capacity": "Capacità"
-  }
-}
+// src/components/contracts/ContractForm.jsx
+import { AlertTriangle, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/LanguageContext';
+import { supabase } from '../../services/supabase';
+import SearchableSelect from '../common/SearchableSelect';
+import { toast } from '../common/ToastContainer';
+import { logActivity } from '../../utils/activityLogger';
+
+const ContractForm = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  partnerUuid, 
+  isCustomerMode = false,
+  customers = [],
+  locations = [],
+  editMode = false,
+  contractToEdit = null
+}) => {
+  const { profile, user } = useAuth();
+  const { t } = useTranslation();
+  
+  // ... [keep all existing state declarations]
+
+  // ... [keep all existing useEffect hooks and functions until handleConfirmContract]
+
+  const handleConfirmContract = async () => {
+    setLoading(true);
+
+    try {
+      const finalEndDate = overrideEndDate ? manualEndDate : calculatedEndDate;
+      const basePrice = overridePrice ? parseFloat(manualPrice) : selectedService.cost;
+      
+      // Calculate discount if applied
+      const discountCalc = appliedDiscount ? calculateDiscount() : null;
+
+      let contractData = {
+        customer_id: parseInt(formData.customer_id),
+        service_id: parseInt(formData.service_id),
+        location_id: parseInt(formData.location_id),
+        partner_uuid: partnerUuid,
+        start_date: formData.start_date,
+        end_date: finalEndDate,
+        
+        // Service snapshot
+        service_name: selectedService.service_name,
+        service_type: selectedService.service_type,
+        service_cost: discountCalc ? discountCalc.finalPrice : basePrice,
+        service_currency: selectedService.currency,
+        service_duration_days: selectedService.duration_days,
+        service_max_entries: selectedService.max_entries,
+        
+        // Location snapshot
+        location_name: selectedLocation?.location_name || 'Unknown Location',
+        resource_name: selectedService.location_resources?.resource_name || 'Unknown Resource',
+        resource_type: selectedService.location_resources?.resource_type || 'scrivania',
+        
+        // Discount fields
+        discount_code: appliedDiscount ? discountCode.trim().toUpperCase() : null,
+        discount_type: appliedDiscount ? appliedDiscount.discount_type : null,
+        discount_value: appliedDiscount ? appliedDiscount.discount_value : null,
+        original_price: discountCalc ? discountCalc.originalPrice : null,
+        discount_amount: discountCalc ? discountCalc.discountAmount : null,
+        final_price: discountCalc ? discountCalc.finalPrice : null,
+        
+        // Contract settings
+        contract_status: 'active',
+        is_renewable: selectedService.is_renewable || false,
+        auto_renew: selectedService.auto_renew || false,
+        
+        updated_at: new Date().toISOString()
+      };
+
+      let result;
+      
+      if (editMode && contractToEdit) {
+        // Update existing contract
+        const { data, error } = await supabase
+          .from('contracts')
+          .update(contractData)
+          .eq('id', contractToEdit.id)
+          .select(`
+            *,
+            customers (
+              id,
+              first_name,
+              second_name,
+              email,
+              company_name
+            ),
+            services (
+              id,
+              service_name,
+              service_type
+            ),
+            locations (
+              id,
+              location_name
+            )
+          `)
+          .single();
+
+        if (error) {
+          console.error('Contract update error:', error);
+          throw error;
+        }
+
+        // Update booking for abbonamento and free_trial services
+        if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
+          const bookingEndDate = selectedService.service_type === 'free_trial' 
+            ? formData.start_date
+            : finalEndDate;
+            
+          await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
+        }
+
+        // Handle discount usage count update
+        if (appliedDiscount) {
+          const oldDiscount = contractToEdit.discount_code;
+          const newDiscount = discountCode.trim().toUpperCase();
+          
+          if (oldDiscount !== newDiscount) {
+            if (oldDiscount) {
+              await decrementDiscountUsage(oldDiscount);
+            }
+            if (appliedDiscount.usage_limit !== null) {
+              await incrementDiscountUsage(newDiscount);
+            }
+          }
+        } else if (contractToEdit.discount_code) {
+          await decrementDiscountUsage(contractToEdit.discount_code);
+        }
+
+        result = data;
+
+        // Log activity
+        await logActivity({
+          action_category: 'contract',
+          action_type: 'updated',
+          entity_id: result.id,
+          entity_type: 'contracts',
+          description: `Updated contract ${result.contract_number} for ${result.customers.company_name || `${result.customers.first_name} ${result.customers.second_name}`}`,
+          metadata: {
+            contract_number: result.contract_number,
+            customer_id: result.customer_id,
+            service_name: result.service_name,
+            service_type: result.service_type,
+            location_name: result.location_name,
+            cost: result.service_cost,
+            currency: result.service_currency,
+            start_date: result.start_date,
+            end_date: result.end_date,
+            discount_applied: !!appliedDiscount,
+            price_overridden: overridePrice,
+            end_date_overridden: overrideEndDate
+          }
+        });
+
+        toast.success(t('messages.contractUpdatedSuccessfully'));
+      } else {
+        // Create new contract
+        const contractNumber = await generateContractNumber();
+        contractData.contract_number = contractNumber;
+
+        const { data, error } = await supabase
+          .from('contracts')
+          .insert([contractData])
+          .select(`
+            *,
+            customers (
+              id,
+              first_name,
+              second_name,
+              email,
+              company_name
+            ),
+            services (
+              id,
+              service_name,
+              service_type
+            ),
+            locations (
+              id,
+              location_name
+            )
+          `)
+          .single();
+
+        if (error) {
+          console.error('Contract creation error:', error);
+          throw error;
+        }
+
+        // Create booking for abbonamento and free_trial services
+        if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
+          const bookingEndDate = selectedService.service_type === 'free_trial' 
+            ? formData.start_date
+            : finalEndDate;
+            
+          await createBookingForContract(data.id, formData.start_date, bookingEndDate);
+        }
+
+        // Increment discount usage count if it has usage_limit
+        if (appliedDiscount && appliedDiscount.usage_limit !== null) {
+          await incrementDiscountUsage(discountCode.trim().toUpperCase());
+        }
+
+        result = data;
+
+        // Log activity
+        await logActivity({
+          action_category: 'contract',
+          action_type: 'created',
+          entity_id: result.id,
+          entity_type: 'contracts',
+          description: `Created contract ${result.contract_number} for ${result.customers.company_name || `${result.customers.first_name} ${result.customers.second_name}`}`,
+          metadata: {
+            contract_number: result.contract_number,
+            customer_id: result.customer_id,
+            service_name: result.service_name,
+            service_type: result.service_type,
+            location_name: result.location_name,
+            cost: result.service_cost,
+            currency: result.service_currency,
+            start_date: result.start_date,
+            end_date: result.end_date,
+            discount_applied: !!appliedDiscount,
+            created_by_customer: isCustomerMode
+          }
+        });
+
+        toast.success(t('messages.contractCreatedSuccessfully'));
+      }
+
+      onSuccess(result);
+      onClose();
+    } catch (error) {
+      console.error('Error saving contract:', error);
+      toast.error(error.message || (editMode ? t('messages.errorUpdatingContract') : t('messages.errorCreatingContract')));
+    } finally {
+      setLoading(false);
+      setShowConfirmation(false);
+    }
+  };
+
+  // ... [keep all remaining functions and return statement exactly as they are]
