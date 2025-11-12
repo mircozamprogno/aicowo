@@ -3,9 +3,35 @@ import { Bell, CheckCircle, ChevronRight, Shield, UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
-import { TEMPLATE_TYPES } from '../../utils/defaultEmailTemplates';
 import { toast } from '../common/ToastContainer';
 import EmailTemplateEditor from './EmailTemplateEditor';
+
+const TEMPLATE_CONFIGS = {
+  customer_invitation: {
+    id: 'customer_invitation',
+    nameKey: 'emailTemplates.customerInvitation',
+    descriptionKey: 'emailTemplates.customerInvitationDescription',
+    icon: 'UserPlus'
+  },
+  partner_admin_invitation: {
+    id: 'partner_admin_invitation',
+    nameKey: 'emailTemplates.partnerAdminInvitation',
+    descriptionKey: 'emailTemplates.partnerAdminInvitationDescription',
+    icon: 'Shield'
+  },
+  customer_booking_confirmation: {
+    id: 'customer_booking_confirmation',
+    nameKey: 'emailTemplates.customerBookingConfirmation',
+    descriptionKey: 'emailTemplates.customerBookingConfirmationDescription',
+    icon: 'CheckCircle'
+  },
+  partner_booking_notification: {
+    id: 'partner_booking_notification',
+    nameKey: 'emailTemplates.partnerBookingNotification',
+    descriptionKey: 'emailTemplates.partnerBookingNotificationDescription',
+    icon: 'Bell'
+  }
+};
 
 const EmailTemplateList = ({ partnerUuid }) => {
   const { t } = useTranslation();
@@ -20,18 +46,24 @@ const EmailTemplateList = ({ partnerUuid }) => {
   }, [partnerUuid]);
 
   const fetchTemplates = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('email_templates')
-        .select('*')
+        .select('id, partner_uuid, template_type, subject_line, body_html, created_at, updated_at')
         .eq('partner_uuid', partnerUuid);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching templates:', error);
+        throw error;
+      }
 
+      console.log('Templates fetched:', data);
       setTemplates(data || []);
     } catch (error) {
-      console.error('Error fetching templates:', error);
-      toast.error(t('messages.errorLoadingTemplates') || 'Error loading templates');
+      console.error('Error in fetchTemplates:', error);
+      toast.error('Error loading templates');
+      setTemplates([]);
     } finally {
       setLoading(false);
     }
@@ -48,16 +80,19 @@ const EmailTemplateList = ({ partnerUuid }) => {
     return <Icon size={24} />;
   };
 
-  const getTemplateData = (templateType) => {
-    const dbTemplate = templates.find(t => t.template_type === templateType.id);
+  const handleTemplateClick = (templateType) => {
+    const config = TEMPLATE_CONFIGS[templateType];
+    if (!config) return;
+
+    const dbTemplate = templates.find(t => t.template_type === templateType);
     
-    return {
-      ...templateType,
+    setSelectedTemplate({
+      ...config,
       dbId: dbTemplate?.id,
       subject_line: dbTemplate?.subject_line,
       body_html: dbTemplate?.body_html,
       isCustomized: !!dbTemplate
-    };
+    });
   };
 
   if (selectedTemplate) {
@@ -67,7 +102,7 @@ const EmailTemplateList = ({ partnerUuid }) => {
         partnerUuid={partnerUuid}
         onBack={() => {
           setSelectedTemplate(null);
-          fetchTemplates(); // Refresh after editing
+          fetchTemplates();
         }}
       />
     );
@@ -76,7 +111,10 @@ const EmailTemplateList = ({ partnerUuid }) => {
   if (loading) {
     return (
       <div className="email-template-list">
-        <div className="loading-spinner"></div>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <div className="loading-spinner"></div>
+          <p>{t('common.loading')}</p>
+        </div>
       </div>
     );
   }
@@ -93,29 +131,38 @@ const EmailTemplateList = ({ partnerUuid }) => {
       </div>
 
       <div className="template-cards">
-        {TEMPLATE_TYPES.map((templateType) => {
-          const templateData = getTemplateData(templateType);
+        {Object.entries(TEMPLATE_CONFIGS).map(([templateType, config]) => {
+          const dbTemplate = templates.find(t => t.template_type === templateType);
           
           return (
             <div
-              key={templateType.id}
+              key={templateType}
               className="template-card"
-              onClick={() => setSelectedTemplate(templateData)}
+              onClick={() => handleTemplateClick(templateType)}
             >
               <div className="template-card-icon">
-                {getIcon(templateType.icon)}
+                {getIcon(config.icon)}
               </div>
               <div className="template-card-content">
                 <h4 className="template-card-title">
-                  {t(templateType.nameKey)}
-                  {templateData.isCustomized && (
-                    <span className="template-customized-badge">
-                      {t('emailTemplates.customized') || 'Customized'}
+                  {t(config.nameKey)}
+                  {dbTemplate && (
+                    <span style={{
+                      display: 'inline-block',
+                      marginLeft: '0.5rem',
+                      padding: '0.125rem 0.5rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      color: '#16a34a',
+                      backgroundColor: '#dcfce7',
+                      borderRadius: '9999px'
+                    }}>
+                      Customized
                     </span>
                   )}
                 </h4>
                 <p className="template-card-description">
-                  {t(templateType.descriptionKey)}
+                  {t(config.descriptionKey)}
                 </p>
               </div>
               <div className="template-card-action">
