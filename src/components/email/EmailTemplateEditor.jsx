@@ -19,7 +19,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
 
-  // Get default template based on language - with fallback
   const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.[template.id] || 
                           DEFAULT_EMAIL_TEMPLATES.en?.[template.id] ||
                           {
@@ -27,6 +26,13 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
                             body: '<p>Email content</p>',
                             variables: []
                           };
+
+  // Separate effect to sync bodyHtml to editor when it changes or ref becomes available
+  useEffect(() => {
+    if (editorRef.current && bodyHtml && !showPreview) {
+      editorRef.current.innerHTML = bodyHtml;
+    }
+  }, [bodyHtml, showPreview]);
 
   const loadPartnerData = async () => {
     try {
@@ -135,23 +141,14 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       if (data) {
         setSubject(data.subject_line);
         setBodyHtml(data.body_html);
-        if (editorRef.current) {
-          editorRef.current.innerHTML = data.body_html;
-        }
       } else {
         setSubject(defaultTemplate.subject);
         setBodyHtml(defaultTemplate.body);
-        if (editorRef.current) {
-          editorRef.current.innerHTML = defaultTemplate.body;
-        }
       }
     } catch (error) {
       console.error('Error loading template:', error);
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = defaultTemplate.body;
-      }
     } finally {
       setLoading(false);
     }
@@ -198,9 +195,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
     if (window.confirm(t('emailTemplates.confirmResetTemplate'))) {
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = defaultTemplate.body;
-      }
       toast.success(t('emailTemplates.templateReset'));
     }
   };

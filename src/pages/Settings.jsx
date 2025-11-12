@@ -7,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
-import EmailTemplateDebugger from '../components/debug/EmailTemplateDebugger';
 
 
 const Settings = () => {
@@ -1385,7 +1384,7 @@ const Settings = () => {
                 {t('settings.customizeEmailBanner') || 'Customize the banner and content that appears in your email templates'}
               </p>
 
-              <EmailTemplateDebugger />
+              {/*  <EmailTemplateDebugger /> */}
 
             </div>
 

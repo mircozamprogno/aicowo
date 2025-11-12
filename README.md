@@ -197,7 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
-2025.11.12 V 0.793 Debug mail templates
+2025.11.12 V 0.794 Debug mail templates
 2025.11.12 V 0.790 Contracts top fix layout 
 2025.11.11 V 0.780 Logs for admin e superadmin + fix 
 2025.11.10 V 0.770 Invisible Service + New Booking
