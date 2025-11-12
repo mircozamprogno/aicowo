@@ -13,24 +13,13 @@ const TEMPLATE_CONFIGS = {
     descriptionKey: 'emailTemplates.customerInvitationDescription',
     icon: 'UserPlus'
   },
-  partner_admin_invitation: {
-    id: 'partner_admin_invitation',
-    nameKey: 'emailTemplates.partnerAdminInvitation',
-    descriptionKey: 'emailTemplates.partnerAdminInvitationDescription',
-    icon: 'Shield'
-  },
   customer_booking_confirmation: {
     id: 'customer_booking_confirmation',
     nameKey: 'emailTemplates.customerBookingConfirmation',
     descriptionKey: 'emailTemplates.customerBookingConfirmationDescription',
     icon: 'CheckCircle'
-  },
-  partner_booking_notification: {
-    id: 'partner_booking_notification',
-    nameKey: 'emailTemplates.partnerBookingNotification',
-    descriptionKey: 'emailTemplates.partnerBookingNotificationDescription',
-    icon: 'Bell'
   }
+  // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
 
 const EmailTemplateList = ({ partnerUuid }) => {

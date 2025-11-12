@@ -1,4 +1,4 @@
-// src/components/email/EmailTemplateEditor.jsx - DEBUG VERSION
+// src/components/email/EmailTemplateEditor.jsx
 import { ArrowLeft, Bold, Eye, Italic, Save, Send, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -18,6 +18,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const [sendingTest, setSendingTest] = useState(false);
   const [partnerEmail, setPartnerEmail] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
+  const isTypingRef = useRef(false);
 
   const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.[template.id] || 
                           DEFAULT_EMAIL_TEMPLATES.en?.[template.id] ||
@@ -27,9 +28,9 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
                             variables: []
                           };
 
-  // Sync bodyHtml to editor
+  // Only sync when NOT typing (e.g., when loading data)
   useEffect(() => {
-    if (editorRef.current && bodyHtml && !showPreview) {
+    if (editorRef.current && bodyHtml && !showPreview && !isTypingRef.current) {
       editorRef.current.innerHTML = bodyHtml;
     }
   }, [bodyHtml, showPreview]);
@@ -126,6 +127,8 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
   const loadTemplate = async () => {
     setLoading(true);
+    isTypingRef.current = false;
+    
     try {
       const { data, error } = await supabase
         .from('email_templates')
@@ -193,6 +196,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
   const handleReset = () => {
     if (window.confirm(t('emailTemplates.confirmResetTemplate'))) {
+      isTypingRef.current = false;
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
       toast.success(t('emailTemplates.templateReset'));
@@ -219,16 +223,24 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       editor.innerHTML += variable;
     }
 
+    isTypingRef.current = true;
     setBodyHtml(editor.innerHTML);
   };
 
   const execCommand = (command, value = null) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
+    
+    // Update bodyHtml after formatting command
+    if (editorRef.current) {
+      isTypingRef.current = true;
+      setBodyHtml(editorRef.current.innerHTML);
+    }
   };
 
   const handleEditorInput = () => {
     if (editorRef.current) {
+      isTypingRef.current = true;
       setBodyHtml(editorRef.current.innerHTML);
     }
   };
@@ -341,12 +353,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
             {!showPreview ? (
               <div
-                ref={(el) => {
-                  editorRef.current = el;
-                  if (el && bodyHtml) {
-                    el.innerHTML = bodyHtml;
-                  }
-                }}
+                ref={editorRef}
                 className="template-editor"
                 contentEditable
                 onInput={handleEditorInput}

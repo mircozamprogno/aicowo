@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2025.11.12 V 0.800 mail templates and send invitation
 2025.11.12 V 0.796 track script
 2025.11.12 V 0.795 Debug mail templates
 2025.11.12 V 0.794 Debug mail templates
