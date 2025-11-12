@@ -19,8 +19,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
 
-  console.log('🔵 RENDER - template.id:', template.id, 'bodyHtml length:', bodyHtml.length);
-
   const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.[template.id] || 
                           DEFAULT_EMAIL_TEMPLATES.en?.[template.id] ||
                           {
@@ -29,25 +27,10 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
                             variables: []
                           };
 
-  console.log('🔵 defaultTemplate exists:', !!defaultTemplate, 'subject:', defaultTemplate.subject?.substring(0, 30));
-
   // Sync bodyHtml to editor
   useEffect(() => {
-    console.log('🟢 SYNC EFFECT triggered');
-    console.log('  - editorRef.current exists:', !!editorRef.current);
-    console.log('  - bodyHtml length:', bodyHtml.length);
-    console.log('  - showPreview:', showPreview);
-    console.log('  - bodyHtml preview:', bodyHtml.substring(0, 100));
-    
     if (editorRef.current && bodyHtml && !showPreview) {
-      console.log('✅ Setting editor innerHTML');
       editorRef.current.innerHTML = bodyHtml;
-      console.log('  - Editor innerHTML after set:', editorRef.current.innerHTML.substring(0, 100));
-    } else {
-      console.log('❌ NOT setting editor innerHTML because:');
-      if (!editorRef.current) console.log('  - editorRef.current is null');
-      if (!bodyHtml) console.log('  - bodyHtml is empty');
-      if (showPreview) console.log('  - showPreview is true');
     }
   }, [bodyHtml, showPreview]);
 
@@ -136,17 +119,12 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   };
 
   useEffect(() => {
-    console.log('🟣 LOAD EFFECT triggered - template.id:', template.id);
     loadTemplate();
     loadPartnerData();
     loadBannerUrl();
   }, [template.id, partnerUuid]);
 
   const loadTemplate = async () => {
-    console.log('🔴 loadTemplate START');
-    console.log('  - template.id:', template.id);
-    console.log('  - partnerUuid:', partnerUuid);
-    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -156,42 +134,23 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
         .eq('template_type', template.id)
         .single();
 
-      console.log('  - Supabase query result:');
-      console.log('    - error:', error);
-      console.log('    - data:', data);
-
       if (error && error.code !== 'PGRST116') {
-        console.error('❌ Error loading template:', error);
+        console.error('Error loading template:', error);
       }
 
       if (data) {
-        console.log('✅ Found DB template');
-        console.log('  - subject_line:', data.subject_line);
-        console.log('  - body_html length:', data.body_html?.length);
-        console.log('  - body_html preview:', data.body_html?.substring(0, 100));
-        
         setSubject(data.subject_line);
         setBodyHtml(data.body_html);
-        
-        console.log('  - State updated, bodyHtml now:', data.body_html?.length, 'chars');
       } else {
-        console.log('⚠️ No DB template found, using default');
-        console.log('  - defaultTemplate.subject:', defaultTemplate.subject);
-        console.log('  - defaultTemplate.body length:', defaultTemplate.body?.length);
-        console.log('  - defaultTemplate.body preview:', defaultTemplate.body?.substring(0, 100));
-        
         setSubject(defaultTemplate.subject);
         setBodyHtml(defaultTemplate.body);
-        
-        console.log('  - State updated with default');
       }
     } catch (error) {
-      console.error('❌ Exception in loadTemplate:', error);
+      console.error('Error loading template:', error);
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
     } finally {
       setLoading(false);
-      console.log('🔴 loadTemplate END');
     }
   };
 
@@ -269,11 +228,8 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   };
 
   const handleEditorInput = () => {
-    console.log('📝 Editor input changed');
     if (editorRef.current) {
-      const newContent = editorRef.current.innerHTML;
-      console.log('  - New content length:', newContent.length);
-      setBodyHtml(newContent);
+      setBodyHtml(editorRef.current.innerHTML);
     }
   };
 
@@ -300,7 +256,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   };
 
   if (loading) {
-    console.log('⏳ Showing loading state');
     return (
       <div className="email-template-editor-loading">
         <div className="loading-spinner"></div>
@@ -308,10 +263,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       </div>
     );
   }
-
-  console.log('🎨 Rendering editor UI');
-  console.log('  - subject:', subject);
-  console.log('  - bodyHtml length:', bodyHtml.length);
 
   return (
     <div className="email-template-editor">
@@ -392,9 +343,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
               <div
                 ref={(el) => {
                   editorRef.current = el;
-                  console.log('🔗 Editor ref callback - element:', !!el);
                   if (el && bodyHtml) {
-                    console.log('🔗 Setting initial content in ref callback');
                     el.innerHTML = bodyHtml;
                   }
                 }}
