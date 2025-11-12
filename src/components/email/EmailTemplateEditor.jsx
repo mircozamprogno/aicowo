@@ -1,3 +1,4 @@
+// src/components/email/EmailTemplateEditor.jsx
 import { ArrowLeft, Bold, Eye, Italic, Save, Send, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -18,9 +19,14 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
 
-  // Get default template based on language
+  // Get default template based on language - with fallback
   const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.[template.id] || 
-                          DEFAULT_EMAIL_TEMPLATES.en[template.id];
+                          DEFAULT_EMAIL_TEMPLATES.en?.[template.id] ||
+                          {
+                            subject: 'Email Template',
+                            body: '<p>Email content</p>',
+                            variables: []
+                          };
 
   const loadPartnerData = async () => {
     try {
@@ -70,7 +76,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
     setSendingTest(true);
     try {
-      // Replace variables with sample data for test email
       let testBodyHtml = bodyHtml;
       const sampleData = {
         '{{partner_name}}': 'Your Company',
@@ -116,7 +121,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const loadTemplate = async () => {
     setLoading(true);
     try {
-      // Try to load existing template
       const { data, error } = await supabase
         .from('email_templates')
         .select('*')
@@ -129,28 +133,22 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       }
 
       if (data) {
-        // Use saved template
         setSubject(data.subject_line);
         setBodyHtml(data.body_html);
-        // Set editor content directly ONLY on load
         if (editorRef.current) {
           editorRef.current.innerHTML = data.body_html;
         }
       } else {
-        // Use default template
         setSubject(defaultTemplate.subject);
         setBodyHtml(defaultTemplate.body);
-        // Set editor content directly ONLY on load
         if (editorRef.current) {
           editorRef.current.innerHTML = defaultTemplate.body;
         }
       }
     } catch (error) {
       console.error('Error loading template:', error);
-      // Use default on error
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
-      // Set editor content directly ONLY on load
       if (editorRef.current) {
         editorRef.current.innerHTML = defaultTemplate.body;
       }
@@ -200,7 +198,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
     if (window.confirm(t('emailTemplates.confirmResetTemplate'))) {
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
-      // Set editor content directly
       if (editorRef.current) {
         editorRef.current.innerHTML = defaultTemplate.body;
       }
@@ -212,10 +209,8 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
     const editor = editorRef.current;
     if (!editor) return;
 
-    // Focus editor
     editor.focus();
 
-    // Insert variable at cursor position
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -227,11 +222,9 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       selection.removeAllRanges();
       selection.addRange(range);
     } else {
-      // If no selection, append at end
       editor.innerHTML += variable;
     }
 
-    // Update state
     setBodyHtml(editor.innerHTML);
   };
 
@@ -249,7 +242,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const renderPreview = () => {
     let previewHtml = bodyHtml;
     
-    // Replace variables with sample data for preview
     const sampleData = {
       '{{partner_name}}': 'Your Company',
       '{{customer_name}}': 'John Doe',
@@ -280,7 +272,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
   return (
     <div className="email-template-editor">
-      {/* Header */}
       <div className="email-template-editor-header">
         <button onClick={onBack} className="back-button">
           <ArrowLeft size={20} />
@@ -294,11 +285,8 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
         </p>
       </div>
 
-      {/* Main Content */}
       <div className="email-template-editor-content">
-        {/* Editor Section */}
         <div className="email-template-editor-main">
-          {/* Subject Line */}
           <div className="template-field">
             <label htmlFor="subject" className="template-field-label">
               {t('emailTemplates.subjectLine')} *
@@ -316,13 +304,11 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
             </p>
           </div>
 
-          {/* Body Editor */}
           <div className="template-field">
             <label className="template-field-label">
               {t('emailTemplates.emailBody')} *
             </label>
             
-            {/* Toolbar */}
             <div className="template-editor-toolbar">
               <button
                 type="button"
@@ -359,7 +345,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
               </button>
             </div>
 
-            {/* Editor */}
             {!showPreview ? (
               <div
                 ref={editorRef}
@@ -367,9 +352,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
                 contentEditable
                 onInput={handleEditorInput}
                 suppressContentEditableWarning={true}
-              >
-                {/* Content will be set via ref */}
-              </div>
+              />
             ) : (
               <div 
                 className="template-preview"
@@ -378,7 +361,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
             )}
           </div>
 
-          {/* Actions */}
           <div className="template-editor-actions">
             <button
               type="button"
@@ -427,7 +409,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
           </div>
         </div>
 
-        {/* Variables Sidebar */}
         <div className="email-template-variables">
           <h3 className="variables-title">
             {t('emailTemplates.availableVariables')}
@@ -437,7 +418,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
           </p>
           
           <div className="variables-list">
-            {defaultTemplate.variables.map((variable) => (
+            {(defaultTemplate.variables || []).map((variable) => (
               <button
                 key={variable.name}
                 className="variable-item"
