@@ -7,6 +7,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
+import EmailTemplateDebugger from '../components/debug/EmailTemplateDebugger';
+
+
 const Settings = () => {
   const { profile, user } = useAuth();
   const { t, language, changeLanguage } = useTranslation();
@@ -1381,6 +1384,9 @@ const Settings = () => {
               <p className="email-templates-tab-description">
                 {t('settings.customizeEmailBanner') || 'Customize the banner and content that appears in your email templates'}
               </p>
+
+              <EmailTemplateDebugger />
+
             </div>
 
             <div className="email-templates-content">
