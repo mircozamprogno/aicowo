@@ -1847,7 +1847,6 @@
     "user": "Utente",
     "email": "Email",
     "entityType": "Tipo di Entità",
-    "description": "Descrizione",
     "actionsColumn": "Azioni",
     "viewDetails": "Visualizza Dettagli",
     "noLogsFound": "Nessun registro attività trovato",

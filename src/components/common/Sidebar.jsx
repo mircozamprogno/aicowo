@@ -74,9 +74,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
-      { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
       { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
+      { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
 
       

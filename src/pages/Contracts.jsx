@@ -816,109 +816,114 @@ const Contracts = () => {
 
   return (
     <div className="contracts-page">
+
       <div className="contracts-header">
-        <div className="contracts-header-content">
-          <h1 className="contracts-title">
-            <FileText size={24} className="mr-2" />
-            {t('contracts.title')}
-          </h1>
-          <p className="contracts-description">
-            {isCustomer 
-              ? t('contracts.manageYourContracts')
-              : t('contracts.managePartnerContracts')
-            }
-          </p>
-          <div className="contracts-stats">
-            <div className="stat-item">
-              <span className="stat-label">{t('contracts.totalContracts')}</span>
-              <span className="stat-value">{contractsToDisplay.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('contracts.activeContracts')}</span>
-              <span className="stat-value">
-                {contractsToDisplay.filter(c => c.contract_status === 'active').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('contracts.expiredContracts')}</span>
-              <span className="stat-value">
-                {contractsToDisplay.filter(c => c.contract_status === 'expired').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('contracts.cancelledContracts') || 'Cancelled'}</span>
-              <span className="stat-value">
-                {contractsToDisplay.filter(c => c.contract_status === 'cancelled').length}
-              </span>
-            </div>
-            {canManagePayments && (
-              <div className="stat-item">
-                <span className="stat-label">{t('payments.outstanding')}</span>
-                <span className="stat-value">
-                  {contractsToDisplay.filter(c => {
-                    const status = getPaymentStatus(c);
-                    return status === 'unpaid' || status === 'partial' || status === 'overdue';
-                  }).length}
-                </span>
-              </div>
-            )}
+        <div className="contracts-header-top">
+          <div className="contracts-title-section">
+            <h1 className="contracts-title">
+              <FileText size={24} className="mr-2" />
+              {t('contracts.title')}
+            </h1>
+            <p className="contracts-description">
+              {isCustomer 
+                ? t('contracts.manageYourContracts')
+                : t('contracts.managePartnerContracts')
+              }
+            </p>
           </div>
+          
+          {canCreateContracts && (
+            <div className="contracts-header-actions">
+              <button className="add-contract-btn" onClick={handleCreateContract}>
+                <Plus size={16} className="mr-2" />
+                {t('contracts.createContract')}
+              </button>
+
+              {(isPartnerAdmin || isSuperAdmin) && (
+                <button 
+                  className="export-csv-btn"
+                  onClick={handleExportCSV}
+                  disabled={exportingCSV || contractsToDisplay.length === 0}
+                  title={t('contracts.exportToCSV') || 'Esporta in CSV'}
+                >
+                  <Download size={16} className="mr-2" />
+                  {exportingCSV 
+                    ? (t('contracts.exporting') || 'Esportazione...') 
+                    : (t('contracts.exportCSV') || 'Esporta CSV')
+                  }
+                </button>
+              )}
+
+              <button 
+                className="archived-contracts-btn"
+                onClick={() => window.location.hash = '/archived-contracts'}
+                title={t('contracts.viewArchivedContracts') || 'View Archived Contracts'}
+              >
+                <Archive size={16} className="mr-2" />
+                {t('contracts.archivedContracts') || 'Archived Contracts'}
+              </button>
+
+              {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
+                <button 
+                  className="bulk-upload-btn"
+                  onClick={handleBulkUpload}
+                  disabled={contractsToDisplay.length === 0}
+                  title="Upload to FattureInCloud"
+                >
+                  <Upload size={16} className="mr-2" />
+                  Upload F.C.
+                </button>
+              )}
+
+              {(isPartnerAdmin || isSuperAdmin) && (
+                <button 
+                  className="renewal-logs-btn"
+                  onClick={() => window.location.hash = '/renewal-logs'}
+                  title={t('renewalLogs.viewRenewalLogs') || 'View Renewal Logs'}
+                >
+                  <RefreshCw size={16} className="mr-2" />
+                  {t('renewalLogs.renewalLogs') || 'Renewal Logs'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
-        {canCreateContracts && (
-          <div className="contracts-header-actions">
-            <button className="add-contract-btn" onClick={handleCreateContract}>
-              <Plus size={16} className="mr-2" />
-              {t('contracts.createContract')}
-            </button>
-
-            {(isPartnerAdmin || isSuperAdmin) && (
-              <button 
-                className="export-csv-btn"
-                onClick={handleExportCSV}
-                disabled={exportingCSV || contractsToDisplay.length === 0}
-                title={t('contracts.exportToCSV') || 'Esporta in CSV'}
-              >
-                <Download size={16} className="mr-2" />
-                {exportingCSV 
-                  ? (t('contracts.exporting') || 'Esportazione...') 
-                  : (t('contracts.exportCSV') || 'Esporta CSV')
-                }
-              </button>
-            )}
-
-            <button 
-              className="archived-contracts-btn"
-              onClick={() => window.location.hash = '/archived-contracts'}
-              title={t('contracts.viewArchivedContracts') || 'View Archived Contracts'}
-            >
-              <Archive size={16} className="mr-2" />
-              {t('contracts.archivedContracts') || 'Archived Contracts'}
-            </button>
-
-            {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
-              <button 
-                className="bulk-upload-btn"
-                onClick={handleBulkUpload}
-                disabled={contractsToDisplay.length === 0}
-                title="Upload to FattureInCloud"
-              >
-                <Upload size={16} className="mr-2" />
-                Upload F.C.
-              </button>
-            )}
-
-            {(isPartnerAdmin || isSuperAdmin) && (
-              <button 
-                className="renewal-logs-btn"
-                onClick={() => window.location.hash = '/renewal-logs'}
-                title={t('renewalLogs.viewRenewalLogs') || 'View Renewal Logs'}
-              >
-                <RefreshCw size={16} className="mr-2" />
-                {t('renewalLogs.renewalLogs') || 'Renewal Logs'}
-              </button>
-            )}
+        
+        <div className="contracts-stats">
+          <div className="stat-item">
+            <span className="stat-label">{t('contracts.totalContracts')}</span>
+            <span className="stat-value">{contractsToDisplay.length}</span>
           </div>
-        )}
+          <div className="stat-item">
+            <span className="stat-label">{t('contracts.activeContracts')}</span>
+            <span className="stat-value">
+              {contractsToDisplay.filter(c => c.contract_status === 'active').length}
+            </span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">{t('contracts.expiredContracts')}</span>
+            <span className="stat-value">
+              {contractsToDisplay.filter(c => c.contract_status === 'expired').length}
+            </span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">{t('contracts.cancelledContracts') || 'Cancelled'}</span>
+            <span className="stat-value">
+              {contractsToDisplay.filter(c => c.contract_status === 'cancelled').length}
+            </span>
+          </div>
+          {canManagePayments && (
+            <div className="stat-item">
+              <span className="stat-label">{t('payments.outstanding')}</span>
+              <span className="stat-value">
+                {contractsToDisplay.filter(c => {
+                  const status = getPaymentStatus(c);
+                  return status === 'unpaid' || status === 'partial' || status === 'overdue';
+                }).length}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       <ContractsFilter

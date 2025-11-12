@@ -1,204 +1,32 @@
-// src/components/services/ServiceForm.jsx
-import { X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useTranslation } from '../../contexts/LanguageContext';
-import { useTourIntegration } from '../../hooks/useTourIntegration';
-import { supabase } from '../../services/supabase';
-import SearchableSelect from '../common/SearchableSelect';
-import { toast } from '../common/ToastContainer';
-import { logActivity } from '../../utils/activityLogger';
+// src/pages/Contracts.jsx
+// Around line 785-850
 
-const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, locations = [] }) => {
-  const { t } = useTranslation();
-  const isEditing = !!service;
+<div className="contracts-page">
+  <div className="contracts-header">
+    <div className="contracts-header-content">
+      <h1 className="contracts-title">
+        <FileText size={24} className="mr-2" />
+        {t('contracts.title')}
+      </h1>
+      <p className="contracts-description">
+        {isCustomer 
+          ? t('contracts.manageYourContracts')
+          : t('contracts.managePartnerContracts')
+        }
+      </p>
+      <div className="contracts-stats">
+        {/* Stats cards here */}
+      </div>
+    </div>
+    
+    {/* MOVE BUTTONS OUTSIDE contracts-header-content */}
+    {canCreateContracts && (
+      <div className="contracts-header-actions">
+        {/* Buttons here */}
+      </div>
+    )}
+  </div>
   
-  // ... [keep all existing state and useEffect hooks]
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const serviceData = {
-        service_name: formData.service_name.trim(),
-        service_description: formData.service_description.trim(),
-        service_type: formData.service_type,
-        location_id: parseInt(formData.location_id),
-        location_resource_id: parseInt(formData.location_resource_id),
-        cost: parseFloat(formData.cost),
-        currency: formData.currency,
-        duration_days: parseFloat(formData.duration_days),
-        max_entries: formData.service_type === 'pacchetto' ? parseInt(formData.max_entries) || null : null,
-        service_status: formData.service_status,
-        is_renewable: formData.is_renewable,
-        auto_renew: formData.auto_renew,
-        private: formData.private,
-        partner_uuid: partnerUuid
-      };
-
-      let result;
-      
-      if (isEditing) {
-        result = await supabase
-          .from('services')
-          .update(serviceData)
-          .eq('id', service.id)
-          .select(`
-            *,
-            location_resources!fk_services_location_resource (
-              id,
-              resource_name,
-              resource_type,
-              quantity,
-              location_id,
-              locations (
-                id,
-                location_name
-              )
-            )
-          `);
-
-        const { data, error } = result;
-
-        if (error) {
-          console.error('Service save error:', error);
-          throw error;
-        }
-
-        // Log activity for update
-        await logActivity({
-          action_category: 'service',
-          action_type: 'updated',
-          entity_id: data[0].id.toString(),
-          entity_type: 'services',
-          description: `Updated service: ${data[0].service_name}`,
-          metadata: {
-            service_name: data[0].service_name,
-            service_type: data[0].service_type,
-            location_id: data[0].location_id,
-            resource_id: data[0].location_resource_id,
-            cost: data[0].cost,
-            currency: data[0].currency,
-            duration_days: data[0].duration_days,
-            status: data[0].service_status,
-            is_private: data[0].private
-          }
-        });
-
-        toast.success(t('messages.serviceUpdatedSuccessfully'));
-        onSuccess(data[0]);
-      } else {
-        result = await supabase
-          .from('services')
-          .insert([serviceData])
-          .select(`
-            *,
-            location_resources!fk_services_location_resource (
-              id,
-              resource_name,
-              resource_type,
-              quantity,
-              location_id,
-              locations (
-                id,
-                location_name
-              )
-            )
-          `);
-
-        const { data, error } = result;
-
-        if (error) {
-          console.error('Service save error:', error);
-          throw error;
-        }
-
-        if (data && data[0]) {
-          await onServiceCreated(data[0]);
-          
-          // Log activity for creation
-          await logActivity({
-            action_category: 'service',
-            action_type: 'created',
-            entity_id: data[0].id.toString(),
-            entity_type: 'services',
-            description: `Created service: ${data[0].service_name}`,
-            metadata: {
-              service_name: data[0].service_name,
-              service_type: data[0].service_type,
-              location_id: data[0].location_id,
-              resource_id: data[0].location_resource_id,
-              cost: data[0].cost,
-              currency: data[0].currency,
-              duration_days: data[0].duration_days,
-              status: data[0].service_status,
-              is_private: data[0].private
-            }
-          });
-        }
-
-        toast.success(t('messages.serviceCreatedSuccessfully'));
-        onSuccess(data[0]);
-      }
-
-      onClose();
-    } catch (error) {
-      console.error('Error saving service:', error);
-      toast.error(error.message || t('messages.errorSavingService'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase
-        .from('services')
-        .delete()
-        .eq('id', service.id);
-
-      if (error) {
-        console.error('Service delete error:', error);
-        throw error;
-      }
-
-      // Log activity for deletion
-      await logActivity({
-        action_category: 'service',
-        action_type: 'deleted',
-        entity_id: service.id.toString(),
-        entity_type: 'services',
-        description: `Deleted service: ${service.service_name}`,
-        metadata: {
-          service_name: service.service_name,
-          service_type: service.service_type,
-          location_id: service.location_id,
-          cost: service.cost,
-          currency: service.currency
-        }
-      });
-
-      toast.success(t('messages.serviceDeletedSuccessfully'));
-      setShowDeleteConfirm(false);
-      onClose();
-      
-      onSuccess(null);
-    } catch (error) {
-      console.error('Error deleting service:', error);
-      toast.error(error.message || t('messages.errorDeletingService'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ... [keep all remaining code exactly as is]
-};
-
-export default ServiceForm;
+  {/* Filters section */}
+  <ContractsFilter ... />
+</div>
