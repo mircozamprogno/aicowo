@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import '../../styles/components/ContractForm.css';
 import { logActivity } from '../../utils/activityLogger';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';

@@ -23,7 +23,8 @@
     "discountCodes": "Discount Codes",
     "support": "Support",
     "customersDiscountCodes": "Discount Codes",
-    "logview": "Logs"
+    "logview": "Logs",
+    "superadminemail": "Partner Email"
   },
   "customers": {
     "title": "Customers",
@@ -161,7 +162,10 @@
     "uploadingBanner": "Uploading Banner...",
     "bannerPreview": "Banner Preview",
     "uploadEmailBanner": "Upload Email Banner",
-    "uploadBanner": "Upload Banner"
+    "uploadBanner": "Upload Banner",
+    "systemEmailBanner": "System Email Banner",
+    "systemEmailBannerDescription": "Upload a banner image that will appear at the top of system email templates (partner invitations). Recommended size: 800x200px. Supported formats: JPG, PNG, GIF.",
+    "uploadSystemEmailBanner": "Upload System Email Banner"
   },
   "locations": {
     "addLocation": "Add Location",
@@ -1027,7 +1031,10 @@
     "discountApplied": "Discount applied",
     "originalPrice": "Original Price",
     "discount": "Discount",
-    "finalPrice": "Final Price"
+    "finalPrice": "Final Price",
+    "contractAmountBreakdown": "Contract Amount Breakdown",
+    "contractTotal": "Contract Total",
+    "contractDetails": "Contract Details"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -1299,7 +1306,14 @@
       "editPayment": "Edit this payment record",
       "viewReceipt": "View payment receipt",
       "deletePayment": "Delete this payment record"
-    }
+    },
+    "includeVAT": "Include VAT in payment",
+    "paymentWithVAT": "Payment amount includes VAT",
+    "paymentWithoutVAT": "Payment amount is net (without VAT)",
+    "number": "Number",
+    "method": "Method",
+    "date": "Date",
+    "fileUploadHint": "JPEG, PNG, WebP, PDF up to 5MB"
   },
   "tour": {
     "welcome": {
@@ -1815,7 +1829,18 @@
     "templateSavedSuccessfully": "Template saved successfully!",
     "errorSavingTemplate": "Error saving template. Please try again.",
     "confirmResetTemplate": "Are you sure you want to reset this template to default? Your changes will be lost.",
-    "templateReset": "Template reset to default"
+    "templateReset": "Template reset to default",
+    "partnerInvitation": "Partner Invitation",
+    "partnerInvitationDescription": "Email sent to new partners when inviting them to join the platform",
+    "systemTemplates": "System Email Templates",
+    "systemTemplatesDescription": "Manage email templates used for partner invitations and system communications",
+    "manageSuperadminTemplatesDescription": "Customize the email templates sent by the system for partner invitations",
+    "testEmailAddress": "Indirizzo Email di Test",
+    "testEmailPlaceholder": "Inserisci email per ricevere il test",
+    "testEmailHint": "Inserisci l'indirizzo email dove vuoi ricevere l'email di test",
+    "testEmailRequired": "Inserisci un indirizzo email di test",
+    "invalidEmailFormat": "Inserisci un indirizzo email valido",
+    "testEmailSentSuccessfully": "Email di test inviata con successo!"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",

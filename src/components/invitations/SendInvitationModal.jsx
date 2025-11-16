@@ -1,11 +1,14 @@
+// src/components/invitations/SendInvitationModal.jsx
 import { Mail, Send, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
 const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const { profile } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -61,16 +64,34 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       }
     };
 
-    console.log('Sending invitation email with OneSignal:', invitationWithPartner);
+    console.log('Sending invitation email:', invitationWithPartner);
 
     try {
-      // Import OneSignal email service
-      const { default: oneSignalEmailService } = await import('../../services/oneSignalEmailService');
-      const success = await oneSignalEmailService.sendInvitation(invitationWithPartner, invitationLink);
-      
-      return success;
+      // MODIFIED: For superadmin inviting partner admin, use customizable template
+      if (isPartnerAdminInvitation) {
+        const { sendPartnerInvitationEmail } = await import('../../services/partnerInvitationEmailService');
+        
+        const adminName = profile?.first_name || profile?.email?.split('@')[0] || 'PowerCowo Team';
+        const partnerName = partner?.company_name || `${partner?.first_name} ${partner?.second_name}`;
+        
+        const success = await sendPartnerInvitationEmail(
+          invitation.invited_email,
+          partnerName,
+          invitationLink,
+          adminName,
+          language
+        );
+        
+        return success;
+      } else {
+        // For customer invitations, use existing OneSignal flow
+        const { default: oneSignalEmailService } = await import('../../services/oneSignalEmailService');
+        const success = await oneSignalEmailService.sendInvitation(invitationWithPartner, invitationLink);
+        
+        return success;
+      }
     } catch (error) {
-      console.error('Error with OneSignal email service:', error);
+      console.error('Error with email service:', error);
       console.log('Fallback - logging invitation details:', {
         to: invitation.invited_email,
         role: invitation.invited_role,
@@ -81,7 +102,6 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       return false;
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,15 +135,23 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       // Generate invitation link
       const invitationLink = generateInvitationLink(data.invitation_uuid);
 
-      // Send email (in real implementation)
-      await sendInvitationEmail(data, invitationLink);
+      // Send email
+      const emailSent = await sendInvitationEmail(data, invitationLink);
 
       // Show success and close modal
-      toast.success(
-        isPartnerAdminInvitation 
-          ? t('messages.partnerAdminInvitationSent')
-          : t('messages.userInvitationSent')
-      );
+      if (emailSent) {
+        toast.success(
+          isPartnerAdminInvitation 
+            ? t('messages.partnerAdminInvitationSent')
+            : t('messages.userInvitationSent')
+        );
+      } else {
+        // Use toast.error if toast.warning doesn't exist
+        toast.error(
+          t('messages.invitationCreatedButEmailFailed') || 
+          'Invitation created but email may not have been sent. Please verify.'
+        );
+      }
       
       onClose();
       

@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2025.11.16 V 0.810 Partner invitation mail
 2025.11.12 V 0.800 mail templates and send invitation
 2025.11.12 V 0.796 track script
 2025.11.12 V 0.795 Debug mail templates

@@ -1,3 +1,4 @@
+// src/utils/defaultEmailTemplates.js
 // Default email templates for EN and IT
 // These are used when a partner hasn't customized their templates yet
 
@@ -83,6 +84,39 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{resource}}', description: 'Resource name' },
         { name: '{{remaining_count}}', description: 'Remaining entries' }
       ]
+    },
+
+    // NEW: Partner invitation template for SuperAdmin
+    partner_invitation: {
+      subject: 'Join PowerCowo - Partner Invitation',
+      body: `<h2>Welcome to PowerCowo!</h2>
+<p>Hello {{partner_name}},</p>
+<p>You've been invited to join PowerCowo as a coworking space partner. We're excited to work with you!</p>
+<p>PowerCowo is a comprehensive coworking management platform that will help you:</p>
+<ul>
+  <li>Manage your locations and resources</li>
+  <li>Handle customer contracts and bookings</li>
+  <li>Track payments and subscriptions</li>
+  <li>Send automated communications</li>
+  <li>And much more!</li>
+</ul>
+<p>To activate your account and get started, please click the button below:</p>
+<p style="text-align: center; margin: 30px 0;">
+  <a href="{{invitation_link}}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+    Activate Partner Account
+  </a>
+</p>
+<p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+<p style="word-break: break-all;">{{invitation_link}}</p>
+<p>Once you've activated your account, you'll receive an email at <strong>{{partner_email}}</strong> with your login credentials.</p>
+<p>If you have any questions, feel free to reach out to our team.</p>
+<p>Best regards,<br>{{admin_name}}<br>PowerCowo Team</p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Partner company name' },
+        { name: '{{partner_email}}', description: 'Partner email address' },
+        { name: '{{invitation_link}}', description: 'Account activation link' },
+        { name: '{{admin_name}}', description: 'Admin name who sent invitation' }
+      ]
     }
   },
   
@@ -167,6 +201,39 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{resource}}', description: 'Nome risorsa' },
         { name: '{{remaining_count}}', description: 'Ingressi rimanenti' }
       ]
+    },
+
+    // NEW: Partner invitation template for SuperAdmin
+    partner_invitation: {
+      subject: 'Unisciti a PowerCowo - Invito Partner',
+      body: `<h2>Benvenuto in PowerCowo!</h2>
+<p>Ciao {{partner_name}},</p>
+<p>Sei stato invitato a unirti a PowerCowo come partner di spazi di coworking. Siamo entusiasti di lavorare con te!</p>
+<p>PowerCowo è una piattaforma completa di gestione coworking che ti aiuterà a:</p>
+<ul>
+  <li>Gestire le tue sedi e risorse</li>
+  <li>Gestire contratti e prenotazioni dei clienti</li>
+  <li>Monitorare pagamenti e abbonamenti</li>
+  <li>Inviare comunicazioni automatizzate</li>
+  <li>E molto altro!</li>
+</ul>
+<p>Per attivare il tuo account e iniziare, clicca sul pulsante qui sotto:</p>
+<p style="text-align: center; margin: 30px 0;">
+  <a href="{{invitation_link}}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+    Attiva Account Partner
+  </a>
+</p>
+<p>Se il pulsante non funziona, puoi copiare e incollare questo link nel tuo browser:</p>
+<p style="word-break: break-all;">{{invitation_link}}</p>
+<p>Una volta attivato il tuo account, riceverai un'email a <strong>{{partner_email}}</strong> con le tue credenziali di accesso.</p>
+<p>Se hai domande, non esitare a contattare il nostro team.</p>
+<p>Cordiali saluti,<br>{{admin_name}}<br>Team PowerCowo</p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Nome dell\'azienda partner' },
+        { name: '{{partner_email}}', description: 'Indirizzo email del partner' },
+        { name: '{{invitation_link}}', description: 'Link di attivazione account' },
+        { name: '{{admin_name}}', description: 'Nome dell\'admin che ha inviato l\'invito' }
+      ]
     }
   }
 };
@@ -196,5 +263,12 @@ export const TEMPLATE_TYPES = [
     nameKey: 'emailTemplates.partnerBookingNotification',
     descriptionKey: 'emailTemplates.partnerBookingNotificationDesc',
     icon: 'Bell'
+  },
+  // NEW: Partner invitation for SuperAdmin
+  {
+    id: 'partner_invitation',
+    nameKey: 'emailTemplates.partnerInvitation',
+    descriptionKey: 'emailTemplates.partnerInvitationDescription',
+    icon: 'Shield'
   }
 ];

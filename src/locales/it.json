@@ -23,7 +23,8 @@
     "discountCodes": "Codici Sconto",
     "support": "Supporto",
     "customersDiscountCodes": "Codici Sconto",
-    "logview": "Logs"
+    "logview": "Logs",
+    "superadminemail": "Partner Email"
   },
   "customers": {
     "title": "Clienti",
@@ -161,7 +162,10 @@
     "uploadingBanner": "Caricamento Banner...",
     "bannerPreview": "Anteprima Banner",
     "uploadEmailBanner": "Carica Banner Email",
-    "uploadBanner": "Carica Banner"
+    "uploadBanner": "Carica Banner",
+    "systemEmailBanner": "Banner Email di Sistema",
+    "systemEmailBannerDescription": "Carica un'immagine banner che apparirà nella parte superiore dei template email di sistema (inviti partner). Dimensione consigliata: 800x200px. Formati supportati: JPG, PNG, GIF.",
+    "uploadSystemEmailBanner": "Carica Banner Email di Sistema"
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
@@ -1030,7 +1034,10 @@
     "discountApplied": "Sconto applicato",
     "originalPrice": "Prezzo originale",
     "discount": "Sconto",
-    "finalPrice": "Prezzo finale"
+    "finalPrice": "Prezzo finale",
+    "contractAmountBreakdown": "Dettaglio Importo Contratto",
+    "contractTotal": "Totale Contratto",
+    "contractDetails": "Dettagli contratto"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",
@@ -1301,7 +1308,14 @@
       "editPayment": "Modifica questo record di pagamento",
       "viewReceipt": "Visualizza ricevuta pagamento",
       "deletePayment": "Elimina questo record di pagamento"
-    }
+    },
+    "includeVAT": "Includi IVA nel pagamento",
+    "paymentWithVAT": "L'importo del pagamento include l'IVA",
+    "paymentWithoutVAT": "L'importo del pagamento è netto (senza IVA)",
+    "number": "Numero",
+    "method": "Metodo",
+    "date": "Data",
+    "fileUploadHint": "JPEG, PNG, WebP, PDF fino a 5MB"
   },
   "tour": {
     "welcome": {
@@ -1817,7 +1831,18 @@
     "templateSavedSuccessfully": "Template salvato con successo!",
     "errorSavingTemplate": "Errore nel salvataggio del template. Riprova.",
     "confirmResetTemplate": "Sei sicuro di voler ripristinare questo template alle impostazioni predefinite? Le tue modifiche andranno perse.",
-    "templateReset": "Template ripristinato alle impostazioni predefinite"
+    "templateReset": "Template ripristinato alle impostazioni predefinite",
+    "partnerInvitation": "Invito Partner",
+    "partnerInvitationDescription": "Email inviata ai nuovi partner quando vengono invitati ad unirsi alla piattaforma",
+    "systemTemplates": "Template Email di Sistema",
+    "systemTemplatesDescription": "Gestisci i template email utilizzati per gli inviti partner e le comunicazioni di sistema",
+    "manageSuperadminTemplatesDescription": "Personalizza i template email inviati dal sistema per gli inviti partner",
+    "testEmailAddress": "Test Email Address",
+    "testEmailPlaceholder": "Enter email to receive test",
+    "testEmailHint": "Enter the email address where you want to receive the test email",
+    "testEmailRequired": "Please enter a test email address",
+    "invalidEmailFormat": "Please enter a valid email address",
+    "testEmailSentSuccessfully": "Test email sent successfully!"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto Clienti",

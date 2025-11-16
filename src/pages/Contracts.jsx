@@ -162,7 +162,8 @@ const Contracts = () => {
           ),
           locations (
             id,
-            location_name
+            location_name,
+            vat_percentage
           )
         `)
         .eq('is_archived', false)

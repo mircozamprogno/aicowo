@@ -15,6 +15,7 @@ import PlanFeatures from '../../pages/PlanFeatures';
 import PricingPlans from '../../pages/PricingPlans';
 import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
+import SuperAdminEmailTemplates from '../../pages/SuperAdminEmailTemplates';
 import Support from '../../pages/Support'; // ← ADD THIS IMPORT
 import Users from '../../pages/Users';
 import logger from '../../utils/logger';
@@ -245,6 +246,14 @@ const Router = () => {
           <LogView />
         </ProtectedRoute>
       ) : <Login />;
+
+    case '/superadminemail':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <SuperAdminEmailTemplates />
+        </ProtectedRoute>
+      ) : <Login />;
+
     default:
       // For any unknown path, redirect based on auth status
       if (user) {

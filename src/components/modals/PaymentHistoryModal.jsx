@@ -23,7 +23,6 @@ const PaymentHistoryModal = ({
   const { profile } = useAuth();
   const { t } = useTranslation();
 
-  // Determine user capabilities
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
   const canEditPayments = isPartnerAdmin || isSuperAdmin;
@@ -59,10 +58,28 @@ const PaymentHistoryModal = ({
     const completed = paymentsData.filter(p => p.payment_status === 'completed');
     const pending = paymentsData.filter(p => p.payment_status === 'pending');
     
-    const totalPaid = completed.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-    const pendingAmount = pending.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-    const contractCost = contract?.service_cost || 0;
-    const outstanding = Math.max(0, contractCost - totalPaid);
+    // Use amount_gross if available, otherwise fall back to amount
+    const totalPaid = completed.reduce((sum, p) => {
+      const amount = p.amount_gross !== null && p.amount_gross !== undefined 
+        ? parseFloat(p.amount_gross) 
+        : parseFloat(p.amount);
+      return sum + (amount || 0);
+    }, 0);
+    
+    const pendingAmount = pending.reduce((sum, p) => {
+      const amount = p.amount_gross !== null && p.amount_gross !== undefined 
+        ? parseFloat(p.amount_gross) 
+        : parseFloat(p.amount);
+      return sum + (amount || 0);
+    }, 0);
+    
+    // Calculate contract total with VAT
+    const baseAmount = parseFloat(contract?.service_cost) || 0;
+    const vatPercentage = parseFloat(contract?.locations?.vat_percentage) || 0;
+    const vatAmount = baseAmount * (vatPercentage / 100);
+    const contractCostGross = baseAmount + vatAmount;
+    
+    const outstanding = Math.max(0, contractCostGross - totalPaid);
 
     setPaymentStats({
       totalPayments: paymentsData.length,
@@ -71,9 +88,9 @@ const PaymentHistoryModal = ({
       totalPaid,
       pendingAmount,
       outstanding,
-      contractCost,
-      isFullyPaid: totalPaid >= contractCost && contractCost > 0,
-      paymentPercentage: contractCost > 0 ? (totalPaid / contractCost) * 100 : 0
+      contractCost: contractCostGross,
+      isFullyPaid: totalPaid >= contractCostGross && contractCostGross > 0,
+      paymentPercentage: contractCostGross > 0 ? Math.min((totalPaid / contractCostGross) * 100, 100) : 0
     });
   };
 
@@ -96,8 +113,8 @@ const PaymentHistoryModal = ({
       toast.success(t('payments.paymentDeleted'));
       setShowDeleteConfirm(false);
       setPaymentToDelete(null);
-      loadPayments(); // Reload payments
-      if (onRefresh) onRefresh(); // Refresh parent component
+      loadPayments();
+      if (onRefresh) onRefresh();
     } catch (error) {
       console.error('Error deleting payment:', error);
       toast.error(t('payments.errorDeletingPayment'));
@@ -128,13 +145,13 @@ const PaymentHistoryModal = ({
 
   const getStatusBadgeClass = (status) => {
     const classes = {
-      completed: 'status-completed',
-      pending: 'status-pending',
-      failed: 'status-failed',
-      refunded: 'status-refunded',
-      cancelled: 'status-cancelled'
+      completed: 'payment-status-completed',
+      pending: 'payment-status-pending',
+      failed: 'payment-status-failed',
+      refunded: 'payment-status-refunded',
+      cancelled: 'payment-status-cancelled'
     };
-    return classes[status] || 'status-default';
+    return classes[status] || 'payment-status-default';
   };
 
   const getMethodIcon = (method) => {
@@ -153,12 +170,18 @@ const PaymentHistoryModal = ({
     }
   };
 
+  const getPaymentAmount = (payment) => {
+    return payment.amount_gross !== null && payment.amount_gross !== undefined 
+      ? payment.amount_gross 
+      : payment.amount;
+  };
+
   if (!isOpen) return null;
 
   return (
     <>
       <div className="modal-overlay">
-        <div className="modal-container payment-history-modal" style={{ maxWidth: '56rem' }}>
+        <div className="modal-container payment-history-modal">
           <div className="modal-header">
             <h2 className="modal-title">
               <FileText size={20} className="mr-2" />
@@ -170,11 +193,10 @@ const PaymentHistoryModal = ({
           </div>
 
           <div className="payment-history-content">
-            {/* Payment Statistics */}
             {paymentStats && (
               <div className="payment-stats-section">
                 <div className="payment-stats-grid">
-                  <div className="stat-card">
+                  <div className="stat-card stat-paid">
                     <div className="stat-icon">
                       <DollarSign size={20} />
                     </div>
@@ -184,7 +206,7 @@ const PaymentHistoryModal = ({
                     </div>
                   </div>
 
-                  <div className="stat-card">
+                  <div className="stat-card stat-outstanding">
                     <div className="stat-icon">
                       <Calendar size={20} />
                     </div>
@@ -194,61 +216,54 @@ const PaymentHistoryModal = ({
                     </div>
                   </div>
 
-                  <div className="stat-card">
+                  <div className="stat-card stat-count">
                     <div className="stat-icon">
                       <CreditCard size={20} />
                     </div>
                     <div className="stat-info">
                       <div className="stat-value">{paymentStats.totalPayments}</div>
-                      <div className="stat-label">{t('payments.totalPayments')}</div>
+                      <div className="stat-label">{t('payments.totalPayments') || 'Pagamenti Totali'}</div>
                     </div>
                   </div>
 
-                  <div className="stat-card">
+                  <div className={`stat-card stat-progress ${paymentStats.isFullyPaid ? 'fully-paid' : ''}`}>
                     <div className="stat-icon">
                       <FileText size={20} />
                     </div>
                     <div className="stat-info">
                       <div className="stat-value">{Math.round(paymentStats.paymentPercentage)}%</div>
-                      <div className="stat-label">{t('payments.paymentProgress')}</div>
+                      <div className="stat-label">{t('payments.paymentProgress') || 'Progresso Pagamento'}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Payment Progress Bar */}
-                <div className="payment-progress">
+                <div className="payment-progress-container">
                   <div className="progress-header">
-                    <span className="progress-label">{t('payments.paymentProgress')}</span>
+                    <span className="progress-label">{t('payments.paymentProgress') || 'Progresso Pagamento'}</span>
                     <span className="progress-value">
                       {formatCurrency(paymentStats.totalPaid)} / {formatCurrency(paymentStats.contractCost)}
                     </span>
                   </div>
-                  <div className="progress-bar">
+                  <div className="progress-bar-wrapper">
                     <div 
-                      className="progress-fill" 
-                      style={{ 
-                        width: `${Math.min(paymentStats.paymentPercentage, 100)}%`,
-                        backgroundColor: paymentStats.isFullyPaid ? '#16a34a' : '#3b82f6'
-                      }}
-                    ></div>
+                      className={`progress-bar-fill ${paymentStats.isFullyPaid ? 'fully-paid' : ''}`}
+                      style={{ width: `${paymentStats.paymentPercentage}%` }}
+                    />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Payments List */}
             <div className="payments-list-section">
               <div className="section-header">
-                <h3>{t('payments.paymentHistory')}</h3>
-                <div className="section-actions">
-                  {paymentStats && (
-                    <span className={`payment-status-badge ${paymentStats.isFullyPaid ? 'fully-paid' : 'outstanding'}`}>
-                      {paymentStats.isFullyPaid 
-                        ? t('contracts.fullyPaid') 
-                        : t('contracts.awaitingPayment')}
-                    </span>
-                  )}
-                </div>
+                <h3>{t('payments.paymentHistory') || 'Storico Pagamenti'}</h3>
+                {paymentStats && (
+                  <span className={`payment-status-badge ${paymentStats.isFullyPaid ? 'fully-paid' : 'outstanding'}`}>
+                    {paymentStats.isFullyPaid 
+                      ? (t('contracts.fullyPaid') || 'Completamente Pagato')
+                      : (t('contracts.awaitingPayment') || 'Da Pagare')}
+                  </span>
+                )}
               </div>
 
               {loading ? (
@@ -262,40 +277,35 @@ const PaymentHistoryModal = ({
                   <p>{t('payments.noPaymentsFound')}</p>
                 </div>
               ) : (
-                <div className="payments-table-wrapper">
-                  <table className="payments-table">
+                <div className="payments-table-container">
+                  <table className="payments-history-table">
                     <thead>
                       <tr>
-                        <th>{t('payments.paymentNumber')}</th>
-                        <th>{t('payments.amount')}</th>
-                        <th>{t('payments.paymentMethod')}</th>
-                        <th>{t('payments.paymentDate')}</th>
-                        <th>{t('payments.paymentStatus')}</th>
-                        <th>{t('payments.transactionRef')}</th>
-                        {canEditPayments && <th>{t('contracts.actionsColumn')}</th>}
+                        <th>{t('payments.number') || 'Numero'}</th>
+                        <th>{t('payments.amount') || 'Importo'}</th>
+                        <th>{t('payments.method') || 'Metodo'}</th>
+                        <th>{t('payments.date') || 'Data'}</th>
+                        {canEditPayments && <th>{t('contracts.actionsColumn') || 'Azioni'}</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {payments.map((payment) => (
                         <tr key={payment.id} className="payment-row">
-                          <td className="payment-number">
-                            <div className="payment-number-info">
-                              <span className="number">{payment.payment_number}</span>
-                              <span className="created-date">
-                                {t('common.createdAt')}: {formatDate(payment.created_at)}
+                          <td>
+                            <span className="payment-number">{payment.payment_number}</span>
+                          </td>
+                          
+                          <td>
+                            <div className="payment-amount-cell">
+                              <span className="amount-value">{formatCurrency(getPaymentAmount(payment))}</span>
+                              <span className="payment-type-badge">
+                                {t(`payments.types.${payment.payment_type}`) || payment.payment_type}
                               </span>
                             </div>
                           </td>
                           
-                          <td className="payment-amount">
-                            <div className="amount-info">
-                              <span className="amount">{formatCurrency(payment.amount)}</span>
-                              <span className="payment-type">{t(`payments.types.${payment.payment_type}`)}</span>
-                            </div>
-                          </td>
-                          
-                          <td className="payment-method">
-                            <div className="method-info">
+                          <td>
+                            <div className="payment-method-cell">
                               <span className="method-icon">{getMethodIcon(payment.payment_method)}</span>
                               <span className="method-name">
                                 {t(`payments.methods.${payment.payment_method}`)}
@@ -303,29 +313,17 @@ const PaymentHistoryModal = ({
                             </div>
                           </td>
                           
-                          <td className="payment-date">
+                          <td className="payment-date-cell">
                             {formatDate(payment.payment_date)}
                           </td>
                           
-                          <td className="payment-status">
-                            <span className={`status-badge ${getStatusBadgeClass(payment.payment_status)}`}>
-                              {t(`payments.status.${payment.payment_status}`)}
-                            </span>
-                          </td>
-                          
-                          <td className="transaction-ref">
-                            <span className="transaction-ref-text">
-                              {payment.transaction_reference || '-'}
-                            </span>
-                          </td>
-                          
                           {canEditPayments && (
-                            <td className="payment-actions">
-                              <div className="actions-group">
+                            <td>
+                              <div className="payment-actions">
                                 <button
                                   className="action-btn edit-btn"
                                   onClick={() => handleEditPayment(payment)}
-                                  title={t('payments.tooltips.editPayment')}
+                                  title={t('payments.tooltips.editPayment') || 'Modifica Pagamento'}
                                 >
                                   <Edit2 size={16} />
                                 </button>
@@ -334,7 +332,7 @@ const PaymentHistoryModal = ({
                                   <button
                                     className="action-btn view-btn"
                                     onClick={() => window.open(payment.receipt_url, '_blank')}
-                                    title={t('payments.tooltips.viewReceipt')}
+                                    title={t('payments.tooltips.viewReceipt') || 'Vedi Ricevuta'}
                                   >
                                     <Eye size={16} />
                                   </button>
@@ -343,7 +341,7 @@ const PaymentHistoryModal = ({
                                 <button
                                   className="action-btn delete-btn"
                                   onClick={() => handleDeletePayment(payment)}
-                                  title={t('payments.tooltips.deletePayment')}
+                                  title={t('payments.tooltips.deletePayment') || 'Elimina Pagamento'}
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -357,26 +355,6 @@ const PaymentHistoryModal = ({
                 </div>
               )}
             </div>
-
-            {/* Payment Notes */}
-            {payments.some(p => p.notes) && (
-              <div className="payment-notes-section">
-                <h4>{t('payments.notes')}</h4>
-                <div className="notes-list">
-                  {payments
-                    .filter(p => p.notes)
-                    .map(payment => (
-                      <div key={payment.id} className="note-item">
-                        <div className="note-header">
-                          <span className="note-payment">{payment.payment_number}</span>
-                          <span className="note-date">{formatDate(payment.created_at)}</span>
-                        </div>
-                        <div className="note-content">{payment.notes}</div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="modal-actions">
@@ -387,13 +365,12 @@ const PaymentHistoryModal = ({
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && paymentToDelete && (
         <div className="modal-overlay">
           <div className="modal-container delete-modal">
             <div className="modal-header">
               <h2 className="modal-title">
-                {t('payments.confirmDeletePayment')}
+                {t('payments.confirmDeletePayment') || 'Conferma Eliminazione Pagamento'}
               </h2>
               <button 
                 onClick={() => setShowDeleteConfirm(false)} 
@@ -408,26 +385,26 @@ const PaymentHistoryModal = ({
                 <Trash2 size={24} className="warning-icon" />
                 <div className="warning-text">
                   <h3>{t('common.confirmDelete')}</h3>
-                  <p>{t('payments.deletePaymentWarning')}</p>
+                  <p>{t('payments.deletePaymentWarning') || 'Questa azione non può essere annullata.'}</p>
                 </div>
               </div>
 
-              <div className="payment-to-delete">
-                <div className="summary-item">
+              <div className="payment-to-delete-info">
+                <div className="delete-info-item">
                   <strong>{t('payments.paymentNumber')}:</strong> {paymentToDelete.payment_number}
                 </div>
-                <div className="summary-item">
-                  <strong>{t('payments.amount')}:</strong> {formatCurrency(paymentToDelete.amount)}
+                <div className="delete-info-item">
+                  <strong>{t('payments.amount')}:</strong> {formatCurrency(getPaymentAmount(paymentToDelete))}
                 </div>
-                <div className="summary-item">
+                <div className="delete-info-item">
                   <strong>{t('payments.paymentMethod')}:</strong> {t(`payments.methods.${paymentToDelete.payment_method}`)}
                 </div>
-                <div className="summary-item">
+                <div className="delete-info-item">
                   <strong>{t('payments.paymentDate')}:</strong> {formatDate(paymentToDelete.payment_date)}
                 </div>
               </div>
 
-              <div className="delete-modal-actions">
+              <div className="modal-actions">
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
@@ -440,7 +417,7 @@ const PaymentHistoryModal = ({
                   onClick={confirmDeletePayment}
                   className="btn-danger"
                 >
-                  {t('payments.deletePayment')}
+                  {t('payments.deletePayment') || 'Elimina Pagamento'}
                 </button>
               </div>
             </div>

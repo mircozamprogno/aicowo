@@ -67,6 +67,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.pricingPlans'), href: '/pricing-plans', icon: CreditCard, roles: ['superadmin'] },
       { name: t('navigation.partnerContracts'), href: '/partner-contracts', icon: File, roles: ['superadmin'] },
       { name: t('navigation.discountCodes'), href: '/discount-codes', icon: Tag, roles: ['superadmin'] },
+      { name: t('navigation.superadminemail'), href: '/superadminemail', icon: Mail, roles: ['superadmin'] },
       
       // Partner admin navigation - NEW ORDER
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },

@@ -7,7 +7,7 @@ import { supabase } from '../../services/supabase';
 import { DEFAULT_EMAIL_TEMPLATES } from '../../utils/defaultEmailTemplates';
 import { toast } from '../common/ToastContainer';
 
-const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
+const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }) => {
   const { t, language } = useTranslation();
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
@@ -17,6 +17,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const editorRef = useRef(null);
   const [sendingTest, setSendingTest] = useState(false);
   const [partnerEmail, setPartnerEmail] = useState('');
+  const [testEmail, setTestEmail] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
   const isTypingRef = useRef(false);
 
@@ -45,6 +46,10 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
       if (error) throw error;
       setPartnerEmail(data.email);
+      
+      // Load last used test email from localStorage, or use partner email as default
+      const savedTestEmail = localStorage.getItem('lastTestEmail');
+      setTestEmail(savedTestEmail || data.email);
     } catch (error) {
       console.error('Error loading partner email:', error);
     }
@@ -71,8 +76,16 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   };
 
   const handleSendTest = async () => {
-    if (!partnerEmail) {
-      toast.error('Email partner non trovata');
+    // Validate test email
+    if (!testEmail || !testEmail.trim()) {
+      toast.error(t('emailTemplates.testEmailRequired') || 'Please enter a test email address');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(testEmail)) {
+      toast.error(t('emailTemplates.invalidEmailFormat') || 'Please enter a valid email address');
       return;
     }
 
@@ -83,8 +96,16 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
 
     setSendingTest(true);
     try {
+      // Save test email to localStorage for next time
+      localStorage.setItem('lastTestEmail', testEmail);
+
       let testBodyHtml = bodyHtml;
-      const sampleData = {
+      const sampleData = mode === 'superadmin' ? {
+        '{{partner_name}}': 'Demo Company',
+        '{{partner_email}}': 'demo@example.com',
+        '{{invitation_link}}': '#',
+        '{{admin_name}}': 'PowerCowo Team'
+      } : {
         '{{partner_name}}': 'Your Company',
         '{{customer_name}}': 'John Doe',
         '{{admin_name}}': 'Jane Smith',
@@ -101,13 +122,13 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
       });
 
       const success = await oneSignalEmailService.sendTestEmail(
-        partnerEmail,
+        testEmail,
         bannerUrl,
         testBodyHtml
       );
 
       if (success) {
-        toast.success('Email di test inviata con successo!');
+        toast.success(t('emailTemplates.testEmailSentSuccessfully') || `Test email sent successfully to ${testEmail}!`);
       } else {
         toast.error('Errore durante l\'invio dell\'email di test. Verifica la configurazione OneSignal.');
       }
@@ -248,7 +269,12 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
   const renderPreview = () => {
     let previewHtml = bodyHtml;
     
-    const sampleData = {
+    const sampleData = mode === 'superadmin' ? {
+      '{{partner_name}}': 'Demo Company',
+      '{{partner_email}}': 'demo@example.com',
+      '{{invitation_link}}': '#',
+      '{{admin_name}}': 'PowerCowo Team'
+    } : {
       '{{partner_name}}': 'Your Company',
       '{{customer_name}}': 'John Doe',
       '{{admin_name}}': 'Jane Smith',
@@ -367,6 +393,23 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
             )}
           </div>
 
+          <div className="template-field">
+            <label htmlFor="testEmail" className="template-field-label">
+              {t('emailTemplates.testEmailAddress') || 'Test Email Address'}
+            </label>
+            <input
+              id="testEmail"
+              type="email"
+              className="template-subject-input"
+              placeholder={t('emailTemplates.testEmailPlaceholder') || 'Enter email to receive test'}
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+            />
+            <p className="template-field-hint">
+              {t('emailTemplates.testEmailHint') || 'Enter the email address where you want to receive the test email'}
+            </p>
+          </div>
+
           <div className="template-editor-actions">
             <button
               type="button"
@@ -380,7 +423,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, onBack }) => {
               type="button"
               onClick={handleSendTest}
               className="btn-secondary"
-              disabled={saving || sendingTest || !bodyHtml.trim()}
+              disabled={saving || sendingTest || !bodyHtml.trim() || !testEmail.trim()}
             >
               {sendingTest ? (
                 <>

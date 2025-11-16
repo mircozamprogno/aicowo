@@ -6,7 +6,7 @@ import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 import EmailTemplateEditor from './EmailTemplateEditor';
 
-const TEMPLATE_CONFIGS = {
+const PARTNER_TEMPLATE_CONFIGS = {
   customer_invitation: {
     id: 'customer_invitation',
     nameKey: 'emailTemplates.customerInvitation',
@@ -22,11 +22,25 @@ const TEMPLATE_CONFIGS = {
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
 
-const EmailTemplateList = ({ partnerUuid }) => {
+const SUPERADMIN_TEMPLATE_CONFIGS = {
+  partner_invitation: {
+    id: 'partner_invitation',
+    nameKey: 'emailTemplates.partnerInvitation',
+    descriptionKey: 'emailTemplates.partnerInvitationDescription',
+    icon: 'Shield'
+  }
+};
+
+const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
   const { t } = useTranslation();
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Select the appropriate template configs based on mode
+  const TEMPLATE_CONFIGS = mode === 'superadmin' 
+    ? SUPERADMIN_TEMPLATE_CONFIGS 
+    : PARTNER_TEMPLATE_CONFIGS;
 
   useEffect(() => {
     if (partnerUuid) {
@@ -89,6 +103,7 @@ const EmailTemplateList = ({ partnerUuid }) => {
       <EmailTemplateEditor
         template={selectedTemplate}
         partnerUuid={partnerUuid}
+        mode={mode}
         onBack={() => {
           setSelectedTemplate(null);
           fetchTemplates();
@@ -115,7 +130,10 @@ const EmailTemplateList = ({ partnerUuid }) => {
           {t('emailTemplates.manageTemplates')}
         </h3>
         <p className="email-template-list-description">
-          {t('emailTemplates.manageTemplatesDescription')}
+          {mode === 'superadmin' 
+            ? t('emailTemplates.manageSuperadminTemplatesDescription')
+            : t('emailTemplates.manageTemplatesDescription')
+          }
         </p>
       </div>
 
