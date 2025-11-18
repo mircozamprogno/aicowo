@@ -100,13 +100,20 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       localStorage.setItem('lastTestEmail', testEmail);
 
       let testBodyHtml = bodyHtml;
+      let testSubject = subject;
       const sampleData = mode === 'superadmin' ? {
         '{{partner_name}}': 'Demo Company',
+        '{{structure_name}}': 'Demo Structure',
+        '{{partner_firstname}}': 'Mario',
+        '{{partner_lastname}}': 'Rossi',
         '{{partner_email}}': 'demo@example.com',
         '{{invitation_link}}': '#',
         '{{admin_name}}': 'PowerCowo Team'
       } : {
         '{{partner_name}}': 'Your Company',
+        '{{structure_name}}': 'Main Branch',
+        '{{partner_firstname}}': 'Mario',
+        '{{partner_lastname}}': 'Rossi',
         '{{customer_name}}': 'John Doe',
         '{{admin_name}}': 'Jane Smith',
         '{{invitation_link}}': '#',
@@ -119,12 +126,14 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
 
       Object.entries(sampleData).forEach(([variable, value]) => {
         testBodyHtml = testBodyHtml.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
+        testSubject = testSubject.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
       });
 
       const success = await oneSignalEmailService.sendTestEmail(
         testEmail,
         bannerUrl,
-        testBodyHtml
+        testBodyHtml,
+        testSubject
       );
 
       if (success) {
@@ -271,11 +280,17 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
     
     const sampleData = mode === 'superadmin' ? {
       '{{partner_name}}': 'Demo Company',
+      '{{structure_name}}': 'Demo Structure',
+      '{{partner_firstname}}': 'Mario',
+      '{{partner_lastname}}': 'Rossi',
       '{{partner_email}}': 'demo@example.com',
       '{{invitation_link}}': '#',
       '{{admin_name}}': 'PowerCowo Team'
     } : {
       '{{partner_name}}': 'Your Company',
+      '{{structure_name}}': 'Main Branch',
+      '{{partner_firstname}}': 'Mario',
+      '{{partner_lastname}}': 'Rossi',
       '{{customer_name}}': 'John Doe',
       '{{admin_name}}': 'Jane Smith',
       '{{invitation_link}}': '#',

@@ -1,0 +1,290 @@
+/* ===== Partner Booking Form Modal Styles ===== */
+
+/* Confirmation Content */
+.confirmation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+/* Warning Section */
+.confirmation-warning {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0.375rem;
+  align-items: flex-start;
+}
+
+.warning-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.warning-text h3 {
+  margin: 0 0 0.375rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.warning-text p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #78350f;
+  line-height: 1.5;
+}
+
+/* Contract Summary - Complete Redesign */
+.contract-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.summary-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.summary-section h5 {
+  margin: 0;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Summary Items Grid */
+.summary-section > div:not(.summary-section h5) {
+  padding: 1.25rem;
+}
+
+.summary-item {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1rem;
+  padding: 0.625rem 0;
+  align-items: baseline;
+}
+
+.summary-item:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 0.9375rem;
+  color: #111827;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+/* Special styling for cost/remaining entries */
+.summary-value.cost {
+  color: #16a34a;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+/* Confirmation Actions */
+.confirmation-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.confirmation-actions .btn-secondary {
+  min-width: 120px;
+}
+
+.confirmation-actions .btn-primary {
+  min-width: 180px;
+}
+
+/* Availability Check Section */
+.availability-check {
+  margin: 1rem 0;
+}
+
+.availability-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.availability-status {
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid;
+}
+
+.availability-status.available {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.availability-status.unavailable {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.availability-success,
+.availability-error {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.availability-success svg {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.availability-error svg {
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.availability-details {
+  flex: 1;
+}
+
+.availability-details p {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.availability-details p:last-child {
+  margin-bottom: 0;
+}
+
+.availability-success .availability-details p {
+  color: #166534;
+}
+
+.availability-error .availability-details p {
+  color: #991b1b;
+}
+
+.availability-details strong {
+  font-weight: 600;
+}
+
+/* Form Help Text */
+.form-help-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Loading Spinner */
+.loading-spinner-small {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .confirmation-content {
+    padding: 1.25rem;
+  }
+
+  .confirmation-warning {
+    padding: 1rem;
+  }
+
+  .summary-item {
+    grid-template-columns: 1fr;
+    gap: 0.375rem;
+    padding: 0.75rem 0;
+  }
+
+  .summary-value {
+    padding-left: 0;
+  }
+
+  .summary-section h5 {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .summary-section > div:not(.summary-section h5) {
+    padding: 1rem;
+  }
+
+  .confirmation-actions {
+    flex-direction: column-reverse;
+    padding-top: 1.25rem;
+  }
+
+  .confirmation-actions button {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirmation-content {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .warning-text h3 {
+    font-size: 0.875rem;
+  }
+
+  .warning-text p {
+    font-size: 0.8125rem;
+  }
+
+  .confirmation-warning {
+    padding: 0.875rem;
+  }
+
+  .confirmation-actions {
+    padding-top: 1rem;
+  }
+}

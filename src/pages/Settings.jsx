@@ -1,11 +1,13 @@
-import { Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
+import { Calendar, Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import OperatingScheduleManager from '../components/calendar/OperatingScheduleManager';
 import { toast } from '../components/common/ToastContainer';
 import EmailTemplateList from '../components/email/EmailTemplateList';
 import LocationsList from '../components/partners/LocationsList';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+import '../styles/components/operating-calendar.css';
 
 
 
@@ -731,9 +733,25 @@ const Settings = () => {
               <Mail size={20} />
               {t('settings.emailTemplates') || 'Email Templates'}
             </button>
+
+
+            {(isAdminPartner) && (
+              <>
+                <button
+                  type="button"
+                  className={`settings-tab ${activeTab === 'calendar' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('calendar')}
+                >
+                  <Calendar size={20} />
+                  {t('settings.operatingCalendar') || 'Operating Calendar'}
+                </button>
+              </>
+            )}
+
           </div>
         </div>
       )}
+
 
       <div className="settings-content">
         {/* Profile Tab Content */}
@@ -1528,6 +1546,23 @@ const Settings = () => {
             </div>
           </div>
         )}
+
+        {/* Operating Calendar Tab Content - Only for admin partners */}
+        {activeTab === 'calendar' && isAdminPartner && (
+          <div className="calendar-tab-content">
+            <div className="calendar-tab-header">
+              <h3 className="calendar-tab-title">
+                <Calendar size={20} />
+                {t('settings.manageOperatingCalendar') || 'Manage Operating Calendar'}
+              </h3>
+              <p className="calendar-tab-description">
+                {t('settings.operatingCalendarDescription') || 'Configure when your locations and resources are available for booking'}
+              </p>
+            </div>
+            <OperatingScheduleManager />
+          </div>
+        )}
+
       </div>
     </div>
   );

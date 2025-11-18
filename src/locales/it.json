@@ -128,6 +128,7 @@
     "profileNotFound": "Profilo cliente non trovato",
     "errorLoadingProfile": "Errore nel caricamento del profilo cliente",
     "errorLoadingCustomers": "Errore nel caricamento dei clienti",
+    "email": "Email",
     "constraints": {
       "activeBookings": "{{count}} prenotazione/i attiva/e",
       "activeContracts": "{{count}} contratto/i attivo/i",
@@ -165,7 +166,10 @@
     "uploadBanner": "Carica Banner",
     "systemEmailBanner": "Banner Email di Sistema",
     "systemEmailBannerDescription": "Carica un'immagine banner che apparirà nella parte superiore dei template email di sistema (inviti partner). Dimensione consigliata: 800x200px. Formati supportati: JPG, PNG, GIF.",
-    "uploadSystemEmailBanner": "Carica Banner Email di Sistema"
+    "uploadSystemEmailBanner": "Carica Banner Email di Sistema",
+    "operatingCalendar": "Calendario Operativo",
+    "manageOperatingCalendar": "Gestisci Calendario Operativo",
+    "operatingCalendarDescription": "Configura quando le tue sedi e risorse sono disponibili per le prenotazioni"
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
@@ -315,7 +319,9 @@
     "deleteWarningResources": "{{count}} risorsa/e sarà/saranno eliminata/e definitivamente",
     "deleteWarningImages": "{{count}} immagine/i sarà/saranno eliminate definitivamente dallo storage",
     "deleteWarningHistoricalData": "{{count}} record di prenotazioni storiche perderanno il riferimento alla sede",
-    "deleteValidationError": "Impossibile validare la sicurezza dell'eliminazione. Riprova."
+    "deleteValidationError": "Impossibile validare la sicurezza dell'eliminazione. Riprova.",
+    "allDesks": "Tutte le Scrivanie",
+    "allMeetingRooms": "Tutte le Sale Riunioni"
   },
   "auth": {
     "signIn": "Accedi",
@@ -572,7 +578,8 @@
     "to": "al",
     "of": "di",
     "confirm": "Conferma",
-    "accessDenied": "Accesso negato"
+    "accessDenied": "Accesso negato",
+    "select": "Seleziona"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -857,7 +864,20 @@
     "selectDuration": "Seleziona durata",
     "available": "Disponibile",
     "resourceAvailableFor": "{{resource}} è disponibile per l'orario selezionato",
-    "capacity": "Capacità"
+    "capacity": "Capacità",
+    "locationClosedOnDate": "Sede chiusa in questa data: {{reason}}",
+    "resourceTypeClosedOnDate": "Tutte le {{resourceType}} sono chiuse in questa data: {{reason}}",
+    "resourceClosedOnDate": "Risorsa chiusa in questa data: {{reason}}",
+    "resourceClosedOnDay": "Risorsa chiusa di {{day}}",
+    "locationClosedOnDay": "Sede chiusa di {{day}}",
+    
+    "closureType": {
+      "holiday": "Festività",
+      "maintenance": "Manutenzione",
+      "special_event": "Evento Speciale",
+      "emergency": "Emergenza",
+      "custom": "Chiusura"
+    }
   },
   "contracts": {
     "title": "Contratti",
@@ -1125,7 +1145,15 @@
     "todayBooking": "Prenotazione di Oggi",
     "timeSlot": "Fascia Oraria",
     "packageContract": "Contratto",
-    "selectAPackage": "Seleziona un pacchetto"
+    "selectAPackage": "Seleziona un pacchetto",
+    "selectACustomer": "Seleziona un cliente",
+    "bookingFor": "Prenota per",
+    "changeCustomer": "Cambia cliente",
+    "locationClosed": "Sede Chiusa",
+    "resourcesClosed": "risorse chiuse",
+    "locationClosedToday": "Sede Chiusa Oggi",
+    "partialClosureToday": "Chiusura Parziale Oggi",
+    "resourcesAffected": "risorse interessate"
   },
   "calendar": {
     "sunday": "Dom",
@@ -1134,7 +1162,65 @@
     "wednesday": "Mer",
     "thursday": "Gio",
     "friday": "Ven",
-    "saturday": "Sab"
+    "saturday": "Sab",
+    "hours": "Ore",
+    "selectLocation": "Seleziona Sede",
+    "noLocationsFound": "Nessuna sede trovata",
+    "createLocationFirst": "Crea prima una sede nella scheda Sedi",
+    "weeklySchedule": "Orario Settimanale",
+    "weeklyScheduleDescription": "Definisci gli orari di apertura regolari per questa sede. Questi orari si applicheranno a tutte le risorse se non diversamente specificato.",
+    "resourceOverrides": "Orari Personalizzati Risorse",
+    "resourceOverridesDescription": "Configura orari di apertura personalizzati per risorse specifiche che differiscono dall'orario della sede.",
+    "closuresAndExceptions": "Chiusure ed Eccezioni",
+    "closuresDescription": "Aggiungi chiusure speciali come festività, periodi di manutenzione o eventi che sostituiscono gli orari regolari.",
+    "day": "Giorno",
+    "status": "Stato",
+    "openingHours": "Orario di Apertura",
+    "closed": "Chiuso",
+    "open": "Aperto",
+    "closedAllDay": "Chiuso tutto il giorno",
+    "saveSchedule": "Salva Orario",
+    "schedulesSaved": "Orario salvato con successo",
+    "customSchedule": "Orario Personalizzato",
+    "usesLocationSchedule": "Usa orario della sede",
+    "addCustomSchedule": "Aggiungi Orario Personalizzato",
+    "confirmDeleteResourceSchedule": "Sei sicuro di voler eliminare questo orario personalizzato? La risorsa tornerà ad usare l'orario della sede.",
+    "resourceScheduleDeleted": "Orario risorsa eliminato con successo",
+    "noResourcesInLocation": "Nessuna risorsa trovata in questa sede",
+    "resourceOverridesIntro": "Le risorse elencate sotto useranno l'orario della sede a meno che non aggiungi un orario personalizzato.",
+    "customScheduleFor": "Orario Personalizzato per",
+    "resourceScheduleSaved": "Orario risorsa salvato con successo",
+    "entireLocation": "Intera Sede",
+    "specificResource": "Risorsa Specifica",
+    "allResourcesOfType": "Tutte le Risorse di Tipo",
+    "allDesks": "Tutte le Scrivanie",
+    "allMeetingRooms": "Tutte le Sale Riunioni",
+    "addClosure": "Aggiungi Chiusura",
+    "noClosuresFound": "Nessuna chiusura programmata",
+    "addClosureDescription": "Aggiungi festività, periodi di manutenzione o altre eccezioni al tuo calendario operativo.",
+    "closure": "Chiusura",
+    "recurring": "Ricorrente",
+    "confirmDeleteClosure": "Sei sicuro di voler eliminare questa chiusura?",
+    "closureDeleted": "Chiusura eliminata con successo",
+    "addNewClosure": "Nuova Chiusura",
+    "editClosure": "Modifica Chiusura",
+    "closureScope": "Si Applica A",
+    "resourceType": "Tipo Risorsa",
+    "selectResource": "Seleziona Risorsa",
+    "startDate": "Data Inizio",
+    "endDate": "Data Fine",
+    "closureType": "Tipo Chiusura",
+    "holiday": "Festività",
+    "maintenance": "Manutenzione",
+    "specialEvent": "Evento Speciale",
+    "emergency": "Emergenza",
+    "custom": "Personalizzato",
+    "reason": "Motivo",
+    "closureReasonPlaceholder": "es. Natale, Manutenzione annuale, Evento aziendale",
+    "recurringAnnually": "Ricorrente annualmente",
+    "recurringHelpText": "Questa chiusura si ripeterà ogni anno nelle stesse date",
+    "closureCreated": "Chiusura creata con successo",
+    "closureUpdated": "Chiusura aggiornata con successo"
   },
   "photoGallery": {
     "title": "Galleria Foto",
@@ -1923,6 +2009,10 @@
       "deactivate": "Disattiva",
       "deactivated": "Disattivato"
     }
+  },
+  "resources": {
+    "scrivania": "Scrivanie",
+    "sala_riunioni": "Sale Riunioni"
   },
   "app": {
     "appName": " ",

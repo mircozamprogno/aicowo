@@ -16,6 +16,9 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Best regards,<br>The {{partner_name}} Team</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Your company name' },
+        { name: '{{structure_name}}', description: 'Your structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
         { name: '{{customer_name}}', description: "Customer's full name" },
         { name: '{{invitation_link}}', description: 'Registration link' },
         { name: '{{custom_message}}', description: 'Your personal message' }
@@ -35,6 +38,9 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Best regards,<br>The PowerCowo Team</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
         { name: '{{admin_name}}', description: "Admin's full name" },
         { name: '{{invitation_link}}', description: 'Registration link' },
         { name: '{{custom_message}}', description: 'Personal message' }
@@ -57,6 +63,10 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>If you need to make any changes or have questions, please don't hesitate to contact us.</p>
 <p>Best regards,<br>Your Workspace Team</p>`,
       variables: [
+        { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
         { name: '{{customer_name}}', description: "Customer's full name" },
         { name: '{{booking_date}}', description: 'Date of booking' },
         { name: '{{resource}}', description: 'Resource name (desk, meeting room)' },
@@ -79,6 +89,10 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Please ensure everything is ready for your guest.</p>
 <p>Best regards,<br>PowerCowo System</p>`,
       variables: [
+        { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
         { name: '{{customer_name}}', description: "Customer's full name" },
         { name: '{{booking_date}}', description: 'Date of booking' },
         { name: '{{resource}}', description: 'Resource name' },
@@ -86,7 +100,6 @@ export const DEFAULT_EMAIL_TEMPLATES = {
       ]
     },
 
-    // NEW: Partner invitation template for SuperAdmin
     partner_invitation: {
       subject: 'Join PowerCowo - Partner Invitation',
       body: `<h2>Welcome to PowerCowo!</h2>
@@ -113,6 +126,9 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Best regards,<br>{{admin_name}}<br>PowerCowo Team</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Partner company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
         { name: '{{partner_email}}', description: 'Partner email address' },
         { name: '{{invitation_link}}', description: 'Account activation link' },
         { name: '{{admin_name}}', description: 'Admin name who sent invitation' }
@@ -133,6 +149,9 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Cordiali saluti,<br>Il Team di {{partner_name}}</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Nome della tua azienda' },
+        { name: '{{structure_name}}', description: 'Nome della struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
         { name: '{{customer_name}}', description: 'Nome completo del cliente' },
         { name: '{{invitation_link}}', description: 'Link di registrazione' },
         { name: '{{custom_message}}', description: 'Il tuo messaggio personale' }
@@ -152,6 +171,9 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Cordiali saluti,<br>Il Team PowerCowo</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
         { name: '{{admin_name}}', description: "Nome completo dell'admin" },
         { name: '{{invitation_link}}', description: 'Link di registrazione' },
         { name: '{{custom_message}}', description: 'Messaggio personale' }
@@ -174,6 +196,10 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Se hai bisogno di modifiche o hai domande, non esitare a contattarci.</p>
 <p>Cordiali saluti,<br>Il Tuo Team Workspace</p>`,
       variables: [
+        { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
         { name: '{{customer_name}}', description: 'Nome completo del cliente' },
         { name: '{{booking_date}}', description: 'Data della prenotazione' },
         { name: '{{resource}}', description: 'Nome risorsa (scrivania, sala riunioni)' },
@@ -196,6 +222,10 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Assicurati che tutto sia pronto per il tuo ospite.</p>
 <p>Cordiali saluti,<br>Sistema PowerCowo</p>`,
       variables: [
+        { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
         { name: '{{customer_name}}', description: 'Nome completo del cliente' },
         { name: '{{booking_date}}', description: 'Data della prenotazione' },
         { name: '{{resource}}', description: 'Nome risorsa' },
@@ -203,7 +233,6 @@ export const DEFAULT_EMAIL_TEMPLATES = {
       ]
     },
 
-    // NEW: Partner invitation template for SuperAdmin
     partner_invitation: {
       subject: 'Unisciti a PowerCowo - Invito Partner',
       body: `<h2>Benvenuto in PowerCowo!</h2>
@@ -230,6 +259,9 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 <p>Cordiali saluti,<br>{{admin_name}}<br>Team PowerCowo</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Nome dell\'azienda partner' },
+        { name: '{{structure_name}}', description: 'Nome della struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
         { name: '{{partner_email}}', description: 'Indirizzo email del partner' },
         { name: '{{invitation_link}}', description: 'Link di attivazione account' },
         { name: '{{admin_name}}', description: 'Nome dell\'admin che ha inviato l\'invito' }
@@ -264,7 +296,6 @@ export const TEMPLATE_TYPES = [
     descriptionKey: 'emailTemplates.partnerBookingNotificationDesc',
     icon: 'Bell'
   },
-  // NEW: Partner invitation for SuperAdmin
   {
     id: 'partner_invitation',
     nameKey: 'emailTemplates.partnerInvitation',

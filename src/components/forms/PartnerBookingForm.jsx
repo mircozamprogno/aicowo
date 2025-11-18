@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
+import '../../styles/components/PartnerBookingForm.css';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
@@ -231,6 +232,9 @@ const PartnerBookingForm = ({
     setAvailabilityStatus(null);
   };
 
+  // src/components/bookings/PartnerBookingForm.jsx
+  // Replace the checkAvailability function (around line 186-236)
+
   const checkAvailability = async () => {
     if (!selectedPackage || !formData.reservation_date) return;
     
@@ -238,8 +242,127 @@ const PartnerBookingForm = ({
     
     try {
       const locationResourceId = selectedPackage.location_resource_id;
+      const locationId = selectedPackage.location_id;
+      const resourceType = selectedPackage.resource_type;
+      
+      // Get day of week (0 = Sunday, 6 = Saturday)
+      const reservationDate = new Date(formData.reservation_date);
+      const dayOfWeek = reservationDate.getDay();
 
-      // Check existing package reservations for this date and resource
+      // ===== STEP 1: Check Exceptional Closures =====
+      const { data: closures, error: closuresError } = await supabase
+        .from('operating_closures')
+        .select('*')
+        .eq('partner_uuid', profile.partner_uuid)
+        .lte('closure_start_date', formData.reservation_date)
+        .gte('closure_end_date', formData.reservation_date);
+
+      if (closuresError) throw closuresError;
+
+      // Check for location-level closure
+      const locationClosure = closures?.find(c => 
+        c.closure_scope === 'location' && c.location_id === locationId
+      );
+      
+      if (locationClosure) {
+        setAvailabilityStatus({
+          available: false,
+          conflictReason: t('reservations.locationClosedOnDate', { 
+            reason: locationClosure.closure_reason || t(`reservations.closureType.${locationClosure.closure_type}`)
+          }),
+          closureInfo: locationClosure
+        });
+        setCheckingAvailability(false);
+        return;
+      }
+
+      // Check for resource-type closure
+      const resourceTypeClosure = closures?.find(c => 
+        c.closure_scope === 'resource_type' && 
+        c.location_id === locationId &&
+        c.resource_type === resourceType
+      );
+      
+      if (resourceTypeClosure) {
+        setAvailabilityStatus({
+          available: false,
+          conflictReason: t('reservations.resourceTypeClosedOnDate', { 
+            resourceType: t(`resources.${resourceType}`),
+            reason: resourceTypeClosure.closure_reason || t(`reservations.closureType.${resourceTypeClosure.closure_type}`)
+          }),
+          closureInfo: resourceTypeClosure
+        });
+        setCheckingAvailability(false);
+        return;
+      }
+
+      // Check for specific resource closure
+      const resourceClosure = closures?.find(c => 
+        c.closure_scope === 'resource' && 
+        c.location_resource_id === locationResourceId
+      );
+      
+      if (resourceClosure) {
+        setAvailabilityStatus({
+          available: false,
+          conflictReason: t('reservations.resourceClosedOnDate', { 
+            reason: resourceClosure.closure_reason || t(`reservations.closureType.${resourceClosure.closure_type}`)
+          }),
+          closureInfo: resourceClosure
+        });
+        setCheckingAvailability(false);
+        return;
+      }
+
+      // ===== STEP 2: Check Resource Operating Schedule =====
+      const { data: resourceSchedule, error: resourceScheduleError } = await supabase
+        .from('resource_operating_schedules')
+        .select('*')
+        .eq('location_resource_id', locationResourceId)
+        .eq('day_of_week', dayOfWeek)
+        .maybeSingle();
+
+      if (resourceScheduleError) throw resourceScheduleError;
+
+      // If resource has custom schedule
+      if (resourceSchedule) {
+        if (resourceSchedule.is_closed) {
+          setAvailabilityStatus({
+            available: false,
+            conflictReason: t('reservations.resourceClosedOnDay', { 
+              day: t(`calendar.${getDayName(dayOfWeek)}`)
+            }),
+            scheduleInfo: resourceSchedule
+          });
+          setCheckingAvailability(false);
+          return;
+        }
+        // Resource is open - continue to check booking conflicts
+      } else {
+        // ===== STEP 3: Check Location Operating Schedule =====
+        const { data: locationSchedule, error: locationScheduleError } = await supabase
+          .from('location_operating_schedules')
+          .select('*')
+          .eq('location_id', locationId)
+          .eq('day_of_week', dayOfWeek)
+          .maybeSingle();
+
+        if (locationScheduleError) throw locationScheduleError;
+
+        if (locationSchedule && locationSchedule.is_closed) {
+          setAvailabilityStatus({
+            available: false,
+            conflictReason: t('reservations.locationClosedOnDay', { 
+              day: t(`calendar.${getDayName(dayOfWeek)}`)
+            }),
+            scheduleInfo: locationSchedule
+          });
+          setCheckingAvailability(false);
+          return;
+        }
+      }
+
+      // ===== STEP 4: Check Existing Package Reservations =====
       const { data: existingReservations, error: reservationsError } = await supabase
         .from('package_reservations')
         .select('duration_type, time_slot, entries_used')
@@ -249,7 +372,7 @@ const PartnerBookingForm = ({
 
       if (reservationsError) throw reservationsError;
 
-      // Check for conflicts
+      // Check for booking conflicts
       let hasConflict = false;
       let conflictReason = '';
       let usedSlots = 0;
@@ -297,6 +420,12 @@ const PartnerBookingForm = ({
     } finally {
       setCheckingAvailability(false);
     }
+  };
+
+  // Helper function to get day name
+  const getDayName = (dayOfWeek) => {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[dayOfWeek];
   };
 
   const validateReservation = () => {
@@ -421,9 +550,6 @@ const PartnerBookingForm = ({
     return new Date(dateString).toLocaleDateString('it-IT');
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🖥️' : '🏢';
-  };
 
   const getMinSelectableDate = () => {
     if (!selectedPackage) return new Date().toISOString().split('T')[0];
@@ -490,58 +616,60 @@ const PartnerBookingForm = ({
             <div className="contract-summary">
               <div className="summary-section">
                 <h5>{t('customers.customerDetails')}</h5>
-                <div className="summary-item">
-                  <span className="summary-label">{t('customers.customer')}:</span>
-                  <span className="summary-value">
-                    {selectedCustomer.company_name || `${selectedCustomer.first_name} ${selectedCustomer.second_name}`}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('customers.email')}:</span>
-                  <span className="summary-value">{selectedCustomer.email}</span>
+                <div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('customers.customer')}</span>
+                    <span className="summary-value">
+                      {selectedCustomer.company_name || `${selectedCustomer.first_name} ${selectedCustomer.second_name}`}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('customers.email')}</span>
+                    <span className="summary-value">{selectedCustomer.email}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="summary-section">
                 <h5>{t('reservations.reservationDetails')}</h5>
-                <div className="summary-item">
-                  <span className="summary-label">{t('contracts.contract')}:</span>
-                  <span className="summary-value">{selectedPackage.contract_number}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('contracts.service')}:</span>
-                  <span className="summary-value">{selectedPackage.service_name}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('contracts.resource')}:</span>
-                  <span className="summary-value">
-                    {getResourceTypeIcon(selectedPackage.resource_type)} {selectedPackage.resource_name}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('contracts.location')}:</span>
-                  <span className="summary-value">{selectedPackage.location_name}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('reservations.dateLabel')}:</span>
-                  <span className="summary-value">{formatDate(formData.reservation_date)}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('reservations.durationLabel')}:</span>
-                  <span className="summary-value">
-                    {formData.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
-                    {formData.duration_type === 'half_day' && (
-                      <span> - {formData.time_slot === 'morning' ? t('reservations.morningSlot') : t('reservations.afternoonSlot')}</span>
-                    )}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('reservations.entriesToUse')}:</span>
-                  <span className="summary-value">{entriesNeeded}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">{t('reservations.remainingAfter')}:</span>
-                  <span className="summary-value cost">{remainingEntries - entriesNeeded}</span>
+                <div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('contracts.contract')}</span>
+                    <span className="summary-value">{selectedPackage.contract_number}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('contracts.service')}</span>
+                    <span className="summary-value">{selectedPackage.service_name}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('contracts.resource')}</span>
+                    <span className="summary-value">{selectedPackage.resource_name}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('contracts.location')}</span>
+                    <span className="summary-value">{selectedPackage.location_name}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('reservations.dateLabel')}</span>
+                    <span className="summary-value">{formatDate(formData.reservation_date)}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('reservations.durationLabel')}</span>
+                    <span className="summary-value">
+                      {formData.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
+                      {formData.duration_type === 'half_day' && (
+                        <span> ({formData.time_slot === 'morning' ? t('reservations.morningSlot') : t('reservations.afternoonSlot')})</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('reservations.entriesToUse')}</span>
+                    <span className="summary-value">{entriesNeeded}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">{t('reservations.remainingAfter')}</span>
+                    <span className="summary-value cost">{remainingEntries - entriesNeeded}</span>
+                  </div>
                 </div>
               </div>
             </div>

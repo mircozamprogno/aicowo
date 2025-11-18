@@ -38,6 +38,8 @@ const Bookings = () => {
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
 
+  const [closures, setClosures] = useState([]);
+
   useEffect(() => {
     if (profile) {
       fetchBookings();
@@ -54,6 +56,13 @@ const Bookings = () => {
   useEffect(() => {
     applyFilters();
   }, [bookings, filters]);
+
+
+  useEffect(() => {
+    if (profile && (isPartnerAdmin || isCustomer)) {
+      fetchClosures();
+    }
+  }, [currentDate, viewType, filters.location, profile]);
 
   const fetchCustomerContracts = async () => {
     try {
@@ -313,6 +322,64 @@ const Bookings = () => {
     }
   };
 
+
+  const fetchClosures = async () => {
+    try {
+      // Calculate date range based on view type
+      let startDate, endDate;
+      
+      if (viewType === 'month') {
+        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        endDate = new Date(lastDay);
+        endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+      } else if (viewType === 'week') {
+        startDate = new Date(currentDate);
+        startDate.setDate(currentDate.getDate() - currentDate.getDay());
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+      } else {
+        startDate = new Date(currentDate);
+        endDate = new Date(currentDate);
+      }
+
+      let closuresQuery = supabase
+        .from('operating_closures')
+        .select(`
+          *,
+          locations (
+            id,
+            location_name
+          ),
+          location_resources (
+            id,
+            resource_name,
+            resource_type
+          )
+        `)
+        .eq('partner_uuid', profile.partner_uuid)
+        .lte('closure_start_date', formatDate(endDate))
+        .gte('closure_end_date', formatDate(startDate));
+
+      // Apply location filter if set
+      if (filters.location) {
+        closuresQuery = closuresQuery.or(`location_id.eq.${filters.location},location_resources.locations.id.eq.${filters.location}`);
+      }
+
+      const { data: closuresData, error } = await closuresQuery;
+
+      if (error) throw error;
+
+      setClosures(closuresData || []);
+    } catch (error) {
+      console.error('Error fetching closures:', error);
+      setClosures([]);
+    }
+  };
+
   const fetchFilterOptions = async () => {
     try {
       const { data: customersData } = await supabase
@@ -379,6 +446,41 @@ const Bookings = () => {
       year: 'numeric',
       month: 'long'
     });
+  };
+
+  const getClosuresForDate = (date) => {
+    const dateStr = formatDate(date);
+    return closures.filter(closure => {
+      return dateStr >= closure.closure_start_date && dateStr <= closure.closure_end_date;
+    });
+  };
+
+  // Add helper function to categorize closures (after getClosuresForDate)
+
+  const categorizeClosures = (closuresForDate) => {
+    const locationClosures = closuresForDate.filter(c => c.closure_scope === 'location');
+    const resourceTypeClosures = closuresForDate.filter(c => c.closure_scope === 'resource_type');
+    const specificResourceClosures = closuresForDate.filter(c => c.closure_scope === 'resource');
+
+    return {
+      hasLocationClosure: locationClosures.length > 0,
+      locationClosure: locationClosures[0],
+      partialClosureCount: resourceTypeClosures.length + specificResourceClosures.length,
+      allClosures: closuresForDate
+    };
+  };
+
+  // Add helper to get closure color by type (after categorizeClosures)
+
+  const getClosureColor = (closureType) => {
+    const colors = {
+      'holiday': '#10b981',
+      'maintenance': '#f59e0b',
+      'special_event': '#8b5cf6',
+      'emergency': '#ef4444',
+      'custom': '#6b7280'
+    };
+    return colors[closureType] || '#6b7280';
   };
 
   const navigateDate = (direction) => {
@@ -476,6 +578,7 @@ const Bookings = () => {
       days.push(new Date(tempDate));
       tempDate.setDate(tempDate.getDate() + 1);
     }
+    
     return (
       <div className="calendar-month">
         <div className="calendar-weekdays">
@@ -488,38 +591,70 @@ const Bookings = () => {
             const isCurrentMonth = day.getMonth() === currentDate.getMonth();
             const isToday = formatDate(day) === formatDate(new Date());
             const dayBookings = getBookingsForDate(day);
+            const dayClosures = getClosuresForDate(day);
+            const closureInfo = categorizeClosures(dayClosures);
+            
             return (
               <div
                 key={idx}
-                className={`calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`}
+                className={`calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${closureInfo.hasLocationClosure ? 'location-closed' : ''}`}
                 onClick={() => { setCurrentDate(new Date(day)); setViewType('day'); }}
               >
-                <div className="calendar-day-number">{day.getDate()}</div>
-                <div className="calendar-day-bookings">
-                  {dayBookings.slice(0, 3).map(b => {
-                    const contract = getContractForBooking(b);
-                    return (
-                      <div
-                        key={b.id}
-                        className="calendar-booking-item"
-                        style={{ backgroundColor: getResourceColor(b) }}
-                        title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
-                      >
-                        <span className="booking-title">{getBookingDisplayText(b)}</span>
-                        {isCustomer && contract && contract.service_type === 'pacchetto' && (
-                          <span className="booking-entries-badge">
-                            {(contract.service_max_entries - contract.entries_used)} {t('bookings.left')}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {dayBookings.length > 3 && (
-                    <div className="calendar-more-bookings">
-                      +{dayBookings.length - 3} {t('bookings.more')}
+                <div className="calendar-day-header">
+                  <div className="calendar-day-number">{day.getDate()}</div>
+                  {closureInfo.hasLocationClosure && (
+                    <div 
+                      className="closure-badge full-closure"
+                      title={`${t('bookings.locationClosed')}: ${closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}`}
+                    >
+                      🚫
+                    </div>
+                  )}
+                  {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
+                    <div 
+                      className="closure-badge partial-closure"
+                      title={`${closureInfo.partialClosureCount} ${t('bookings.resourcesClosed')}`}
+                    >
+                      ⚠️{closureInfo.partialClosureCount}
                     </div>
                   )}
                 </div>
+                
+                {closureInfo.hasLocationClosure && (
+                  <div className="closure-overlay">
+                    <div className="closure-message">
+                      {closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}
+                    </div>
+                  </div>
+                )}
+                
+                {!closureInfo.hasLocationClosure && (
+                  <div className="calendar-day-bookings">
+                    {dayBookings.slice(0, 3).map(b => {
+                      const contract = getContractForBooking(b);
+                      return (
+                        <div
+                          key={b.id}
+                          className="calendar-booking-item"
+                          style={{ backgroundColor: getResourceColor(b) }}
+                          title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                        >
+                          <span className="booking-title">{getBookingDisplayText(b)}</span>
+                          {isCustomer && contract && contract.service_type === 'pacchetto' && (
+                            <span className="booking-entries-badge">
+                              {(contract.service_max_entries - contract.entries_used)} {t('bookings.left')}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {dayBookings.length > 3 && (
+                      <div className="calendar-more-bookings">
+                        +{dayBookings.length - 3} {t('bookings.more')}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -545,12 +680,25 @@ const Bookings = () => {
           {weekDays.map((day, idx) => {
             const isToday = formatDate(day) === formatDate(new Date());
             const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
+            const dayClosures = getClosuresForDate(day);
+            const closureInfo = categorizeClosures(dayClosures);
+            
             return (
-              <div key={idx} className={`calendar-week-day-header ${isToday ? 'today' : ''}`}>
+              <div key={idx} className={`calendar-week-day-header ${isToday ? 'today' : ''} ${closureInfo.hasLocationClosure ? 'has-closure' : ''}`}>
                 <div className="week-day-name">
                   {day.toLocaleDateString(locale, { weekday: 'short' })}
                 </div>
                 <div className="week-day-number">{day.getDate()}</div>
+                {closureInfo.hasLocationClosure && (
+                  <div className="week-closure-indicator" title={t('bookings.locationClosed')}>
+                    🚫
+                  </div>
+                )}
+                {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
+                  <div className="week-closure-indicator partial" title={`${closureInfo.partialClosureCount} ${t('bookings.resourcesClosed')}`}>
+                    ⚠️
+                  </div>
+                )}
               </div>
             );
           })}
@@ -559,33 +707,42 @@ const Bookings = () => {
           {weekDays.map((day, idx) => {
             const isToday = formatDate(day) === formatDate(new Date());
             const dayBookings = getBookingsForDate(day);
+            const dayClosures = getClosuresForDate(day);
+            const closureInfo = categorizeClosures(dayClosures);
+            
             return (
               <div 
                 key={idx} 
-                className={`calendar-week-day ${isToday ? 'today' : ''}`}
+                className={`calendar-week-day ${isToday ? 'today' : ''} ${closureInfo.hasLocationClosure ? 'location-closed' : ''}`}
                 onClick={() => { setCurrentDate(new Date(day)); setViewType('day'); }}
               >
-                <div className="week-day-bookings">
-                  {dayBookings.map(b => {
-                    const contract = getContractForBooking(b);
-                    return (
-                      <div
-                        key={b.id}
-                        className="week-booking-item"
-                        style={{ backgroundColor: getResourceColor(b) }}
-                        title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
-                      >
-                        <div className="week-booking-title">{getBookingDisplayText(b)}</div>
-                        <div className="week-booking-resource">{b.location_resources?.resource_name}</div>
-                        {isCustomer && contract && contract.service_type === 'pacchetto' && (
-                          <div className="week-booking-entries">
-                            {(contract.service_max_entries - contract.entries_used)} {t('bookings.entriesLeft')}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                {closureInfo.hasLocationClosure ? (
+                  <div className="week-closure-message">
+                    {closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}
+                  </div>
+                ) : (
+                  <div className="week-day-bookings">
+                    {dayBookings.map(b => {
+                      const contract = getContractForBooking(b);
+                      return (
+                        <div
+                          key={b.id}
+                          className="week-booking-item"
+                          style={{ backgroundColor: getResourceColor(b) }}
+                          title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                        >
+                          <div className="week-booking-title">{getBookingDisplayText(b)}</div>
+                          <div className="week-booking-resource">{b.location_resources?.resource_name}</div>
+                          {isCustomer && contract && contract.service_type === 'pacchetto' && (
+                            <div className="week-booking-entries">
+                              {(contract.service_max_entries - contract.entries_used)} {t('bookings.entriesLeft')}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -596,6 +753,8 @@ const Bookings = () => {
 
   const renderCustomerDayView = () => {
     const dayBookings = getBookingsForDate(currentDate);
+    const dayClosures = getClosuresForDate(currentDate);
+    const closureInfo = categorizeClosures(dayClosures);
     const subscriptions = dayBookings.filter(b => b.booking_type === 'subscription');
     const packages = dayBookings.filter(b => b.booking_type === 'package');
 
@@ -605,7 +764,45 @@ const Bookings = () => {
           <h2>{formatDisplayDate(currentDate)}</h2>
         </div>
 
-        {dayBookings.length === 0 ? (
+        {/* Closure Alert Banner */}
+        {closureInfo.hasLocationClosure && (
+          <div className="closure-alert location-closure-alert">
+            <div className="closure-alert-icon">🚫</div>
+            <div className="closure-alert-content">
+              <h4>{t('bookings.locationClosedToday')}</h4>
+              <p>{closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}</p>
+              {closureInfo.locationClosure.locations && (
+                <p className="closure-location">📍 {closureInfo.locationClosure.locations.location_name}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
+          <div className="closure-alert partial-closure-alert">
+            <div className="closure-alert-icon">⚠️</div>
+            <div className="closure-alert-content">
+              <h4>{t('bookings.partialClosureToday')}</h4>
+              <div className="closure-list">
+                {closureInfo.allClosures.map((closure, idx) => (
+                  <div key={idx} className="closure-item">
+                    <span className="closure-scope-badge" style={{ backgroundColor: getClosureColor(closure.closure_type) }}>
+                      {closure.closure_scope === 'resource_type' 
+                        ? t(`resources.${closure.resource_type}`)
+                        : closure.location_resources?.resource_name
+                      }
+                    </span>
+                    <span className="closure-reason">
+                      {closure.closure_reason || t(`reservations.closureType.${closure.closure_type}`)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {dayBookings.length === 0 && !closureInfo.hasLocationClosure ? (
           <div className="day-no-bookings">
             <Calendar size={48} className="empty-icon" />
             <p>{t('bookings.noBookingsForDay')}</p>
@@ -827,51 +1024,59 @@ const Bookings = () => {
 
   const renderPartnerDayView = () => {
     const dayBookings = getBookingsForDate(currentDate);
+    const dayClosures = getClosuresForDate(currentDate);
+    const closureInfo = categorizeClosures(dayClosures);
+    
     return (
       <div className="calendar-day-view">
         <div className="day-view-header">
           <h2>{formatDisplayDate(currentDate)}</h2>
           <p>{dayBookings.length} {dayBookings.length === 1 ? t('bookings.booking') : t('bookings.bookings')}</p>
         </div>
-        <div className="day-view-content">
-          {dayBookings.length === 0 ? (
-            <div className="day-no-bookings">
-              <Calendar size={48} className="empty-icon" />
-              <p>{t('bookings.noBookingsForDay')}</p>
+
+        {/* Closure Alert Banner */}
+        {closureInfo.hasLocationClosure && (
+          <div className="closure-alert location-closure-alert">
+            <div className="closure-alert-icon">🚫</div>
+            <div className="closure-alert-content">
+              <h4>{t('bookings.locationClosedToday')}</h4>
+              <p>{closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}</p>
+              {closureInfo.locationClosure.locations && (
+                <p className="closure-location">📍 {closureInfo.locationClosure.locations.location_name}</p>
+              )}
             </div>
-          ) : (
-            <div className="day-bookings-list">
-              {dayBookings.map(b => (
-                <div key={b.id} className="day-booking-card">
-                  <div className="day-booking-header">
-                    <div className="day-booking-color" style={{ backgroundColor: getResourceColor(b) }} />
-                    <div className="day-booking-info">
-                      <h3>{b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`}</h3>
-                      <p>{b.contracts?.contract_number}</p>
-                    </div>
-                    <div className="day-booking-cost">
-                      {new Intl.NumberFormat('it-IT', {
-                        style: 'currency',
-                        currency: b.contracts?.service_currency || 'EUR'
-                      }).format(b.contracts?.service_cost || 0)}
-                    </div>
-                  </div>
-                  <div className="day-booking-details">
-                    <div className="day-booking-service"><strong>{b.contracts?.service_name}</strong></div>
-                    <div className="day-booking-resource">{b.location_resources?.resource_name}</div>
-                    <div className="day-booking-location">📍 {b.location_resources?.locations?.location_name}</div>
-                    <div className="day-booking-period">📅 {b.start_date} - {b.end_date}</div>
-                    {b.duration_type && (
-                      <div className="day-booking-duration">
-                        ⏱ {b.duration_type === 'full_day' ? t('reservations.fullDay') : t('reservations.halfDay')}
-                        {b.duration_type === 'half_day' && b.time_slot ? ` (${b.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})` : ''}
-                      </div>
+          </div>
+        )}
+
+        {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
+          <div className="closure-alert partial-closure-alert">
+            <div className="closure-alert-icon">⚠️</div>
+            <div className="closure-alert-content">
+              <h4>{t('bookings.partialClosureToday')} - {closureInfo.partialClosureCount} {t('bookings.resourcesAffected')}</h4>
+              <div className="closure-list">
+                {closureInfo.allClosures.map((closure, idx) => (
+                  <div key={idx} className="closure-item">
+                    <span className="closure-scope-badge" style={{ backgroundColor: getClosureColor(closure.closure_type) }}>
+                      {closure.closure_scope === 'resource_type' 
+                        ? t(`resources.${closure.resource_type}`)
+                        : closure.location_resources?.resource_name
+                      }
+                    </span>
+                    <span className="closure-reason">
+                      {closure.closure_reason || t(`reservations.closureType.${closure.closure_type}`)}
+                    </span>
+                    {closure.locations && (
+                      <span className="closure-location">@ {closure.locations.location_name}</span>
                     )}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          )}
+          </div>
+        )}
+        
+        <div className="day-view-content">
+          {/* Rest of existing renderPartnerDayView content */}
         </div>
       </div>
     );

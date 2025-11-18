@@ -120,9 +120,10 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     // Fetch partner data for email settings
     const { data: partnerData, error: partnerError } = await supabase
       .from('partners')
-      .select('company_name, email')
+      .select('company_name, structure_name, first_name, second_name, email')
       .eq('partner_uuid', invitationData.partner_uuid)
       .single();
+
 
     if (partnerError || !partnerData) {
       console.error('Error fetching partner data:', partnerError);
@@ -156,7 +157,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     }
 
     // Replace variables with actual data
-    const partnerName = partnerData.company_name || 
+    const partnerName = partnerData.structure_name || partnerData.company_name || 
                        invitationData.partners?.company_name ||
                        (invitationData.partners?.first_name && invitationData.partners?.second_name 
                          ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
@@ -164,10 +165,16 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     
     // Replace variables in subject
     emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+    emailSubject = emailSubject.replace(/\{\{structure_name\}\}/g, partnerData.structure_name || '');
+    emailSubject = emailSubject.replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || '');
+    emailSubject = emailSubject.replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || '');
     emailSubject = emailSubject.replace(/\{\{invitation_link\}\}/g, invitationLink);
     
     // Replace variables in body
     bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+    bodyHtml = bodyHtml.replace(/\{\{structure_name\}\}/g, partnerData.structure_name || '');
+    bodyHtml = bodyHtml.replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || '');
+    bodyHtml = bodyHtml.replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || '');
     bodyHtml = bodyHtml.replace(/\{\{invitation_link\}\}/g, invitationLink);
     bodyHtml = bodyHtml.replace(/\{\{custom_message\}\}/g, invitationData.custom_message || '');
 
@@ -189,7 +196,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     // Send using unique template with partner email settings
     const payload = {
       app_id: this.appId,
-      email_from_name: partnerData.company_name || partnerName,
+      email_from_name: partnerData.structure_name || partnerData.company_name || partnerName,
       email_subject: emailSubject,
       email_from_address: "info@tuttoapposto.info",
       email_reply_to_address: "noreply@proton.me",
@@ -248,7 +255,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       if (!partnerData) {
         const { data: fetchedPartnerData, error: partnerError } = await supabase
           .from('partners')
-          .select('company_name, email')
+          .select('company_name, structure_name, first_name, second_name, email')
           .eq('partner_uuid', contractData.partner_uuid)
           .single();
 
@@ -324,14 +331,6 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       const serviceName = bookingData.contracts?.service_name || contractData.service_name || '';
       const partnerName = partnerData.company_name || 'PowerCowo';
 
-      // Replace variables in subject
-      emailSubject = emailSubject.replace(/\{\{service_name\}\}/g, serviceName);
-      emailSubject = emailSubject.replace(/\{\{contract_number\}\}/g, contractNumber);
-      emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
-      emailSubject = emailSubject.replace(/\{\{customer_name\}\}/g, customerName);
-
-      console.log('✅ Email subject:', emailSubject);
-
       // Format booking date
       const bookingDate = new Date(bookingData.reservation_date).toLocaleDateString('it-IT', {
         weekday: 'long',
@@ -339,6 +338,20 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         month: 'long',
         day: 'numeric'
       });
+
+      // Replace variables in subject
+      emailSubject = emailSubject.replace(/\{\{service_name\}\}/g, serviceName);
+      emailSubject = emailSubject.replace(/\{\{contract_number\}\}/g, contractNumber);
+      emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+      emailSubject = emailSubject.replace(/\{\{structure_name\}\}/g, partnerData?.structure_name || '');
+      emailSubject = emailSubject.replace(/\{\{partner_firstname\}\}/g, partnerData?.first_name || '');
+      emailSubject = emailSubject.replace(/\{\{partner_lastname\}\}/g, partnerData?.second_name || '');
+      emailSubject = emailSubject.replace(/\{\{customer_name\}\}/g, customerName);
+      emailSubject = emailSubject.replace(/\{\{booking_date\}\}/g, bookingDate);
+
+      console.log('✅ Email subject:', emailSubject);
+
+
 
       // Get resource info
       const resourceName = bookingData.location_resources?.resource_name 
@@ -387,6 +400,9 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
       // Replace ALL possible variable names in template
       bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+      bodyHtml = bodyHtml.replace(/\{\{structure_name\}\}/g, partnerData?.structure_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_firstname\}\}/g, partnerData?.first_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_lastname\}\}/g, partnerData?.second_name || '');
       bodyHtml = bodyHtml.replace(/\{\{customer_name\}\}/g, customerName);
       bodyHtml = bodyHtml.replace(/\{\{booking_date\}\}/g, bookingDate);
       bodyHtml = bodyHtml.replace(/\{\{resource\}\}/g, resourceName);
@@ -418,7 +434,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       // Send email using unique template
       const payload = {
         app_id: this.appId,
-        email_from_name: partnerName,
+        email_from_name: partnerData.structure_name || partnerName,
         email_subject: emailSubject,
         email_from_address: "info@tuttoapposto.info",
         email_reply_to_address: "noreply@proton.me",
@@ -633,7 +649,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
    * @param {string} bodyHtml - HTML body content
    * @returns {Promise<boolean>} - Success status
    */
-  async sendTestEmail(recipientEmail, bannerUrl, bodyHtml) {
+  async sendTestEmail(recipientEmail, bannerUrl, bodyHtml, subject = 'Template Preview') {
     if (!this.isConfigured || !this.uniqueTemplateId) {
       console.error('OneSignal unique template not configured');
       console.log('Config check:', {
@@ -649,7 +665,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       const payload = {
         app_id: this.appId,
         email_from_name: "PowerCowo",
-        email_subject: "Test Email - Template Preview",
+        email_subject: `[TEST] ${subject}`,
         email_from_address: "info@tuttoapposto.info",
         email_reply_to_address: "noreply@proton.me",
         template_id: this.uniqueTemplateId,
