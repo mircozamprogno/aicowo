@@ -186,13 +186,20 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     },
     
     customer_booking_confirmation: {
-      subject: 'Conferma prenotazione del {{booking_date}}',
-      body: `<h2><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-weight: normal;">Gentile {{customer_name}},&nbsp;<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem; font-weight: normal;">la tua prenotazione è confermata:</span></h2>
+      subject: 'Prenotazione Confermata - {{service_name}}',
+      body: `<h2>La Tua Prenotazione è Confermata!</h2>
+<p>Ciao {{customer_name}},</p>
+<p>Ottima notizia! La tua prenotazione è stata confermata con successo.</p>
+<h3>Dettagli Prenotazione:</h3>
 <ul>
-  <li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Data:</strong><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{booking_date}}</span></li>
-  <li><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"><b>Durata:&nbsp;</b>{{duration_display}}<br></span></li><li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Accessi rimanenti:</strong>
-        <span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{remaining_count}}</span></li></ul>
-        <p><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"><br></span></p><p><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_firstname}},</span></p><p>{{structure_name}}<br></p>`,
+  <li><strong>Servizio:</strong> {{service_name}}</li>
+  <li><strong>Data:</strong> {{booking_date}}</li>
+  <li><strong>Risorsa:</strong> {{resource}}</li>
+  <li><strong>Ingressi Rimanenti:</strong> {{remaining_count}}</li>
+</ul>
+<p>Non vediamo l'ora di vederti!</p>
+<p>Se hai bisogno di modifiche o hai domande, non esitare a contattarci.</p>
+<p>Cordiali saluti,<br>Il Tuo Team Workspace</p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Nome azienda' },
         { name: '{{structure_name}}', description: 'Nome struttura' },
