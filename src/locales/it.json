@@ -357,7 +357,7 @@
     "invalidInvitation": "Invito Non Valido",
     "invalidInvitationMessage": "Questo link di invito non è valido o è scaduto. Contatta il tuo amministratore per un nuovo invito.",
     "invitedAsPartnerAdmin": "Sei stato invitato a diventare amministratore per {{partnerName}}",
-    "invitedAsUser": "Sei stato invitato a unirti a {{partnerName}} come utente",
+    "invitedAsUser": "Sei stato invitato a unirti a {{partnerName}}",
     "setNewPassword": "Imposta Nuova Password",
     "setNewPasswordInstructions": "Inserisci la tua nuova password qui sotto.",
     "newPassword": "Nuova Password",

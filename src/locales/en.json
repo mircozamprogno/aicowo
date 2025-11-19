@@ -357,7 +357,7 @@
     "invalidInvitation": "Invalid Invitation",
     "invalidInvitationMessage": "This invitation link is invalid or has expired. Please contact your administrator for a new invitation.",
     "invitedAsPartnerAdmin": "You've been invited to become an administrator for {{partnerName}}",
-    "invitedAsUser": "You've been invited to join {{partnerName}} as a user",
+    "invitedAsUser": "You've been invited to join {{partnerName}}",
     "setNewPassword": "Set New Password",
     "setNewPasswordInstructions": "Please enter your new password below.",
     "newPassword": "New Password",

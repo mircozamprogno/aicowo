@@ -79,7 +79,8 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
           partnerName,
           invitationLink,
           adminName,
-          language
+          language,
+          formData.customMessage // <-- ADD THIS PARAMETER
         );
         
         return success;

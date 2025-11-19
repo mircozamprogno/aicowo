@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2025.11.19 V 0.830 EMail sending Bug Fixes
 2025.11.18 V 0.820 Closure Calendar + Bug Fixes
 2025.11.16 V 0.810 Partner invitation mail
 2025.11.12 V 0.800 mail templates and send invitation

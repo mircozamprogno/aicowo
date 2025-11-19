@@ -14,6 +14,7 @@ const SYSTEM_PARTNER_UUID = '11111111-1111-1111-1111-111111111111';
  * @param {string} invitationLink - Activation link for the partner account
  * @param {string} adminName - Name of the admin sending the invitation
  * @param {string} language - Language code ('en' or 'it'), defaults to 'en'
+ * @param {string} customMessage - Custom message to include in the email
  * @returns {Promise<boolean>} - Returns true if email sent successfully
  */
 export const sendPartnerInvitationEmail = async (
@@ -21,7 +22,8 @@ export const sendPartnerInvitationEmail = async (
   partnerName,
   invitationLink,
   adminName,
-  language = 'en'
+  language = 'en',
+  customMessage = ''
 ) => {
   try {
     // 1. Fetch the customized template (if exists)
@@ -53,7 +55,8 @@ export const sendPartnerInvitationEmail = async (
       '{{partner_name}}': partnerName,
       '{{partner_email}}': partnerEmail,
       '{{invitation_link}}': invitationLink,
-      '{{admin_name}}': adminName
+      '{{admin_name}}': adminName,
+      '{{custom_message}}': customMessage
     };
 
     Object.entries(variables).forEach(([variable, value]) => {
@@ -81,50 +84,34 @@ export const sendPartnerInvitationEmail = async (
       // Continue without banner
     }
 
-    // 5. Send email using OneSignal
-    // The sendTestEmail method sends an email with banner and body
-    // Subject is embedded in the body HTML as a title or we can prepend it
-    
-    // Option 1: Try to use sendTestEmail (used in EmailTemplateEditor)
-    let success = false;
-    
-    if (typeof oneSignalEmailService.sendTestEmail === 'function') {
-      console.log('Sending partner invitation using sendTestEmail method');
-      success = await oneSignalEmailService.sendTestEmail(
-        partnerEmail,
-        bannerUrl,
-        bodyHtml
-      );
-    } 
-    // Option 2: Try to use sendInvitation (used in existing SendInvitationModal)
-    else if (typeof oneSignalEmailService.sendInvitation === 'function') {
-      console.log('Sending partner invitation using sendInvitation method');
-      
-      // Format data similar to how existing invitations work
-      const invitationData = {
-        invited_email: partnerEmail,
-        invited_role: 'admin',
-        partners: {
-          company_name: partnerName
-        }
-      };
-      
-      success = await oneSignalEmailService.sendInvitation(invitationData, invitationLink);
-    }
-    // Option 3: Fallback - log the email details
-    else {
-      console.warn('No suitable OneSignal email method found');
-      console.log('Partner invitation email details:', {
-        to: partnerEmail,
-        subject: subject,
-        bannerUrl: bannerUrl,
-        bodyPreview: bodyHtml.substring(0, 200) + '...',
-        invitationLink: invitationLink
-      });
-      
-      // Return false to indicate email wasn't sent
+    // 5. Send email using OneSignal directly (NOT sendTestEmail which adds [TEST])
+    console.log('Sending partner invitation email');
+
+    const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
+    const apiKey = import.meta.env.VITE_ONESIGNAL_API_KEY;
+    const uniqueTemplateId = import.meta.env.VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID;
+
+    if (!appId || !apiKey || !uniqueTemplateId) {
+      console.error('OneSignal not configured');
       return false;
     }
+
+    const payload = {
+      app_id: appId,
+      email_from_name: "PowerCowo",
+      email_subject: subject,
+      email_from_address: "info@tuttoapposto.info",
+      email_reply_to_address: "noreply@proton.me",
+      template_id: uniqueTemplateId,
+      target_channel: "email",
+      include_email_tokens: [partnerEmail],
+      custom_data: {
+        banner_url: bannerUrl,
+        body_html: bodyHtml
+      }
+    };
+
+    const success = await oneSignalEmailService.sendOneSignalRequest(payload);
 
     if (success) {
       console.log('Partner invitation email sent successfully to:', partnerEmail);
@@ -174,7 +161,8 @@ export const getPartnerInvitationPreview = async (language = 'en') => {
       '{{partner_name}}': 'Demo Coworking Space',
       '{{partner_email}}': 'demo@example.com',
       '{{invitation_link}}': 'https://powercowo.com/activate/sample-token',
-      '{{admin_name}}': 'John Doe'
+      '{{admin_name}}': 'John Doe',
+      '{{custom_message}}': 'We are excited to have you join our platform!'
     };
 
     Object.entries(sampleData).forEach(([variable, value]) => {

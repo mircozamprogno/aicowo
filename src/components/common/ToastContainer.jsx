@@ -1,12 +1,15 @@
+// src/components/common/ToastContainer.jsx
 import { AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+let toastCounter = 0; // Add counter outside component
 
 const ToastContainer = () => {
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
     const handleToast = (event) => {
-      const toast = { id: Date.now(), ...event.detail };
+      const toast = { id: `${Date.now()}-${toastCounter++}`, ...event.detail }; // Use counter
       setToasts(prev => [...prev, toast]);
       setTimeout(() => {
         setToasts(prev => prev.filter(t => t.id !== toast.id));

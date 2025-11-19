@@ -5,21 +5,23 @@
 export const DEFAULT_EMAIL_TEMPLATES = {
   en: {
     customer_invitation: {
-      subject: 'Join {{partner_name}} - Your Invitation',
-      body: `<h2>Welcome!</h2>
-<p>Hi {{customer_name}},</p>
-<p>You've been invited to join <strong>{{partner_name}}</strong>. We're excited to have you as part of our community!</p>
-<p>To complete your registration and access all our services, please click the link below:</p>
-<p><a href="{{invitation_link}}">Complete Registration</a></p>
-{{custom_message}}
-<p>If you have any questions, feel free to reach out to us.</p>
-<p>Best regards,<br>The {{partner_name}} Team</p>`,
+      subject: 'Invito a unirti a {{partner_name}}',
+      body: `<h2><span style="font-size: 14px; font-weight: 400;">Gentile Cliente, 
+      <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
+      <h2><span style="font-size: 14px; font-weight: 400;">{{custom_message}}&nbsp;</span></h2>
+      <h2><span style="font-size: 14px; font-weight: 400;">Per iniziare a utilizzare i nostri spazi, registrati sul portale.</span></h2>
+      <h2><a href="{{invitation_link}}">Completa la registrazione</a></h2>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Lo Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
+      <span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">-&nbsp;</span></p><p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
+      <span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Ricevi questa email perché hai ricevuto un invito da un nostro partner.<br></span>
+      <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp; -&nbsp;</span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span>
+      <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
       variables: [
         { name: '{{partner_name}}', description: 'Your company name' },
         { name: '{{structure_name}}', description: 'Your structure name' },
         { name: '{{partner_firstname}}', description: 'Partner first name' },
         { name: '{{partner_lastname}}', description: 'Partner last name' },
-        { name: '{{customer_name}}', description: "Customer's full name" },
         { name: '{{invitation_link}}', description: 'Registration link' },
         { name: '{{custom_message}}', description: 'Your personal message' }
       ]
@@ -69,6 +71,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{partner_lastname}}', description: 'Partner last name' },
         { name: '{{customer_name}}', description: "Customer's full name" },
         { name: '{{booking_date}}', description: 'Date of booking' },
+        { name: '{{duration_display}}', description: 'Duration' },
         { name: '{{resource}}', description: 'Resource name (desk, meeting room)' },
         { name: '{{remaining_count}}', description: 'Remaining entries' },
         { name: '{{service_name}}', description: 'Service name' }
@@ -138,23 +141,25 @@ export const DEFAULT_EMAIL_TEMPLATES = {
   
   it: {
     customer_invitation: {
-      subject: 'Unisciti a {{partner_name}} - Il Tuo Invito',
-      body: `<h2>Benvenuto!</h2>
-<p>Ciao {{customer_name}},</p>
-<p>Sei stato invitato a unirti a <strong>{{partner_name}}</strong>. Siamo entusiasti di averti come parte della nostra community!</p>
-<p>Per completare la tua registrazione e accedere a tutti i nostri servizi, clicca sul link qui sotto:</p>
-<p><a href="{{invitation_link}}">Completa la Registrazione</a></p>
-{{custom_message}}
-<p>Se hai domande, non esitare a contattarci.</p>
-<p>Cordiali saluti,<br>Il Team di {{partner_name}}</p>`,
+      subject: 'Invito a unirti a {{partner_name}}',
+      body: `<h2><span style="font-size: 14px; font-weight: 400;">Gentile Cliente, 
+      <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
+      <h2><span style="font-size: 14px; font-weight: 400;">{{custom_message}}&nbsp;</span></h2>
+      <h2><span style="font-size: 14px; font-weight: 400;">Per iniziare a utilizzare i nostri spazi, registrati sul portale.</span></h2>
+      <h2><a href="{{invitation_link}}">Completa la registrazione</a></h2>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Lo Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
+      <span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">-&nbsp;</span></p><p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
+      <span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Ricevi questa email perché hai ricevuto un invito da un nostro partner.<br></span>
+      <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp; -&nbsp;</span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span>
+      <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
       variables: [
-        { name: '{{partner_name}}', description: 'Nome della tua azienda' },
-        { name: '{{structure_name}}', description: 'Nome della struttura' },
-        { name: '{{partner_firstname}}', description: 'Nome del partner' },
-        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
-        { name: '{{customer_name}}', description: 'Nome completo del cliente' },
-        { name: '{{invitation_link}}', description: 'Link di registrazione' },
-        { name: '{{custom_message}}', description: 'Il tuo messaggio personale' }
+        { name: '{{partner_name}}', description: 'Your company name' },
+        { name: '{{structure_name}}', description: 'Your structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
+        { name: '{{invitation_link}}', description: 'Registration link' },
+        { name: '{{custom_message}}', description: 'Your personal message' }
       ]
     },
     
@@ -202,6 +207,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{partner_lastname}}', description: 'Cognome del partner' },
         { name: '{{customer_name}}', description: 'Nome completo del cliente' },
         { name: '{{booking_date}}', description: 'Data della prenotazione' },
+        { name: '{{duration_display}}', description: 'Durata' },
         { name: '{{resource}}', description: 'Nome risorsa (scrivania, sala riunioni)' },
         { name: '{{remaining_count}}', description: 'Ingressi rimanenti' },
         { name: '{{service_name}}', description: 'Nome servizio' }

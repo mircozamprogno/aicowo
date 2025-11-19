@@ -252,7 +252,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       console.log('partnerData:', partnerData);
 
       // Fetch partner data if not provided (for FROM name and banner)
-      if (!partnerData) {
+      // if (!partnerData) {
         const { data: fetchedPartnerData, error: partnerError } = await supabase
           .from('partners')
           .select('company_name, structure_name, first_name, second_name, email')
@@ -264,7 +264,12 @@ async sendCustomerInvitation(invitationData, invitationLink) {
           return false;
         }
         partnerData = fetchedPartnerData;
-      }
+      // }
+
+      console.log('=== BOOKING CONFIRMATION DEBUG 2 ===');
+      console.log('bookingData:', bookingData);
+      console.log('contractData:', contractData);
+      console.log('partnerData:', partnerData);
 
       // Fetch custom template from database
       const { data: templateData, error: templateError } = await supabase
@@ -329,7 +334,17 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       // Get contract/service info early for subject
       const contractNumber = bookingData.contracts?.contract_number || contractData.contract_number || '';
       const serviceName = bookingData.contracts?.service_name || contractData.service_name || '';
-      const partnerName = partnerData.company_name || 'PowerCowo';
+
+      console.log('🔍 DEBUG partnerData:', {
+        structure_name: partnerData.structure_name,
+        company_name: partnerData.company_name,
+        structure_name_type: typeof partnerData.structure_name,
+        structure_name_length: partnerData.structure_name?.length
+      });
+
+      const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
+
+      console.log('🔍 DEBUG Final partnerName:', partnerName);
 
       // Format booking date
       const bookingDate = new Date(bookingData.reservation_date).toLocaleDateString('it-IT', {
@@ -374,13 +389,22 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       const durationType = bookingData.duration_type === 'full_day' 
         ? (t('reservations.fullDay') || 'Giornata intera')
         : (t('reservations.halfDay') || 'Mezza giornata');
-      
+
       let timeSlotInfo = '';
       if (bookingData.duration_type === 'half_day' && bookingData.time_slot) {
-        timeSlotInfo = bookingData.time_slot === 'morning' 
-          ? `${t('reservations.morning') || 'Mattina'} (9:00 - 13:00)`
-          : `${t('reservations.afternoon') || 'Pomeriggio'} (14:00 - 18:00)`;
+        const slotLabel = bookingData.time_slot === 'morning' 
+          ? (t('reservations.morning') || 'Mattina')
+          : (t('reservations.afternoon') || 'Pomeriggio');
+        const slotHours = bookingData.time_slot === 'morning' 
+          ? '9:00 - 13:00'
+          : '14:00 - 18:00';
+        timeSlotInfo = `${slotLabel} (${slotHours})`;
       }
+
+      // Create combined duration text for display
+      const durationDisplay = bookingData.duration_type === 'full_day'
+        ? durationType
+        : `${durationType} - ${timeSlotInfo}`;
 
       console.log('=== TEMPLATE VARIABLES ===');
       const templateVars = {
@@ -412,6 +436,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       bodyHtml = bodyHtml.replace(/\{\{service_name\}\}/g, serviceName);
       bodyHtml = bodyHtml.replace(/\{\{duration_type\}\}/g, durationType);
       bodyHtml = bodyHtml.replace(/\{\{time_slot\}\}/g, timeSlotInfo);
+      bodyHtml = bodyHtml.replace(/\{\{duration_display\}\}/g, durationDisplay); // ADD THIS LINE
       bodyHtml = bodyHtml.replace(/\{\{entries_used\}\}/g, entriesUsed.toString());
       bodyHtml = bodyHtml.replace(/\{\{remaining_count\}\}/g, Math.max(0, remainingEntries).toString());
       bodyHtml = bodyHtml.replace(/\{\{remaining_entries\}\}/g, Math.max(0, remainingEntries).toString());
@@ -431,10 +456,13 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         bannerUrl = data.publicUrl;
       }
 
+      console.log('🔍 DEBUG email_from_name:', partnerName);
+
+
       // Send email using unique template
       const payload = {
         app_id: this.appId,
-        email_from_name: partnerData.structure_name || partnerName,
+        email_from_name: partnerName,
         email_subject: emailSubject,
         email_from_address: "info@tuttoapposto.info",
         email_reply_to_address: "noreply@proton.me",

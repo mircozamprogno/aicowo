@@ -1,32 +1,31 @@
-// src/pages/Contracts.jsx
-// Around line 785-850
+// src/services/oneSignalEmailService.js
 
-<div className="contracts-page">
-  <div className="contracts-header">
-    <div className="contracts-header-content">
-      <h1 className="contracts-title">
-        <FileText size={24} className="mr-2" />
-        {t('contracts.title')}
-      </h1>
-      <p className="contracts-description">
-        {isCustomer 
-          ? t('contracts.manageYourContracts')
-          : t('contracts.managePartnerContracts')
-        }
-      </p>
-      <div className="contracts-stats">
-        {/* Stats cards here */}
-      </div>
-    </div>
-    
-    {/* MOVE BUTTONS OUTSIDE contracts-header-content */}
-    {canCreateContracts && (
-      <div className="contracts-header-actions">
-        {/* Buttons here */}
-      </div>
-    )}
-  </div>
-  
-  {/* Filters section */}
-  <ContractsFilter ... />
-</div>
+// Replace the section starting around line 248 (partnerName definition):
+const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
+
+// Replace the section around line 341-347 (duration and time slot):
+// Duration and time slot info
+const durationType = bookingData.duration_type === 'full_day' 
+  ? (t('reservations.fullDay') || 'Giornata intera')
+  : (t('reservations.halfDay') || 'Mezza giornata');
+
+let timeSlotInfo = '';
+if (bookingData.duration_type === 'half_day' && bookingData.time_slot) {
+  const slotLabel = bookingData.time_slot === 'morning' 
+    ? (t('reservations.morning') || 'Mattina')
+    : (t('reservations.afternoon') || 'Pomeriggio');
+  const slotHours = bookingData.time_slot === 'morning' 
+    ? '9:00 - 13:00'
+    : '14:00 - 18:00';
+  timeSlotInfo = `${slotLabel} (${slotHours})`;
+}
+
+// Create combined duration text for display
+const durationDisplay = bookingData.duration_type === 'full_day'
+  ? durationType
+  : `${durationType} - ${timeSlotInfo}`;
+
+// Then around line 367-370, add this replacement:
+bodyHtml = bodyHtml.replace(/\{\{duration_type\}\}/g, durationType);
+bodyHtml = bodyHtml.replace(/\{\{time_slot\}\}/g, timeSlotInfo);
+bodyHtml = bodyHtml.replace(/\{\{duration_display\}\}/g, durationDisplay); // ADD THIS LINE

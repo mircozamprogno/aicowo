@@ -60,7 +60,8 @@ const InvitationRegister = () => {
           partners (
             first_name,
             second_name,
-            company_name
+            company_name,
+            structure_name
           )
         `)
         .eq('invitation_uuid', invitationToken)
@@ -277,9 +278,7 @@ const InvitationRegister = () => {
                       : invitation.partners?.first_name || invitation.partners?.company_name
                   })
                 : t('auth.invitedAsUser', { 
-                    partnerName: invitation.partners?.first_name && invitation.partners?.second_name 
-                      ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
-                      : invitation.partners?.first_name || invitation.partners?.company_name
+                    partnerName: invitation.partners?.structure_name || invitation.partners?.company_name
                   })
               }
             </p>
