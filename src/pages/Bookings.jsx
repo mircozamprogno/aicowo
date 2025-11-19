@@ -6,6 +6,7 @@ import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+import '../styles/pages/bookings.css';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -39,6 +40,10 @@ const Bookings = () => {
   const isSuperAdmin = profile?.role === 'superadmin';
 
   const [closures, setClosures] = useState([]);
+
+  // Booking details modal state
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -330,8 +335,10 @@ const Bookings = () => {
       
       if (viewType === 'month') {
         const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        startDate = new Date(firstDay);  // <-- FIXED: assign to outer variable
+        const dayOfWeek = firstDay.getDay();
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startDate.setDate(startDate.getDate() - daysToSubtract);
         
         const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         endDate = new Date(lastDay);
@@ -582,7 +589,7 @@ const Bookings = () => {
     return (
       <div className="calendar-month">
         <div className="calendar-weekdays">
-          {[t('calendar.sunday'), t('calendar.monday'), t('calendar.tuesday'), t('calendar.wednesday'), t('calendar.thursday'), t('calendar.friday'), t('calendar.saturday')].map(d => (
+          {[t('calendar.monday'), t('calendar.tuesday'), t('calendar.wednesday'), t('calendar.thursday'), t('calendar.friday'), t('calendar.saturday'), t('calendar.sunday')].map(d => (
             <div key={d} className="calendar-weekday">{d}</div>
           ))}
         </div>
@@ -638,6 +645,11 @@ const Bookings = () => {
                           className="calendar-booking-item"
                           style={{ backgroundColor: getResourceColor(b) }}
                           title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBooking(b);
+                            setShowBookingDetails(true);
+                          }}
                         >
                           <span className="booking-title">{getBookingDisplayText(b)}</span>
                           {isCustomer && contract && contract.service_type === 'pacchetto' && (
@@ -665,7 +677,9 @@ const Bookings = () => {
 
   const renderWeekView = () => {
     const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    const dayOfWeek = currentDate.getDay();
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    startOfWeek.setDate(currentDate.getDate() - daysToSubtract);
     
     const weekDays = [];
     for (let i = 0; i < 7; i++) {
@@ -730,6 +744,11 @@ const Bookings = () => {
                           className="week-booking-item"
                           style={{ backgroundColor: getResourceColor(b) }}
                           title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBooking(b);
+                            setShowBookingDetails(true);
+                          }}
                         >
                           <div className="week-booking-title">{getBookingDisplayText(b)}</div>
                           <div className="week-booking-resource">{b.location_resources?.resource_name}</div>
@@ -1227,6 +1246,127 @@ const Bookings = () => {
         onClose={() => setShowPartnerBooking(false)}
         onSuccess={handlePartnerBookingSuccess}
       />
+
+
+
+      {/* Booking Details Modal */}
+      {showBookingDetails && selectedBooking && (
+        <div className="modal-overlay" onClick={() => setShowBookingDetails(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('bookings.bookingDetails')}</h2>
+              <button className="modal-close" onClick={() => setShowBookingDetails(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="booking-detail-section">
+                <h3>{t('bookings.serviceInformation')}</h3>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.serviceName')}:</span>
+                  <span className="detail-value">{selectedBooking.contracts?.service_name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.serviceType')}:</span>
+                  <span className="detail-value">
+                    {selectedBooking.booking_type === 'package' ? t('services.package') : t('services.subscription')}
+                  </span>
+                </div>
+                {selectedBooking.booking_type === 'package' && (
+                  <>
+                    <div className="detail-row">
+                      <span className="detail-label">{t('bookings.duration')}:</span>
+                      <span className="detail-value">
+                        {selectedBooking.duration_type === 'full_day' 
+                          ? t('reservations.fullDay')
+                          : `${t('reservations.halfDay')} (${selectedBooking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`
+                        }
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.contractNumber')}:</span>
+                  <span className="detail-value">{selectedBooking.contracts?.contract_number}</span>
+                </div>
+              </div>
+
+              <div className="booking-detail-section">
+                <h3>{t('bookings.resourceInformation')}</h3>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.resource')}:</span>
+                  <span className="detail-value">{selectedBooking.location_resources?.resource_name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.resourceType')}:</span>
+                  <span className="detail-value">
+                    {selectedBooking.location_resources?.resource_type === 'scrivania' 
+                      ? t('locations.scrivania') 
+                      : t('locations.salaRiunioni')
+                    }
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.location')}:</span>
+                  <span className="detail-value">{selectedBooking.location_resources?.locations?.location_name}</span>
+                </div>
+              </div>
+
+              {!isCustomer && selectedBooking.customers && (
+                <div className="booking-detail-section">
+                  <h3>{t('bookings.customerInformation')}</h3>
+                  <div className="detail-row">
+                    <span className="detail-label">{t('bookings.customer')}:</span>
+                    <span className="detail-value">
+                      {selectedBooking.customers.company_name || `${selectedBooking.customers.first_name} ${selectedBooking.customers.second_name}`}
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">{t('bookings.email')}:</span>
+                    <span className="detail-value">{selectedBooking.customers.email}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="booking-detail-section">
+                <h3>{t('bookings.bookingPeriod')}</h3>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.startDate')}:</span>
+                  <span className="detail-value">
+                    {new Date(selectedBooking.start_date).toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US')}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">{t('bookings.endDate')}:</span>
+                  <span className="detail-value">
+                    {new Date(selectedBooking.end_date).toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US')}
+                  </span>
+                </div>
+              </div>
+
+              {selectedBooking.contracts?.service_cost && (
+                <div className="booking-detail-section">
+                  <h3>{t('bookings.pricing')}</h3>
+                  <div className="detail-row">
+                    <span className="detail-label">{t('bookings.serviceCost')}:</span>
+                    <span className="detail-value">
+                      {new Intl.NumberFormat('it-IT', {
+                        style: 'currency',
+                        currency: selectedBooking.contracts.service_currency || 'EUR'
+                      }).format(selectedBooking.contracts.service_cost)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowBookingDetails(false)}>
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 };

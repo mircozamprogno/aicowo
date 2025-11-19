@@ -1153,7 +1153,21 @@
     "resourcesClosed": "risorse chiuse",
     "locationClosedToday": "Sede Chiusa Oggi",
     "partialClosureToday": "Chiusura Parziale Oggi",
-    "resourcesAffected": "risorse interessate"
+    "resourcesAffected": "risorse interessate",
+    "bookingDetails": "Dettagli Prenotazione",
+    "serviceInformation": "Informazioni Servizio",
+    "serviceName": "Nome Servizio",
+    "serviceType": "Tipo Servizio",
+    "duration": "Durata",
+    "contractNumber": "Numero Contratto",
+    "resourceInformation": "Informazioni Risorsa",
+    "customerInformation": "Informazioni Cliente",
+    "email": "Email",
+    "bookingPeriod": "Periodo Prenotazione",
+    "startDate": "Data Inizio",
+    "endDate": "Data Fine",
+    "pricing": "Prezzi",
+    "serviceCost": "Costo Servizio"
   },
   "calendar": {
     "sunday": "Dom",

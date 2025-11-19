@@ -1150,7 +1150,21 @@
     "resourcesClosed": "resources closed",
     "locationClosedToday": "Location Closed Today",
     "partialClosureToday": "Partial Closure Today",
-    "resourcesAffected": "resources affected"
+    "resourcesAffected": "resources affected",
+    "bookingDetails": "Booking Details",
+    "serviceInformation": "Service Information",
+    "serviceName": "Service Name",
+    "serviceType": "Service Type",
+    "duration": "Duration",
+    "contractNumber": "Contract Number",
+    "resourceInformation": "Resource Information",
+    "customerInformation": "Customer Information",
+    "email": "Email",
+    "bookingPeriod": "Booking Period",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "pricing": "Pricing",
+    "serviceCost": "Service Cost"
   },
   "calendar": {
     "sunday": "Sun",
