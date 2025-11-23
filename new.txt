@@ -1,31 +1,27 @@
-// src/services/oneSignalEmailService.js
+// Add state after line 31
+const [recipientTypeFilter, setRecipientTypeFilter] = useState('all'); // all, partners, customers
 
-// Replace the section starting around line 248 (partnerName definition):
-const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
+// Add filter UI before RecipientSelector (around line 374):
+{isSuperadmin && (
+  <div className="form-field">
+    <label>{t('notifications.recipientType')}</label>
+    <Select
+      value={recipientTypeFilter}
+      onChange={(e) => setRecipientTypeFilter(e.target.value)}
+      options={[
+        { value: 'all', label: t('notifications.allRecipientTypes') },
+        { value: 'partners', label: t('notifications.partnersOnly') },
+        { value: 'customers', label: t('notifications.customersOnly') }
+      ]}
+    />
+  </div>
+)}
 
-// Replace the section around line 341-347 (duration and time slot):
-// Duration and time slot info
-const durationType = bookingData.duration_type === 'full_day' 
-  ? (t('reservations.fullDay') || 'Giornata intera')
-  : (t('reservations.halfDay') || 'Mezza giornata');
-
-let timeSlotInfo = '';
-if (bookingData.duration_type === 'half_day' && bookingData.time_slot) {
-  const slotLabel = bookingData.time_slot === 'morning' 
-    ? (t('reservations.morning') || 'Mattina')
-    : (t('reservations.afternoon') || 'Pomeriggio');
-  const slotHours = bookingData.time_slot === 'morning' 
-    ? '9:00 - 13:00'
-    : '14:00 - 18:00';
-  timeSlotInfo = `${slotLabel} (${slotHours})`;
-}
-
-// Create combined duration text for display
-const durationDisplay = bookingData.duration_type === 'full_day'
-  ? durationType
-  : `${durationType} - ${timeSlotInfo}`;
-
-// Then around line 367-370, add this replacement:
-bodyHtml = bodyHtml.replace(/\{\{duration_type\}\}/g, durationType);
-bodyHtml = bodyHtml.replace(/\{\{time_slot\}\}/g, timeSlotInfo);
-bodyHtml = bodyHtml.replace(/\{\{duration_display\}\}/g, durationDisplay); // ADD THIS LINE
+// Update RecipientSelector call (around line 379):
+<RecipientSelector
+  userRole={profile.role}
+  partnerUuid={profile.partner_uuid}
+  selectedRecipients={selectedRecipients}
+  onRecipientsChange={setSelectedRecipients}
+  recipientTypeFilter={isSuperadmin ? recipientTypeFilter : undefined}
+/>

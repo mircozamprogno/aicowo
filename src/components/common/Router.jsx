@@ -8,6 +8,7 @@ import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
 import LogView from '../../pages/LogView';
+import Notifications from '../../pages/Notifications';
 import PartnerContracts from '../../pages/PartnerContracts';
 import Partners from '../../pages/Partners';
 import PhotoGallery from '../../pages/PhotoGallery';
@@ -251,6 +252,13 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['superadmin']}>
           <SuperAdminEmailTemplates />
+        </ProtectedRoute>
+      ) : <Login />;
+
+    case '/notifications':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user','admin','superadmin']}>
+          <Notifications />
         </ProtectedRoute>
       ) : <Login />;
 

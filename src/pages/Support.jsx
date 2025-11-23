@@ -2,6 +2,8 @@ import { Building, Clock, FileText, HelpCircle, Mail, MapPin, MessageSquare, Pho
 import { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 
+import logger from '../utils/logger';
+
 const Support = () => {
   const { t } = useTranslation();
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -13,7 +15,7 @@ const Support = () => {
       setCopiedEmail(true);
       setTimeout(() => setCopiedEmail(false), 2000);
     } catch (err) {
-      console.error('Failed to copy email:', err);
+      logger.error('Failed to copy email:', err);
     }
   };
 
@@ -23,7 +25,7 @@ const Support = () => {
       setCopiedPhone(true);
       setTimeout(() => setCopiedPhone(false), 2000);
     } catch (err) {
-      console.error('Failed to copy phone:', err);
+      logger.error('Failed to copy phone:', err);
     }
   };
 

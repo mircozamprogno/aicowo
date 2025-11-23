@@ -9,6 +9,8 @@ import { generatePartnerContractPDF } from '../services/partnerContractGenerator
 import { supabase } from '../services/supabase';
 import '../styles/pages/partner-contracts.css';
 
+import logger from '../utils/logger';
+
 const PartnerContracts = () => {
   const [contracts, setContracts] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -77,7 +79,7 @@ const PartnerContracts = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching partner contracts:', error);
+        logger.error('Error fetching partner contracts:', error);
         // Mock data for development
         setContracts([
           {
@@ -152,7 +154,7 @@ const PartnerContracts = () => {
         setContracts(data || []);
       }
     } catch (error) {
-      console.error('Error fetching partner contracts:', error);
+      logger.error('Error fetching partner contracts:', error);
       toast.error(t('messages.errorLoadingPartnerContracts') || 'Error loading partner contracts');
     } finally {
       setLoading(false);
@@ -167,7 +169,7 @@ const PartnerContracts = () => {
         .order('company_name', { ascending: true });
 
       if (error) {
-        console.error('Error fetching partners:', error);
+        logger.error('Error fetching partners:', error);
         // Mock data for development
         setPartners([
           {
@@ -191,7 +193,7 @@ const PartnerContracts = () => {
         setPartners(data || []);
       }
     } catch (error) {
-      console.error('Error fetching partners:', error);
+      logger.error('Error fetching partners:', error);
     }
   };
 
@@ -204,7 +206,7 @@ const PartnerContracts = () => {
         .order('plan_name', { ascending: true });
 
       if (error) {
-        console.error('Error fetching pricing plans:', error);
+        logger.error('Error fetching pricing plans:', error);
         // Mock data for development
         setPricingPlans([
           {
@@ -234,7 +236,7 @@ const PartnerContracts = () => {
         setPricingPlans(data || []);
       }
     } catch (error) {
-      console.error('Error fetching pricing plans:', error);
+      logger.error('Error fetching pricing plans:', error);
     }
   };
 
@@ -247,7 +249,7 @@ const PartnerContracts = () => {
         .order('code', { ascending: true });
 
       if (error) {
-        console.error('Error fetching discount codes:', error);
+        logger.error('Error fetching discount codes:', error);
         // Mock data for development
         setDiscountCodes([
           {
@@ -269,7 +271,7 @@ const PartnerContracts = () => {
         setDiscountCodes(data || []);
       }
     } catch (error) {
-      console.error('Error fetching discount codes:', error);
+      logger.error('Error fetching discount codes:', error);
     }
   };
 
@@ -315,7 +317,7 @@ const PartnerContracts = () => {
         .eq('id', contractToDelete.id);
 
       if (error) {
-        console.error('Error deleting partner contract:', error);
+        logger.error('Error deleting partner contract:', error);
         toast.error(t('messages.errorDeletingPartnerContract') || 'Error deleting partner contract');
         return;
       }
@@ -323,7 +325,7 @@ const PartnerContracts = () => {
       setContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
       toast.success(t('messages.partnerContractDeletedSuccessfully') || 'Partner contract deleted successfully');
     } catch (error) {
-      console.error('Error deleting partner contract:', error);
+      logger.error('Error deleting partner contract:', error);
       toast.error(t('messages.errorDeletingPartnerContract') || 'Error deleting partner contract');
     } finally {
       setShowDeleteConfirm(false);
@@ -439,7 +441,7 @@ const PartnerContracts = () => {
       
       toast.success(t('partnerContracts.pdfGenerated') || 'PDF generato con successo');
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error(t('partnerContracts.pdfError') || 'Errore durante la generazione del PDF');
     } finally {
       setGeneratingPDF(null);

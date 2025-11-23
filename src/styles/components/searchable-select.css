@@ -195,3 +195,11 @@
     color: #dbeafe;
   }
 }
+
+
+/* In your Select component CSS or inline styles */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}

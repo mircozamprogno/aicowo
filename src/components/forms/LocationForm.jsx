@@ -1,3 +1,4 @@
+// src/components/locations/LocationForm.jsx
 import { Calendar, Image, Mail, Map, MapPin, Monitor, Navigation, Phone, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -5,9 +6,12 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { useTourIntegration } from '../../hooks/useTourIntegration';
 import { imageService } from '../../services/imageService';
 import { supabase } from '../../services/supabase';
+import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/activityLogger';
 import ImageUpload from '../common/ImageUpload';
 import { toast } from '../common/ToastContainer';
 import MapSelector from '../maps/MapSelector';
+
+import logger from '../../utils/logger';
 
 const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null }) => {
   const { t } = useTranslation();
@@ -15,7 +19,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const { profile } = useAuth();
   
-  // VAT defaults by country
   const getDefaultVatByCountry = (country) => {
     const vatRates = {
       'Italy': 22.00,
@@ -47,7 +50,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     vat_percentage: 22.00
   });
 
-  // Image states
   const [images, setImages] = useState({
     exterior: [],
     scrivania: [],
@@ -55,13 +57,14 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   });
 
   const [resources, setResources] = useState([]);
+  const [resourcesToDelete, setResourcesToDelete] = useState([]);
+  const [initialResources, setInitialResources] = useState([]);
 
   const [activeTab, setActiveTab] = useState('basic');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   
-  // Add state for delete confirmation modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalInfo, setDeleteModalInfo] = useState({
     index: null,
@@ -72,10 +75,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const { onLocationCreated } = useTourIntegration();
 
-  // Initialize form data when location changes
   useEffect(() => {
     if (location) {
-      // Set form data
       setFormData({
         location_name: location.location_name || '',
         address: location.address || '',
@@ -91,7 +92,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         vat_percentage: location.vat_percentage || getDefaultVatByCountry(location.country || 'Italy')
       });
 
-      // Set resources data
       if (location.resources && location.resources.length > 0) {
         const formattedResources = location.resources.map(resource => ({
           id: resource.id,
@@ -101,20 +101,22 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           description: resource.description || ''
         }));
         setResources(formattedResources);
+        setInitialResources(formattedResources);
       } else {
         if (profile?.role === 'superadmin') {
           setResources([]);
+          setInitialResources([]);
         } else {
           setResources([
             { resource_type: 'scrivania', resource_name: '', quantity: '1', description: '' }
           ]);
+          setInitialResources([]);
         }
       }
 
-      // Load existing images
+      setResourcesToDelete([]);
       loadExistingImages();
     } else {
-      // Reset form for new location with partner defaults
       const defaultCountry = partnerData?.country || 'Italy';
       const defaultFormData = {
         location_name: '',
@@ -144,6 +146,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         scrivania: [],
         sala_riunioni: []
       });
+      setResourcesToDelete([]);
+      setInitialResources([]);
     }
   }, [location, partnerData, profile?.role]);
 
@@ -155,21 +159,20 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       if (result.success) {
         setImages(result.data);
       } else {
-        console.error('Failed to load images:', result.error);
+        logger.error('Failed to load images:', result.error);
       }
     } catch (error) {
-      console.error('Error loading images:', error);
+      logger.error('Error loading images:', error);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Special handling for VAT percentage
     if (name === 'vat_percentage') {
       const numValue = parseFloat(value);
       if (value !== '' && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
-        return; // Don't update if invalid
+        return;
       }
       setFormData(prev => ({
         ...prev,
@@ -178,7 +181,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       return;
     }
     
-    // Special handling for country - update VAT when country changes (only for new locations)
     if (name === 'country' && !isEditing) {
       setFormData(prev => ({
         ...prev,
@@ -188,7 +190,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       return;
     }
     
-    // Standard handling for other fields
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -210,17 +211,14 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }]);
   };
 
-  // NEW: Check if resource can be deleted and handle appropriately
   const handleResourceDelete = async (index) => {
     const resource = resources[index];
     
-    // For new resources (no ID), just remove immediately
     if (!resource.id) {
       removeResource(index);
       return;
     }
 
-    // For existing resources, check for bookings first
     try {
       const { data: bookings, error: bookingCheckError } = await supabase
         .from('package_reservations')
@@ -228,14 +226,13 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         .eq('location_resource_id', resource.id);
 
       if (bookingCheckError) {
-        console.error('Error checking bookings:', bookingCheckError);
+        logger.error('Error checking bookings:', bookingCheckError);
         toast.error('Error checking resource usage. Please try again.');
         return;
       }
 
       const bookingCount = bookings ? bookings.length : 0;
 
-      // Set modal info and show confirmation
       setDeleteModalInfo({
         index: index,
         resourceName: resource.resource_name || 'Unnamed Resource',
@@ -245,31 +242,33 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       setShowDeleteModal(true);
 
     } catch (error) {
-      console.error('Error checking resource bookings:', error);
+      logger.error('Error checking resource bookings:', error);
       toast.error('Error checking resource usage. Please try again.');
     }
   };
 
-  // Handle the actual removal after confirmation
   const confirmResourceDelete = () => {
     if (deleteModalInfo.hasBookings) {
-      // Just close modal - don't delete
       setShowDeleteModal(false);
       return;
     }
     
-    // Safe to delete
     removeResource(deleteModalInfo.index);
     setShowDeleteModal(false);
   };
 
   const removeResource = (index) => {
     if (resources.length > 1) {
+      const resource = resources[index];
+      
+      if (resource.id) {
+        setResourcesToDelete(prev => [...prev, resource.id]);
+      }
+      
       setResources(prev => prev.filter((_, i) => i !== index));
     }
   };
 
-  // Handle image changes for each category
   const handleImagesChange = (category, newImages) => {
     setImages(prev => ({
       ...prev,
@@ -277,31 +276,43 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }));
   };
 
-  // Handle image deletion from storage
   const handleImageDelete = async (image) => {
     if (!image.id) {
       throw new Error('Cannot delete image: missing image ID');
     }
 
     try {
-      console.log('Deleting image:', image.id, image.image_name);
+      logger.log('Deleting image:', image.id, image.image_name);
 
-      // Use imageService to delete the image
       const result = await imageService.deleteLocationImage(image.id);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete image');
       }
 
+      await logActivity({
+        action_category: ACTIVITY_CATEGORIES.LOCATION,
+        action_type: ACTIVITY_ACTIONS.IMAGE_DELETED,
+        entity_id: location?.id,
+        entity_type: 'location',
+        description: `Deleted image from location: ${location?.location_name}`,
+        metadata: {
+          location_id: location?.id,
+          location_name: location?.location_name,
+          image_id: image.id,
+          image_name: image.image_name,
+          image_category: image.image_category
+        }
+      });
+
       toast.success(t('locations.imageDeletedSuccessfully') || 'Image deleted successfully');
     } catch (error) {
-      console.error('Error deleting image:', error);
+      logger.error('Error deleting image:', error);
       toast.error(t('locations.errorDeletingImage') || 'Error deleting image');
-      throw error; // Re-throw to prevent UI update
+      throw error;
     }
   };
 
-  // Handle coordinates change from map
   const handleCoordinatesChange = (lat, lng) => {
     setFormData(prev => ({
       ...prev,
@@ -310,11 +321,10 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }));
   };
 
-  // Geocode address using Nominatim
   const geocodeAddress = async () => {
     const { address, city, postal_code, country } = formData;
     
-    console.log('🗺️ Geocoding request:', { address, city, postal_code, country });
+    logger.log('🗺️ Geocoding request:', { address, city, postal_code, country });
     
     if (!address && !city) {
       toast.error(t('locations.addressOrCityRequired'));
@@ -324,7 +334,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     setGeocoding(true);
     
     try {
-      // Build query string for Nominatim
       const addressComponents = [
         address,
         city,
@@ -335,21 +344,21 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       const query = addressComponents.join(', ');
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=${country === 'Italy' ? 'it' : ''}`;
       
-      console.log('🔍 Query:', query);
-      console.log('🌐 URL:', url);
+      logger.log('🔍 Query:', query);
+      logger.log('🌐 URL:', url);
       
       const response = await fetch(url);
-      console.log('📡 Response status:', response.status);
+      logger.log('📡 Response status:', response.status);
       
       const data = await response.json();
-      console.log('📊 Response data:', data);
+      logger.log('📊 Response data:', data);
       
       if (data && data.length > 0) {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
         
-        console.log('✅ Found coordinates:', { lat, lng });
+        logger.log('✅ Found coordinates:', { lat, lng });
         
         setFormData(prev => ({
           ...prev,
@@ -360,26 +369,27 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         toast.success(t('locations.addressGeocodedSuccessfully'));
         setActiveTab('location');
       } else {
-        console.log('❌ No results found');
+        logger.log('❌ No results found');
         toast.error(t('locations.addressNotFound'));
       }
     } catch (error) {
-      console.error('💥 Geocoding error:', error);
+      logger.error('💥 Geocoding error:', error);
       toast.error(t('locations.geocodingError'));
     } finally {
       setGeocoding(false);
     }
   };
 
-  // Upload images to storage
   const uploadImages = async (locationId) => {
     setUploadingImages(true);
     const uploadPromises = [];
+    let totalNewImages = 0;
 
     for (const [category, categoryImages] of Object.entries(images)) {
       const newImages = categoryImages.filter(img => img.isNew && img.file);
       
       if (newImages.length > 0) {
+        totalNewImages += newImages.length;
         const files = newImages.map(img => img.file);
         uploadPromises.push(
           imageService.uploadLocationImages(files, partnerUuid, locationId, category, {
@@ -392,22 +402,39 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     try {
       const results = await Promise.all(uploadPromises);
       
-      // Check for any failed uploads
       const allResults = results.flat();
       const failed = allResults.filter(r => !r.success);
       
       if (failed.length > 0) {
-        console.error('Some images failed to upload:', failed);
+        logger.error('Some images failed to upload:', failed);
         toast.error(t('locations.someImagesFailedToUpload', { count: failed.length }));
       }
 
       const succeeded = allResults.filter(r => r.success);
       if (succeeded.length > 0) {
+        await logActivity({
+          action_category: ACTIVITY_CATEGORIES.LOCATION,
+          action_type: ACTIVITY_ACTIONS.IMAGES_UPLOADED,
+          entity_id: locationId,
+          entity_type: 'location',
+          description: `Uploaded ${succeeded.length} image(s) to location: ${formData.location_name}`,
+          metadata: {
+            location_id: locationId,
+            location_name: formData.location_name,
+            images_count: succeeded.length,
+            images_by_category: Object.entries(images).reduce((acc, [cat, imgs]) => {
+              const newCount = imgs.filter(img => img.isNew && img.file).length;
+              if (newCount > 0) acc[cat] = newCount;
+              return acc;
+            }, {})
+          }
+        });
+
         toast.success(t('locations.imagesUploadedSuccessfully', { count: succeeded.length }));
       }
 
     } catch (error) {
-      console.error('Error uploading images:', error);
+      logger.error('Error uploading images:', error);
       toast.error(t('locations.errorUploadingImages'));
     } finally {
       setUploadingImages(false);
@@ -420,13 +447,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       return false;
     }
 
-    // Validate email format if provided
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       toast.error(t('messages.invalidEmailFormat'));
       return false;
     }
 
-    // Validate VAT percentage
     if (formData.vat_percentage < 0 || formData.vat_percentage > 100) {
       toast.error(t('messages.invalidVatPercentage'));
       return false;
@@ -434,13 +459,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
     const isSuperAdmin = profile?.role === 'superadmin';
 
-    // For admin users, at least one resource is required
     if (!isSuperAdmin && resources.filter(r => r.resource_name.trim()).length === 0) {
       toast.error('At least one resource is required for partner locations');
       return false;
     }
 
-    // Validate filled resources
     for (let i = 0; i < resources.length; i++) {
       const resource = resources[i];
       if (resource.resource_name.trim()) {
@@ -452,6 +475,24 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }
 
     return true;
+  };
+
+  const getLocationChanges = (original, updated) => {
+    const changes = {};
+    const fields = ['location_name', 'address', 'city', 'postal_code', 'country', 
+                    'phone', 'email', 'description', 'timezone', 'vat_percentage',
+                    'latitude', 'longitude'];
+    
+    fields.forEach(field => {
+      if (original[field] !== updated[field]) {
+        changes[field] = {
+          from: original[field],
+          to: updated[field]
+        };
+      }
+    });
+    
+    return changes;
   };
 
   const handleSubmit = async (e) => {
@@ -467,7 +508,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       let locationData;
       
       if (isEditing) {
-        // Update existing location
+        const locationChanges = getLocationChanges(location, formData);
+        
         const { data: updatedLocation, error: locationError } = await supabase
           .from('locations')
           .update({
@@ -491,22 +533,65 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         if (locationError) throw locationError;
         locationData = updatedLocation;
 
-        // Simple resource management - delete all and re-insert
-        // This works because we've already validated deletions via the modal
-        const { error: deleteResourcesError } = await supabase
-          .from('location_resources')
-          .delete()
-          .eq('location_id', location.id);
+        await logActivity({
+          action_category: ACTIVITY_CATEGORIES.LOCATION,
+          action_type: ACTIVITY_ACTIONS.UPDATED,
+          entity_id: locationData.id,
+          entity_type: 'location',
+          description: `Updated location: ${locationData.location_name}`,
+          metadata: {
+            location_id: locationData.id,
+            location_name: locationData.location_name,
+            changes: locationChanges,
+            has_changes: Object.keys(locationChanges).length > 0
+          }
+        });
 
-        if (deleteResourcesError) {
-          console.error('Error deleting existing resources:', deleteResourcesError);
-          // Continue anyway, might be no existing resources
+        if (resourcesToDelete.length > 0) {
+          logger.log('Deleting resources:', resourcesToDelete);
+          
+          const { data: resourcesToLog } = await supabase
+            .from('location_resources')
+            .select('id, resource_name, resource_type')
+            .in('id', resourcesToDelete);
+          
+          const { error: deleteResourcesError } = await supabase
+            .from('location_resources')
+            .delete()
+            .in('id', resourcesToDelete);
+
+          if (deleteResourcesError) {
+            logger.error('Error deleting resources:', deleteResourcesError);
+            throw new Error('Cannot delete resources with active bookings. Please cancel bookings first.');
+          }
+
+          if (resourcesToLog && resourcesToLog.length > 0) {
+            await logActivity({
+              action_category: ACTIVITY_CATEGORIES.LOCATION,
+              action_type: ACTIVITY_ACTIONS.RESOURCES_DELETED,
+              entity_id: locationData.id,
+              entity_type: 'location',
+              description: `Deleted ${resourcesToLog.length} resource(s) from location: ${locationData.location_name}`,
+              metadata: {
+                location_id: locationData.id,
+                location_name: locationData.location_name,
+                deleted_resources: resourcesToLog.map(r => ({
+                  id: r.id,
+                  name: r.resource_name,
+                  type: r.resource_type
+                }))
+              }
+            });
+          }
         }
 
-        // Insert current resources
+        const newResources = resources.filter(r => !r.id && r.resource_name.trim());
+        const updatedResources = resources.filter(r => r.id && r.resource_name.trim());
+
         const resourcesData = resources
           .filter(resource => resource.resource_name.trim())
           .map(resource => ({
+            id: resource.id || undefined,
             location_id: locationData.id,
             partner_uuid: partnerUuid,
             resource_type: resource.resource_type,
@@ -515,16 +600,69 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             description: resource.description.trim() || null
           }));
 
-        if (resourcesData.length > 0) {
-          const { error: resourcesError } = await supabase
-            .from('location_resources')
-            .insert(resourcesData);
+        for (const resourceData of resourcesData) {
+          if (resourceData.id) {
+            const { error: updateError } = await supabase
+              .from('location_resources')
+              .update({
+                resource_type: resourceData.resource_type,
+                resource_name: resourceData.resource_name,
+                quantity: resourceData.quantity,
+                description: resourceData.description
+              })
+              .eq('id', resourceData.id);
 
-          if (resourcesError) throw resourcesError;
+            if (updateError) throw updateError;
+          } else {
+            delete resourceData.id;
+            const { error: insertError } = await supabase
+              .from('location_resources')
+              .insert([resourceData]);
+
+            if (insertError) throw insertError;
+          }
+        }
+
+        if (newResources.length > 0) {
+          await logActivity({
+            action_category: ACTIVITY_CATEGORIES.LOCATION,
+            action_type: ACTIVITY_ACTIONS.RESOURCES_ADDED,
+            entity_id: locationData.id,
+            entity_type: 'location',
+            description: `Added ${newResources.length} resource(s) to location: ${locationData.location_name}`,
+            metadata: {
+              location_id: locationData.id,
+              location_name: locationData.location_name,
+              added_resources: newResources.map(r => ({
+                name: r.resource_name,
+                type: r.resource_type,
+                quantity: r.quantity
+              }))
+            }
+          });
+        }
+
+        if (updatedResources.length > 0) {
+          await logActivity({
+            action_category: ACTIVITY_CATEGORIES.LOCATION,
+            action_type: ACTIVITY_ACTIONS.RESOURCES_UPDATED,
+            entity_id: locationData.id,
+            entity_type: 'location',
+            description: `Updated ${updatedResources.length} resource(s) in location: ${locationData.location_name}`,
+            metadata: {
+              location_id: locationData.id,
+              location_name: locationData.location_name,
+              updated_resources: updatedResources.map(r => ({
+                id: r.id,
+                name: r.resource_name,
+                type: r.resource_type,
+                quantity: r.quantity
+              }))
+            }
+          });
         }
 
       } else {
-        // Create new location
         const { data: newLocation, error: locationError } = await supabase
           .from('locations')
           .insert([{
@@ -553,7 +691,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           resources: []
         });
 
-        // Insert resources
         const resourcesData = resources
           .filter(resource => resource.resource_name.trim())
           .map(resource => ({
@@ -572,9 +709,29 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
           if (resourcesError) throw resourcesError;
         }
+
+        await logActivity({
+          action_category: ACTIVITY_CATEGORIES.LOCATION,
+          action_type: ACTIVITY_ACTIONS.CREATED,
+          entity_id: locationData.id,
+          entity_type: 'location',
+          description: `Created new location: ${locationData.location_name}`,
+          metadata: {
+            location_id: locationData.id,
+            location_name: locationData.location_name,
+            address: formData.address,
+            city: formData.city,
+            country: formData.country,
+            resources_count: resourcesData.length,
+            resources: resourcesData.map(r => ({
+              name: r.resource_name,
+              type: r.resource_type,
+              quantity: r.quantity
+            }))
+          }
+        });
       }
 
-      // Upload new images
       await uploadImages(locationData.id);
 
       toast.success(
@@ -586,7 +743,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       onSuccess(locationData);
       onClose();
     } catch (error) {
-      console.error('Error saving location:', error);
+      logger.error('Error saving location:', error);
       toast.error(error.message || t('messages.errorSavingLocation'));
     } finally {
       setLoading(false);
@@ -619,7 +776,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   return (
     <div className="locations-modal-backdrop location-form-modal-backdrop">
       <div className="location-form-modal-container">
-        {/* Header */}
         <div className="location-form-header">
           <div className="location-form-header-content">
             <MapPin />
@@ -633,10 +789,8 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         </div>
 
         <form onSubmit={handleSubmit} className="location-form-layout">
-          {/* Left Panel - Location Details */}
           <div className="location-form-sidebar">
             <div className="location-form-sidebar-content">
-              {/* Basic Information */}
               <div className="location-details-section">
                 <h3 className="location-details-header">
                   <MapPin />
@@ -662,7 +816,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               </div>
 
-              {/* Contact Information Summary */}
               <div className="contact-summary">
                 <h4 className="contact-summary-title">
                   <Phone size={16} />
@@ -687,7 +840,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               </div>
 
-              {/* Address Summary */}
               <div className="address-summary">
                 <h4 className="address-summary-title">
                   <MapPin size={16} />
@@ -714,7 +866,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               </div>
 
-              {/* VAT Information Summary */}
               <div className="vat-summary">
                 <h4 className="vat-summary-title">
                   <span className="vat-icon">🧾</span>
@@ -730,7 +881,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               </div>
 
-              {/* Resource Summary */}
               <div className="resource-summary">
                 <h4 className="resource-summary-title">{t('locations.resourcesSummary')}</h4>
                 <div className="resource-summary-list">
@@ -749,7 +899,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               </div>
 
-              {/* Images Summary */}
               <div className="images-summary">
                 <h4 className="images-summary-title">
                   <Image size={16} />
@@ -771,9 +920,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             </div>
           </div>
 
-          {/* Right Panel - Tabbed Content */}
           <div className="location-form-main">
-            {/* Tab Navigation */}
             <div className="form-tabs-nav">
               <button
                 type="button"
@@ -817,9 +964,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
               </button>
             </div>
 
-            {/* Tab Content */}
             <div className="form-tab-content">
-              {/* Basic Information Tab */}
               {activeTab === 'basic' && (
                 <div className="basic-info-tab">
                   <div className="basic-info-content">
@@ -926,7 +1071,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               )}
 
-              {/* Address Tab */}
               {activeTab === 'address' && (
                 <div className="address-tab">
                   <div className="address-content">
@@ -1028,7 +1172,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       </div>
                     </div>
 
-                    {/* Coordinates Display */}
                     {(formData.latitude && formData.longitude) && (
                       <div className="coordinates-section">
                         <h4 className="coordinates-title">
@@ -1048,7 +1191,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       </div>
                     )}
 
-                    {/* Address Tips */}
                     <div className="address-tips">
                       <h4 className="address-tips-title">💡 {t('locations.addressTips')}</h4>
                       <ul className="address-tips-list">
@@ -1062,7 +1204,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               )}
 
-              {/* Map Location Tab */}
               {activeTab === 'location' && (
                 <div className="location-tab">
                   <div className="location-content">
@@ -1085,7 +1226,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               )}
 
-              {/* Resources Tab */}
               {activeTab === 'resources' && (
                 <div className="resources-tab">
                   <div className="resources-content">
@@ -1213,7 +1353,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       ))}
                     </div>
 
-                    {/* Examples section */}
                     <div className="examples-section">
                       <h4 className="examples-title">📋 {t('locations.resourceExamples')}</h4>
                       <div className="examples-grid">
@@ -1245,7 +1384,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </div>
               )}
 
-              {/* Images Tab */}
               {activeTab === 'images' && (
                 <div className="images-tab">
                   <div className="images-content">
@@ -1254,7 +1392,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       {t('locations.locationImages')}
                     </h3>
                     
-                    {/* Image Categories */}
                     <div className="image-categories">
                       {Object.entries(images).map(([category, categoryImages]) => (
                         <div key={category} className="image-category-section">
@@ -1282,7 +1419,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
               )}
             </div>
 
-            {/* Footer Actions */}
             <div className="location-form-footer">
               <button
                 type="button"
@@ -1310,7 +1446,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         </form>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="modal-overlay">
           <div className="delete-confirmation-modal">

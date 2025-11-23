@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/activityLogger';
+import logger from '../../utils/logger';
 import { toast } from '../common/ToastContainer';
 
 const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
@@ -64,7 +66,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       }
     };
 
-    console.log('Sending invitation email:', invitationWithPartner);
+    logger.log('Sending invitation email:', invitationWithPartner);
 
     try {
       // MODIFIED: For superadmin inviting partner admin, use customizable template
@@ -92,8 +94,8 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
         return success;
       }
     } catch (error) {
-      console.error('Error with email service:', error);
-      console.log('Fallback - logging invitation details:', {
+      logger.error('Error with email service:', error);
+      logger.log('Fallback - logging invitation details:', {
         to: invitation.invited_email,
         role: invitation.invited_role,
         partner: partner?.company_name || partner?.first_name,
@@ -139,6 +141,31 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       // Send email
       const emailSent = await sendInvitationEmail(data, invitationLink);
 
+      // Log activity
+      await logActivity({
+        action_category: ACTIVITY_CATEGORIES.USER,
+        action_type: ACTIVITY_ACTIONS.SENT,
+        entity_id: data.id,
+        entity_type: 'invitation',
+        description: isPartnerAdminInvitation
+          ? `Partner admin invitation sent to ${formData.email} for ${partner?.company_name || partner?.first_name}`
+          : `Customer invitation sent to ${formData.email}`,
+        metadata: {
+          invitation_uuid: data.invitation_uuid,
+          invited_email: formData.email,
+          invited_role: targetRole,
+          invited_name: isPartnerAdminInvitation 
+            ? `${formData.firstName} ${formData.lastName}`
+            : null,
+          partner_name: partner?.company_name || `${partner?.first_name} ${partner?.second_name}`,
+          partner_uuid: partner.partner_uuid,
+          email_sent: emailSent,
+          has_custom_message: !!formData.customMessage,
+          expires_at: data.expires_at,
+          invitation_type: isPartnerAdminInvitation ? 'partner_admin' : 'customer'
+        }
+      });
+
       // Show success and close modal
       if (emailSent) {
         toast.success(
@@ -165,7 +192,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       });
 
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      logger.error('Error sending invitation:', error);
       toast.error(error.message || t('messages.errorSendingInvitation'));
     } finally {
       setLoading(false);

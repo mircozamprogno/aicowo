@@ -1,5 +1,5 @@
 // src/components/common/Select.jsx
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import '../../styles/components/searchable-select.css';
@@ -10,7 +10,8 @@ const Select = ({
     options, 
     placeholder = "Select...",
     emptyMessage = "No options available",
-    className = ""
+    className = "",
+    name = "" // Add name prop
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -63,13 +64,8 @@ const Select = ({
     }, [isOpen]);
 
     const handleSelect = (selectedValue) => {
-        onChange({ target: { value: selectedValue } });
+        onChange({ target: { name: name, value: selectedValue } });
         setIsOpen(false);
-    };
-
-    const handleClear = (e) => {
-        e.stopPropagation();
-        onChange({ target: { value: '' } });
     };
 
     const getDisplayValue = () => {
@@ -127,13 +123,6 @@ const Select = ({
                         {getDisplayValue()}
                     </span>
                     <div className="searchable-select-icons">
-                        {value && (
-                            <X 
-                                size={16} 
-                                onClick={handleClear}
-                                className="clear-icon"
-                            />
-                        )}
                         <ChevronDown 
                             size={16} 
                             className={`chevron-icon ${isOpen ? 'rotate' : ''}`}

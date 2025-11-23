@@ -1,7 +1,9 @@
+// src/components/layout/Layout.jsx
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import NotificationBell from '../notifications/NotificationBell';
 import LanguageSwitcher from './LanguageSwitcher';
 import Sidebar from './Sidebar';
 
@@ -12,7 +14,6 @@ const Layout = ({ children, pageTitle }) => {
 
   return (
     <div className="layout">
-      {/* Mobile sidebar */}
       <div className={`mobile-sidebar-overlay ${sidebarOpen ? 'open' : ''}`}>
         <div 
           className="mobile-sidebar-backdrop" 
@@ -23,16 +24,13 @@ const Layout = ({ children, pageTitle }) => {
         </div>
       </div>
 
-      {/* Static sidebar for desktop */}
       <div className="desktop-sidebar">
         <div className="sidebar-container">
           <Sidebar />
         </div>
       </div>
 
-      {/* Main content */}
       <div className="main-content">
-        {/* Top bar */}
         <div className="topbar">
           <button
             className="mobile-menu-btn"
@@ -45,6 +43,7 @@ const Layout = ({ children, pageTitle }) => {
               <h1 className="app-title">{pageTitle ? t(pageTitle) : t('app.appName')}</h1>
             </div>
             <div className="topbar-actions">
+              {profile && <NotificationBell />}
               <LanguageSwitcher />
               <div className="user-info">
                 <span className="user-name">
@@ -55,7 +54,6 @@ const Layout = ({ children, pageTitle }) => {
           </div>
         </div>
 
-        {/* Page content */}
         <main className="page-content">
           <div className="page-container">
             {children}

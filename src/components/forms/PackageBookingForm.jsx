@@ -1,9 +1,13 @@
+// src/components/forms/PackageBookingForm.jsx
 import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
+
+import { logActivity } from '../../utils/activityLogger';
+import logger from '../../utils/logger';
 
 const PackageBookingForm = ({ 
   isOpen, 
@@ -68,7 +72,7 @@ const PackageBookingForm = ({
         .single();
 
       if (serviceError) {
-        console.error('Service error:', serviceError);
+        logger.error('Service error:', serviceError);
         setAvailabilityStatus({ available: false, error: 'Error checking availability' });
         return;
       }
@@ -88,7 +92,7 @@ const PackageBookingForm = ({
         .eq('reservation_status', 'confirmed');
 
       if (reservationsError) {
-        console.error('Reservations error:', reservationsError);
+        logger.error('Reservations error:', reservationsError);
         setAvailabilityStatus({ available: false, error: 'Error checking existing reservations' });
         return;
       }
@@ -138,7 +142,7 @@ const PackageBookingForm = ({
       });
 
     } catch (error) {
-      console.error('Error checking availability:', error);
+      logger.error('Error checking availability:', error);
       setAvailabilityStatus({ available: false, error: 'Unexpected error checking availability' });
     } finally {
       setCheckingAvailability(false);
@@ -218,7 +222,7 @@ const PackageBookingForm = ({
         created_by: user.id
       };
 
-      console.log('Creating reservation with data:', reservationData);
+      logger.log('Creating reservation with data:', reservationData);
 
       const { data, error } = await supabase
         .from('package_reservations')
@@ -235,22 +239,74 @@ const PackageBookingForm = ({
             locations (
               location_name
             )
+          ),
+          customers (
+            first_name,
+            second_name,
+            email,
+            company_name
           )
         `)
         .single();
 
       if (error) {
-        console.error('Reservation creation error:', error);
+        logger.error('Reservation creation error:', error);
         throw new Error(error.message);
       }
 
-      console.log('Reservation created successfully:', data);
+      logger.log('Reservation created successfully:', data);
+
+      // Log activity
+      try {
+        const customerName = data.customers?.company_name || 
+          `${data.customers?.first_name} ${data.customers?.second_name}`;
+        
+        const resourceInfo = `${data.location_resources?.resource_name} (${data.location_resources?.resource_type})`;
+        const locationName = data.location_resources?.locations?.location_name;
+        const durationText = data.duration_type === 'full_day' 
+          ? 'Full Day' 
+          : `Half Day (${data.time_slot})`;
+
+        await logActivity({
+          action_category: 'reservation',
+          action_type: 'created',
+          entity_id: data.id.toString(),
+          entity_type: 'package_reservations',
+          description: `Customer created package reservation for ${resourceInfo} at ${locationName} on ${data.reservation_date}`,
+          metadata: {
+            reservation_id: data.id,
+            contract_number: data.contracts?.contract_number,
+            contract_id: data.contract_id,
+            customer_name: customerName,
+            customer_id: data.customer_id,
+            resource_name: data.location_resources?.resource_name,
+            resource_type: data.location_resources?.resource_type,
+            resource_id: data.location_resource_id,
+            location_name: locationName,
+            location_id: data.location_resources?.locations?.id,
+            reservation_date: data.reservation_date,
+            duration_type: data.duration_type,
+            time_slot: data.time_slot,
+            duration_text: durationText,
+            entries_used: data.entries_used,
+            service_name: data.contracts?.service_name,
+            created_by: 'customer',
+            self_service: true
+          }
+        });
+
+        logger.log('✅ Package reservation activity logged successfully');
+      } catch (logError) {
+        logger.error('Error logging package reservation activity:', logError);
+        // Don't fail the reservation if logging fails
+      }
+
       toast.success(t('reservations.bookingConfirmed'));
       onSuccess(data);
       onClose();
       
     } catch (error) {
-      console.error('Error creating reservation:', error);
+      logger.error('Error creating reservation:', error);
       toast.error('Error creating reservation: ' + error.message);
     } finally {
       setLoading(false);

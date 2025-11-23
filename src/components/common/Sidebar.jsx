@@ -1,4 +1,4 @@
-import { Activity, Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, Users, X } from 'lucide-react';
+import { Activity, BellRing, Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -77,6 +77,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
       { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
+      { name: t('navigation.notifications'), href: '/notifications', icon: BellRing, roles: ['user', 'admin', 'superadmin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
       { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
 

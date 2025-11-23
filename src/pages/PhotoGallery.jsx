@@ -6,6 +6,8 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { imageService } from '../services/imageService';
 import { supabase } from '../services/supabase';
 
+import logger from '../utils/logger';
+
 const PhotoGallery = () => {
   const { t } = useTranslation();
   const { profile } = useAuth();
@@ -95,7 +97,7 @@ const PhotoGallery = () => {
       setImages(allImages);
 
     } catch (err) {
-      console.error('Error fetching gallery data:', err);
+      logger.error('Error fetching gallery data:', err);
       setError(err.message);
       toast.error(t('photoGallery.errorLoadingGallery'));
     } finally {

@@ -6,6 +6,8 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/pages/partner-discount-codes.css';
 
+import logger from '../utils/logger';
+
 const PartnerDiscountCodes = () => {
   const [discountCodes, setDiscountCodes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ const PartnerDiscountCodes = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching discount codes:', error);
+        logger.error('Error fetching discount codes:', error);
         // Mock data for development
         setDiscountCodes([
           {
@@ -83,7 +85,7 @@ const PartnerDiscountCodes = () => {
         setDiscountCodes(data || []);
       }
     } catch (error) {
-      console.error('Error fetching discount codes:', error);
+      logger.error('Error fetching discount codes:', error);
       toast.error(t('messages.errorLoadingDiscountCodes') || 'Error loading discount codes');
     } finally {
       setLoading(false);
@@ -132,7 +134,7 @@ const PartnerDiscountCodes = () => {
         .eq('id', codeToDelete.id);
 
       if (error) {
-        console.error('Error deleting discount code:', error);
+        logger.error('Error deleting discount code:', error);
         toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
         return;
       }
@@ -140,7 +142,7 @@ const PartnerDiscountCodes = () => {
       setDiscountCodes(prev => prev.filter(c => c.id !== codeToDelete.id));
       toast.success(t('messages.discountCodeDeletedSuccessfully') || 'Discount code deleted successfully');
     } catch (error) {
-      console.error('Error deleting discount code:', error);
+      logger.error('Error deleting discount code:', error);
       toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
     } finally {
       setShowDeleteConfirm(false);
@@ -629,7 +631,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
       const { data, error } = result;
 
       if (error) {
-        console.error('Error saving discount code:', error);
+        logger.error('Error saving discount code:', error);
         throw error;
       }
 
@@ -642,7 +644,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
       onSuccess(data);
       onClose();
     } catch (error) {
-      console.error('Error saving discount code:', error);
+      logger.error('Error saving discount code:', error);
       if (error.code === '23505') { // Unique violation
         toast.error(t('discountCodes.codeAlreadyExists') || 'This discount code already exists');
       } else {

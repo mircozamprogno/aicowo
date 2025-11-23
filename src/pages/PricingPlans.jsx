@@ -8,6 +8,8 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/pages/pricing-plans.css';
 
+import logger from '../utils/logger';
+
 const PricingPlans = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const PricingPlans = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching pricing plans:', error);
+        logger.error('Error fetching pricing plans:', error);
         // Mock data for development
         setPlans([
           {
@@ -85,7 +87,7 @@ const PricingPlans = () => {
         setPlans(data || []);
       }
     } catch (error) {
-      console.error('Error fetching pricing plans:', error);
+      logger.error('Error fetching pricing plans:', error);
       toast.error(t('messages.errorLoadingPricingPlans') || 'Error loading pricing plans');
     } finally {
       setLoading(false);
@@ -134,7 +136,7 @@ const PricingPlans = () => {
         .eq('id', planToDelete.id);
 
       if (error) {
-        console.error('Error deleting pricing plan:', error);
+        logger.error('Error deleting pricing plan:', error);
         toast.error(t('messages.errorDeletingPricingPlan') || 'Error deleting pricing plan');
         return;
       }
@@ -142,7 +144,7 @@ const PricingPlans = () => {
       setPlans(prev => prev.filter(p => p.id !== planToDelete.id));
       toast.success(t('messages.pricingPlanDeletedSuccessfully') || 'Pricing plan deleted successfully');
     } catch (error) {
-      console.error('Error deleting pricing plan:', error);
+      logger.error('Error deleting pricing plan:', error);
       toast.error(t('messages.errorDeletingPricingPlan') || 'Error deleting pricing plan');
     } finally {
       setShowDeleteConfirm(false);

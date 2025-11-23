@@ -1,9 +1,13 @@
+// src/components/partners/LocationsList.jsx
 import { AlertTriangle, Calendar, Edit, FileText, MapPin, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/activityLogger';
 import { toast } from '../common/ToastContainer';
 import LocationForm from '../forms/LocationForm';
+
+import logger from '../../utils/logger';
 
 const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
   const { t } = useTranslation();
@@ -12,7 +16,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
   const [showLocationForm, setShowLocationForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   
-  // Enhanced delete confirmation states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [locationToDelete, setLocationToDelete] = useState(null);
   const [deleteValidation, setDeleteValidation] = useState({
@@ -36,15 +39,14 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
 
   const fetchLocations = async () => {
     if (!partner?.partner_uuid) {
-      console.warn('No partner UUID provided');
+      logger.warn('No partner UUID provided');
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching locations for partner:', partner.partner_uuid);
+      logger.log('Fetching locations for partner:', partner.partner_uuid);
       
-      // Fetch locations with their resources
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select(`
@@ -74,17 +76,17 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
         .order('created_at', { ascending: false });
 
       if (locationsError) {
-        console.error('Error fetching locations:', locationsError);
+        logger.error('Error fetching locations:', locationsError);
         toast.error(t('messages.errorLoadingLocations'));
         setLocations([]);
         return;
       }
 
-      console.log('Locations data:', locationsData);
+      logger.log('Locations data:', locationsData);
       setLocations(locationsData || []);
 
     } catch (error) {
-      console.error('Error in fetchLocations:', error);
+      logger.error('Error in fetchLocations:', error);
       toast.error(t('messages.errorLoadingLocations'));
       setLocations([]);
     } finally {
@@ -101,8 +103,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     setEditingLocation(location);
     setShowLocationForm(true);
   };
-
-  // Replace the entire handleDeleteLocation function with this improved version:
 
   const handleDeleteLocation = async (location) => {
     setLocationToDelete(location);
@@ -126,7 +126,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
       let pastBookingCount = 0;
       let imageCount = 0;
 
-      // Check for active contracts - handle gracefully if contracts table doesn't exist or has different structure
       try {
         const { data: activeContracts, error: contractsError } = await supabase
           .from('contracts')
@@ -135,17 +134,14 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
           .in('contract_status', ['active', 'pending']);
 
         if (contractsError) {
-          console.warn('Error checking contracts (this may be expected):', contractsError);
-          // Continue with activeContractCount = 0
+          logger.warn('Error checking contracts (this may be expected):', contractsError);
         } else {
           activeContractCount = activeContracts ? activeContracts.length : 0;
         }
       } catch (contractError) {
-        console.warn('Contracts check failed (continuing):', contractError);
-        // Continue with activeContractCount = 0
+        logger.warn('Contracts check failed (continuing):', contractError);
       }
 
-      // Check for future bookings - handle gracefully
       try {
         const today = new Date().toISOString().split('T')[0];
         const { data: futureBookings, error: futureBookingsError } = await supabase
@@ -155,17 +151,14 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
           .gte('booking_date', today);
 
         if (futureBookingsError) {
-          console.warn('Error checking future bookings (this may be expected):', futureBookingsError);
-          // Continue with futureBookingCount = 0
+          logger.warn('Error checking future bookings (this may be expected):', futureBookingsError);
         } else {
           futureBookingCount = futureBookings ? futureBookings.length : 0;
         }
       } catch (bookingError) {
-        console.warn('Future bookings check failed (continuing):', bookingError);
-        // Continue with futureBookingCount = 0
+        logger.warn('Future bookings check failed (continuing):', bookingError);
       }
 
-      // Check for past bookings - handle gracefully
       try {
         const today = new Date().toISOString().split('T')[0];
         const { data: pastBookings, error: pastBookingsError } = await supabase
@@ -175,17 +168,14 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
           .lt('booking_date', today);
 
         if (pastBookingsError) {
-          console.warn('Error checking past bookings (this may be expected):', pastBookingsError);
-          // Continue with pastBookingCount = 0
+          logger.warn('Error checking past bookings (this may be expected):', pastBookingsError);
         } else {
           pastBookingCount = pastBookings ? pastBookings.length : 0;
         }
       } catch (bookingError) {
-        console.warn('Past bookings check failed (continuing):', bookingError);
-        // Continue with pastBookingCount = 0
+        logger.warn('Past bookings check failed (continuing):', bookingError);
       }
 
-      // Check for location images - handle gracefully
       try {
         const { data: imageFiles, error: imageError } = await supabase.storage
           .from('locations')
@@ -195,23 +185,17 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
           });
 
         if (imageError) {
-          console.warn('Error checking images (this may be expected):', imageError);
-          // Continue with imageCount = 0
+          logger.warn('Error checking images (this may be expected):', imageError);
         } else {
           imageCount = imageFiles ? imageFiles.length : 0;
         }
       } catch (imageError) {
-        console.warn('Images check failed (continuing):', imageError);
-        // Continue with imageCount = 0
+        logger.warn('Images check failed (continuing):', imageError);
       }
 
-      // Count total resources
       const totalResources = location.resources ? location.resources.length : 0;
-
-      // Determine if location can be safely deleted
       const canDelete = activeContractCount === 0 && futureBookingCount === 0;
 
-      // Generate warnings - only for actual issues
       const warnings = [];
       if (activeContractCount > 0) {
         warnings.push(t('locations.deleteWarningActiveContracts', { count: activeContractCount }));
@@ -229,7 +213,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
         warnings.push(t('locations.deleteWarningHistoricalData', { count: pastBookingCount }));
       }
 
-      // Update state with successful validation
       setDeleteValidation({
         loading: false,
         canDelete,
@@ -244,8 +227,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
       });
 
     } catch (error) {
-      // Only show validation error for truly unexpected errors
-      console.error('Unexpected error during validation:', error);
+      logger.error('Unexpected error during validation:', error);
       setDeleteValidation({
         loading: false,
         canDelete: false,
@@ -261,14 +243,30 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     }
   };
 
-
-  // Proceed with deletion after confirmation
   const confirmDeleteLocation = async () => {
     if (!deleteValidation.canDelete) {
-      return; // Should not happen as button is disabled
+      return;
     }
 
     try {
+      // Store location data for logging before deletion
+      const deletedLocationData = {
+        location_id: locationToDelete.id,
+        location_name: locationToDelete.location_name,
+        address: locationToDelete.address,
+        city: locationToDelete.city,
+        country: locationToDelete.country,
+        resources_count: deleteValidation.dependencies.totalResources,
+        images_count: deleteValidation.dependencies.images,
+        past_bookings_count: deleteValidation.dependencies.pastBookings,
+        resources: locationToDelete.resources ? locationToDelete.resources.map(r => ({
+          id: r.id,
+          name: r.resource_name,
+          type: r.resource_type,
+          quantity: r.quantity
+        })) : []
+      };
+
       // Delete location images from storage
       if (deleteValidation.dependencies.images > 0) {
         try {
@@ -277,11 +275,10 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
             .remove([`${partner.partner_uuid}/${locationToDelete.id}`]);
           
           if (storageError) {
-            console.warn('Error deleting location images:', storageError);
-            // Continue with location deletion even if image deletion fails
+            logger.warn('Error deleting location images:', storageError);
           }
         } catch (storageError) {
-          console.warn('Error deleting location images:', storageError);
+          logger.warn('Error deleting location images:', storageError);
         }
       }
 
@@ -292,8 +289,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
         .eq('location_id', locationToDelete.id);
 
       if (resourcesError) {
-        console.error('Error deleting location resources:', resourcesError);
-        // Continue with location deletion
+        logger.error('Error deleting location resources:', resourcesError);
       }
 
       // Delete the location
@@ -304,13 +300,23 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
 
       if (locationError) throw locationError;
 
+      // Log the deletion activity
+      await logActivity({
+        action_category: ACTIVITY_CATEGORIES.LOCATION,
+        action_type: ACTIVITY_ACTIONS.DELETED,
+        entity_id: deletedLocationData.location_id,
+        entity_type: 'location',
+        description: `Deleted location: ${deletedLocationData.location_name}`,
+        metadata: deletedLocationData
+      });
+
       toast.success(t('messages.locationDeletedSuccessfully'));
-      fetchLocations(); // Refresh the list
+      fetchLocations();
       setShowDeleteConfirm(false);
       setLocationToDelete(null);
 
     } catch (error) {
-      console.error('Error deleting location:', error);
+      logger.error('Error deleting location:', error);
       toast.error(t('messages.errorDeletingLocation'));
     }
   };
@@ -321,7 +327,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
   };
 
   const handleLocationFormSuccess = (savedLocation) => {
-    fetchLocations(); // Refresh the list
+    fetchLocations();
   };
 
   const formatLocationAddress = (location) => {
@@ -355,7 +361,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     return summary.join(', ');
   };
 
-  // Don't render anything if not open and not embedded
   if (!isOpen && !embedded) return null;
 
   const content = (
@@ -468,7 +473,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
         </div>
       )}
 
-      {/* Location Form Modal */}
       <LocationForm
         isOpen={showLocationForm}
         onClose={handleLocationFormClose}
@@ -478,7 +482,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
         partnerData={partner}
       />
 
-      {/* Enhanced Delete Confirmation Modal */}
       {showDeleteConfirm && locationToDelete && (
         <div className="modal-overlay">
           <div className="modal-container enhanced-delete-modal">
@@ -505,7 +508,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
             </div>
 
             <div className="enhanced-delete-content">
-              {/* Location Information */}
               <div className="delete-location-info">
                 <div className="delete-location-header">
                   <MapPin size={24} />
@@ -523,7 +525,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                 </div>
               ) : (
                 <>
-                  {/* Dependencies Summary */}
                   <div className="delete-dependencies-summary">
                     <h4>{t('locations.dependenciesFound')}</h4>
                     <div className="dependencies-grid">
@@ -565,7 +566,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                     </div>
                   </div>
 
-                  {/* Warnings */}
                   {deleteValidation.warnings.length > 0 && (
                     <div className="delete-warnings">
                       <h4>
@@ -583,7 +583,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                     </div>
                   )}
 
-                  {/* Action Message */}
                   <div className={`delete-action-message ${deleteValidation.canDelete ? 'warning' : 'error'}`}>
                     {deleteValidation.canDelete ? (
                       <div>
@@ -611,7 +610,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
               )}
             </div>
 
-            {/* Action Buttons */}
             <div className="enhanced-delete-actions">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -636,7 +634,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     </>
   );
 
-  // If embedded, return content directly
   if (embedded) {
     return (
       <div className="locations-embedded">
@@ -645,7 +642,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     );
   }
 
-  // If not embedded, return in modal
   return (
     <div className="locations-modal-backdrop">
       <div className="locations-modal">

@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
+import logger from '../utils/logger';
+
 const Partners = () => {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ const Partners = () => {
   }, []);
 
   const fetchPartners = async () => {
-    console.log('Starting to fetch partners...');
+    logger.log('Starting to fetch partners...');
     try {
       let query = supabase.from('partners').select('*');
       
@@ -35,12 +37,12 @@ const Partners = () => {
       
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      console.log('Supabase response:', { data, error });
+      logger.log('Supabase response:', { data, error });
 
       if (error) {
-        console.error('Supabase error:', error);
+        logger.error('Supabase error:', error);
         // Provide mock data if the table doesn't exist
-        console.log('Using mock data for partners');
+        logger.log('Using mock data for partners');
         setPartners([
           {
             id: 1,
@@ -68,15 +70,15 @@ const Partners = () => {
           }
         ]);
       } else {
-        console.log('Setting real partners data:', data);
+        logger.log('Setting real partners data:', data);
         setPartners(data || []);
       }
     } catch (error) {
-      console.error('Error fetching partners:', error);
+      logger.error('Error fetching partners:', error);
       toast.error(t('messages.errorLoadingPartners'));
       setPartners([]);
     } finally {
-      console.log('Setting loading to false');
+      logger.log('Setting loading to false');
       setLoading(false);
     }
   };

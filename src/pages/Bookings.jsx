@@ -8,6 +8,11 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/pages/bookings.css';
 
+import ConfirmModal from '../components/common/ConfirmModal';
+
+import { logActivity } from '../utils/activityLogger';
+import logger from '../utils/logger';
+
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +49,8 @@ const Bookings = () => {
   // Booking details modal state
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -107,13 +114,13 @@ const Bookings = () => {
 
       setCustomerContracts(contractsData || []);
     } catch (error) {
-      console.error('Error fetching customer contracts:', error);
+      logger.error('Error fetching customer contracts:', error);
     }
   };
 
   const checkAvailablePackages = async () => {
     try {
-      console.log('Checking available packages for user:', user.id);
+      logger.log('Checking available packages for user:', user.id);
       
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
@@ -122,16 +129,16 @@ const Bookings = () => {
         .single();
 
       if (customerError) {
-        console.error('Error fetching customer:', customerError);
+        logger.error('Error fetching customer:', customerError);
         return;
       }
 
       if (!customerData) {
-        console.log('No customer data found for user');
+        logger.log('No customer data found for user');
         return;
       }
 
-      console.log('Customer ID:', customerData.id);
+      logger.log('Customer ID:', customerData.id);
 
       const { data: packageContracts, error } = await supabase
         .from('contracts')
@@ -153,14 +160,14 @@ const Bookings = () => {
         .eq('is_archived', false);
 
       if (error) {
-        console.error('Error fetching package contracts:', error);
+        logger.error('Error fetching package contracts:', error);
         throw error;
       }
 
-      console.log('Package contracts found:', packageContracts);
+      logger.log('Package contracts found:', packageContracts);
 
       if (!packageContracts || packageContracts.length === 0) {
-        console.log('No active package contracts found');
+        logger.log('No active package contracts found');
         setHasAvailablePackages(false);
         return;
       }
@@ -173,7 +180,7 @@ const Bookings = () => {
         const totalReservations = contract.service_max_entries || 0;
         const available = usedReservations < totalReservations;
         
-        console.log(`Contract ${contract.contract_number}:`, {
+        logger.log(`Contract ${contract.contract_number}:`, {
           total: totalReservations,
           used: usedReservations,
           available: available
@@ -182,10 +189,10 @@ const Bookings = () => {
         return available;
       });
 
-      console.log('Has available packages:', hasAvailable);
+      logger.log('Has available packages:', hasAvailable);
       setHasAvailablePackages(hasAvailable);
     } catch (error) {
-      console.error('Error checking available packages:', error);
+      logger.error('Error checking available packages:', error);
       setHasAvailablePackages(false);
     }
   };
@@ -319,7 +326,7 @@ const Bookings = () => {
 
       setBookings(combined);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      logger.error('Error fetching bookings:', error);
       toast.error(t('messages.errorLoadingBookings') || 'Error loading bookings');
       setBookings([]);
     } finally {
@@ -382,7 +389,7 @@ const Bookings = () => {
 
       setClosures(closuresData || []);
     } catch (error) {
-      console.error('Error fetching closures:', error);
+      logger.error('Error fetching closures:', error);
       setClosures([]);
     }
   };
@@ -404,7 +411,7 @@ const Bookings = () => {
       setCustomers(customersData || []);
       setLocations(locationsData || []);
     } catch (error) {
-      console.error('Error fetching filter options:', error);
+      logger.error('Error fetching filter options:', error);
     }
   };
 
@@ -422,8 +429,158 @@ const Bookings = () => {
     setFilteredBookings(filtered);
   };
 
-  const handlePartnerBookingSuccess = (reservation) => {
-    console.log('Booking successful:', reservation);
+  const handlePartnerBookingSuccess = async (reservation) => {
+    logger.log('Booking successful:', reservation);
+    
+    try {
+      // Fetch full reservation details for logging
+      let fullReservation = null;
+      let isPackageReservation = false;
+      
+      // Determine if it's a package reservation or subscription booking
+      if (reservation.duration_type) {
+        // It's a package reservation
+        isPackageReservation = true;
+        const { data, error } = await supabase
+          .from('package_reservations')
+          .select(`
+            *,
+            contracts (
+              contract_number,
+              service_name,
+              service_type
+            ),
+            location_resources (
+              resource_name,
+              resource_type,
+              locations (
+                location_name
+              )
+            ),
+            customers (
+              first_name,
+              second_name,
+              email,
+              company_name
+            )
+          `)
+          .eq('id', reservation.id)
+          .single();
+        
+        if (!error && data) {
+          fullReservation = data;
+        }
+      } else {
+        // It's a subscription booking
+        const { data, error } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            contracts (
+              contract_number,
+              service_name,
+              service_type
+            ),
+            location_resources (
+              resource_name,
+              resource_type,
+              locations (
+                location_name
+              )
+            ),
+            customers (
+              first_name,
+              second_name,
+              email,
+              company_name
+            )
+          `)
+          .eq('id', reservation.id)
+          .single();
+        
+        if (!error && data) {
+          fullReservation = data;
+        }
+      }
+
+      if (fullReservation) {
+        const customerName = fullReservation.customers?.company_name || 
+          `${fullReservation.customers?.first_name} ${fullReservation.customers?.second_name}`;
+        
+        const resourceInfo = `${fullReservation.location_resources?.resource_name} (${fullReservation.location_resources?.resource_type})`;
+        const locationName = fullReservation.location_resources?.locations?.location_name;
+
+        if (isPackageReservation) {
+          // Log package reservation
+          const durationText = fullReservation.duration_type === 'full_day' 
+            ? 'Full Day' 
+            : `Half Day (${fullReservation.time_slot})`;
+          
+          await logActivity({
+            action_category: 'booking',
+            action_type: 'created',
+            entity_id: fullReservation.id.toString(),
+            entity_type: 'package_reservations',
+            description: isCustomer 
+              ? `Customer created package reservation for ${resourceInfo} at ${locationName} on ${fullReservation.reservation_date}`
+              : `Created package reservation for ${customerName} at ${resourceInfo}, ${locationName} on ${fullReservation.reservation_date}`,
+            metadata: {
+              reservation_id: fullReservation.id,
+              contract_number: fullReservation.contracts?.contract_number,
+              contract_id: fullReservation.contract_id,
+              customer_name: customerName,
+              customer_id: fullReservation.customer_id,
+              resource_name: fullReservation.location_resources?.resource_name,
+              resource_type: fullReservation.location_resources?.resource_type,
+              resource_id: fullReservation.resource_id,
+              location_name: locationName,
+              location_id: fullReservation.location_resources?.locations?.id,
+              reservation_date: fullReservation.reservation_date,
+              duration_type: fullReservation.duration_type,
+              time_slot: fullReservation.time_slot,
+              duration_text: durationText,
+              service_name: fullReservation.contracts?.service_name,
+              service_type: fullReservation.contracts?.service_type,
+              created_by: isCustomer ? 'customer' : 'partner',
+              self_service: isCustomer
+            }
+          });
+        } else {
+          // Log subscription booking
+          await logActivity({
+            action_category: 'booking',
+            action_type: 'created',
+            entity_id: fullReservation.id.toString(),
+            entity_type: 'bookings',
+            description: isCustomer 
+              ? `Customer created subscription booking for ${resourceInfo} at ${locationName}`
+              : `Created subscription booking for ${customerName} at ${resourceInfo}, ${locationName}`,
+            metadata: {
+              booking_id: fullReservation.id,
+              contract_number: fullReservation.contracts?.contract_number,
+              contract_id: fullReservation.contract_id,
+              customer_name: customerName,
+              customer_id: fullReservation.customer_id,
+              resource_name: fullReservation.location_resources?.resource_name,
+              resource_type: fullReservation.location_resources?.resource_type,
+              resource_id: fullReservation.resource_id,
+              location_name: locationName,
+              location_id: fullReservation.location_resources?.locations?.id,
+              start_date: fullReservation.start_date,
+              end_date: fullReservation.end_date,
+              service_name: fullReservation.contracts?.service_name,
+              service_type: fullReservation.contracts?.service_type,
+              created_by: isCustomer ? 'customer' : 'partner',
+              self_service: isCustomer
+            }
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('Error logging booking activity:', error);
+      // Don't fail the booking if logging fails
+    }
+
     fetchBookings();
     if (isCustomer) {
       checkAvailablePackages();
@@ -431,6 +588,183 @@ const Bookings = () => {
     }
     setShowPartnerBooking(false);
     toast.success(isCustomer ? 'Reservation created successfully' : 'Booking created successfully for customer');
+  };
+
+
+
+  const handleDeleteBooking = async () => {
+    if (!selectedBooking) return;
+
+    const isPackage = selectedBooking.booking_type === 'package';
+    const bookingId = isPackage ? selectedBooking.id.replace('pkg-', '') : selectedBooking.id;
+
+    try {
+      setLoading(true);
+
+      if (isPackage) {
+        // Handle package reservation deletion
+        const { data: packageData, error: fetchError } = await supabase
+          .from('package_reservations')
+          .select(`
+            *,
+            contracts(id, entries_used, customer_id, contract_number, service_name),
+            location_resources(
+              resource_name,
+              resource_type,
+              locations(id, location_name)
+            ),
+            customers(first_name, second_name, email, company_name)
+          `)
+          .eq('id', bookingId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // Soft delete the package reservation
+        const { error: deleteError } = await supabase
+          .from('package_reservations')
+          .update({ 
+            is_archived: true,
+            reservation_status: 'cancelled'
+          })
+          .eq('id', bookingId);
+
+        if (deleteError) throw deleteError;
+
+        // Restore the entry count in the contract
+        const { error: contractError } = await supabase
+          .from('contracts')
+          .update({ 
+            entries_used: Math.max(0, (packageData.contracts.entries_used || 0) - 1)
+          })
+          .eq('id', packageData.contract_id);
+
+        if (contractError) throw contractError;
+
+        // Log activity
+        const customerName = packageData.customers?.company_name || 
+          `${packageData.customers?.first_name} ${packageData.customers?.second_name}`;
+        
+        try {
+          await logActivity({
+            // partner_uuid: profile.partner_uuid, // ADD THIS
+            action_category: 'booking',
+            action_type: 'deleted',
+            entity_type: 'package_reservations',
+            entity_id: parseInt(bookingId),
+            description: isCustomer 
+              ? `Customer deleted package reservation for ${packageData.location_resources?.resource_name}`
+              : `Deleted package reservation for ${customerName} at ${packageData.location_resources?.resource_name}`,
+            metadata: {
+              reservation_id: parseInt(bookingId),
+              contract_id: packageData.contract_id,
+              contract_number: packageData.contracts?.contract_number,
+              service_name: packageData.contracts?.service_name,
+              customer_name: customerName,
+              customer_id: packageData.customer_id,
+              resource_name: packageData.location_resources?.resource_name,
+              resource_type: packageData.location_resources?.resource_type,
+              resource_id: packageData.resource_id,
+              location_name: packageData.location_resources?.locations?.location_name,
+              location_id: packageData.location_resources?.locations?.id,
+              reservation_date: packageData.reservation_date,
+              duration_type: packageData.duration_type,
+              time_slot: packageData.time_slot,
+              deleted_by: isCustomer ? 'customer' : 'partner'
+            }
+          });
+        } catch (logError) {
+          logger.error('Error logging package deletion activity:', logError);
+          // Don't fail the deletion if logging fails
+        }
+
+        toast.success(t('bookings.packageReservationDeleted'));
+      } else {
+        // Handle subscription booking deletion
+        const { data: bookingData, error: fetchError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            contracts(id, customer_id, contract_number, service_name),
+            location_resources(
+              resource_name,
+              resource_type,
+              locations(id, location_name)
+            ),
+            customers(first_name, second_name, email, company_name)
+          `)
+          .eq('id', bookingId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // Soft delete the booking
+        const { error: deleteError } = await supabase
+          .from('bookings')
+          .update({ 
+            is_archived: true,
+            booking_status: 'cancelled'
+          })
+          .eq('id', bookingId);
+
+        if (deleteError) throw deleteError;
+
+        // Log activity
+        const customerName = bookingData.customers?.company_name || 
+          `${bookingData.customers?.first_name} ${bookingData.customers?.second_name}`;
+        
+        try {
+          await logActivity({
+            // partner_uuid: profile.partner_uuid, // ADD THIS
+            action_category: 'booking',
+            action_type: 'deleted',
+            entity_type: 'bookings',
+            entity_id: parseInt(bookingId),
+            description: isCustomer 
+              ? `Customer deleted subscription booking for ${bookingData.location_resources?.resource_name}`
+              : `Deleted subscription booking for ${customerName} at ${bookingData.location_resources?.resource_name}`,
+            metadata: {
+              booking_id: parseInt(bookingId),
+              contract_id: bookingData.contract_id,
+              contract_number: bookingData.contracts?.contract_number,
+              service_name: bookingData.contracts?.service_name,
+              customer_name: customerName,
+              customer_id: bookingData.customer_id,
+              resource_name: bookingData.location_resources?.resource_name,
+              resource_type: bookingData.location_resources?.resource_type,
+              resource_id: bookingData.resource_id,
+              location_name: bookingData.location_resources?.locations?.location_name,
+              location_id: bookingData.location_resources?.locations?.id,
+              start_date: bookingData.start_date,
+              end_date: bookingData.end_date,
+              deleted_by: isCustomer ? 'customer' : 'partner'
+            }
+          });
+        } catch (logError) {
+          logger.error('Error logging booking deletion activity:', logError);
+          // Don't fail the deletion if logging fails
+        }
+
+        toast.success(t('bookings.subscriptionBookingDeleted'));
+      }
+
+      // Refresh data
+      await fetchBookings();
+      if (isCustomer) {
+        await checkAvailablePackages();
+        await fetchCustomerContracts();
+      }
+
+      // Close modal
+      setShowBookingDetails(false);
+      setSelectedBooking(null);
+
+    } catch (error) {
+      logger.error('Error deleting booking:', error);
+      toast.error(t('bookings.errorDeletingBooking'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (date) => {
@@ -1358,13 +1692,42 @@ const Bookings = () => {
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowBookingDetails(false)}>
+              <button 
+                className="btn-danger" 
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={loading}
+              >
+                {t('bookings.deleteBooking')}
+              </button>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowBookingDetails(false)}
+                disabled={loading}
+              >
                 {t('common.close')}
               </button>
             </div>
+
+
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteBooking}
+        title={t('bookings.deleteBookingTitle')}
+        message={
+          selectedBooking?.booking_type === 'package'
+            ? t('bookings.confirmDeletePackageReservation')
+            : t('bookings.confirmDeleteSubscriptionBooking')
+        }
+        confirmText={t('bookings.confirmDelete')}
+        cancelText={t('common.cancel')}
+        isDestructive={true}
+      />
 
 
     </div>

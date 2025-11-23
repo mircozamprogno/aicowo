@@ -1,6 +1,7 @@
 // src/pages/LogView.jsx
 import { Calendar, ChevronLeft, ChevronRight, Eye, FileText, Filter, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -22,7 +23,7 @@ const LogView = () => {
   });
   const [pagination, setPagination] = useState({
     currentPage: 1,
-    pageSize: 20,
+    pageSize: 10,
     totalCount: 0,
     totalPages: 0
   });
@@ -64,6 +65,30 @@ const LogView = () => {
     'deactivate'
   ];
 
+  const rowsPerPageOptions = [10, 20, 50, 100];
+
+  // Get category options for Select component
+  const getCategoryOptions = () => {
+    return [
+      { value: '', label: t('logs.allCategories') },
+      ...actionCategories.map(cat => ({
+        value: cat,
+        label: t(`logs.categories.${cat}`)
+      }))
+    ];
+  };
+
+  // Get action type options for Select component
+  const getActionTypeOptions = () => {
+    return [
+      { value: '', label: t('logs.allActions') },
+      ...actionTypes.map(action => ({
+        value: action,
+        label: t(`logs.actions.${action}`)
+      }))
+    ];
+  };
+
   useEffect(() => {
     if (profile) {
       if (isSuperAdmin) {
@@ -78,7 +103,7 @@ const LogView = () => {
     if (selectedPartner) {
       fetchLogs();
     }
-  }, [selectedPartner, filters, pagination.currentPage]);
+  }, [selectedPartner, filters, pagination.currentPage, pagination.pageSize]);
 
   const fetchPartners = async () => {
     try {
@@ -192,6 +217,14 @@ const LogView = () => {
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, currentPage: newPage }));
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPagination(prev => ({ 
+      ...prev, 
+      pageSize: newPageSize,
+      currentPage: 1 // Reset to first page when changing page size
+    }));
   };
 
   const handleViewDetails = (log) => {
@@ -362,51 +395,78 @@ const LogView = () => {
                 <label className="filter-label">
                   {t('logs.category')}
                 </label>
-                <select
-                  className="filter-select"
+                <Select
+                  name="category"
                   value={filters.category}
                   onChange={(e) => handleFilterChange('category', e.target.value)}
-                >
-                  <option value="">{t('logs.allCategories')}</option>
-                  {actionCategories.map(cat => (
-                    <option key={cat} value={cat}>
-                      {t(`logs.categories.${cat}`)}
-                    </option>
-                  ))}
-                </select>
+                  options={getCategoryOptions()}
+                  placeholder={t('logs.allCategories')}
+                  emptyMessage={t('logs.noCategories')}
+                />
               </div>
 
               <div className="filter-group">
                 <label className="filter-label">
                   {t('logs.actionType')}
                 </label>
-                <select
-                  className="filter-select"
+                <Select
+                  name="actionType"
                   value={filters.actionType}
                   onChange={(e) => handleFilterChange('actionType', e.target.value)}
-                >
-                  <option value="">{t('logs.allActions')}</option>
-                  {actionTypes.map(action => (
-                    <option key={action} value={action}>
-                      {t(`logs.actions.${action}`)}
-                    </option>
-                  ))}
-                </select>
+                  options={getActionTypeOptions()}
+                  placeholder={t('logs.allActions')}
+                  emptyMessage={t('logs.noActions')}
+                />
               </div>
             </div>
           </div>
 
-          {/* Logs Stats */}
-          <div className="logs-stats">
-            <div className="stat-item">
-              <span className="stat-label">{t('logs.totalLogs')}</span>
-              <span className="stat-value">{pagination.totalCount}</span>
+          {/* Pagination Controls */}
+          <div className="logs-pagination-controls">
+            <div className="pagination-left">
+              <div className="rows-per-page">
+                <label className="filter-label">
+                  {t('logs.rowsPerPage')}
+                </label>
+                <select
+                  className="filter-select"
+                  value={pagination.pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                >
+                  {rowsPerPageOptions.map(option => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="pagination-info">
+                {t('logs.showing')} {logs.length > 0 ? ((pagination.currentPage - 1) * pagination.pageSize) + 1 : 0} - {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalCount)} {t('logs.of')} {pagination.totalCount} {t('logs.logs')}
+              </div>
             </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('logs.currentPage')}</span>
-              <span className="stat-value">
-                {pagination.currentPage} / {pagination.totalPages || 1}
-              </span>
+            
+            <div className="pagination-right">
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                {t('logs.previous')}
+              </button>
+              
+              <div className="pagination-page-info">
+                {t('logs.page')} {pagination.currentPage} {t('logs.of')} {pagination.totalPages || 1}
+              </div>
+              
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage >= pagination.totalPages}
+              >
+                {t('logs.next')}
+                <ChevronRight size={16} />
+              </button>
             </div>
           </div>
 
@@ -414,105 +474,76 @@ const LogView = () => {
           {loading ? (
             <div className="logs-loading">{t('common.loading')}</div>
           ) : (
-            <>
-              <div className="logs-table-container">
-                <div className="logs-table-wrapper">
-                  <table className="logs-table">
-                    <thead className="logs-table-head">
-                      <tr>
-                        <th className="logs-table-header">{t('logs.dateTime')}</th>
-                        <th className="logs-table-header">{t('logs.user')}</th>
-                        <th className="logs-table-header">{t('logs.category')}</th>
-                        <th className="logs-table-header">{t('logs.actionType')}</th>
-                        <th className="logs-table-header">{t('logs.entityType')}</th>
-                        <th className="logs-table-header">{t('logs.description')}</th>
-                        <th className="logs-table-header">{t('logs.actionsColumn')}</th>
+            <div className="logs-table-container">
+              <div className="logs-table-wrapper">
+                <table className="logs-table">
+                  <thead className="logs-table-head">
+                    <tr>
+                      <th className="logs-table-header">{t('logs.dateTime')}</th>
+                      <th className="logs-table-header">{t('logs.user')}</th>
+                      <th className="logs-table-header">{t('logs.category')}</th>
+                      <th className="logs-table-header">{t('logs.actionType')}</th>
+                      <th className="logs-table-header">{t('logs.entityType')}</th>
+                      <th className="logs-table-header">{t('logs.description')}</th>
+                      <th className="logs-table-header">{t('logs.actionsColumn')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="logs-table-body">
+                    {logs.map((log) => (
+                      <tr key={log.id} className="logs-table-row">
+                        <td className="logs-table-cell">
+                          <div className="log-datetime">
+                            {formatDateTime(log.created_at)}
+                          </div>
+                        </td>
+                        <td className="logs-table-cell">
+                          <div className="log-user">
+                            <div className="user-name">{formatUserName(log)}</div>
+                            <div className="user-email">{formatUserEmail(log)}</div>
+                          </div>
+                        </td>
+                        <td className="logs-table-cell">
+                          <span className={`category-badge ${getCategoryBadgeClass(log.action_category)}`}>
+                            {t(`logs.categories.${log.action_category}`)}
+                          </span>
+                        </td>
+                        <td className="logs-table-cell">
+                          <span className={`action-badge ${getActionTypeBadgeClass(log.action_type)}`}>
+                            {t(`logs.actions.${log.action_type}`)}
+                          </span>
+                        </td>
+                        <td className="logs-table-cell">
+                          <div className="log-entity">
+                            {log.entity_type || '-'}
+                          </div>
+                        </td>
+                        <td className="logs-table-cell">
+                          <div className="log-description">
+                            {truncateText(log.description)}
+                          </div>
+                        </td>
+                        <td className="logs-table-cell">
+                          <button
+                            className="view-details-btn"
+                            onClick={() => handleViewDetails(log)}
+                            title={t('logs.viewDetails')}
+                          >
+                            <Eye size={16} />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="logs-table-body">
-                      {logs.map((log) => (
-                        <tr key={log.id} className="logs-table-row">
-                          <td className="logs-table-cell">
-                            <div className="log-datetime">
-                              {formatDateTime(log.created_at)}
-                            </div>
-                          </td>
-                          <td className="logs-table-cell">
-                            <div className="log-user">
-                              <div className="user-name">{formatUserName(log)}</div>
-                              <div className="user-email">{formatUserEmail(log)}</div>
-                            </div>
-                          </td>
-                          <td className="logs-table-cell">
-                            <span className={`category-badge ${getCategoryBadgeClass(log.action_category)}`}>
-                              {t(`logs.categories.${log.action_category}`)}
-                            </span>
-                          </td>
-                          <td className="logs-table-cell">
-                            <span className={`action-badge ${getActionTypeBadgeClass(log.action_type)}`}>
-                              {t(`logs.actions.${log.action_type}`)}
-                            </span>
-                          </td>
-                          <td className="logs-table-cell">
-                            <div className="log-entity">
-                              {log.entity_type || '-'}
-                            </div>
-                          </td>
-                          <td className="logs-table-cell">
-                            <div className="log-description">
-                              {truncateText(log.description)}
-                            </div>
-                          </td>
-                          <td className="logs-table-cell">
-                            <button
-                              className="view-details-btn"
-                              onClick={() => handleViewDetails(log)}
-                              title={t('logs.viewDetails')}
-                            >
-                              <Eye size={16} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  
-                  {logs.length === 0 && (
-                    <div className="logs-empty">
-                      <FileText size={48} className="empty-icon" />
-                      <p>{t('logs.noLogsFound')}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Pagination */}
-              {logs.length > 0 && (
-                <div className="logs-pagination">
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={pagination.currentPage === 1}
-                  >
-                    <ChevronLeft size={16} />
-                    {t('logs.previous')}
-                  </button>
-                  
-                  <div className="pagination-info">
-                    {t('logs.page')} {pagination.currentPage} {t('logs.of')} {pagination.totalPages}
+                    ))}
+                  </tbody>
+                </table>
+                
+                {logs.length === 0 && (
+                  <div className="logs-empty">
+                    <FileText size={48} className="empty-icon" />
+                    <p>{t('logs.noLogsFound')}</p>
                   </div>
-                  
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={pagination.currentPage >= pagination.totalPages}
-                  >
-                    {t('logs.next')}
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-            </>
+                )}
+              </div>
+            </div>
           )}
         </>
       )}

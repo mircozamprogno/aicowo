@@ -6,6 +6,9 @@ import EmailTemplateList from '../components/email/EmailTemplateList';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
+
+import logger from '../utils/logger';
+
 const SYSTEM_PARTNER_UUID = '11111111-1111-1111-1111-111111111111';
 
 const SuperAdminEmailTemplates = () => {
@@ -31,7 +34,7 @@ const SuperAdminEmailTemplates = () => {
         });
 
       if (error) {
-        console.log('No existing email banner found or error:', error);
+        logger.log('No existing email banner found or error:', error);
         return;
       }
 
@@ -46,7 +49,7 @@ const SuperAdminEmailTemplates = () => {
         setCurrentBannerUrl(data.publicUrl);
       }
     } catch (error) {
-      console.error('Error loading current email banner:', error);
+      logger.error('Error loading current email banner:', error);
     }
   };
 
@@ -137,7 +140,7 @@ const SuperAdminEmailTemplates = () => {
       await uploadBannerFile(processedFile);
 
     } catch (error) {
-      console.error('Error processing banner image:', error);
+      logger.error('Error processing banner image:', error);
       toast.error('Error processing image. Please try another file.');
       setBannerUploading(false);
     }
@@ -163,7 +166,7 @@ const SuperAdminEmailTemplates = () => {
           }
         }
       } catch (deleteError) {
-        console.log('No existing banner to delete or error:', deleteError);
+        logger.log('No existing banner to delete or error:', deleteError);
       }
 
       // Upload new banner
@@ -190,7 +193,7 @@ const SuperAdminEmailTemplates = () => {
       toast.success('System email banner uploaded successfully!');
 
     } catch (error) {
-      console.error('Error uploading email banner:', error);
+      logger.error('Error uploading email banner:', error);
       
       // Provide more specific error messages
       if (error.message?.includes('row-level security policy')) {
@@ -225,7 +228,7 @@ const SuperAdminEmailTemplates = () => {
       toast.success('System email banner removed successfully!');
 
     } catch (error) {
-      console.error('Error removing email banner:', error);
+      logger.error('Error removing email banner:', error);
       toast.error('Error removing email banner. Please try again.');
     }
   };

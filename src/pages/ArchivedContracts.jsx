@@ -7,6 +7,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { ContractArchiveService } from '../services/contractArchiveService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
 
 const ArchivedContracts = () => {
   const [archivedContracts, setArchivedContracts] = useState([]);
@@ -48,12 +49,12 @@ const ArchivedContracts = () => {
       if (result.success) {
         setArchivedContracts(result.data);
       } else {
-        console.error('Error fetching archived contracts:', result.error);
+        logger.error('Error fetching archived contracts:', result.error);
         toast.error(t('messages.errorLoadingContracts'));
         setArchivedContracts([]);
       }
     } catch (error) {
-      console.error('Error fetching archived contracts:', error);
+      logger.error('Error fetching archived contracts:', error);
       toast.error(t('messages.errorLoadingContracts'));
       setArchivedContracts([]);
     } finally {
@@ -70,7 +71,7 @@ const ArchivedContracts = () => {
         setArchiveAnalytics(result.data);
       }
     } catch (error) {
-      console.error('Error fetching archive analytics:', error);
+      logger.error('Error fetching archive analytics:', error);
     }
   };
 
@@ -98,7 +99,7 @@ const ArchivedContracts = () => {
         toast.error(result.error || t('contracts.errorRestoringContract') || 'Error restoring contract');
       }
     } catch (error) {
-      console.error('Error restoring contract:', error);
+      logger.error('Error restoring contract:', error);
       toast.error(t('contracts.errorRestoringContract') || 'Error restoring contract');
     } finally {
       setShowRestoreConfirm(false);
@@ -130,7 +131,7 @@ const ArchivedContracts = () => {
         .eq('contract_id', contractToDelete.id);
 
       if (reservationsError) {
-        console.error('Error deleting package reservations:', reservationsError);
+        logger.error('Error deleting package reservations:', reservationsError);
       }
 
       // Then delete related bookings
@@ -140,7 +141,7 @@ const ArchivedContracts = () => {
         .eq('contract_id', contractToDelete.id);
 
       if (bookingsError) {
-        console.error('Error deleting bookings:', bookingsError);
+        logger.error('Error deleting bookings:', bookingsError);
       }
 
       // Finally delete the contract
@@ -150,7 +151,7 @@ const ArchivedContracts = () => {
         .eq('id', contractToDelete.id);
 
       if (error) {
-        console.error('Error permanently deleting contract:', error);
+        logger.error('Error permanently deleting contract:', error);
         toast.error(t('contracts.errorDeletingContract') || 'Error deleting contract permanently');
         return;
       }
@@ -162,7 +163,7 @@ const ArchivedContracts = () => {
         fetchArchiveAnalytics(); // Refresh analytics
       }
     } catch (error) {
-      console.error('Error permanently deleting contract:', error);
+      logger.error('Error permanently deleting contract:', error);
       toast.error(t('contracts.errorDeletingContract') || 'Error deleting contract permanently');
     } finally {
       setShowPermanentDeleteConfirm(false);
@@ -235,7 +236,7 @@ const ArchivedContracts = () => {
             logoUrl = data.publicUrl;
           }
         } catch (logoError) {
-          console.log('No logo found:', logoError);
+          logger.log('No logo found:', logoError);
         }
       }
 
@@ -245,7 +246,7 @@ const ArchivedContracts = () => {
       toast.success(t('contracts.pdfGeneratedSuccessfully') || 'PDF generated successfully!');
       
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       toast.error(t('contracts.errorGeneratingPDF') || 'Error generating PDF. Please try again.');
     } finally {
       setGeneratingPDF(null);

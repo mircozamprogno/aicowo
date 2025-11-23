@@ -1,11 +1,16 @@
-import { ChevronDown, Search, Send, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
+// src/pages/Invitations.jsx
+import { Search, Send, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import ConfirmModal from '../components/common/ConfirmModal';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import SendInvitationModal from '../components/invitations/SendInvitationModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+
+import logger from '../utils/logger';
+
 
 const Invitations = () => {
   const [allInvitations, setAllInvitations] = useState([]);
@@ -41,7 +46,7 @@ const Invitations = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching current partner:', error);
+        logger.error('Error fetching current partner:', error);
         // Mock data for development
         setCurrentPartner({
           partner_uuid: profile.partner_uuid,
@@ -53,14 +58,14 @@ const Invitations = () => {
         setCurrentPartner(data);
       }
     } catch (error) {
-      console.error('Error fetching current partner:', error);
+      logger.error('Error fetching current partner:', error);
     }
   };
 
   const fetchInvitations = async () => {
     if (!profile) return;
 
-    console.log('Fetching invitations for user:', profile);
+    logger.log('Fetching invitations for user:', profile);
     setLoading(true);
 
     try {
@@ -80,20 +85,20 @@ const Invitations = () => {
       // Apply tenant isolation based on user role
       if (profile.role === 'superadmin') {
         // Superadmin sees all invitations
-        console.log('Superadmin: fetching all invitations');
+        logger.log('Superadmin: fetching all invitations');
       } else if (profile.role === 'admin') {
         // Admin sees only invitations for their partner
         if (!profile.partner_uuid) {
-          console.warn('Admin user has no partner_uuid');
+          logger.warn('Admin user has no partner_uuid');
           setAllInvitations([]);
           setLoading(false);
           return;
         }
-        console.log('Admin: fetching invitations for partner:', profile.partner_uuid);
+        logger.log('Admin: fetching invitations for partner:', profile.partner_uuid);
         query = query.eq('partner_uuid', profile.partner_uuid);
       } else {
         // Regular users shouldn't access this page, but just in case
-        console.warn('Non-admin user trying to access invitations');
+        logger.warn('Non-admin user trying to access invitations');
         setAllInvitations([]);
         setLoading(false);
         return;
@@ -102,7 +107,7 @@ const Invitations = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching invitations:', error);
+        logger.error('Error fetching invitations:', error);
         toast.error(t('messages.errorLoadingInvitations'));
         
         // Provide mock data for development
@@ -172,11 +177,11 @@ const Invitations = () => {
           setAllInvitations(mockInvitations);
         }
       } else {
-        console.log('Invitations fetched successfully:', data);
+        logger.log('Invitations fetched successfully:', data);
         setAllInvitations(data || []);
       }
     } catch (error) {
-      console.error('Error fetching invitations:', error);
+      logger.error('Error fetching invitations:', error);
       toast.error(t('messages.errorLoadingInvitations'));
       setAllInvitations([]);
     } finally {
@@ -255,7 +260,7 @@ const Invitations = () => {
 
       toast.success(t('messages.invitationCancelledSuccessfully'));
     } catch (error) {
-      console.error('Error cancelling invitation:', error);
+      logger.error('Error cancelling invitation:', error);
       toast.error(t('messages.errorCancellingInvitation'));
     }
   };
@@ -281,7 +286,7 @@ const Invitations = () => {
       setSelectedInvitations(new Set());
       toast.success(t('invitations.invitationsDeletedSuccessfully', { count: selectedInvitations.size }));
     } catch (error) {
-      console.error('Error deleting invitations:', error);
+      logger.error('Error deleting invitations:', error);
       toast.error(t('invitations.errorDeletingInvitations'));
     } finally {
       setDeleting(false);
@@ -349,6 +354,15 @@ const Invitations = () => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
   };
+
+  // Status filter options for Select component
+  const statusOptions = [
+    { value: 'all', label: t('invitations.allStatuses') },
+    { value: 'pending', label: t('invitations.pending') },
+    { value: 'used', label: t('invitations.used') },
+    { value: 'expired', label: t('invitations.expired') },
+    { value: 'cancelled', label: t('invitations.cancelled') }
+  ];
 
   if (loading) {
     return <div className="invitations-loading">{t('common.loading')}</div>;
@@ -422,18 +436,13 @@ const Invitations = () => {
           </div>
           
           <div className="filter-dropdown">
-            <select
+            <Select
+              name="statusFilter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">{t('invitations.allStatuses')}</option>
-              <option value="pending">{t('invitations.pending')}</option>
-              <option value="used">{t('invitations.used')}</option>
-              <option value="expired">{t('invitations.expired')}</option>
-              <option value="cancelled">{t('invitations.cancelled')}</option>
-            </select>
-            <ChevronDown size={16} className="dropdown-icon" />
+              options={statusOptions}
+              placeholder={t('invitations.selectStatus')}
+            />
           </div>
         </div>
 

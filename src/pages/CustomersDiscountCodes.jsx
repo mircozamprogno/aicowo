@@ -1,10 +1,14 @@
+// src/pages/CustomersDiscountCodes.jsx
 import { DollarSign, Edit, Percent, Plus, Tag, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/pages/customers-discount-codes.css';
+
+import logger from '../utils/logger';
 
 const CustomersDiscountCodes = () => {
   const [discountCodes, setDiscountCodes] = useState([]);
@@ -38,13 +42,13 @@ const CustomersDiscountCodes = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching discount codes:', error);
+        logger.error('Error fetching discount codes:', error);
         toast.error(t('messages.errorLoadingDiscountCodes') || 'Error loading discount codes');
       } else {
         setDiscountCodes(data || []);
       }
     } catch (error) {
-      console.error('Error fetching discount codes:', error);
+      logger.error('Error fetching discount codes:', error);
       toast.error(t('messages.errorLoadingDiscountCodes') || 'Error loading discount codes');
     } finally {
       setLoading(false);
@@ -94,7 +98,7 @@ const CustomersDiscountCodes = () => {
         .eq('partner_uuid', partnerUuid);
 
       if (error) {
-        console.error('Error deleting discount code:', error);
+        logger.error('Error deleting discount code:', error);
         toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
         return;
       }
@@ -102,7 +106,7 @@ const CustomersDiscountCodes = () => {
       setDiscountCodes(prev => prev.filter(c => c.id !== codeToDelete.id));
       toast.success(t('messages.discountCodeDeletedSuccessfully') || 'Discount code deleted successfully');
     } catch (error) {
-      console.error('Error deleting discount code:', error);
+      logger.error('Error deleting discount code:', error);
       toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
     } finally {
       setShowDeleteConfirm(false);
@@ -165,6 +169,28 @@ const CustomersDiscountCodes = () => {
   const uniqueStatuses = [...new Set(discountCodes.map(c => getStatusBadgeClass(c).replace('status-', '')))];
   const uniqueTypes = [...new Set(discountCodes.map(c => c.discount_type))];
 
+  // Status filter options for Select component
+  const getStatusOptions = () => {
+    return [
+      { value: 'all', label: t('common.all') },
+      ...uniqueStatuses.map(status => ({
+        value: status,
+        label: t(`discountCodes.${status}`)
+      }))
+    ];
+  };
+
+  // Type filter options for Select component
+  const getTypeOptions = () => {
+    return [
+      { value: 'all', label: t('common.all') },
+      ...uniqueTypes.map(type => ({
+        value: type,
+        label: t(`discountCodes.${type}`)
+      }))
+    ];
+  };
+
   // Access control
   if (!isAdmin) {
     return (
@@ -225,38 +251,26 @@ const CustomersDiscountCodes = () => {
           <label htmlFor="status-filter" className="filter-label">
             {t('discountCodes.status')}:
           </label>
-          <select
-            id="status-filter"
+          <Select
+            name="status-filter"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">{t('common.all')}</option>
-            {uniqueStatuses.map(status => (
-              <option key={status} value={status}>
-                {t(`discountCodes.${status}`)}
-              </option>
-            ))}
-          </select>
+            options={getStatusOptions()}
+            placeholder={t('common.all')}
+          />
         </div>
         
         <div className="filter-group">
           <label htmlFor="type-filter" className="filter-label">
             {t('discountCodes.discountType')}:
           </label>
-          <select
-            id="type-filter"
+          <Select
+            name="type-filter"
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">{t('common.all')}</option>
-            {uniqueTypes.map(type => (
-              <option key={type} value={type}>
-                {t(`discountCodes.${type}`)}
-              </option>
-            ))}
-          </select>
+            options={getTypeOptions()}
+            placeholder={t('common.all')}
+          />
         </div>
       </div>
 
@@ -471,6 +485,12 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
   
   const [loading, setLoading] = useState(false);
 
+  // Discount type options for Select component
+  const discountTypeOptions = [
+    { value: 'percentage', label: t('discountCodes.percentage') },
+    { value: 'fixed_amount', label: t('discountCodes.fixedAmount') }
+  ];
+
   useEffect(() => {
     if (code) {
       setFormData({
@@ -594,7 +614,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
       const { data, error } = result;
 
       if (error) {
-        console.error('Error saving discount code:', error);
+        logger.error('Error saving discount code:', error);
         throw error;
       }
 
@@ -607,7 +627,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
       onSuccess(data);
       onClose();
     } catch (error) {
-      console.error('Error saving discount code:', error);
+      logger.error('Error saving discount code:', error);
       if (error.code === '23505') { // Unique violation
         toast.error(t('discountCodes.codeAlreadyExists') || 'This discount code already exists');
       } else {
@@ -688,17 +708,13 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
                 <label htmlFor="discount_type" className="form-label">
                   {t('discountCodes.discountType')} *
                 </label>
-                <select
-                  id="discount_type"
+                <Select
                   name="discount_type"
-                  required
-                  className="form-select"
                   value={formData.discount_type}
                   onChange={handleChange}
-                >
-                  <option value="percentage">{t('discountCodes.percentage')}</option>
-                  <option value="fixed_amount">{t('discountCodes.fixedAmount')}</option>
-                </select>
+                  options={discountTypeOptions}
+                  placeholder={t('discountCodes.selectType')}
+                />
               </div>
               
               <div className="form-group">

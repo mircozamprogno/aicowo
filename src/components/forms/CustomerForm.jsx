@@ -1,7 +1,9 @@
+// src/components/customers/CustomerForm.jsx
 import { Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 
 const CustomerForm = ({ 
@@ -48,6 +50,28 @@ const CustomerForm = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConstraints, setDeleteConstraints] = useState([]);
+
+  // Customer type options for Select component
+  const customerTypeOptions = [
+    { value: 'individual', label: t('customers.individual') },
+    { value: 'freelancer', label: t('customers.freelancer') },
+    { value: 'entrepeneur', label: t('customers.entrepeneur') },
+    { value: 'employee', label: t('customers.employee') },
+    { value: 'tourist', label: t('customers.tourist') },
+    { value: 'student', label: t('customers.student') },
+    { value: 'affiliated', label: t('customers.affiliated') }
+  ];
+
+  // Customer status options for Select component
+  const customerStatusOptions = [
+    { value: 'tobequalified', label: t('customers.tobequalified') },
+    { value: 'qualified', label: t('customers.qualified') },
+    { value: 'tobeactivated', label: t('customers.tobeactivated') },
+    { value: 'active', label: t('customers.active') },
+    { value: 'expiring', label: t('customers.expiring') },
+    { value: 'toberenewed', label: t('customers.toberenewed') },
+    { value: 'inactive', label: t('customers.inactive') }
+  ];
 
   // Update form data when customer changes
   useEffect(() => {
@@ -333,22 +357,13 @@ const CustomerForm = ({
                   <label htmlFor="customer_type" className="form-label">
                     {t('customers.type')} *
                   </label>
-                  <select
-                    id="customer_type"
+                  <Select
                     name="customer_type"
-                    required
-                    className="form-select"
                     value={formData.customer_type}
                     onChange={handleChange}
-                  >
-                    <option value="individual">{t('customers.individual')}</option>
-                    <option value="freelancer">{t('customers.freelancer')}</option>
-                    <option value="entrepeneur">{t('customers.entrepeneur')}</option>
-                    <option value="employee">{t('customers.employee')}</option>
-                    <option value="tourist">{t('customers.tourist')}</option>
-                    <option value="student">{t('customers.student')}</option>
-                    <option value="affiliated">{t('customers.affiliated')}</option>
-                  </select>
+                    options={customerTypeOptions}
+                    placeholder={t('customers.selectType')}
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="customer_status" className="form-label">
@@ -370,22 +385,13 @@ const CustomerForm = ({
                       }}
                     />
                   ) : (
-                    <select
-                      id="customer_status"
+                    <Select
                       name="customer_status"
-                      required
-                      className="form-select"
                       value={formData.customer_status}
                       onChange={handleChange}
-                    >
-                      <option value="tobequalified">{t('customers.tobequalified')}</option>
-                      <option value="qualified">{t('customers.qualified')}</option>
-                      <option value="tobeactivated">{t('customers.tobeactivated')}</option>
-                      <option value="active">{t('customers.active')}</option>
-                      <option value="expiring">{t('customers.expiring')}</option>
-                      <option value="toberenewed">{t('customers.toberenewed')}</option>
-                      <option value="inactive">{t('customers.inactive')}</option>
-                    </select>
+                      options={customerStatusOptions}
+                      placeholder={t('customers.selectStatus')}
+                    />
                   )}
                 </div>
               </div>

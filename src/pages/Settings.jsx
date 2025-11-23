@@ -1,6 +1,8 @@
+// src/pages/Settings.jsx
 import { Calendar, Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import OperatingScheduleManager from '../components/calendar/OperatingScheduleManager';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import EmailTemplateList from '../components/email/EmailTemplateList';
 import LocationsList from '../components/partners/LocationsList';
@@ -8,6 +10,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/components/operating-calendar.css';
+
+import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../utils/activityLogger';
+import logger from '../utils/logger';
 
 
 
@@ -94,7 +99,7 @@ const Settings = () => {
         });
 
       if (error) {
-        console.log('No existing logo found or error:', error);
+        logger.log('No existing logo found or error:', error);
         return;
       }
 
@@ -109,7 +114,7 @@ const Settings = () => {
         setCurrentLogoUrl(data.publicUrl);
       }
     } catch (error) {
-      console.error('Error loading current logo:', error);
+      logger.error('Error loading current logo:', error);
     }
   };
 
@@ -125,7 +130,7 @@ const Settings = () => {
         });
 
       if (error) {
-        console.log('No existing email banner found or error:', error);
+        logger.log('No existing email banner found or error:', error);
         return;
       }
 
@@ -140,7 +145,7 @@ const Settings = () => {
         setCurrentBannerUrl(data.publicUrl);
       }
     } catch (error) {
-      console.error('Error loading current email banner:', error);
+      logger.error('Error loading current email banner:', error);
     }
   };
 
@@ -231,7 +236,7 @@ const Settings = () => {
       await uploadLogoFile(processedFile);
 
     } catch (error) {
-      console.error('Error processing image:', error);
+      logger.error('Error processing image:', error);
       toast.error('Error processing image. Please try another file.');
       setLogoUploading(false);
     }
@@ -257,7 +262,7 @@ const Settings = () => {
           }
         }
       } catch (deleteError) {
-        console.log('No existing logo to delete or error:', deleteError);
+        logger.log('No existing logo to delete or error:', deleteError);
       }
 
       // Upload new logo
@@ -284,7 +289,7 @@ const Settings = () => {
       toast.success('Logo uploaded successfully!');
 
     } catch (error) {
-      console.error('Error uploading logo:', error);
+      logger.error('Error uploading logo:', error);
       
       // Provide more specific error messages
       if (error.message?.includes('row-level security policy')) {
@@ -319,7 +324,7 @@ const Settings = () => {
       toast.success('Logo removed successfully!');
 
     } catch (error) {
-      console.error('Error removing logo:', error);
+      logger.error('Error removing logo:', error);
       toast.error('Error removing logo. Please try again.');
     }
   };
@@ -368,7 +373,7 @@ const Settings = () => {
       await uploadBannerFile(processedFile);
 
     } catch (error) {
-      console.error('Error processing banner image:', error);
+      logger.error('Error processing banner image:', error);
       toast.error('Error processing image. Please try another file.');
       setBannerUploading(false);
     }
@@ -394,7 +399,7 @@ const Settings = () => {
           }
         }
       } catch (deleteError) {
-        console.log('No existing banner to delete or error:', deleteError);
+        logger.log('No existing banner to delete or error:', deleteError);
       }
 
       // Upload new banner
@@ -421,7 +426,7 @@ const Settings = () => {
       toast.success('Email banner uploaded successfully!');
 
     } catch (error) {
-      console.error('Error uploading email banner:', error);
+      logger.error('Error uploading email banner:', error);
       
       // Provide more specific error messages
       if (error.message?.includes('row-level security policy')) {
@@ -456,7 +461,7 @@ const Settings = () => {
       toast.success('Email banner removed successfully!');
 
     } catch (error) {
-      console.error('Error removing email banner:', error);
+      logger.error('Error removing email banner:', error);
       toast.error('Error removing email banner. Please try again.');
     }
   };
@@ -471,7 +476,7 @@ const Settings = () => {
 
   const fetchPartnerData = async () => {
     try {
-      console.log('Fetching partner data for admin:', profile.partner_uuid);
+      logger.log('Fetching partner data for admin:', profile.partner_uuid);
       
       const { data, error } = await supabase
         .from('partners')
@@ -480,13 +485,13 @@ const Settings = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching partner data:', error);
+        logger.error('Error fetching partner data:', error);
         toast.error(t('messages.errorLoadingPartnerData'));
         return;
       }
 
       if (data) {
-        console.log('Found partner data:', data);
+        logger.log('Found partner data:', data);
         setPartnerData(data);
         setFormData({
           first_name: data.first_name || '',
@@ -518,7 +523,7 @@ const Settings = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching partner data:', error);
+      logger.error('Error fetching partner data:', error);
       toast.error(t('messages.errorLoadingPartnerData'));
     } finally {
       setLoading(false);
@@ -527,7 +532,7 @@ const Settings = () => {
 
   const fetchCustomerData = async () => {
     try {
-      console.log('Fetching customer data for user:', user.id);
+      logger.log('Fetching customer data for user:', user.id);
       
       const { data, error } = await supabase
         .from('customers')
@@ -536,12 +541,12 @@ const Settings = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        console.error('Error fetching customer data:', error);
+        logger.error('Error fetching customer data:', error);
         // If there's an error, we'll create a new customer record
       }
 
       if (data) {
-        console.log('Found existing customer data:', data);
+        logger.log('Found existing customer data:', data);
         setCustomerData(data);
         setFormData({
           first_name: data.first_name || '',
@@ -571,7 +576,7 @@ const Settings = () => {
           preferred_language: language || 'it'
         });
       } else {
-        console.log('No customer data found, will create new record');
+        logger.log('No customer data found, will create new record');
         setFormData(prev => ({
           ...prev,
           first_name: profile.first_name || '',
@@ -581,7 +586,7 @@ const Settings = () => {
         }));
       }
     } catch (error) {
-      console.error('Error fetching customer data:', error);
+      logger.error('Error fetching customer data:', error);
       toast.error(t('messages.errorLoadingCustomerData'));
     } finally {
       setLoading(false);
@@ -622,13 +627,24 @@ const Settings = () => {
           city: formData.city,
           country: formData.country,
           company_name: formData.company_name,
-          structure_name: formData.structure_name, // ADD THIS LINE
+          structure_name: formData.structure_name,
           piva: formData.piva,
           pec: formData.pec,
           website: formData.website,
           partner_type: formData.partner_type,
           partner_status: formData.partner_status
         };
+
+        // Capture changes
+        const changes = {};
+        Object.keys(partnerUpdateData).forEach(key => {
+          if (partnerData[key] !== partnerUpdateData[key]) {
+            changes[key] = {
+              old: partnerData[key] || null,
+              new: partnerUpdateData[key] || null
+            };
+          }
+        });
 
         const { data, error } = await supabase
           .from('partners')
@@ -639,18 +655,68 @@ const Settings = () => {
         if (error) throw error;
 
         setPartnerData(data[0]);
+
+        // Log activity only if there were changes
+        if (Object.keys(changes).length > 0) {
+          await logActivity({
+            action_category: ACTIVITY_CATEGORIES.USER,
+            action_type: ACTIVITY_ACTIONS.UPDATED,
+            entity_id: partnerData.id,
+            entity_type: 'partner',
+            description: `Partner profile updated: ${formData.company_name || formData.first_name}`,
+            metadata: {
+              partner_name: formData.company_name || `${formData.first_name} ${formData.second_name}`,
+              partner_type: formData.partner_type,
+              changes: changes
+            }
+          });
+        }
+
         toast.success(t('messages.partnerDataSavedSuccessfully'));
       } else {
         // Update customer data
         let result;
         
         if (customerData) {
+          // Capture changes for existing customer
+          const changes = {};
+          Object.keys(formData).forEach(key => {
+            if (customerData[key] !== formData[key]) {
+              changes[key] = {
+                old: customerData[key] || null,
+                new: formData[key] || null
+              };
+            }
+          });
+
           // Update existing customer record
           result = await supabase
             .from('customers')
             .update(formData)
             .eq('id', customerData.id)
             .select();
+
+          const { data, error } = result;
+          if (error) throw error;
+
+          setCustomerData(data[0]);
+
+          // Log activity only if there were changes
+          if (Object.keys(changes).length > 0) {
+            await logActivity({
+              action_category: ACTIVITY_CATEGORIES.CUSTOMER,
+              action_type: ACTIVITY_ACTIONS.UPDATED,
+              entity_id: customerData.id,
+              entity_type: 'customer',
+              description: `Customer profile updated: ${formData.first_name} ${formData.second_name}`,
+              metadata: {
+                customer_name: `${formData.first_name} ${formData.second_name}`,
+                customer_type: formData.customer_type,
+                customer_email: formData.email,
+                changes: changes
+              }
+            });
+          }
         } else {
           // Create new customer record
           const newCustomerData = {
@@ -663,17 +729,32 @@ const Settings = () => {
             .from('customers')
             .insert([newCustomerData])
             .select();
+
+          const { data, error } = result;
+          if (error) throw error;
+
+          setCustomerData(data[0]);
+
+          // Log creation
+          await logActivity({
+            action_category: ACTIVITY_CATEGORIES.CUSTOMER,
+            action_type: ACTIVITY_ACTIONS.CREATED,
+            entity_id: data[0].id,
+            entity_type: 'customer',
+            description: `Customer profile created: ${formData.first_name} ${formData.second_name}`,
+            metadata: {
+              customer_name: `${formData.first_name} ${formData.second_name}`,
+              customer_type: formData.customer_type,
+              customer_email: formData.email,
+              created_data: newCustomerData
+            }
+          });
         }
 
-        const { data, error } = result;
-
-        if (error) throw error;
-
-        setCustomerData(data[0]);
         toast.success(t('messages.customerDataSavedSuccessfully'));
       }
     } catch (error) {
-      console.error('Error saving data:', error);
+      logger.error('Error saving data:', error);
       toast.error(error.message || (isAdminPartner ? t('messages.errorSavingPartnerData') : t('messages.errorSavingCustomerData')));
     } finally {
       setSaving(false);
@@ -683,6 +764,12 @@ const Settings = () => {
   const handleLocationsModalClose = () => {
     setShowLocations(false);
   };
+
+  // Language options for Select component
+  const languageOptions = [
+    { value: 'it', label: 'Italiano' },
+    { value: 'en', label: 'English' }
+  ];
 
   if (loading) {
     return <div className="settings-loading">{t('common.loading')}</div>;
@@ -964,22 +1051,19 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Language Selection */}
+              {/* Language Selection - Using Select component */}
               <div className="form-group">
                 <label htmlFor="preferred_language" className="form-label">
                   <Globe size={16} style={{ marginRight: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
                   {t('settings.language') || 'Language'}
                 </label>
-                <select
-                  id="preferred_language"
+                <Select
                   name="preferred_language"
-                  className="form-select"
                   value={formData.preferred_language}
                   onChange={handleLanguageChange}
-                >
-                  <option value="it">Italiano</option>
-                  <option value="en">English</option>
-                </select>
+                  options={languageOptions}
+                  placeholder={t('settings.selectLanguage') || 'Select language'}
+                />
               </div>
 
               {/* Codice Fiscale only for users, not partners */}

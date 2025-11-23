@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
+import logger from '../utils/logger';
+
 const PlanFeatures = () => {
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,7 @@ const PlanFeatures = () => {
         .order('feature_name', { ascending: true });
 
       if (error) {
-        console.error('Error fetching features:', error);
+        logger.error('Error fetching features:', error);
         // Mock data for development
         setFeatures([
           {
@@ -81,7 +83,7 @@ const PlanFeatures = () => {
         setFeatures(data || []);
       }
     } catch (error) {
-      console.error('Error fetching features:', error);
+      logger.error('Error fetching features:', error);
       toast.error(t('messages.errorLoadingFeatures') || 'Error loading features');
     } finally {
       setLoading(false);
@@ -130,7 +132,7 @@ const PlanFeatures = () => {
         .eq('id', featureToDelete.id);
 
       if (error) {
-        console.error('Error deleting feature:', error);
+        logger.error('Error deleting feature:', error);
         toast.error(t('messages.errorDeletingFeature') || 'Error deleting feature');
         return;
       }
@@ -138,7 +140,7 @@ const PlanFeatures = () => {
       setFeatures(prev => prev.filter(f => f.id !== featureToDelete.id));
       toast.success(t('messages.featureDeletedSuccessfully') || 'Feature deleted successfully');
     } catch (error) {
-      console.error('Error deleting feature:', error);
+      logger.error('Error deleting feature:', error);
       toast.error(t('messages.errorDeletingFeature') || 'Error deleting feature');
     } finally {
       setShowDeleteConfirm(false);
