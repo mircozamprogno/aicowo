@@ -1,13 +1,13 @@
-import { Download, Edit2 } from 'lucide-react';
+// src/pages/Customers.jsx
+import { ChevronLeft, ChevronRight, Download, Edit2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import FattureInCloudImportModal from '../components/fattureincloud/FattureInCloudImportModal';
 import CustomerForm from '../components/forms/CustomerForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
-
-// Logger
 import logger from '../utils/logger';
 
 const Customers = () => {
@@ -17,15 +17,29 @@ const Customers = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const { profile } = useAuth();
   const { t } = useTranslation();
-
   const [showImportModal, setShowImportModal] = useState(false);
   const [partnerSettings, setPartnerSettings] = useState(null);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Pagination options for Select component
+  const itemsPerPageOptions = [
+    { value: 10, label: '10' },
+    { value: 20, label: '20' },
+    { value: 50, label: '50' },
+    { value: 100, label: '100' }
+  ];
 
   useEffect(() => {
     fetchCustomers();
     fetchPartnerSettings();
   }, [profile]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
 
   const fetchCustomers = async () => {
     if (!profile?.partner_uuid) {
@@ -40,16 +54,14 @@ const Customers = () => {
         .from('customers')
         .select('*')
         .eq('partner_uuid', profile.partner_uuid)
-        .neq('customer_status', 'inactive') // Exclude inactive customers
+        .neq('customer_status', 'inactive')
         .order('created_at', { ascending: false });
 
       const { data, error } = await query;
-
       logger.log('Supabase response:', { data, error });
 
       if (error) {
         logger.error('Supabase error:', error);
-        // Provide mock data if the table doesn't exist or there's an error
         logger.log('Using mock data for customers');
         setCustomers([
           {
@@ -136,7 +148,6 @@ const Customers = () => {
     }
   };
 
-  // Add handler:
   const handleImportSuccess = () => {
     fetchCustomers();
     setShowImportModal(false);
@@ -147,7 +158,6 @@ const Customers = () => {
     const constraints = [];
 
     try {
-      // Check for active bookings
       logger.log('Checking bookings...');
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
@@ -164,7 +174,6 @@ const Customers = () => {
         }
       }
 
-      // Check for active contracts
       logger.log('Checking contracts...');
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
@@ -181,7 +190,6 @@ const Customers = () => {
         }
       }
 
-      // Check for package reservations
       logger.log('Checking package reservations...');
       const { data: reservations, error: reservationsError } = await supabase
         .from('package_reservations')
@@ -198,7 +206,6 @@ const Customers = () => {
         }
       }
 
-      // Check for payments through contracts
       if (contracts && contracts.length > 0) {
         logger.log('Checking payments for contracts...');
         const contractIds = contracts.map(c => c.id);
@@ -230,10 +237,8 @@ const Customers = () => {
   const handleDeleteCustomer = async (customer) => {
     logger.log('=== STARTING DELETE PROCESS FOR CUSTOMER:', customer);
     
-    // Check constraints first
     const constraints = await checkCustomerConstraints(customer.id);
     
-    // If there are constraints, show error and don't proceed
     if (constraints.length > 0) {
       logger.log('=== CANNOT DELETE - HAS CONSTRAINTS');
       toast.error(t('customers.cannotDeleteWithConstraints'));
@@ -241,7 +246,6 @@ const Customers = () => {
     }
 
     try {
-      // Set status to inactive instead of deleting
       const { error } = await supabase
         .from('customers')
         .update({ 
@@ -257,7 +261,6 @@ const Customers = () => {
 
       logger.log('=== CUSTOMER STATUS UPDATED TO INACTIVE');
 
-      // Remove from UI
       setCustomers(prev => prev.filter(c => c.id !== customer.id));
       toast.success(t('customers.customerDeactivatedSuccessfully'));
       
@@ -307,7 +310,22 @@ const Customers = () => {
     }
   };
 
-  // Check if user can manage customers (admin partners)
+  // Pagination logic
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCustomers = customers.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+  };
+
   const canManageCustomers = profile?.role === 'admin';
 
   if (!canManageCustomers) {
@@ -365,6 +383,51 @@ const Customers = () => {
         )}
       </div>
 
+      {customers.length > 0 && (
+        <div className="pagination-controls">
+          <div className="pagination-info">
+            <span>
+              {t('common.showing')} {startIndex + 1}-{Math.min(endIndex, customers.length)} {t('common.of')} {customers.length}
+            </span>
+          </div>
+          
+          <div className="pagination-actions">
+            <div className="items-per-page">
+              <label>{t('common.rowsPerPage')}:</label>
+              <Select
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                options={itemsPerPageOptions}
+                name="itemsPerPage"
+                autoSelectSingle={false}
+              />
+            </div>
+
+            <div className="page-navigation">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="page-btn"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              
+              <span className="page-info">
+                {t('common.page')} {currentPage} {t('common.of')} {totalPages}
+              </span>
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="page-btn"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="customers-table-container">
         <div className="customers-table-wrapper">
           <table className="customers-table">
@@ -391,7 +454,7 @@ const Customers = () => {
               </tr>
             </thead>
             <tbody className="customers-table-body">
-              {customers.map((customer) => (
+              {currentCustomers.map((customer) => (
                 <tr key={customer.id} className="customers-table-row">
                   <td className="customers-table-cell">
                     <div className="customer-info">
@@ -481,7 +544,6 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Customer Form Modal */}
       <CustomerForm
         isOpen={showForm}
         onClose={handleFormClose}
@@ -492,7 +554,6 @@ const Customers = () => {
         partnerUuid={profile?.partner_uuid}
       />
 
-      
       <FattureInCloudImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
@@ -500,7 +561,6 @@ const Customers = () => {
         partnerUuid={profile?.partner_uuid}
         onImportSuccess={handleImportSuccess}
       />
-
     </div>
   );
 };

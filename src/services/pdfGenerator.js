@@ -473,3 +473,358 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
     throw new Error('Failed to generate PDF');
   }
 };
+
+
+
+/**
+ * Generate a professional invoice PDF
+ * @param {Object} payment - Payment/Invoice data from partners_payments table
+ * @param {Object} partnerData - Partner information
+ * @param {string} logoUrl - Partner logo URL (optional)
+ * @param {Function} t - Translation function
+ */
+export const generateInvoicePDF = async (payment, partnerData, logoUrl, t) => {
+  try {
+    // DEBUG: Log the payment object to see what data we have
+    console.log('=== PDF GENERATION DEBUG ===');
+    console.log('Full payment object:', payment);
+    console.log('invoice_number field:', payment.invoice_number);
+    console.log('All payment keys:', Object.keys(payment));
+    console.log('=========================');
+    
+    // Create new PDF document - A4 size
+    const pdf = new jsPDF('portrait', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    // Define margins and positions
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+    let currentY = margin;
+    
+    // Color scheme
+    const primaryColor = '#16a34a'; // Green
+    const secondaryColor = '#374151'; // Gray
+    
+    // Helper functions
+    const addWrappedText = (text, x, y, maxWidth, lineHeight = 6) => {
+      const lines = pdf.splitTextToSize(text, maxWidth);
+      pdf.text(lines, x, y);
+      return y + (lines.length * lineHeight);
+    };
+    
+    const formatCurrency = (amount, currency = 'EUR') => {
+      return new Intl.NumberFormat('it-IT', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(amount);
+    };
+    
+    const formatDate = (dateString) => {
+      if (!dateString) return 'N/A';
+      return new Date(dateString).toLocaleDateString('it-IT');
+    };
+
+    // 1. HEADER with Logo (if provided)
+    if (logoUrl) {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve) => {
+          img.onload = () => {
+            const maxLogoWidth = 40;
+            const maxLogoHeight = 25;
+            const aspectRatio = img.width / img.height;
+            
+            let logoWidth = maxLogoWidth;
+            let logoHeight = logoWidth / aspectRatio;
+            
+            if (logoHeight > maxLogoHeight) {
+              logoHeight = maxLogoHeight;
+              logoWidth = logoHeight * aspectRatio;
+            }
+            
+            pdf.addImage(img, 'PNG', margin, currentY, logoWidth, logoHeight);
+            resolve();
+          };
+          
+          img.onerror = () => resolve();
+          img.src = logoUrl;
+        });
+        
+        currentY += 30;
+      } catch (error) {
+        currentY += 10;
+      }
+    }
+    
+    // Partner information (right side)
+    if (partnerData) {
+      const partnerInfoX = pageWidth - margin - 80;
+      let partnerY = margin;
+      
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(secondaryColor);
+      
+      if (partnerData.company_name) {
+        pdf.text(partnerData.company_name, partnerInfoX, partnerY);
+        partnerY += 7;
+      }
+      
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      
+      if (partnerData.address) {
+        partnerY = addWrappedText(partnerData.address, partnerInfoX, partnerY, 75, 4);
+      }
+      
+      if (partnerData.zip || partnerData.city) {
+        const location = `${partnerData.zip || ''} ${partnerData.city || ''}`.trim();
+        if (location) {
+          pdf.text(location, partnerInfoX, partnerY);
+          partnerY += 4;
+        }
+      }
+      
+      if (partnerData.piva) {
+        pdf.text(`P.IVA: ${partnerData.piva}`, partnerInfoX, partnerY);
+        partnerY += 4;
+      }
+      
+      if (partnerData.email) {
+        pdf.text(partnerData.email, partnerInfoX, partnerY);
+      }
+      
+      currentY = Math.max(currentY, partnerY + 10);
+    }
+    
+    // 2. TITLE
+    currentY += 10;
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(primaryColor);
+    pdf.text(t('partnerBilling.invoice') || 'FATTURA', margin, currentY);
+    
+    currentY += 15;
+    
+    // 3. INVOICE INFO BOX
+    pdf.setFillColor(245, 245, 245);
+    pdf.rect(margin, currentY - 5, contentWidth, 50, 'F');
+    
+    currentY += 5;
+    
+    const leftColumnX = margin + 5;
+    const rightColumnX = margin + (contentWidth / 2) + 5;
+    let leftY = currentY;
+    let rightY = currentY;
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(secondaryColor);
+    
+    // Left column
+    pdf.text(t('partnerBilling.invoiceNumber') || 'Numero Fattura:', leftColumnX, leftY);
+    leftY += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.text(payment.invoice_number || 'N/A', leftColumnX, leftY);
+    leftY += 10;
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(t('partnerBilling.billingPeriod') || 'Periodo:', leftColumnX, leftY);
+    leftY += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`${formatDate(payment.payment_period_start)} - ${formatDate(payment.payment_period_end)}`, leftColumnX, leftY);
+    leftY += 10;
+    
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(t('partnerBilling.issueDate') || 'Data Emissione:', leftColumnX, leftY);
+    leftY += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(formatDate(payment.created_at), leftColumnX, leftY);
+    
+    // Right column
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(t('partnerBilling.dueDate') || 'Scadenza:', rightColumnX, rightY);
+    rightY += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(formatDate(payment.due_date), rightColumnX, rightY);
+    rightY += 10;
+    
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(t('partnerBilling.status') || 'Stato:', rightColumnX, rightY);
+    rightY += 5;
+    pdf.setFont('helvetica', 'normal');
+    
+    // Status with color
+    let statusText = payment.payment_status ? payment.payment_status.toUpperCase() : 'N/A';
+    let statusColor = secondaryColor;
+    if (payment.payment_status === 'paid') {
+      statusText = t('partnerBilling.paid') || 'PAGATO';
+      statusColor = '#059669';
+    } else if (payment.payment_status === 'pending' && payment.is_overdue) {
+      statusText = t('partnerBilling.overdue') || 'SCADUTO';
+      statusColor = '#dc2626';
+    } else if (payment.payment_status === 'pending') {
+      statusText = t('partnerBilling.pending') || 'IN ATTESA';
+      statusColor = '#d97706';
+    }
+    pdf.setTextColor(statusColor);
+    pdf.text(statusText, rightColumnX, rightY);
+    pdf.setTextColor(secondaryColor);
+    rightY += 10;
+    
+    if (payment.payment_date) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(t('partnerBilling.paymentDate') || 'Data Pagamento:', rightColumnX, rightY);
+      rightY += 5;
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(formatDate(payment.payment_date), rightColumnX, rightY);
+    }
+    
+    currentY += 55;
+    
+    // 4. SERVICE DETAILS
+    currentY += 10;
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(primaryColor);
+    pdf.text(t('partnerBilling.serviceDetails') || 'DETTAGLIO SERVIZIO', margin, currentY);
+    
+    currentY += 10;
+    
+    // Plan info from billing_details
+    if (payment.billing_details) {
+      const details = typeof payment.billing_details === 'string' 
+        ? JSON.parse(payment.billing_details) 
+        : payment.billing_details;
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(secondaryColor);
+      
+      if (details.plan_name) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${t('partnerBilling.plan') || 'Piano'}: `, margin, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(details.plan_name, margin + 20, currentY);
+        currentY += 7;
+      }
+    }
+    
+    // Active users
+    if (payment.active_users_count !== null) {
+      pdf.setFontSize(10);
+      pdf.text(`${t('partnerBilling.activeUsers') || 'Utenti Attivi'}: ${payment.active_users_count} / ${payment.plan_active_users_limit || 0}`, margin, currentY);
+      
+      if (payment.is_over_limit) {
+        pdf.setTextColor('#dc2626');
+        pdf.text(`(${t('partnerBilling.overLimit') || 'Oltre Limite'})`, margin + 60, currentY);
+        pdf.setTextColor(secondaryColor);
+      }
+      
+      currentY += 10;
+    }
+    
+    // 5. AMOUNT TABLE
+    currentY += 5;
+    
+    pdf.setFillColor(240, 240, 240);
+    pdf.rect(margin, currentY, contentWidth, 8, 'F');
+    
+    currentY += 6;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    
+    const descCol = margin + 2;
+    const amountCol = pageWidth - margin - 40;
+    
+    pdf.text(t('partnerBilling.description') || 'Descrizione', descCol, currentY);
+    pdf.text(t('partnerBilling.amount') || 'Importo', amountCol, currentY);
+    
+    currentY += 8;
+    
+    // Service line
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    
+    const serviceDesc = `${t('partnerBilling.subscriptionService') || 'Servizio Abbonamento'} - ${formatDate(payment.payment_period_start)} / ${formatDate(payment.payment_period_end)}`;
+    currentY = addWrappedText(serviceDesc, descCol, currentY, contentWidth - 45, 5);
+    
+    const subtotal = Number(payment.amount) || 0;
+    pdf.text(formatCurrency(subtotal, payment.currency), amountCol, currentY - 5);
+    
+    currentY += 5;
+    
+    // Late fee
+    if (payment.late_fee && payment.late_fee > 0) {
+      pdf.setTextColor('#dc2626');
+      pdf.text(t('partnerBilling.lateFee') || 'Mora', descCol, currentY);
+      pdf.text(formatCurrency(payment.late_fee, payment.currency), amountCol, currentY);
+      pdf.setTextColor(secondaryColor);
+      currentY += 7;
+    }
+    
+    // Total line
+    currentY += 5;
+    pdf.setDrawColor(220, 220, 220);
+    pdf.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 8;
+    
+    // TOTAL
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    pdf.setTextColor(primaryColor);
+    
+    const totalAmount = subtotal + (payment.late_fee || 0);
+    pdf.text(t('partnerBilling.totalAmount') || 'TOTALE', descCol, currentY);
+    pdf.text(formatCurrency(totalAmount, payment.currency), amountCol, currentY);
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(secondaryColor);
+    
+    currentY += 15;
+    
+    // 6. FOOTER
+    currentY = pageHeight - 40;
+    
+    pdf.setDrawColor(200, 200, 200);
+    pdf.line(margin, currentY, pageWidth - margin, currentY);
+    
+    currentY += 10;
+    
+    pdf.setFontSize(8);
+    pdf.setTextColor('#9ca3af');
+    pdf.setFont('helvetica', 'italic');
+    
+    const footerText = t('partnerBilling.invoiceFooter') || 
+      'Questo documento rappresenta una fattura valida per il servizio fornito.';
+    currentY = addWrappedText(footerText, margin, currentY, contentWidth, 4);
+    
+    currentY += 8;
+    
+    const generatedText = `${t('contracts.generatedOn') || 'Generato il'}: ${formatDate(new Date().toISOString())}`;
+    pdf.text(generatedText, margin, currentY);
+    
+    const docNumber = payment.invoice_number || `INV-${Date.now()}`;
+    pdf.text(docNumber, pageWidth - margin - pdf.getTextWidth(docNumber), currentY);
+    
+    // 7. SAVE PDF
+    const fileName = `invoice-${payment.invoice_number || payment.id}.pdf`;
+    pdf.save(fileName);
+    
+    return true;
+    
+  } catch (error) {
+    console.error('Error generating invoice PDF:', error);
+    throw new Error('Failed to generate invoice PDF');
+  }
+};
+
+// Keep existing generateContractPDF function unchanged
+// (Your existing contract PDF generation code remains here)

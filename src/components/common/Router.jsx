@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ContractRenewalLogs from '../../components/ContractRenewalLogs';
 import { useAuth } from '../../contexts/AuthContext';
 import ArchivedContracts from '../../pages/ArchivedContracts';
+import BillingStatisticsDashboard from '../../pages/BillingStatisticsDashboard';
 import Bookings from '../../pages/Bookings';
 import Contracts from '../../pages/Contracts';
 import Customers from '../../pages/Customers';
@@ -9,6 +10,7 @@ import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
 import LogView from '../../pages/LogView';
 import Notifications from '../../pages/Notifications';
+import PartnerBillingManagement from '../../pages/PartnerBillingManagement';
 import PartnerContracts from '../../pages/PartnerContracts';
 import Partners from '../../pages/Partners';
 import PhotoGallery from '../../pages/PhotoGallery';
@@ -17,6 +19,11 @@ import PricingPlans from '../../pages/PricingPlans';
 import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
 import SuperAdminEmailTemplates from '../../pages/SuperAdminEmailTemplates';
+
+import AllPartnersBilling from '../../pages/AllPartnersBilling';
+import PartnerBillingHistory from '../../pages/PartnerBillingHistory';
+
+
 import Support from '../../pages/Support'; // ← ADD THIS IMPORT
 import Users from '../../pages/Users';
 import logger from '../../utils/logger';
@@ -255,12 +262,43 @@ const Router = () => {
         </ProtectedRoute>
       ) : <Login />;
 
+    case '/partner-billing':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <PartnerBillingManagement />
+        </ProtectedRoute>
+      ) : <Login />;
+
     case '/notifications':
       return user ? (
         <ProtectedRoute requiredRoles={['user','admin','superadmin']}>
           <Notifications />
         </ProtectedRoute>
       ) : <Login />;
+
+    case '/billing-history':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <PartnerBillingHistory />
+        </ProtectedRoute>
+      ) : <Login />;
+
+    case '/partners-billing':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <AllPartnersBilling />
+        </ProtectedRoute>
+      ) : <Login />;
+
+    case '/billing-statistics':
+      return user ? (
+        <ProtectedRoute requiredRoles={['superadmin']}>
+          <BillingStatisticsDashboard />
+        </ProtectedRoute>
+      ) : <Login />;
+
+
+
 
     default:
       // For any unknown path, redirect based on auth status

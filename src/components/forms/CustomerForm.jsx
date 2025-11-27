@@ -6,6 +6,8 @@ import { supabase } from '../../services/supabase';
 import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const CustomerForm = ({ 
   isOpen, 
   onClose, 
@@ -51,7 +53,6 @@ const CustomerForm = ({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConstraints, setDeleteConstraints] = useState([]);
 
-  // Customer type options for Select component
   const customerTypeOptions = [
     { value: 'individual', label: t('customers.individual') },
     { value: 'freelancer', label: t('customers.freelancer') },
@@ -62,7 +63,6 @@ const CustomerForm = ({
     { value: 'affiliated', label: t('customers.affiliated') }
   ];
 
-  // Customer status options for Select component
   const customerStatusOptions = [
     { value: 'tobequalified', label: t('customers.tobequalified') },
     { value: 'qualified', label: t('customers.qualified') },
@@ -73,10 +73,9 @@ const CustomerForm = ({
     { value: 'inactive', label: t('customers.inactive') }
   ];
 
-  // Update form data when customer changes
   useEffect(() => {
     if (customer) {
-      console.log('Loading customer data for editing:', customer);
+      logger.log('Loading customer data for editing:', customer);
       setFormData({
         first_name: customer.first_name || '',
         second_name: customer.second_name || '',
@@ -103,8 +102,7 @@ const CustomerForm = ({
         notes: customer.notes || ''
       });
     } else {
-      // Reset form for new customer
-      console.log('Resetting form for new customer');
+      logger.log('Resetting form for new customer');
       setFormData({
         first_name: '',
         second_name: '',
@@ -149,14 +147,12 @@ const CustomerForm = ({
       let result;
       
       if (isEditing) {
-        // Update existing customer
         result = await supabase
           .from('customers')
           .update(formData)
           .eq('id', customer.id)
           .select();
       } else {
-        // Create new customer
         const customerData = {
           ...formData,
           partner_uuid: partnerUuid,
@@ -186,7 +182,7 @@ const CustomerForm = ({
         onClose();
       }
     } catch (error) {
-      console.error('Error saving customer:', error);
+      logger.error('Error saving customer:', error);
       toast.error(error.message || t('messages.errorSavingCustomer'));
     } finally {
       setLoading(false);
@@ -197,11 +193,8 @@ const CustomerForm = ({
     if (!customer || !checkConstraints) return;
     
     setDeleteLoading(true);
-    
-    // Check constraints
     const constraints = await checkConstraints(customer.id);
     setDeleteConstraints(constraints);
-    
     setDeleteLoading(false);
     setShowDeleteConfirm(true);
   };
@@ -209,7 +202,6 @@ const CustomerForm = ({
   const handleConfirmDelete = async () => {
     if (!customer || !onDelete) return;
 
-    // If there are constraints, don't allow deletion
     if (deleteConstraints.length > 0) {
       setShowDeleteConfirm(false);
       setDeleteConstraints([]);
@@ -217,9 +209,7 @@ const CustomerForm = ({
     }
 
     setDeleteLoading(true);
-    
     const result = await onDelete(customer);
-    
     setDeleteLoading(false);
     
     if (result.success) {
@@ -267,222 +257,215 @@ const CustomerForm = ({
           )}
 
           <form onSubmit={handleSubmit} className="modal-form">
-            {/* Personal Information Section */}
-            <div className="form-section">
-              <h3 className="form-section-title">{t('customers.personalInformation')}</h3>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="first_name" className="form-label">
-                    {t('customers.firstName')} *
-                  </label>
-                  <input
-                    id="first_name"
-                    name="first_name"
-                    type="text"
-                    required
-                    className="form-input"
-                    placeholder={t('placeholders.firstNamePlaceholder')}
-                    value={formData.first_name}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="second_name" className="form-label">
-                    {t('customers.secondName')} *
-                  </label>
-                  <input
-                    id="second_name"
-                    name="second_name"
-                    type="text"
-                    required
-                    className="form-input"
-                    placeholder={t('placeholders.secondNamePlaceholder')}
-                    value={formData.second_name}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
+            <h3 className="form-section-title">{t('customers.personalInformation')}</h3>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="email" className="form-label">
-                    {t('auth.email')} *
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    className="form-input"
-                    placeholder={t('placeholders.emailPlaceholder')}
-                    value={formData.email}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="phone" className="form-label">
-                    {t('customers.phone')}
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    className="form-input"
-                    placeholder={t('placeholders.phonePlaceholder')}
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
 
+            <div className="form-group">
+              <label htmlFor="company_name" className="form-label">
+                {t('customers.companyName')}
+              </label>
+              <input
+                id="company_name"
+                name="company_name"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.companyNamePlaceholder')}
+                value={formData.company_name}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-row">
               <div className="form-group">
-                <label htmlFor="codice_fiscale" className="form-label">
-                  {t('customers.codiceFiscale')} *
+                <label htmlFor="first_name" className="form-label">
+                  {t('customers.firstName')} *
                 </label>
                 <input
-                  id="codice_fiscale"
-                  name="codice_fiscale"
+                  id="first_name"
+                  name="first_name"
                   type="text"
                   required
                   className="form-input"
-                  placeholder={t('placeholders.codiceFiscalePlaceholder')}
-                  value={formData.codice_fiscale}
+                  placeholder={t('placeholders.firstNamePlaceholder')}
+                  value={formData.first_name}
                   onChange={handleChange}
                 />
               </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="customer_type" className="form-label">
-                    {t('customers.type')} *
-                  </label>
-                  <Select
-                    name="customer_type"
-                    value={formData.customer_type}
-                    onChange={handleChange}
-                    options={customerTypeOptions}
-                    placeholder={t('customers.selectType')}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="customer_status" className="form-label">
-                    {t('customers.status')} *
-                  </label>
-                  {isProfileCompletion ? (
-                    <input
-                      id="customer_status"
-                      name="customer_status"
-                      type="text"
-                      className="form-input"
-                      value={t(`customers.${formData.customer_status}`)}
-                      readOnly
-                      disabled
-                      style={{ 
-                        backgroundColor: '#f5f5f5', 
-                        cursor: 'not-allowed',
-                        color: '#666'
-                      }}
-                    />
-                  ) : (
-                    <Select
-                      name="customer_status"
-                      value={formData.customer_status}
-                      onChange={handleChange}
-                      options={customerStatusOptions}
-                      placeholder={t('customers.selectStatus')}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Address Information */}
-            <div className="form-section">
-              <h3 className="form-section-title">{t('customers.addressInformation')}</h3>
-              
               <div className="form-group">
-                <label htmlFor="address" className="form-label">
-                  {t('customers.address')}
+                <label htmlFor="second_name" className="form-label">
+                  {t('customers.secondName')} *
                 </label>
                 <input
-                  id="address"
-                  name="address"
+                  id="second_name"
+                  name="second_name"
                   type="text"
+                  required
                   className="form-input"
-                  placeholder={t('placeholders.addressPlaceholder')}
-                  value={formData.address}
+                  placeholder={t('placeholders.secondNamePlaceholder')}
+                  value={formData.second_name}
                   onChange={handleChange}
                 />
               </div>
+            </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="zip" className="form-label">
-                    {t('customers.zip')}
-                  </label>
-                  <input
-                    id="zip"
-                    name="zip"
-                    type="text"
-                    className="form-input"
-                    placeholder={t('placeholders.zipPlaceholder')}
-                    value={formData.zip}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="city" className="form-label">
-                    {t('customers.city')}
-                  </label>
-                  <input
-                    id="city"
-                    name="city"
-                    type="text"
-                    className="form-input"
-                    placeholder={t('placeholders.cityPlaceholder')}
-                    value={formData.city}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="country" className="form-label">
-                    {t('customers.country')}
-                  </label>
-                  <input
-                    id="country"
-                    name="country"
-                    type="text"
-                    className="form-input"
-                    placeholder={t('placeholders.countryPlaceholder')}
-                    value={formData.country}
-                    onChange={handleChange}
-                  />
-                </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">
+                  {t('auth.email')} *
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="form-input"
+                  placeholder={t('placeholders.emailPlaceholder')}
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="phone" className="form-label">
+                  {t('customers.phone')}
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  className="form-input"
+                  placeholder={t('placeholders.phonePlaceholder')}
+                  value={formData.phone}
+                  onChange={handleChange}
+                />
               </div>
             </div>
 
-            {/* Business Information - Only show for companies */}
+            <div className="form-group">
+              <label htmlFor="codice_fiscale" className="form-label">
+                {t('customers.codiceFiscale')} *
+              </label>
+              <input
+                id="codice_fiscale"
+                name="codice_fiscale"
+                type="text"
+                required
+                className="form-input"
+                placeholder={t('placeholders.codiceFiscalePlaceholder')}
+                value={formData.codice_fiscale}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="customer_type" className="form-label">
+                  {t('customers.type')} *
+                </label>
+                <Select
+                  name="customer_type"
+                  value={formData.customer_type}
+                  onChange={handleChange}
+                  options={customerTypeOptions}
+                  placeholder={t('customers.selectType')}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="customer_status" className="form-label">
+                  {t('customers.status')} *
+                </label>
+                {isProfileCompletion ? (
+                  <input
+                    id="customer_status"
+                    name="customer_status"
+                    type="text"
+                    className="form-input"
+                    value={t(`customers.${formData.customer_status}`)}
+                    readOnly
+                    disabled
+                    style={{ 
+                      backgroundColor: '#f5f5f5', 
+                      cursor: 'not-allowed',
+                      color: '#666'
+                    }}
+                  />
+                ) : (
+                  <Select
+                    name="customer_status"
+                    value={formData.customer_status}
+                    onChange={handleChange}
+                    options={customerStatusOptions}
+                    placeholder={t('customers.selectStatus')}
+                  />
+                )}
+              </div>
+            </div>
+
+            <h3 className="form-section-title">{t('customers.addressInformation')}</h3>
+            
+            <div className="form-group">
+              <label htmlFor="address" className="form-label">
+                {t('customers.address')}
+              </label>
+              <input
+                id="address"
+                name="address"
+                type="text"
+                className="form-input"
+                placeholder={t('placeholders.addressPlaceholder')}
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="zip" className="form-label">
+                  {t('customers.zip')}
+                </label>
+                <input
+                  id="zip"
+                  name="zip"
+                  type="text"
+                  className="form-input"
+                  placeholder={t('placeholders.zipPlaceholder')}
+                  value={formData.zip}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="city" className="form-label">
+                  {t('customers.city')}
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  className="form-input"
+                  placeholder={t('placeholders.cityPlaceholder')}
+                  value={formData.city}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="country" className="form-label">
+                  {t('customers.country')}
+                </label>
+                <input
+                  id="country"
+                  name="country"
+                  type="text"
+                  className="form-input"
+                  placeholder={t('placeholders.countryPlaceholder')}
+                  value={formData.country}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
             {formData.customer_type === 'company' && (
-              <div className="form-section">
+              <>
                 <h3 className="form-section-title">{t('customers.businessInformation')}</h3>
                 
-                <div className="form-group">
-                  <label htmlFor="company_name" className="form-label">
-                    {t('customers.companyName')} *
-                  </label>
-                  <input
-                    id="company_name"
-                    name="company_name"
-                    type="text"
-                    required={formData.customer_type === 'company'}
-                    className="form-input"
-                    placeholder={t('placeholders.companyNamePlaceholder')}
-                    value={formData.company_name}
-                    onChange={handleChange}
-                  />
-                </div>
-
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="piva" className="form-label">
@@ -544,12 +527,7 @@ const CustomerForm = ({
                     />
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Billing Information - Only show for companies */}
-            {formData.customer_type === 'company' && (
-              <div className="form-section">
                 <h3 className="form-section-title">{t('customers.billingInformation')}</h3>
                 
                 <div className="form-row">
@@ -642,29 +620,23 @@ const CustomerForm = ({
                     />
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
-            {/* Notes */}
-            <div className="form-section">
-              <div className="form-group">
-                <label htmlFor="notes" className="form-label">
-                  {t('customers.notes')}
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  rows={3}
-                  className="form-textarea"
-                  placeholder={t('placeholders.notesPlaceholder')}
-                  value={formData.notes}
-                  onChange={handleChange}
-                />
-              </div>
+            <h3 className="form-section-title">{t('customers.notes')}</h3>
+            <div className="form-group">
+              <textarea
+                id="notes"
+                name="notes"
+                rows={3}
+                className="form-textarea"
+                placeholder={t('placeholders.notesPlaceholder')}
+                value={formData.notes}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="modal-actions">
-              {/* Delete button on the left (only for editing) */}
               {isEditing && !isProfileCompletion && onDelete && (
                 <button
                   type="button"
@@ -712,7 +684,6 @@ const CustomerForm = ({
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="modal-overlay" style={{ zIndex: 1001 }}>
           <div className="modal-container delete-modal">

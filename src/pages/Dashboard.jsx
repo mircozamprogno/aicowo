@@ -1,6 +1,6 @@
 import { Building, Calendar, DollarSign, MapPin, Plus, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from '../components/common/ToastContainer';
 import ContractForm from '../components/forms/ContractForm';
 import PackageBookingForm from '../components/forms/PackageBookingForm';
@@ -21,12 +21,18 @@ import oneSignalEmailService from '../services/oneSignalEmailService';
 
 
 
+
+
+
 const Dashboard = () => {
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
   const [profileCheckRetries, setProfileCheckRetries] = useState(0);
   const MAX_PROFILE_CHECK_RETRIES = 3;  
+
+  const [partnersUsersData, setPartnersUsersData] = useState([]);
+  const [partnersUsersLoading, setPartnersUsersLoading] = useState(true);
 
   // ADD THIS DEBUG LOG
   logger.log('🔍 DASHBOARD DEBUG - Profile object:', profile);
@@ -161,6 +167,7 @@ const Dashboard = () => {
       setProfileCheckComplete(true);
       fetchStats();
       fetchContractsChartData();
+      fetchPartnersUsersData(); // ADD THIS LINE
     } else {
       // Unknown role
       logger.warn('⚠️ Unknown role:', currentRole);
@@ -1063,6 +1070,82 @@ setStats({
     }
   };
 
+
+
+  const fetchPartnersUsersData = async () => {
+    setPartnersUsersLoading(true);
+    
+    try {
+      const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+      
+      // Get all partners
+      const { data: partners, error: partnersError } = await supabase
+        .from('partners')
+        .select('partner_uuid, company_name, first_name, second_name')
+        .eq('partner_status', 'active');
+      
+      if (partnersError) throw partnersError;
+      
+      // For each partner, get active users count and plan limit
+      const partnersData = await Promise.all(
+        (partners || []).map(async (partner) => {
+          // FIXED: Month parameter FIRST, partner UUID SECOND
+          const { data: activeUsersData, error: activeUsersError } = await supabase
+            .rpc('count_active_users_for_month', {
+              p_billing_month: currentMonth,
+              p_partner_uuid: partner.partner_uuid
+            });
+          
+          if (activeUsersError) {
+            logger.error('❌ Error getting active users:', activeUsersError);
+          }
+          
+          // Call the RPC function to get plan limit
+          const { data: planLimitData, error: planLimitError } = await supabase
+            .rpc('get_partner_active_users_limit', {
+              p_partner_uuid: partner.partner_uuid
+            });
+          
+          if (planLimitError) {
+            logger.error('❌ Error getting plan limit:', planLimitError);
+          }
+          
+          const activeUsers = activeUsersData || 0;
+          const planLimit = planLimitData || 0;
+          const isOverLimit = activeUsers > planLimit;
+          
+          const partnerName = partner.company_name || 
+            `${partner.first_name || ''} ${partner.second_name || ''}`.trim() ||
+            'Partner';
+          
+          return {
+            partnerName,
+            activeUsers,
+            planLimit,
+            isOverLimit
+          };
+        })
+      );
+      
+      // Filter out partners with no data and sort
+      const chartData = partnersData
+        .filter(p => p.activeUsers > 0 || p.planLimit > 0)
+        .sort((a, b) => {
+          if (a.isOverLimit !== b.isOverLimit) return a.isOverLimit ? -1 : 1;
+          return b.activeUsers - a.activeUsers;
+        })
+        .slice(0, 15); // Top 15 partners
+      
+      setPartnersUsersData(chartData);
+    } catch (error) {
+      logger.error('Error fetching partners users data:', error);
+      setPartnersUsersData([]);
+    } finally {
+      setPartnersUsersLoading(false);
+    }
+  };
+
+
   // Format currency helper
   const formatCurrency = (amount, currency = 'EUR') => {
     return new Intl.NumberFormat('en-US', {
@@ -1857,7 +1940,106 @@ const renderEnhancedPartnerDashboard = () => {
             </div>
           </div>
 
-          {/* Contracts Analytics Chart for Superadmin - ONLY SHOW IF THERE'S DATA */}
+          {/* Partners Active Users Monitoring - SUPERADMIN ONLY */}
+          <div className="dashboard-section">
+            <h2 className="section-title">
+              <Users size={20} style={{ marginRight: '0.5rem' }} />
+              {t('dashboard.partnersUsersMonitoring') || 'Monitoraggio Utenti Partner'}
+            </h2>
+            <div className="dashboard-chart">
+              <h3 className="chart-subtitle">
+                {t('dashboard.activeUsersVsPlanLimits') || 'Utenti Attivi vs Limiti Piano - Top Partner'}
+              </h3>
+              {partnersUsersLoading ? (
+                <div className="chart-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Caricamento dati...</span>
+                </div>
+              ) : partnersUsersData.length === 0 ? (
+                <div className="chart-empty">
+                  <p>{t('dashboard.noPartnersData') || 'Nessun dato di fatturazione disponibile'}</p>
+                </div>
+              ) : (
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart 
+                      data={partnersUsersData} 
+                      margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
+                      layout="horizontal"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="partnerName" 
+                        tick={{ fontSize: 11 }} 
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          value, 
+                          name === 'activeUsers' ? 'Utenti Attivi' : 'Limite Piano'
+                        ]}
+                        labelFormatter={(label) => `Partner: ${label}`}
+                      />
+                      <Legend 
+                        formatter={(value) => 
+                          value === 'activeUsers' ? 'Utenti Attivi' : 'Limite Piano'
+                        }
+                        wrapperStyle={{ paddingTop: '20px' }}
+                      />
+                      <Bar 
+                        dataKey="activeUsers" 
+                        fill="#3b82f6" 
+                        name="activeUsers"
+                        radius={[4, 4, 0, 0]}
+                      >
+                        {partnersUsersData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.isOverLimit ? '#ef4444' : '#3b82f6'} 
+                          />
+                        ))}
+                      </Bar>
+                      <Bar 
+                        dataKey="planLimit" 
+                        fill="#10b981" 
+                        name="planLimit"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  
+                  {/* Over-Limit Partners Summary */}
+                  {partnersUsersData.some(p => p.isOverLimit) && (
+                    <div className="partners-overlimit-alert">
+                      <AlertTriangle size={20} />
+                      <div className="alert-content">
+                        <strong>
+                          {partnersUsersData.filter(p => p.isOverLimit).length} {' '}
+                          {t('dashboard.partnersOverLimit') || 'partner oltre il limite'}
+                        </strong>
+                        <div className="overlimit-partners-list">
+                          {partnersUsersData
+                            .filter(p => p.isOverLimit)
+                            .map((p, idx) => (
+                              <span key={idx} className="overlimit-partner">
+                                {p.partnerName} ({p.activeUsers}/{p.planLimit})
+                              </span>
+                            ))
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Contracts Analytics Chart - ONLY IF DATA EXISTS */}
           {hasContractData && (
             <div className="dashboard-section">
               <div className="dashboard-chart">

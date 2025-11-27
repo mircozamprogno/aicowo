@@ -11,12 +11,20 @@ const Select = ({
     placeholder = "Select...",
     emptyMessage = "No options available",
     className = "",
-    name = "" // Add name prop
+    name = "",
+    autoSelectSingle = true // New prop to control auto-selection
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const dropdownRef = useRef(null);
     const triggerRef = useRef(null);
+
+    // Auto-select first option if only one option exists
+    useEffect(() => {
+        if (autoSelectSingle && options.length === 1 && !value) {
+            onChange({ target: { name: name, value: options[0].value } });
+        }
+    }, [options, value, autoSelectSingle, onChange, name]);
 
     // Calculate dropdown position
     const updateDropdownPosition = () => {

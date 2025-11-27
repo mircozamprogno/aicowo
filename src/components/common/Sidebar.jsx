@@ -1,4 +1,4 @@
-import { Activity, BellRing, Building, Calendar, Camera, Cog, CreditCard, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, Users, X } from 'lucide-react';
+import { Activity, BellRing, Building, Calendar, Camera, Cog, CreditCard, DollarSign, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -68,6 +68,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.partnerContracts'), href: '/partner-contracts', icon: File, roles: ['superadmin'] },
       { name: t('navigation.discountCodes'), href: '/discount-codes', icon: Tag, roles: ['superadmin'] },
       { name: t('navigation.superadminemail'), href: '/superadminemail', icon: Mail, roles: ['superadmin'] },
+      { name: t('navigation.partner-billing'), href: '/partner-billing', icon: Calendar, roles: ['superadmin'] },
+      { name: t('navigation.partners-billing'), href: '/partners-billing', icon: DollarSign, roles: ['superadmin'] },
+      { name: t('navigation.billing-statistics'), href: '/billing-statistics', icon: TrendingUp, roles: ['superadmin'] },
       
       // Partner admin navigation - NEW ORDER
       { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
@@ -79,8 +82,11 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
       { name: t('navigation.notifications'), href: '/notifications', icon: BellRing, roles: ['user', 'admin', 'superadmin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
+      { name: t('navigation.billing-history'), href: '/billing-history', icon: DollarSign, roles: ['admin'] },
       { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
 
+
+      
       
       // Regular users see limited options and settings
       { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },

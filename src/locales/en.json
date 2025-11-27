@@ -25,7 +25,11 @@
     "customersDiscountCodes": "Discount Codes",
     "logview": "Logs",
     "superadminemail": "Partner Email",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "partner-billing": "Invoices",
+    "partners-billing": "All Partners Billing",
+    "billing-history": "Payments and Invoices",
+    "billing-statistics": "Billing Statistics"
   },
   "customers": {
     "title": "Customers",
@@ -448,7 +452,11 @@
     "totalActiveValue": "Total Active Contract Value", 
     "monthOverMonthGrowth": "Month-over-Month Growth",
     "packageUtilization": "Package Utilization",
-    "customerUsagePatterns": "Customer usage patterns and entry consumption"
+    "customerUsagePatterns": "Customer usage patterns and entry consumption",
+    "partnersUsersMonitoring": "Partners Users Monitoring",
+    "activeUsersVsPlanLimits": "Active Users vs Plan Limits - Top Partners",
+    "noPartnersData": "No billing data available",
+    "partnersOverLimit": "partners over limit"
   },
   "partners": {
     "title": "Partners",
@@ -582,7 +590,11 @@
     "confirm": "Confirm",
     "accessDenied": "Access denied",
     "select": "Select",
-    "page": "Per page"
+    "page": "Per page",
+    "noResultsFound": "No results found",
+    "showing": "Showing",
+    "rowsPerPage": "Rows per page",
+    "refresh": "Refresh"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -715,7 +727,9 @@
     "errorCheckingContracts": "Error checking for associated contracts",
     "endDateRequired": "End date is required",
     "endDateMustBeAfterStartDate": "End date must be after start date",
-    "priceInvalid": "Price must be a valid number greater than zero"
+    "priceInvalid": "Price must be a valid number greater than zero",
+    "pdfGenerated": "PDF generated successfully",
+    "errorGeneratingPdf": "Error generating PDF"
   },
   "services": {
     "title": "Services",
@@ -2213,6 +2227,51 @@
     "allRecipientTypes": "All Recipients",
     "partnersOnly": "Partners Only",
     "customersOnly": "Customers Only"
+  },
+  "partnerBilling": {
+    "billingHistory": "Billing History",
+    "billingHistorySubtitle": "View and manage your invoices",
+    "allPartnersBilling": "All Partners Billing",
+    "allPartnersBillingSubtitle": "Manage billing for all partners",
+    "totalInvoices": "Total Invoices",
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "totalAmount": "Total Amount",
+    "status": "Status",
+    "year": "Year",
+    "partner": "Partner",
+    "invoiceNumber": "Invoice Number",
+    "period": "Period",
+    "plan": "Plan",
+    "amount": "Amount",
+    "activeUsers": "Active Users",
+    "dueDate": "Due Date",
+    "lateFee": "Late Fee",
+    "overLimit": "Over Limit",
+    "daysOverdue": "days overdue",
+    "noInvoices": "No invoices found",
+    "downloadInvoice": "Download Invoice",
+    "searchInvoices": "Search invoices or partners...",
+    "errorMessage": "Error Message",
+    "yes": "Yes",
+    "no": "No",
+    "invoice": "INVOICE",
+    "billingPeriod": "Billing Period",
+    "issueDate": "Issue Date",
+    "paymentDate": "Payment Date",
+    "transactionRef": "Transaction Ref",
+    "serviceDetails": "Service Details",
+    "description": "Description",
+    "subscriptionService": "Subscription Service",
+    "billingFrequency": "Billing Frequency",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "invoiceFooter": "This document represents a valid invoice for the service provided.",
+    "paymentInstructions": "PAYMENT INSTRUCTIONS",
+    "paymentInstructionsText": "Please make payment by the due date using the following methods: bank transfer, credit card, or direct debit."
   },
   "app": {
     "appName": " ",

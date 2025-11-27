@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2025.11.27 V 0.860 Fatturazione + Gestione utenti 
 2025.11.23 V 0.850 Notifications + Logs 
 2025.11.19 V 0.840 View Calendar BUg Fixes
 2025.11.19 V 0.830 EMail sending Bug Fixes
