@@ -7,6 +7,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { PaymentService } from '../../services/paymentService';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PaymentHistoryModal = ({ 
   isOpen, 
   onClose, 
@@ -40,14 +42,14 @@ const PaymentHistoryModal = ({
       
       if (error) {
         toast.error(t('payments.errorLoadingPayments'));
-        console.error('Error loading payments:', error);
+        logger.error('Error loading payments:', error);
         return;
       }
 
       setPayments(data || []);
       calculateStats(data || []);
     } catch (error) {
-      console.error('Error loading payments:', error);
+      logger.error('Error loading payments:', error);
       toast.error(t('payments.errorLoadingPayments'));
     } finally {
       setLoading(false);
@@ -116,7 +118,7 @@ const PaymentHistoryModal = ({
       loadPayments();
       if (onRefresh) onRefresh();
     } catch (error) {
-      console.error('Error deleting payment:', error);
+      logger.error('Error deleting payment:', error);
       toast.error(t('payments.errorDeletingPayment'));
     }
   };

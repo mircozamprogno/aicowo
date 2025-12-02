@@ -1,5 +1,5 @@
 // src/pages/Settings.jsx
-import { Calendar, Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, Download, FileText, Filter, Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import OperatingScheduleManager from '../components/calendar/OperatingScheduleManager';
 import Select from '../components/common/Select';
@@ -8,13 +8,13 @@ import EmailTemplateList from '../components/email/EmailTemplateList';
 import LocationsList from '../components/partners/LocationsList';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { generateInvoicePDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 import '../styles/components/operating-calendar.css';
+import '../styles/pages/partner-billing-history.css';
 
 import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../utils/activityLogger';
 import logger from '../utils/logger';
-
-
 
 const Settings = () => {
   const { profile, user } = useAuth();
@@ -32,7 +32,7 @@ const Settings = () => {
   
   // Location management states
   const [showLocations, setShowLocations] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'locations', or 'email-templates'
+  const [activeTab, setActiveTab] = useState('profile');
   
   // Email banner upload states
   const [bannerFile, setBannerFile] = useState(null);
@@ -40,7 +40,19 @@ const Settings = () => {
   const [bannerUploading, setBannerUploading] = useState(false);
   const [currentBannerUrl, setCurrentBannerUrl] = useState(null);
   
-  // Determine if user is admin partner or regular user
+  // Billing history states
+  const [payments, setPayments] = useState([]);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
+  const [billingStats, setBillingStats] = useState({
+    total: 0,
+    pending: 0,
+    paid: 0,
+    overdue: 0,
+    totalAmount: 0
+  });
+  
   const isAdminPartner = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
   
@@ -56,7 +68,7 @@ const Settings = () => {
     codice_fiscale: '',
     customer_type: 'individual',
     company_name: '',
-    structure_name: '', // ADD THIS LINE
+    structure_name: '',
     piva: '',
     pec: '',
     sdi_code: '',
@@ -68,10 +80,8 @@ const Settings = () => {
     billing_city: '',
     billing_country: 'Italy',
     notes: '',
-    // Partner-specific fields
     partner_type: 'company',
     partner_status: 'active',
-    // Language preference
     preferred_language: language || 'it'
   });
 
@@ -81,17 +91,163 @@ const Settings = () => {
         fetchPartnerData();
         loadCurrentLogo();
         loadCurrentBanner();
+        fetchPayments();
       } else {
         fetchCustomerData();
       }
     }
   }, [user, profile, isAdminPartner, isSuperAdmin]);
 
+  const fetchPayments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('partners_payments')
+        .select(`
+          *,
+          partners_contracts (
+            contract_number,
+            billing_frequency,
+            partners_pricing_plans (
+              plan_name
+            )
+          )
+        `)
+        .eq('partner_uuid', profile.partner_uuid)
+        .order('payment_period_start', { ascending: false });
+
+      if (error) throw error;
+
+      setPayments(data || []);
+      calculateBillingStats(data || []);
+    } catch (error) {
+      logger.error('Error fetching payments:', error);
+    }
+  };
+
+  const calculateBillingStats = (paymentsData) => {
+    const stats = {
+      total: paymentsData.length,
+      pending: 0,
+      paid: 0,
+      overdue: 0,
+      totalAmount: 0
+    };
+
+    paymentsData.forEach(payment => {
+      stats.totalAmount += Number(payment.amount);
+      
+      if (payment.payment_status === 'paid') {
+        stats.paid++;
+      } else if (payment.payment_status === 'pending' && payment.is_overdue) {
+        stats.overdue++;
+      } else if (payment.payment_status === 'pending') {
+        stats.pending++;
+      }
+    });
+
+    setBillingStats(stats);
+  };
+
+  const handleDownloadInvoice = async (payment) => {
+    setDownloadingId(payment.id);
+    
+    try {
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('partner_uuid', profile.partner_uuid)
+        .single();
+
+      if (partnerError) throw partnerError;
+
+      const logoUrl = partnerData?.logo_url || null;
+      await generateInvoicePDF(payment, partnerData, logoUrl, t);
+
+      toast.success(t('messages.pdfGenerated') || 'PDF generated successfully');
+    } catch (error) {
+      logger.error('Error generating invoice PDF:', error);
+      toast.error(t('messages.errorGeneratingPdf') || 'Error generating PDF');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const formatCurrency = (amount, currency = 'EUR') => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('it-IT', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusBadgeClass = (status, isOverdue) => {
+    if (status === 'paid') return 'status-paid';
+    if (status === 'pending' && isOverdue) return 'status-overdue';
+    if (status === 'pending') return 'status-pending';
+    if (status === 'failed') return 'status-failed';
+    if (status === 'cancelled') return 'status-cancelled';
+    return 'status-inactive';
+  };
+
+  const getStatusLabel = (status, isOverdue) => {
+    if (status === 'paid') return t('partnerBilling.paid') || 'Pagato';
+    if (status === 'pending' && isOverdue) return t('partnerBilling.overdue') || 'Scaduto';
+    if (status === 'pending') return t('partnerBilling.pending') || 'In Attesa';
+    if (status === 'failed') return t('partnerBilling.failed') || 'Fallito';
+    if (status === 'cancelled') return t('partnerBilling.cancelled') || 'Annullato';
+    return status;
+  };
+
+  const getOverLimitBadge = (payment) => {
+    if (payment.is_over_limit) {
+      return (
+        <span className="over-limit-badge" title={`${payment.active_users_count} / ${payment.plan_active_users_limit}`}>
+          {t('partnerBilling.overLimit') || 'Oltre Limite'}
+        </span>
+      );
+    }
+    return null;
+  };
+
+  const filteredPayments = payments.filter(payment => {
+    const statusMatch = filterStatus === 'all' || 
+      (filterStatus === 'overdue' ? payment.is_overdue && payment.payment_status === 'pending' : payment.payment_status === filterStatus);
+    
+    const yearMatch = filterYear === 'all' || 
+      new Date(payment.payment_period_start).getFullYear().toString() === filterYear;
+    
+    return statusMatch && yearMatch;
+  });
+
+  const uniqueYears = [...new Set(payments.map(p => 
+    new Date(p.payment_period_start).getFullYear().toString()
+  ))].sort((a, b) => b - a);
+
+  const yearOptions = [
+    { value: 'all', label: t('common.all') || 'Tutti' },
+    ...uniqueYears.map(year => ({ value: year, label: year }))
+  ];
+
+  const statusOptions = [
+    { value: 'all', label: t('common.all') || 'Tutti' },
+    { value: 'pending', label: t('partnerBilling.pending') || 'In Attesa' },
+    { value: 'paid', label: t('partnerBilling.paid') || 'Pagato' },
+    { value: 'overdue', label: t('partnerBilling.overdue') || 'Scaduto' },
+    { value: 'failed', label: t('partnerBilling.failed') || 'Fallito' }
+  ];
+
   const loadCurrentLogo = async () => {
     if (!profile?.partner_uuid) return;
 
     try {
-      // Check if logo exists in storage
       const { data: files, error } = await supabase.storage
         .from('partners')
         .list(`${profile.partner_uuid}`, {
@@ -103,7 +259,6 @@ const Settings = () => {
         return;
       }
 
-      // Find logo file (could be logo.png, logo.jpg, etc.)
       const logoFile = files?.find(file => file.name.startsWith('logo.'));
       
       if (logoFile) {
@@ -122,7 +277,6 @@ const Settings = () => {
     if (!profile?.partner_uuid) return;
 
     try {
-      // Check if email banner exists in storage
       const { data: files, error } = await supabase.storage
         .from('partners')
         .list(`${profile.partner_uuid}`, {
@@ -134,7 +288,6 @@ const Settings = () => {
         return;
       }
 
-      // Find email banner file
       const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
       
       if (bannerFile) {
@@ -156,7 +309,6 @@ const Settings = () => {
       const img = document.createElement('img');
 
       img.onload = () => {
-        // Calculate new dimensions (max 800x600, maintaining aspect ratio)
         const maxWidth = 800;
         const maxHeight = 600;
         let { width, height } = img;
@@ -173,16 +325,13 @@ const Settings = () => {
           }
         }
 
-        // Set canvas dimensions
         canvas.width = width;
         canvas.height = height;
 
-        // Draw and compress image
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to blob with compression
         canvas.toBlob(
           (blob) => {
             if (blob) {
@@ -192,7 +341,7 @@ const Settings = () => {
             }
           },
           'image/png',
-          0.9 // Quality setting
+          0.9
         );
       };
 
@@ -205,13 +354,11 @@ const Settings = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select a valid image file');
       return;
     }
 
-    // Validate file size (max 10MB original)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image file size must be less than 10MB');
       return;
@@ -220,19 +367,14 @@ const Settings = () => {
     setLogoUploading(true);
 
     try {
-      // Process and compress image
       const processedBlob = await processImage(file);
-      
-      // Create File object from blob
       const processedFile = new File([processedBlob], 'logo.png', {
         type: 'image/png'
       });
 
-      // Create preview URL
       const previewUrl = URL.createObjectURL(processedBlob);
       setLogoPreview(previewUrl);
 
-      // Automatically upload after processing
       await uploadLogoFile(processedFile);
 
     } catch (error) {
@@ -246,7 +388,6 @@ const Settings = () => {
     if (!file || !profile?.partner_uuid) return;
 
     try {
-      // Delete existing logo first
       try {
         const { data: existingFiles } = await supabase.storage
           .from('partners')
@@ -265,7 +406,6 @@ const Settings = () => {
         logger.log('No existing logo to delete or error:', deleteError);
       }
 
-      // Upload new logo
       const fileName = 'logo.png';
       const filePath = `${profile.partner_uuid}/${fileName}`;
 
@@ -278,20 +418,18 @@ const Settings = () => {
 
       if (error) throw error;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('partners')
         .getPublicUrl(filePath);
 
       setCurrentLogoUrl(urlData.publicUrl);
-      setLogoPreview(null); // Clear preview since we now have current logo
+      setLogoPreview(null);
 
       toast.success('Logo uploaded successfully!');
 
     } catch (error) {
       logger.error('Error uploading logo:', error);
       
-      // Provide more specific error messages
       if (error.message?.includes('row-level security policy')) {
         toast.error('Storage permission error. Please contact support to configure bucket policies.');
       } else if (error.message?.includes('storage')) {
@@ -300,7 +438,6 @@ const Settings = () => {
         toast.error('Error uploading logo. Please try again.');
       }
       
-      // Clear preview on error
       if (logoPreview) {
         URL.revokeObjectURL(logoPreview);
         setLogoPreview(null);
@@ -337,18 +474,15 @@ const Settings = () => {
     }
   };
 
-  // Banner upload handlers
   const handleBannerSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select a valid image file');
       return;
     }
 
-    // Validate file size (max 10MB original)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image file size must be less than 10MB');
       return;
@@ -357,19 +491,14 @@ const Settings = () => {
     setBannerUploading(true);
 
     try {
-      // Process and compress image
       const processedBlob = await processImage(file);
-      
-      // Create File object from blob
       const processedFile = new File([processedBlob], 'email_banner.png', {
         type: 'image/png'
       });
 
-      // Create preview URL
       const previewUrl = URL.createObjectURL(processedBlob);
       setBannerPreview(previewUrl);
 
-      // Automatically upload after processing
       await uploadBannerFile(processedFile);
 
     } catch (error) {
@@ -383,7 +512,6 @@ const Settings = () => {
     if (!file || !profile?.partner_uuid) return;
 
     try {
-      // Delete existing banner first
       try {
         const { data: existingFiles } = await supabase.storage
           .from('partners')
@@ -402,7 +530,6 @@ const Settings = () => {
         logger.log('No existing banner to delete or error:', deleteError);
       }
 
-      // Upload new banner
       const fileName = 'email_banner.png';
       const filePath = `${profile.partner_uuid}/${fileName}`;
 
@@ -415,20 +542,18 @@ const Settings = () => {
 
       if (error) throw error;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('partners')
         .getPublicUrl(filePath);
 
       setCurrentBannerUrl(urlData.publicUrl);
-      setBannerPreview(null); // Clear preview since we now have current banner
+      setBannerPreview(null);
 
       toast.success('Email banner uploaded successfully!');
 
     } catch (error) {
       logger.error('Error uploading email banner:', error);
       
-      // Provide more specific error messages
       if (error.message?.includes('row-level security policy')) {
         toast.error('Storage permission error. Please contact support to configure bucket policies.');
       } else if (error.message?.includes('storage')) {
@@ -437,7 +562,6 @@ const Settings = () => {
         toast.error('Error uploading email banner. Please try again.');
       }
       
-      // Clear preview on error
       if (bannerPreview) {
         URL.revokeObjectURL(bannerPreview);
         setBannerPreview(null);
@@ -502,21 +626,21 @@ const Settings = () => {
           zip: data.zip || '',
           city: data.city || '',
           country: data.country || 'Italy',
-          codice_fiscale: '', // Partners don't have codice_fiscale in partners table
-          customer_type: 'company', // Partners are always companies in settings
+          codice_fiscale: '',
+          customer_type: 'company',
           company_name: data.company_name || '',
-          structure_name: data.structure_name || '', // ADD THIS LINE
+          structure_name: data.structure_name || '',
           piva: data.piva || '',
           pec: data.pec || '',
-          sdi_code: '', // Not in partners table
+          sdi_code: '',
           website: data.website || '',
-          billing_email: '', // Not in partners table
-          billing_phone: '', // Not in partners table
-          billing_address: '', // Not in partners table
-          billing_zip: '', // Not in partners table
-          billing_city: '', // Not in partners table
-          billing_country: 'Italy', // Default
-          notes: '', // Not in partners table
+          billing_email: '',
+          billing_phone: '',
+          billing_address: '',
+          billing_zip: '',
+          billing_city: '',
+          billing_country: 'Italy',
+          notes: '',
           partner_type: data.partner_type || 'company',
           partner_status: data.partner_status || 'active',
           preferred_language: language || 'it'
@@ -540,9 +664,8 @@ const Settings = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      if (error && error.code !== 'PGRST116') {
         logger.error('Error fetching customer data:', error);
-        // If there's an error, we'll create a new customer record
       }
 
       if (data) {
@@ -616,7 +739,6 @@ const Settings = () => {
 
     try {
       if (isAdminPartner || isSuperAdmin) {
-        // Update partner data
         const partnerUpdateData = {
           first_name: formData.first_name,
           second_name: formData.second_name,
@@ -635,7 +757,6 @@ const Settings = () => {
           partner_status: formData.partner_status
         };
 
-        // Capture changes
         const changes = {};
         Object.keys(partnerUpdateData).forEach(key => {
           if (partnerData[key] !== partnerUpdateData[key]) {
@@ -656,7 +777,6 @@ const Settings = () => {
 
         setPartnerData(data[0]);
 
-        // Log activity only if there were changes
         if (Object.keys(changes).length > 0) {
           await logActivity({
             action_category: ACTIVITY_CATEGORIES.USER,
@@ -674,11 +794,9 @@ const Settings = () => {
 
         toast.success(t('messages.partnerDataSavedSuccessfully'));
       } else {
-        // Update customer data
         let result;
         
         if (customerData) {
-          // Capture changes for existing customer
           const changes = {};
           Object.keys(formData).forEach(key => {
             if (customerData[key] !== formData[key]) {
@@ -689,7 +807,6 @@ const Settings = () => {
             }
           });
 
-          // Update existing customer record
           result = await supabase
             .from('customers')
             .update(formData)
@@ -701,7 +818,6 @@ const Settings = () => {
 
           setCustomerData(data[0]);
 
-          // Log activity only if there were changes
           if (Object.keys(changes).length > 0) {
             await logActivity({
               action_category: ACTIVITY_CATEGORIES.CUSTOMER,
@@ -718,7 +834,6 @@ const Settings = () => {
             });
           }
         } else {
-          // Create new customer record
           const newCustomerData = {
             ...formData,
             user_id: user.id,
@@ -735,7 +850,6 @@ const Settings = () => {
 
           setCustomerData(data[0]);
 
-          // Log creation
           await logActivity({
             action_category: ACTIVITY_CATEGORIES.CUSTOMER,
             action_type: ACTIVITY_ACTIONS.CREATED,
@@ -765,7 +879,6 @@ const Settings = () => {
     setShowLocations(false);
   };
 
-  // Language options for Select component
   const languageOptions = [
     { value: 'it', label: 'Italiano' },
     { value: 'en', label: 'English' }
@@ -792,7 +905,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Tab Navigation - Only show for admin partners */}
       {(isAdminPartner || isSuperAdmin) && (
         <div className="settings-tabs">
           <div className="settings-tabs-nav">
@@ -820,32 +932,32 @@ const Settings = () => {
               <Mail size={20} />
               {t('settings.emailTemplates') || 'Email Templates'}
             </button>
-
-
-            {(isAdminPartner) && (
-              <>
-                <button
-                  type="button"
-                  className={`settings-tab ${activeTab === 'calendar' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('calendar')}
-                >
-                  <Calendar size={20} />
-                  {t('settings.operatingCalendar') || 'Operating Calendar'}
-                </button>
-              </>
+            {isAdminPartner && (
+              <button
+                type="button"
+                className={`settings-tab ${activeTab === 'calendar' ? 'active' : ''}`}
+                onClick={() => setActiveTab('calendar')}
+              >
+                <Calendar size={20} />
+                {t('settings.operatingCalendar') || 'Operating Calendar'}
+              </button>
             )}
-
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'invoices' ? 'active' : ''}`}
+              onClick={() => setActiveTab('invoices')}
+            >
+              <FileText size={20} />
+              {t('settings.invoices') || 'Fatture'}
+            </button>
           </div>
         </div>
       )}
 
-
       <div className="settings-content">
-        {/* Profile Tab Content */}
         {activeTab === 'profile' && (
           <form onSubmit={handleSubmit} className="settings-form">
             
-            {/* Logo Upload Section - Only for Partners */}
             {(isAdminPartner || isSuperAdmin) && (
               <div className="form-section">
                 <h3 className="form-section-title">
@@ -858,7 +970,6 @@ const Settings = () => {
                 </p>
 
                 <div className="logo-upload-section">
-                  {/* Current Logo Display */}
                   {currentLogoUrl && !logoPreview && (
                     <div className="current-logo-container">
                       <div className="logo-display-card">
@@ -902,7 +1013,6 @@ const Settings = () => {
                     </div>
                   )}
 
-                  {/* Logo Preview */}
                   {logoPreview && (
                     <div className="logo-preview-container">
                       <div className="logo-display-card">
@@ -945,7 +1055,6 @@ const Settings = () => {
                     </div>
                   )}
 
-                  {/* Upload Logo Input - First time */}
                   {!logoPreview && !currentLogoUrl && (
                     <div className="logo-upload-empty">
                       <div className="upload-placeholder">
@@ -979,7 +1088,6 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Personal Information Section */}
             <div className="form-section">
               <h3 className="form-section-title">
                 {(isAdminPartner || isSuperAdmin) ? t('customers.partnerInformation') : t('customers.personalInformation')}
@@ -1051,7 +1159,6 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Language Selection - Using Select component */}
               <div className="form-group">
                 <label htmlFor="preferred_language" className="form-label">
                   <Globe size={16} style={{ marginRight: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
@@ -1066,7 +1173,6 @@ const Settings = () => {
                 />
               </div>
 
-              {/* Codice Fiscale only for users, not partners */}
               {!(isAdminPartner || isSuperAdmin) && (
                 <div className="form-group">
                   <label htmlFor="codice_fiscale" className="form-label">
@@ -1085,7 +1191,6 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Customer type only for users */}
               {!(isAdminPartner || isSuperAdmin) && (
                 <div className="form-row">
                   <div className="form-group">
@@ -1111,7 +1216,6 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Partner type and status only for superadmin */}
               {isSuperAdmin && (
                 <div className="form-row">
                   <div className="form-group">
@@ -1156,7 +1260,6 @@ const Settings = () => {
               )}
             </div>
 
-            {/* Address Information */}
             <div className="form-section">
               <h3 className="form-section-title">{t('customers.addressInformation')}</h3>
               
@@ -1225,7 +1328,6 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Business Information - Show for companies or always for partners */}
             {((isAdminPartner || isSuperAdmin) || formData.customer_type === 'company') && (
               <div className="form-section">
                 <h3 className="form-section-title">
@@ -1248,7 +1350,6 @@ const Settings = () => {
                   />
                 </div>
 
-                {/* ADD THIS NEW FIELD */}
                 <div className="form-group">
                   <label htmlFor="structure_name" className="form-label">
                     {t('customers.structureName')}
@@ -1330,7 +1431,6 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Billing Information - Only show for users with company type */}
             {!(isAdminPartner || isSuperAdmin) && formData.customer_type === 'company' && (
               <div className="form-section">
                 <h3 className="form-section-title">{t('customers.billingInformation')}</h3>
@@ -1453,7 +1553,6 @@ const Settings = () => {
           </form>
         )}
 
-        {/* Locations Tab Content - Only for admin partners */}
         {activeTab === 'locations' && (isAdminPartner || isSuperAdmin) && (
           <div className="locations-tab-content">
             <div className="locations-tab-header">
@@ -1474,7 +1573,6 @@ const Settings = () => {
           </div>
         )}
 
-        {/* Email Templates Tab Content - Only for admin partners */}
         {activeTab === 'email-templates' && (isAdminPartner || isSuperAdmin) && (
           <div className="email-templates-tab-content">
             <div className="email-templates-tab-header">
@@ -1485,13 +1583,9 @@ const Settings = () => {
               <p className="email-templates-tab-description">
                 {t('settings.customizeEmailBanner') || 'Customize the banner and content that appears in your email templates'}
               </p>
-
-              {/*  <EmailTemplateDebugger /> */}
-
             </div>
 
             <div className="email-templates-content">
-              {/* Email Banner Upload Section */}
               <div className="form-section">
                 <h3 className="form-section-title">
                   <Image size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
@@ -1502,7 +1596,6 @@ const Settings = () => {
                 </p>
 
                 <div className="banner-upload-section">
-                  {/* Current Banner Display */}
                   {currentBannerUrl && !bannerPreview && (
                     <div className="current-banner-container">
                       <div className="banner-display-card">
@@ -1546,7 +1639,6 @@ const Settings = () => {
                     </div>
                   )}
 
-                  {/* Banner Preview */}
                   {bannerPreview && (
                     <div className="banner-preview-container">
                       <div className="banner-display-card">
@@ -1589,7 +1681,6 @@ const Settings = () => {
                     </div>
                   )}
 
-                  {/* Upload Banner Input - First time */}
                   {!bannerPreview && !currentBannerUrl && (
                     <div className="banner-upload-empty">
                       <div className="upload-placeholder">
@@ -1623,7 +1714,6 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Email Template Management Section */}
               <div className="form-section">
                 <EmailTemplateList partnerUuid={profile.partner_uuid} />
               </div>
@@ -1631,7 +1721,6 @@ const Settings = () => {
           </div>
         )}
 
-        {/* Operating Calendar Tab Content - Only for admin partners */}
         {activeTab === 'calendar' && isAdminPartner && (
           <div className="calendar-tab-content">
             <div className="calendar-tab-header">
@@ -1646,6 +1735,204 @@ const Settings = () => {
             <OperatingScheduleManager />
           </div>
         )}
+
+        {activeTab === 'invoices' && (isAdminPartner || isSuperAdmin) && (
+          <div className="partner-billing-history-page" style={{ padding: 0, background: 'transparent' }}>
+            <div className="partner-billing-history-header">
+              <div className="partner-billing-history-header-content">
+                <h1 className="partner-billing-history-title">
+                  <DollarSign size={24} className="mr-2" />
+                  {t('partnerBilling.billingHistory') || 'Storico Fatturazione'}
+                </h1>
+                <p className="partner-billing-history-description">
+                  {t('partnerBilling.billingHistorySubtitle') || 'Visualizza e gestisci le tue fatture'}
+                </p>
+              </div>
+            </div>
+
+            <div className="billing-stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon total">
+                  <FileText size={24} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">{t('partnerBilling.totalInvoices') || 'Totale Fatture'}</div>
+                  <div className="stat-value">{billingStats.total}</div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon pending">
+                  <Clock size={24} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">{t('partnerBilling.pending') || 'In Attesa'}</div>
+                  <div className="stat-value">{billingStats.pending}</div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon paid">
+                  <CheckCircle size={24} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">{t('partnerBilling.paid') || 'Pagate'}</div>
+                  <div className="stat-value">{billingStats.paid}</div>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon overdue">
+                  <AlertTriangle size={24} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">{t('partnerBilling.overdue') || 'Scadute'}</div>
+                  <div className="stat-value">{billingStats.overdue}</div>
+                </div>
+              </div>
+
+              <div className="stat-card total-amount">
+                <div className="stat-icon amount">
+                  <DollarSign size={24} />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">{t('partnerBilling.totalAmount') || 'Importo Totale'}</div>
+                  <div className="stat-value">{formatCurrency(billingStats.totalAmount, payments[0]?.currency)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="billing-filters">
+              <div className="filter-group">
+                <label className="filter-label">
+                  <Filter size={16} />
+                  {t('partnerBilling.status')}:
+                </label>
+                <Select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  options={statusOptions}
+                  placeholder={t('common.all')}
+                  autoSelectSingle={false}
+                />
+              </div>
+
+              <div className="filter-group">
+                <label className="filter-label">
+                  <Calendar size={16} />
+                  {t('partnerBilling.year')}:
+                </label>
+                <Select
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  options={yearOptions}
+                  placeholder={t('common.all')}
+                  autoSelectSingle={false}
+                />
+              </div>
+            </div>
+
+            <div className="billing-table-container">
+              <table className="billing-table">
+                <thead>
+                  <tr>
+                    <th>{t('partnerBilling.invoiceNumber') || 'N. Fattura'}</th>
+                    <th>{t('partnerBilling.period') || 'Periodo'}</th>
+                    <th>{t('partnerBilling.plan') || 'Piano'}</th>
+                    <th>{t('partnerBilling.amount') || 'Importo'}</th>
+                    <th>{t('partnerBilling.activeUsers') || 'Utenti Attivi'}</th>
+                    <th>{t('partnerBilling.dueDate') || 'Scadenza'}</th>
+                    <th>{t('partnerBilling.status')}</th>
+                    <th>{t('partnerContracts.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPayments.map((payment) => (
+                    <tr key={payment.id} className={payment.is_overdue && payment.payment_status === 'pending' ? 'overdue-row' : ''}>
+                      <td>
+                        <div className="invoice-info">
+                          <div className="invoice-number">{payment.invoice_number}</div>
+                          {payment.transaction_reference && (
+                            <div className="transaction-ref">{payment.transaction_reference}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="period-info">
+                          <div>{formatDate(payment.payment_period_start)}</div>
+                          <div className="period-separator">→</div>
+                          <div>{formatDate(payment.payment_period_end)}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="plan-info">
+                          {payment.partners_contracts?.partners_pricing_plans?.plan_name || '-'}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="amount-info">
+                          <div className="amount">{formatCurrency(payment.amount, payment.currency)}</div>
+                          {payment.late_fee > 0 && (
+                            <div className="late-fee">+{formatCurrency(payment.late_fee, payment.currency)} {t('partnerBilling.lateFee')}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="users-info">
+                          {payment.active_users_count !== null ? (
+                            <>
+                              <span>{payment.active_users_count} / {payment.plan_active_users_limit || 0}</span>
+                              {getOverLimitBadge(payment)}
+                            </>
+                          ) : '-'}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="due-date-info">
+                          {formatDate(payment.due_date)}
+                          {payment.is_overdue && payment.payment_status === 'pending' && (
+                            <div className="overdue-days">
+                              {payment.overdue_days} {t('partnerBilling.daysOverdue') || 'giorni'}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${getStatusBadgeClass(payment.payment_status, payment.is_overdue)}`}>
+                          {getStatusLabel(payment.payment_status, payment.is_overdue)}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="billing-actions">
+                          <button 
+                            className="action-btn download-btn"
+                            onClick={() => handleDownloadInvoice(payment)}
+                            disabled={downloadingId === payment.id}
+                            title={t('partnerBilling.downloadInvoice')}
+                          >
+                            {downloadingId === payment.id ? (
+                              <span className="downloading-spinner">⏳</span>
+                            ) : (
+                              <Download size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {filteredPayments.length === 0 && (
+                <div className="empty-state">
+                  <FileText size={48} className="empty-icon" />
+                  <p>{t('partnerBilling.noInvoices') || 'Nessuna fattura trovata'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
 
       </div>
     </div>

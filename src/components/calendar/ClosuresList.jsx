@@ -7,6 +7,8 @@ import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 import ClosureModal from './ClosureModal';
 
+import logger from '../../utils/logger';
+
 const ClosuresList = ({ location }) => {
   const { profile } = useAuth();
   const { t } = useTranslation();
@@ -41,7 +43,7 @@ const ClosuresList = ({ location }) => {
 
       setClosures(data || []);
     } catch (error) {
-      console.error('Error fetching closures:', error);
+      logger.error('Error fetching closures:', error);
       toast.error(t('messages.errorLoadingClosures'));
     } finally {
       setLoading(false);
@@ -72,7 +74,7 @@ const ClosuresList = ({ location }) => {
       toast.success(t('calendar.closureDeleted'));
       fetchClosures();
     } catch (error) {
-      console.error('Error deleting closure:', error);
+      logger.error('Error deleting closure:', error);
       toast.error(t('messages.errorDeletingClosure'));
     }
   };

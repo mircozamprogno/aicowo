@@ -9,6 +9,8 @@ import { generateInvoicePDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 import '../styles/pages/all-partners-billing.css';
 
+import logger from '../utils/logger';
+
 const AllPartnersBilling = () => {
   const [payments, setPayments] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -67,7 +69,7 @@ const AllPartnersBilling = () => {
       setPayments(data || []);
       calculateStats(data || []);
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      logger.error('Error fetching payments:', error);
       toast.error(t('messages.errorLoadingData') || 'Error loading billing data');
     } finally {
       setLoading(false);
@@ -85,7 +87,7 @@ const AllPartnersBilling = () => {
       if (error) throw error;
       setPartners(data || []);
     } catch (error) {
-      console.error('Error fetching partners:', error);
+      logger.error('Error fetching partners:', error);
     }
   };
 
@@ -145,7 +147,7 @@ const AllPartnersBilling = () => {
 
       toast.success(t('messages.pdfGenerated') || 'PDF generated successfully');
     } catch (error) {
-      console.error('Error generating invoice PDF:', error);
+      logger.error('Error generating invoice PDF:', error);
       toast.error(t('messages.errorGeneratingPdf') || 'Error generating PDF');
     } finally {
       setDownloadingId(null);

@@ -1,12 +1,13 @@
+// src/pages/Partners.jsx
 import { Edit, Send, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import PartnerForm from '../components/forms/PartnerForm';
 import SendInvitationModal from '../components/invitations/SendInvitationModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
-
 import logger from '../utils/logger';
 
 const Partners = () => {
@@ -18,6 +19,8 @@ const Partners = () => {
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [showInvitation, setShowInvitation] = useState(false);
   const [invitationPartner, setInvitationPartner] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const { profile } = useAuth();
   const { t } = useTranslation();
 
@@ -30,7 +33,6 @@ const Partners = () => {
     try {
       let query = supabase.from('partners').select('*');
       
-      // If user is not superadmin, only show their partner
       if (profile?.role !== 'superadmin' && profile?.partner_uuid) {
         query = query.eq('partner_uuid', profile.partner_uuid);
       }
@@ -41,7 +43,6 @@ const Partners = () => {
 
       if (error) {
         logger.error('Supabase error:', error);
-        // Provide mock data if the table doesn't exist
         logger.log('Using mock data for partners');
         setPartners([
           {
@@ -128,7 +129,21 @@ const Partners = () => {
     setInvitationPartner(null);
   };
 
-  // Check if user can invite (superadmin can invite partner admins, partner admins can invite users)
+  // Pagination calculations
+  const totalPages = Math.ceil(partners.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const paginatedPartners = partners.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    setRowsPerPage(parseInt(e.target.value));
+    setCurrentPage(1);
+  };
+
   const canInvite = profile?.role === 'superadmin' || profile?.role === 'admin';
   const canManagePartners = profile?.role === 'superadmin';
 
@@ -157,6 +172,52 @@ const Partners = () => {
         </div>
       </div>
 
+      {/* Pagination Controls */}
+      {partners.length > 0 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            <span className="pagination-text">
+              {t('common.showing')} {startIndex + 1}-{Math.min(endIndex, partners.length)} {t('common.of')} {partners.length}
+            </span>
+          </div>
+          <div className="pagination-controls">
+            <div className="rows-per-page">
+              <span className="pagination-label">{t('common.rowsPerPage')}:</span>
+              <Select
+                value={rowsPerPage.toString()}
+                onChange={handleRowsPerPageChange}
+                options={[
+                  { value: '10', label: '10' },
+                  { value: '20', label: '20' },
+                  { value: '50', label: '50' },
+                  { value: '100', label: '100' }
+                ]}
+                autoSelectSingle={false}
+              />
+            </div>
+            <div className="pagination-buttons">
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                {t('common.previous')}
+              </button>
+              <span className="pagination-pages">
+                {currentPage} {t('common.of')} {totalPages}
+              </span>
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                {t('common.next')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="partners-table-container">
         <div className="partners-table-wrapper">
           <table className="partners-table">
@@ -180,7 +241,7 @@ const Partners = () => {
               </tr>
             </thead>
             <tbody className="partners-table-body">
-              {partners.map((partner) => (
+              {paginatedPartners.map((partner) => (
                 <tr key={partner.id} className="partners-table-row">
                   <td className="partners-table-cell">
                     <div className="partner-info">
@@ -251,7 +312,6 @@ const Partners = () => {
         </div>
       </div>
 
-      {/* Partner Form Modal */}
       {canManagePartners && (
         <PartnerForm
           isOpen={showForm}
@@ -261,7 +321,6 @@ const Partners = () => {
         />
       )}
 
-      {/* Send Invitation Modal */}
       {canInvite && (
         <SendInvitationModal
           isOpen={showInvitation}

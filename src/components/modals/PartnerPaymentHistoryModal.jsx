@@ -5,6 +5,8 @@ import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 import PartnerPaymentForm from '../forms/PartnerPaymentForm';
 
+import logger from '../../utils/logger';
+
 const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
   const { t } = useTranslation();
   const [payments, setPayments] = useState([]);
@@ -32,7 +34,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
         .order('payment_period_start', { ascending: false });
 
       if (error) {
-        console.error('Error fetching partner payments:', error);
+        logger.error('Error fetching partner payments:', error);
         // Mock data for development
         setPayments([
           {
@@ -68,7 +70,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
         setPayments(data || []);
       }
     } catch (error) {
-      console.error('Error fetching partner payments:', error);
+      logger.error('Error fetching partner payments:', error);
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
         .eq('id', paymentToDelete.id);
 
       if (error) {
-        console.error('Error deleting payment:', error);
+        logger.error('Error deleting payment:', error);
         toast.error(t('partnerContracts.errorDeletingPayment') || 'Error deleting payment');
         return;
       }
@@ -124,7 +126,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
       setPayments(prev => prev.filter(p => p.id !== paymentToDelete.id));
       toast.success(t('partnerContracts.paymentDeletedSuccessfully') || 'Payment deleted successfully');
     } catch (error) {
-      console.error('Error deleting payment:', error);
+      logger.error('Error deleting payment:', error);
       toast.error(t('partnerContracts.errorDeletingPayment') || 'Error deleting payment');
     } finally {
       setShowDeleteConfirm(false);

@@ -5,6 +5,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PartnerPaymentForm = ({ 
   isOpen, 
   onClose, 
@@ -164,7 +166,7 @@ const PartnerPaymentForm = ({
       const { data, error } = result;
 
       if (error) {
-        console.error('Error saving payment:', error);
+        logger.error('Error saving payment:', error);
         throw error;
       }
 
@@ -177,7 +179,7 @@ const PartnerPaymentForm = ({
       onSuccess(data);
       onClose();
     } catch (error) {
-      console.error('Error saving payment:', error);
+      logger.error('Error saving payment:', error);
       toast.error(error.message || (isEditing ? t('partnerContracts.errorUpdatingPayment') : t('partnerContracts.errorCreatingPayment')));
     } finally {
       setLoading(false);

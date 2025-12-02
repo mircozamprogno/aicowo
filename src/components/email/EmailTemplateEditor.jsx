@@ -7,6 +7,8 @@ import { supabase } from '../../services/supabase';
 import { DEFAULT_EMAIL_TEMPLATES } from '../../utils/defaultEmailTemplates';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }) => {
   const { t, language } = useTranslation();
   const [subject, setSubject] = useState('');
@@ -51,7 +53,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       const savedTestEmail = localStorage.getItem('lastTestEmail');
       setTestEmail(savedTestEmail || data.email);
     } catch (error) {
-      console.error('Error loading partner email:', error);
+      logger.error('Error loading partner email:', error);
     }
   };
 
@@ -71,7 +73,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
         setBannerUrl(data.publicUrl);
       }
     } catch (error) {
-      console.error('Error loading banner URL:', error);
+      logger.error('Error loading banner URL:', error);
     }
   };
 
@@ -142,7 +144,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
         toast.error('Errore durante l\'invio dell\'email di test. Verifica la configurazione OneSignal.');
       }
     } catch (error) {
-      console.error('Error sending test email:', error);
+      logger.error('Error sending test email:', error);
       toast.error('Errore durante l\'invio dell\'email di test.');
     } finally {
       setSendingTest(false);
@@ -168,7 +170,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading template:', error);
+        logger.error('Error loading template:', error);
       }
 
       if (data) {
@@ -179,7 +181,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
         setBodyHtml(defaultTemplate.body);
       }
     } catch (error) {
-      console.error('Error loading template:', error);
+      logger.error('Error loading template:', error);
       setSubject(defaultTemplate.subject);
       setBodyHtml(defaultTemplate.body);
     } finally {
@@ -217,7 +219,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
 
       toast.success(t('emailTemplates.templateSavedSuccessfully'));
     } catch (error) {
-      console.error('Error saving template:', error);
+      logger.error('Error saving template:', error);
       toast.error(t('emailTemplates.errorSavingTemplate'));
     } finally {
       setSaving(false);

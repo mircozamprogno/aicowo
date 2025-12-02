@@ -1,13 +1,14 @@
 // services/fattureInCloudService.js
+import logger from '../utils/logger';
 import { supabase } from './supabase';
 
 export class FattureInCloudService {
   static async uploadContract(contract, partnerSettings, t) {
     try {
-      // console.log('=== FattureInCloud Upload Debug ===');
-      // console.log('Uploading contract to FattureInCloud:', contract.id);
-      // console.log('Contract data:', contract);
-      // console.log('Partner settings:', partnerSettings);
+      logger.log('=== FattureInCloud Upload Debug ===');
+      logger.log('Uploading contract to FattureInCloud:', contract.id);
+      logger.log('Contract data:', contract);
+      logger.log('Partner settings:', partnerSettings);
 
       // Validate partner has FattureInCloud enabled
       if (!partnerSettings?.fattureincloud_enabled) {
@@ -20,11 +21,11 @@ export class FattureInCloudService {
 
       // Get full customer data
       const customerData = await this.getCustomerData(contract.customer_id);
-      // console.log('Customer data:', customerData);
+      logger.log('Customer data:', customerData);
       
       // Build FattureInCloud document payload
       const documentData = this.buildDocumentPayload(contract, customerData, partnerSettings, t);
-      // console.log('Document payload:', JSON.stringify(documentData, null, 2));
+      logger.log('Document payload:', JSON.stringify(documentData, null, 2));
 
       // Prepare the request
       const requestUrl = `${supabase.supabaseUrl}/functions/v1/fattureincloud`;
@@ -38,12 +39,12 @@ export class FattureInCloudService {
         documentData
       };
 
-      // console.log('=== API Request Debug ===');
-      // console.log('Request URL:', requestUrl);
-      // console.log('Request Headers:', requestHeaders);
-      // console.log('Request Body:', JSON.stringify(requestBody, null, 2));
-      // console.log('Supabase URL:', supabase.supabaseUrl);
-      // console.log('Supabase Key (first 20 chars):', supabase.supabaseKey?.substring(0, 20) + '...');
+      logger.log('=== API Request Debug ===');
+      logger.log('Request URL:', requestUrl);
+      logger.log('Request Headers:', requestHeaders);
+      logger.log('Request Body:', JSON.stringify(requestBody, null, 2));
+      logger.log('Supabase URL:', supabase.supabaseUrl);
+      logger.log('Supabase Key (first 20 chars):', supabase.supabaseKey?.substring(0, 20) + '...');
 
       // Make the API call
       const response = await fetch(requestUrl, {
@@ -52,21 +53,21 @@ export class FattureInCloudService {
         body: JSON.stringify(requestBody)
       });
 
-      // console.log('=== API Response Debug ===');
-      // console.log('Response status:', response.status);
-      // console.log('Response statusText:', response.statusText);
-      // console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      logger.log('=== API Response Debug ===');
+      logger.log('Response status:', response.status);
+      logger.log('Response statusText:', response.statusText);
+      logger.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response body (text):', errorText);
+        logger.log('Error response body (text):', errorText);
         
         let errorData;
         try {
           errorData = JSON.parse(errorText);
-          console.log('Error response body (JSON):', errorData);
+          logger.log('Error response body (JSON):', errorData);
         } catch (e) {
-          console.log('Error response is not valid JSON');
+          logger.log('Error response is not valid JSON');
           errorData = { message: errorText };
         }
         
@@ -74,8 +75,8 @@ export class FattureInCloudService {
       }
 
       const result = await response.json();
-      console.log('=== Success Response ===');
-      console.log('FattureInCloud upload successful:', result);
+      logger.log('=== Success Response ===');
+      logger.log('FattureInCloud upload successful:', result);
 
       // Record the upload in our database
       await this.recordUpload(contract.id, result.data.id, result.data.number);
@@ -88,9 +89,9 @@ export class FattureInCloudService {
       };
 
     } catch (error) {
-      console.error('=== Upload Error ===');
-      console.error('Error uploading to FattureInCloud:', error);
-      console.error('Error stack:', error.stack);
+      logger.error('=== Upload Error ===');
+      logger.error('Error uploading to FattureInCloud:', error);
+      logger.error('Error stack:', error.stack);
       
       // Record failed attempt
       await this.recordUploadAttempt(contract.id, false, error.message);
@@ -236,7 +237,7 @@ export class FattureInCloudService {
       }]);
 
     if (error) {
-      console.error('Error recording upload:', error);
+      logger.error('Error recording upload:', error);
     }
   }
 
@@ -251,7 +252,7 @@ export class FattureInCloudService {
       }]);
 
     if (error) {
-      console.error('Error recording upload attempt:', error);
+      logger.error('Error recording upload attempt:', error);
     }
   }
 
@@ -264,7 +265,7 @@ export class FattureInCloudService {
       .order('uploaded_at', { ascending: false });
 
     if (error) {
-      console.error('Error getting upload status:', error);
+      logger.error('Error getting upload status:', error);
       return {};
     }
 
@@ -287,7 +288,7 @@ export class FattureInCloudService {
       .single();
 
     if (error) {
-      console.error('Error getting partner settings:', error);
+      logger.error('Error getting partner settings:', error);
       return null;
     }
 
@@ -347,17 +348,22 @@ export class FattureInCloudService {
     return results;
   }
 
-  // Add after bulkUploadContracts method:
-
   static async fetchClients(companyId, accessToken, partnerUuid) {
     try {
       const { data: existingCustomers } = await supabase
         .from('customers')
-        .select('fattureincloud_client_id')
+        .select('fattureincloud_client_id, customer_status')
         .eq('partner_uuid', partnerUuid)
         .not('fattureincloud_client_id', 'is', null);
 
-      const existingClientIds = new Set(existingCustomers?.map(c => c.fattureincloud_client_id) || []);
+      // Only exclude ACTIVE customers, include inactive ones
+      const activeClientIds = new Set(
+        existingCustomers
+          ?.filter(c => c.customer_status !== 'inactive')
+          .map(c => c.fattureincloud_client_id) || []
+      );
+
+      logger.log('📋 Active customer IDs to exclude:', Array.from(activeClientIds));
 
       // Get user session token
       const { data: { session } } = await supabase.auth.getSession();
@@ -382,14 +388,16 @@ export class FattureInCloudService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Edge function error response:', errorText);
+        logger.error('Edge function error response:', errorText);
         throw new Error(`API error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
       const availableClients = result.data.filter(
-        client => !existingClientIds.has(client.id)
+        client => !activeClientIds.has(client.id)
       );
+
+      logger.log('✅ Available clients for import:', availableClients.length);
 
       return { success: true, clients: availableClients };
     } catch (error) {
@@ -422,7 +430,7 @@ export class FattureInCloudService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Edge function error response:', errorText);
+        logger.error('Edge function error response:', errorText);
         throw new Error(`API error: ${response.status} - ${errorText}`);
       }
       
@@ -446,9 +454,30 @@ export class FattureInCloudService {
         }
 
         const client = detailsResult.data;
+
+        // Log full JSON from FattureInCloud for debugging
+        logger.log('=== FULL FATTUREINCLOUD CLIENT DATA ===');
+        logger.log(`Client ID: ${clientId}`);
+        logger.log('Complete JSON:', JSON.stringify(client, null, 2));
+        logger.log('========================================');
+
+        // Check if customer already exists (including inactive)
+        const { data: existingCustomer, error: checkError } = await supabase
+          .from('customers')
+          .select('id, customer_status')
+          .eq('partner_uuid', partnerUuid)
+          .eq('fattureincloud_client_id', clientId)
+          .maybeSingle();
+
+        if (checkError) {
+          logger.error('❌ Error checking existing customer:', checkError);
+          results.push({ clientId, success: false, error: checkError.message });
+          continue;
+        }
+
         const customerData = {
           partner_uuid: partnerUuid,
-          fattureincloud_client_id: client.id,  // ✅ ADD THIS
+          fattureincloud_client_id: client.id,
           company_name: client.name || '',
           first_name: client.first_name || '',
           second_name: client.last_name || '',
@@ -462,31 +491,57 @@ export class FattureInCloudService {
           pec: client.certified_email || '',
           phone: client.phone || '',
           sdi_code: client.ei_code || '',
-          customer_status: 'tobequalified',
+          customer_status: 'active', // Set to active (or reactivate)
           customer_type: client.name ? 'entrepeneur' : 'individual',
-          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
+        logger.log('📦 Mapped customer data:', JSON.stringify(customerData, null, 2));
 
-        console.log('🔍 Inserting customer:', {
-          name: customerData.company_name,
-          email: customerData.email,
-          piva: customerData.piva,
-          pec: customerData.pec
-        });
+        let data, error;
 
-        const { data, error } = await supabase
-          .from('customers')
-          .insert(customerData)
-          .select()
-          .single();
+        if (existingCustomer) {
+          // Update existing customer (reactivate if inactive)
+          logger.log(`🔄 Updating existing customer ${existingCustomer.id} (status: ${existingCustomer.customer_status})`);
+          
+          const result = await supabase
+            .from('customers')
+            .update(customerData)
+            .eq('id', existingCustomer.id)
+            .select()
+            .single();
+
+          data = result.data;
+          error = result.error;
+
+          if (!error) {
+            logger.log(`✅ Customer ${existingCustomer.id} updated and reactivated`);
+          }
+        } else {
+          // Insert new customer
+          logger.log('➕ Creating new customer');
+          customerData.created_at = new Date().toISOString();
+
+          const result = await supabase
+            .from('customers')
+            .insert(customerData)
+            .select()
+            .single();
+
+          data = result.data;
+          error = result.error;
+
+          if (!error) {
+            logger.log('✅ New customer created');
+          }
+        }
 
         results.push(error ? 
           { clientId, success: false, error: error.message } : 
           { clientId, success: true, data }
         );
       } catch (error) {
+        logger.error(`❌ Error importing client ${clientId}:`, error);
         results.push({ clientId, success: false, error: error.message });
       }
     }

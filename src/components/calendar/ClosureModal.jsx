@@ -7,6 +7,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import Select from '../common/Select';
 
+import logger from '../../utils/logger';
+
 const ClosureModal = ({ location, closure, onClose, onSuccess }) => {
   const { profile, user } = useAuth();
   const { t } = useTranslation();
@@ -53,7 +55,7 @@ const ClosureModal = ({ location, closure, onClose, onSuccess }) => {
       if (error) throw error;
       setResources(data || []);
     } catch (error) {
-      console.error('Error fetching resources:', error);
+      logger.error('Error fetching resources:', error);
     }
   };
 
@@ -135,7 +137,7 @@ const ClosureModal = ({ location, closure, onClose, onSuccess }) => {
       toast.success(closure ? t('calendar.closureUpdated') : t('calendar.closureCreated'));
       onSuccess();
     } catch (error) {
-      console.error('Error saving closure:', error);
+      logger.error('Error saving closure:', error);
       toast.error(t('messages.errorSavingClosure'));
     } finally {
       setLoading(false);

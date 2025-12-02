@@ -10,6 +10,8 @@ import NotificationEditor from './NotificationEditor';
 import NotificationModal from './NotificationModal';
 import RecipientSelector from './RecipientSelector';
 
+import logger from '../../utils/logger';
+
 
 import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/activityLogger';
 
@@ -99,7 +101,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
       if (error) throw error;
       setTemplates(data || []);
     } catch (error) {
-      console.error('Error loading templates:', error);
+      logger.error('Error loading templates:', error);
       toast.error(t('notifications.errorLoadingTemplates'));
     } finally {
       setLoadingTemplates(false);
@@ -234,7 +236,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
 
       onSaved?.();
     } catch (error) {
-      console.error('Error saving notification:', error);
+      logger.error('Error saving notification:', error);
       toast.error(t('notifications.errorSaving'));
     } finally {
       setSaving(false);

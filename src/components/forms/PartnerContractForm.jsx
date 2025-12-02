@@ -5,6 +5,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PartnerContractForm = ({ 
   isOpen, 
   onClose, 
@@ -43,7 +45,7 @@ const PartnerContractForm = ({
   // Update form data when contract changes
   useEffect(() => {
     if (contract) {
-      console.log('Loading contract data for editing:', contract);
+      logger.log('Loading contract data for editing:', contract);
       setFormData({
         partner_uuid: contract.partner_uuid || '',
         plan_id: contract.plan_id?.toString() || '',
@@ -58,7 +60,7 @@ const PartnerContractForm = ({
       });
     } else {
       // Reset form for new contract
-      console.log('Resetting form for new contract');
+      logger.log('Resetting form for new contract');
       setFormData({
         partner_uuid: '',
         plan_id: '',
@@ -307,7 +309,7 @@ const PartnerContractForm = ({
       const { data, error } = result;
 
       if (error) {
-        console.error('Error saving partner contract:', error);
+        logger.error('Error saving partner contract:', error);
         throw error;
       }
 
@@ -320,7 +322,7 @@ const PartnerContractForm = ({
       onSuccess(data);
       onClose();
     } catch (error) {
-      console.error('Error saving partner contract:', error);
+      logger.error('Error saving partner contract:', error);
       toast.error(error.message || (isEditing ? t('messages.errorUpdatingPartnerContract') : t('messages.errorCreatingPartnerContract')));
     } finally {
       setLoading(false);

@@ -1,7 +1,9 @@
+// src/components/auth/Login.jsx
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import ConfirmModal from '../common/ConfirmModal';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import Link from '../common/Link';
 import { toast } from '../common/ToastContainer';
@@ -11,8 +13,38 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', message: '' });
   const { signIn } = useAuth();
   const { t } = useTranslation();
+
+  // Check for partner status error on mount
+  useEffect(() => {
+    const storedError = sessionStorage.getItem('partnerStatusError');
+    if (storedError) {
+      try {
+        const errorData = JSON.parse(storedError);
+        let title = t('auth.loginFailed');
+        let message = '';
+
+        if (errorData.type === 'check_failed') {
+          message = t('auth.partnerStatusCheckFailed');
+        } else if (errorData.type === 'not_active') {
+          const statusKey = `auth.partnerStatus.${errorData.status}`;
+          const companyName = errorData.companyName || t('common.account');
+          message = t(statusKey, { companyName });
+        }
+
+        setErrorModal({
+          isOpen: true,
+          title,
+          message
+        });
+        sessionStorage.removeItem('partnerStatusError');
+      } catch (e) {
+        console.error('Failed to parse partner error:', e);
+      }
+    }
+  }, [t]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +59,11 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseErrorModal = () => {
+    setErrorModal({ isOpen: false, title: '', message: '' });
+    setLoading(false);
   };
 
   return (
@@ -104,22 +141,22 @@ const Login = () => {
               {loading ? `${t('auth.signIn')}...` : t('auth.signIn')}
             </button>
           </div>
-
-          {/* Keep email column for admin 
-          <div className="auth-switch">
-            <span className="auth-switch-text">
-              {t('auth.dontHaveAccount')}{' '}
-              <Link to="/register" className="auth-switch-link">
-                {t('auth.signUp')}
-              </Link>
-            </span>
-          </div>
-          */}
         </form>
       </div>
       <div className="auth-language-switcher">
         <LanguageSwitcher />
       </div>
+
+      <ConfirmModal
+        isOpen={errorModal.isOpen}
+        onClose={handleCloseErrorModal}
+        onConfirm={handleCloseErrorModal}
+        title={errorModal.title}
+        message={errorModal.message}
+        confirmText="OK"
+        cancelText=""
+        isDestructive={false}
+      />
     </div>
   );
 };

@@ -1,8 +1,29 @@
+/*
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles */
+*/
+
+/* src/index.css */
+
+/* Force light mode */
+:root {
+  color-scheme: only light !important;
+}
+
+html, body {
+  color-scheme: only light !important;
+  background: white !important;
+  color: #000 !important;
+}
+
+* {
+  color-scheme: only light !important;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -15,17 +36,4 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
-}
-
-/* Force everything to light mode. */
-
-:root {
-  color-scheme: light !important;
-}
-
-/* Force light mode */
-@media (prefers-color-scheme: dark) {
-  * {
-    color-scheme: light !important;
-  }
 }

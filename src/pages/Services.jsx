@@ -1,3 +1,4 @@
+// src/pages/Services.jsx
 import { Edit2, HelpCircle, Plus, Settings, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
@@ -6,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
-// Logger
 import logger from '../utils/logger';
 
 const Services = () => {
@@ -28,7 +28,6 @@ const Services = () => {
   const fetchServicesAndLocations = async () => {
     setLoading(true);
     try {
-      // Fetch locations first
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select('*')
@@ -37,7 +36,6 @@ const Services = () => {
 
       if (locationsError) {
         logger.error('Error fetching locations:', locationsError);
-        // Only show error for actual errors, not empty results
         if (locationsError.code !== 'PGRST116') {
           toast.error(t('messages.errorLoadingLocations'));
         }
@@ -46,7 +44,6 @@ const Services = () => {
         setLocations(locationsData || []);
       }
 
-      // Fetch services with location and resource information using the new structure
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select(`
@@ -68,7 +65,6 @@ const Services = () => {
 
       if (servicesError) {
         logger.error('Error fetching services:', servicesError);
-        // Only show error for actual errors, not empty results
         if (servicesError.code !== 'PGRST116') {
           toast.error(t('messages.errorLoadingServices'));
         }
@@ -100,19 +96,16 @@ const Services = () => {
   };
 
   const handleFormSuccess = (savedService) => {
-    // If savedService is null, it means a service was deleted - refetch the list
     if (savedService === null) {
       fetchServicesAndLocations();
       return;
     }
     
     if (editingService) {
-      // Update existing service in the list
       setServices(prev => 
         prev.map(s => s.id === savedService.id ? savedService : s)
       );
     } else {
-      // Add new service to the list
       setServices(prev => [savedService, ...prev]);
     }
   };
@@ -129,7 +122,8 @@ const Services = () => {
     const types = {
       abbonamento: t('services.subscription'),
       pacchetto: t('services.package'),
-      free_trial: t('services.freeTrial')
+      free_trial: t('services.freeTrial'),
+      giornaliero: t('services.dayPass')
     };
     return types[type] || type;
   };
@@ -138,7 +132,8 @@ const Services = () => {
     const classes = {
       abbonamento: 'service-type-subscription',
       pacchetto: 'service-type-package',
-      free_trial: 'service-type-trial'
+      free_trial: 'service-type-trial',
+      giornaliero: 'service-type-daypass'
     };
     return classes[type] || 'service-type-default';
   };
@@ -160,13 +155,10 @@ const Services = () => {
     return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
   };
 
-  // Removed getResourceTypeIcon function since we don't need icons anymore
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  // Check if user can manage services (admin partners only)
   const canManageServices = profile?.role === 'admin';
 
   if (!canManageServices) {
@@ -213,9 +205,9 @@ const Services = () => {
               </span>
             </div>
             <div className="stat-item">
-              <span className="stat-label">{t('services.packages')}</span>
+              <span className="stat-label">{t('services.dayPasses')}</span>
               <span className="stat-value">
-                {services.filter(s => s.service_type === 'pacchetto').length}
+                {services.filter(s => s.service_type === 'giornaliero').length}
               </span>
             </div>
           </div>
@@ -234,8 +226,6 @@ const Services = () => {
             {t('services.addService')}
           </button>
         </div>
-
-
       </div>
 
       <div className="services-table-container">
@@ -295,7 +285,6 @@ const Services = () => {
                       {service.location_resources ? (
                         <div className="resource-info">
                           <div className="resource-header">
-                            {/* Removed the resource icon span */}
                             <span className="resource-name">
                               {service.location_resources.resource_name}
                             </span>
@@ -357,7 +346,6 @@ const Services = () => {
         </div>
       </div>
 
-      {/* Service Form Modal */}
       <ServiceForm
         isOpen={showForm}
         onClose={handleFormClose}
@@ -366,7 +354,6 @@ const Services = () => {
         partnerUuid={profile?.partner_uuid}
         locations={locations}
       />
-
 
       {showServiceInfo && (
         <div className="modal-overlay">
@@ -418,6 +405,21 @@ const Services = () => {
                     {t('services.packageExample')}
                   </p>
                 </div>
+
+                <div className="service-type-item">
+                  <div className="service-type-header">
+                    <span className="service-type-badge service-type-daypass">
+                      {t('services.dayPass')}
+                    </span>
+                    <h3>{t('services.dayPassInfo')}</h3>
+                  </div>
+                  <p className="service-type-description">
+                    {t('services.dayPassDescription')}
+                  </p>
+                  <p className="service-type-example">
+                    {t('services.dayPassExample')}
+                  </p>
+                </div>
               </div>
 
               <div className="service-info-actions">
@@ -433,9 +435,6 @@ const Services = () => {
           </div>
         </div>
       )}
-
-
-
     </div>
   );
 };

@@ -7,6 +7,8 @@ import { supabase } from '../../services/supabase';
 import '../../styles/components/NotificationBell.css';
 import NotificationModal from './NotificationModal';
 
+import logger from '../../utils/logger';
+
 const NotificationBell = () => {
   const { t } = useTranslation();
   const { profile } = useAuth(); // Use profile, not user
@@ -40,7 +42,7 @@ const NotificationBell = () => {
 
       // Safety check
       if (!userUuid) {
-        console.error('NotificationBell - loadUnreadCount - userUuid is undefined!');
+        logger.error('NotificationBell - loadUnreadCount - userUuid is undefined!');
         setUnreadCount(0);
         return;
       }
@@ -96,7 +98,7 @@ const NotificationBell = () => {
 
       setUnreadCount(unreadIds.length);
     } catch (error) {
-      console.error('Error loading unread count:', error);
+      logger.error('Error loading unread count:', error);
     }
   };
 
@@ -161,7 +163,7 @@ const NotificationBell = () => {
         setShowAutoModal(true);
       }
     } catch (error) {
-      console.error('Error checking unacknowledged notifications:', error);
+      logger.error('Error checking unacknowledged notifications:', error);
     }
   };
 
@@ -224,7 +226,7 @@ const NotificationBell = () => {
 
       loadUnreadCount();
     } catch (error) {
-      console.error('Error acknowledging notification:', error);
+      logger.error('Error acknowledging notification:', error);
     }
   };
 

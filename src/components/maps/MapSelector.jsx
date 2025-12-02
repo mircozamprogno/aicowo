@@ -2,6 +2,8 @@ import { MapPin, Navigation, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 
+import logger from '../../utils/logger';
+
 const MapSelector = ({ latitude, longitude, onCoordinatesChange, address }) => {
   const { t } = useTranslation();
   const mapRef = useRef(null);
@@ -54,7 +56,7 @@ const MapSelector = ({ latitude, longitude, onCoordinatesChange, address }) => {
 
         document.head.appendChild(script);
       } catch (error) {
-        console.error('Error loading Leaflet:', error);
+        logger.error('Error loading Leaflet:', error);
         setMapError('Failed to load map library');
       }
     };
@@ -138,7 +140,7 @@ const MapSelector = ({ latitude, longitude, onCoordinatesChange, address }) => {
       mapInstanceRef.current = map;
 
     } catch (error) {
-      console.error('Error initializing map:', error);
+      logger.error('Error initializing map:', error);
       setMapError('Failed to initialize map');
     }
   }, [mapLoaded, currentLat, currentLng]);

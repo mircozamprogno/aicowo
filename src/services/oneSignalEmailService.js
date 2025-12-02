@@ -1,5 +1,7 @@
 // OneSignal Email Service for sending invitations and booking confirmations
 
+import logger from '../utils/logger';
+
 class OneSignalEmailService {
   constructor() {
     // Get OneSignal configuration from environment variables
@@ -22,8 +24,8 @@ class OneSignalEmailService {
     this.isBookingConfigured = !!(this.isConfigured && this.customerBookingTemplateId && this.partnerBookingTemplateId);
     
     if (!this.isConfigured) {
-      console.warn('OneSignal email service not configured. Check your .env.local file.');
-      console.log('Required variables:', {
+      logger.warn('OneSignal email service not configured. Check your .env.local file.');
+      logger.log('Required variables:', {
         VITE_ONESIGNAL_APP_ID: !!this.appId,
         VITE_ONESIGNAL_API_KEY: !!this.apiKey,
         VITE_ONESIGNAL_ADMIN_TEMPLATE_ID: !!this.adminTemplateId,
@@ -33,8 +35,8 @@ class OneSignalEmailService {
     }
 
     if (!this.isBookingConfigured) {
-      console.warn('OneSignal booking templates not configured. Check your .env.local file.');
-      console.log('Booking template variables:', {
+      logger.warn('OneSignal booking templates not configured. Check your .env.local file.');
+      logger.log('Booking template variables:', {
         VITE_ONESIGNAL_CUSTOMER_BOOKING_TEMPLATE_ID: !!this.customerBookingTemplateId,
         VITE_ONESIGNAL_PARTNER_BOOKING_TEMPLATE_ID: !!this.partnerBookingTemplateId
       });
@@ -49,7 +51,7 @@ class OneSignalEmailService {
  */
 async sendInvitation(invitationData, invitationLink) {
   if (!this.isConfigured) {
-    console.error('OneSignal email service not configured');
+    logger.error('OneSignal email service not configured');
     this.logEmailDetails(invitationData, invitationLink);
     return false;
   }
@@ -77,8 +79,8 @@ async sendInvitation(invitationData, invitationLink) {
       app_id: this.appId,
       email_from_name: "PowerCowo",
       email_subject: emailSubject,
-      email_from_address: "info@powercowo.com",
-      email_reply_to_address: "info@powercowo.com",
+      email_from_address: "app@powercowo.com",
+      email_reply_to_address: "app@powercowo.com",
       template_id: templateId,
       target_channel: "email",
       include_email_tokens: [invitationData.invited_email],
@@ -92,10 +94,10 @@ async sendInvitation(invitationData, invitationLink) {
       }
     };
 
-    console.log('Sending admin invitation with legacy template:', payload);
+    logger.log('Sending admin invitation with legacy template:', payload);
     return await this.sendOneSignalRequest(payload);
   } catch (error) {
-    console.error('Error in sendInvitation:', error);
+    logger.error('Error in sendInvitation:', error);
     return false;
   }
 }
@@ -108,7 +110,7 @@ async sendInvitation(invitationData, invitationLink) {
  */
 async sendCustomerInvitation(invitationData, invitationLink) {
   if (!this.uniqueTemplateId) {
-    console.error('Unique template ID not configured');
+    logger.error('Unique template ID not configured');
     return false;
   }
 
@@ -126,7 +128,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
 
     if (partnerError || !partnerData) {
-      console.error('Error fetching partner data:', partnerError);
+      logger.error('Error fetching partner data:', partnerError);
       return false;
     }
 
@@ -147,13 +149,13 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       if (templateData.subject_line) {
         emailSubject = templateData.subject_line;
       }
-      console.log('Using custom customer_invitation template');
+      logger.log('Using custom customer_invitation template');
     } else {
       // Fallback to default template (assuming language is 'it')
       const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_invitation || 
                              DEFAULT_EMAIL_TEMPLATES.en?.customer_invitation;
       bodyHtml = defaultTemplate?.body || '<p>Welcome!</p>';
-      console.log('Using default customer_invitation template');
+      logger.log('Using default customer_invitation template');
     }
 
     // Replace variables with actual data
@@ -198,8 +200,8 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       app_id: this.appId,
       email_from_name: partnerData.structure_name || partnerData.company_name || partnerName,
       email_subject: emailSubject,
-      email_from_address: "info@powercowo.com",
-      email_reply_to_address: "info@powercowo.com",
+      email_from_address: "app@powercowo.com",
+      email_reply_to_address: "app@powercowo.com",
       template_id: this.uniqueTemplateId,
       target_channel: "email",
       include_email_tokens: [invitationData.invited_email],
@@ -212,7 +214,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       }
     };
 
-    console.log('Sending customer invitation with unique template:', {
+    logger.log('Sending customer invitation with unique template:', {
       email: invitationData.invited_email,
       fromName: partnerData.company_name,
       fromEmail: partnerData.email,
@@ -222,7 +224,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
     return await this.sendOneSignalRequest(payload);
   } catch (error) {
-    console.error('Error sending customer invitation:', error);
+    logger.error('Error sending customer invitation:', error);
     return false;
   }
 }
@@ -237,7 +239,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
    */
   async sendBookingConfirmation(bookingData, contractData, t, partnerData = null) {
     if (!this.uniqueTemplateId) {
-      console.error('Unique template ID not configured');
+      logger.error('Unique template ID not configured');
       return false;
     }
 
@@ -246,10 +248,10 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       const { supabase } = await import('./supabase');
       const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
 
-      console.log('=== BOOKING CONFIRMATION DEBUG ===');
-      console.log('bookingData:', bookingData);
-      console.log('contractData:', contractData);
-      console.log('partnerData:', partnerData);
+      logger.log('=== BOOKING CONFIRMATION DEBUG ===');
+      logger.log('bookingData:', bookingData);
+      logger.log('contractData:', contractData);
+      logger.log('partnerData:', partnerData);
 
       // Fetch partner data if not provided (for FROM name and banner)
       // if (!partnerData) {
@@ -260,16 +262,16 @@ async sendCustomerInvitation(invitationData, invitationLink) {
           .single();
 
         if (partnerError || !fetchedPartnerData) {
-          console.error('Error fetching partner data:', partnerError);
+          logger.error('Error fetching partner data:', partnerError);
           return false;
         }
         partnerData = fetchedPartnerData;
       // }
 
-      console.log('=== BOOKING CONFIRMATION DEBUG 2 ===');
-      console.log('bookingData:', bookingData);
-      console.log('contractData:', contractData);
-      console.log('partnerData:', partnerData);
+      logger.log('=== BOOKING CONFIRMATION DEBUG 2 ===');
+      logger.log('bookingData:', bookingData);
+      logger.log('contractData:', contractData);
+      logger.log('partnerData:', partnerData);
 
       // Fetch custom template from database
       const { data: templateData, error: templateError } = await supabase
@@ -286,16 +288,16 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       if (templateData && !templateError) {
         bodyHtml = templateData.body_html;
         emailSubject = templateData.subject_line || 'Prenotazione Confermata';
-        console.log('Using custom customer_booking_confirmation template');
+        logger.log('Using custom customer_booking_confirmation template');
       } else {
-        console.log('No custom template, using default. Error:', templateError);
+        logger.log('No custom template, using default. Error:', templateError);
         const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_booking_confirmation || 
                                DEFAULT_EMAIL_TEMPLATES.en?.customer_booking_confirmation;
         bodyHtml = defaultTemplate?.body || '<p>Booking confirmed</p>';
         if (defaultTemplate?.subject) {
           emailSubject = defaultTemplate.subject;
         }
-        console.log('Using default customer_booking_confirmation template');
+        logger.log('Using default customer_booking_confirmation template');
       }
 
       // Extract CUSTOMER data - this is WHO receives the email
@@ -308,34 +310,34 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         customerFirstName = bookingData.contracts.customers.first_name || '';
         customerLastName = bookingData.contracts.customers.second_name || '';
         customerEmail = bookingData.contracts.customers.email || '';
-        console.log('✅ Customer from bookingData.contracts.customers');
+        logger.log('✅ Customer from bookingData.contracts.customers');
       } 
       // Fallback to contractData.customers
       else if (contractData.customers) {
         customerFirstName = contractData.customers.first_name || '';
         customerLastName = contractData.customers.second_name || '';
         customerEmail = contractData.customers.email || '';
-        console.log('✅ Customer from contractData.customers');
+        logger.log('✅ Customer from contractData.customers');
       }
 
       const customerName = `${customerFirstName} ${customerLastName}`.trim();
 
       if (!customerEmail) {
-        console.error('❌ CUSTOMER EMAIL NOT FOUND!');
-        console.log('Available data:', {
+        logger.error('❌ CUSTOMER EMAIL NOT FOUND!');
+        logger.log('Available data:', {
           'bookingData.contracts': bookingData.contracts,
           'contractData.customers': contractData.customers
         });
         return false;
       }
 
-      console.log('✅ Customer data:', { customerName, customerEmail });
+      logger.log('✅ Customer data:', { customerName, customerEmail });
 
       // Get contract/service info early for subject
       const contractNumber = bookingData.contracts?.contract_number || contractData.contract_number || '';
       const serviceName = bookingData.contracts?.service_name || contractData.service_name || '';
 
-      console.log('🔍 DEBUG partnerData:', {
+      logger.log('🔍 DEBUG partnerData:', {
         structure_name: partnerData.structure_name,
         company_name: partnerData.company_name,
         structure_name_type: typeof partnerData.structure_name,
@@ -344,7 +346,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
       const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
 
-      console.log('🔍 DEBUG Final partnerName:', partnerName);
+      logger.log('🔍 DEBUG Final partnerName:', partnerName);
 
       // Format booking date
       const bookingDate = new Date(bookingData.reservation_date).toLocaleDateString('it-IT', {
@@ -364,7 +366,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       emailSubject = emailSubject.replace(/\{\{customer_name\}\}/g, customerName);
       emailSubject = emailSubject.replace(/\{\{booking_date\}\}/g, bookingDate);
 
-      console.log('✅ Email subject:', emailSubject);
+      logger.log('✅ Email subject:', emailSubject);
 
 
 
@@ -406,7 +408,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         ? durationType
         : `${durationType} - ${timeSlotInfo}`;
 
-      console.log('=== TEMPLATE VARIABLES ===');
+      logger.log('=== TEMPLATE VARIABLES ===');
       const templateVars = {
         partnerName,
         customerName,
@@ -420,7 +422,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         entriesUsed,
         remainingEntries
       };
-      console.log(templateVars);
+      logger.log(templateVars);
 
       // Replace ALL possible variable names in template
       bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
@@ -456,7 +458,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         bannerUrl = data.publicUrl;
       }
 
-      console.log('🔍 DEBUG email_from_name:', partnerName);
+      logger.log('🔍 DEBUG email_from_name:', partnerName);
 
 
       // Send email using unique template
@@ -464,8 +466,8 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         app_id: this.appId,
         email_from_name: partnerName,
         email_subject: emailSubject,
-        email_from_address: "info@powercowo.com",
-        email_reply_to_address: "info@powercowo.com",
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
         template_id: this.uniqueTemplateId,
         target_channel: "email",
         include_email_tokens: [customerEmail],
@@ -478,7 +480,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         }
       };
 
-      console.log('📧 Sending booking confirmation:', {
+      logger.log('📧 Sending booking confirmation:', {
         to: customerEmail,
         from: partnerName,
         subject: emailSubject,
@@ -487,7 +489,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
       return await this.sendOneSignalRequest(payload);
     } catch (error) {
-      console.error('Error sending booking confirmation:', error);
+      logger.error('Error sending booking confirmation:', error);
       return false;
     }
   }
@@ -508,7 +510,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         day: 'numeric'
       });
     } catch (error) {
-      console.error('Error formatting booking date:', error);
+      logger.error('Error formatting booking date:', error);
       return date.toString();
     }
   }
@@ -552,7 +554,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
           errorData = { message: errorText };
         }
         
-        console.error('OneSignal API error:', {
+        logger.error('OneSignal API error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorData
@@ -560,32 +562,32 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         
         // If blocked by client, suggest solutions
         if (response.status === 0 || errorText.includes('ERR_BLOCKED_BY_CLIENT')) {
-          console.error('OneSignal request blocked. Solutions:');
-          console.error('1. Disable ad blocker for localhost');
-          console.error('2. Add onesignal.com to whitelist');
-          console.error('3. Use a backend proxy (set VITE_ONESIGNAL_PROXY_URL)');
+          logger.error('OneSignal request blocked. Solutions:');
+          logger.error('1. Disable ad blocker for localhost');
+          logger.error('2. Add onesignal.com to whitelist');
+          logger.error('3. Use a backend proxy (set VITE_ONESIGNAL_PROXY_URL)');
         }
         
         return false;
       }
 
       const result = await response.json();
-      console.log('OneSignal notification sent successfully:', result);
+      logger.log('OneSignal notification sent successfully:', result);
       
       // Check if notification was created successfully
       const success = !!(result.id);
-      console.log('OneSignal success check:', { id: result.id, success });
+      logger.log('OneSignal success check:', { id: result.id, success });
       
       return success;
     } catch (error) {
-      console.error('OneSignal API request failed:', error);
+      logger.error('OneSignal API request failed:', error);
       
       // Provide helpful error messages
       if (error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-        console.error('Request blocked by browser security. Try:');
-        console.error('1. Disable ad blocker/security extensions');
-        console.error('2. Use incognito/private mode');
-        console.error('3. Set up a backend proxy');
+        logger.error('Request blocked by browser security. Try:');
+        logger.error('1. Disable ad blocker/security extensions');
+        logger.error('2. Use incognito/private mode');
+        logger.error('3. Set up a backend proxy');
       }
       
       return false;
@@ -620,8 +622,8 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         app_id: this.appId,
         email_from_name: "PowerCowo",
         email_subject: emailSubject,
-        email_from_address: "info@powercowo.com",
-        email_reply_to_address: "info@powercowo.com",
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
         template_id: templateId,
         target_channel: "email",
         include_email_tokens: [email],
@@ -639,7 +641,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         }
       };
 
-      console.log('Sending OneSignal notification with payload:', {
+      logger.log('Sending OneSignal notification with payload:', {
         email,
         templateId,
         role: invitationData.invited_role,
@@ -651,7 +653,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
       return await this.sendOneSignalRequest(payload);
     } catch (error) {
-      console.error('Error in sendOneSignalNotification:', error);
+      logger.error('Error in sendOneSignalNotification:', error);
       return false;
     }
   }
@@ -679,8 +681,8 @@ async sendCustomerInvitation(invitationData, invitationLink) {
    */
   async sendTestEmail(recipientEmail, bannerUrl, bodyHtml, subject = 'Template Preview') {
     if (!this.isConfigured || !this.uniqueTemplateId) {
-      console.error('OneSignal unique template not configured');
-      console.log('Config check:', {
+      logger.error('OneSignal unique template not configured');
+      logger.log('Config check:', {
         isConfigured: this.isConfigured,
         uniqueTemplateId: this.uniqueTemplateId,
         appId: this.appId,
@@ -694,8 +696,8 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         app_id: this.appId,
         email_from_name: "PowerCowo",
         email_subject: `[TEST] ${subject}`,
-        email_from_address: "info@powercowo.com",
-        email_reply_to_address: "info@powercowo.com",
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
         template_id: this.uniqueTemplateId,
         target_channel: "email",
         include_email_tokens: [recipientEmail],
@@ -706,16 +708,16 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       };
 
       // DEBUG: Log complete payload
-      console.log('=== ONESIGNAL TEST EMAIL PAYLOAD ===');
-      console.log('Full JSON payload:', JSON.stringify(payload, null, 2));
-      console.log('Banner URL:', bannerUrl);
-      console.log('Body HTML length:', bodyHtml?.length);
-      console.log('Body HTML preview:', bodyHtml?.substring(0, 200));
-      console.log('====================================');
+      logger.log('=== ONESIGNAL TEST EMAIL PAYLOAD ===');
+      logger.log('Full JSON payload:', JSON.stringify(payload, null, 2));
+      logger.log('Banner URL:', bannerUrl);
+      logger.log('Body HTML length:', bodyHtml?.length);
+      logger.log('Body HTML preview:', bodyHtml?.substring(0, 200));
+      logger.log('====================================');
 
       return await this.sendOneSignalRequest(payload);
     } catch (error) {
-      console.error('Error sending test email:', error);
+      logger.error('Error sending test email:', error);
       return false;
     }
   }
@@ -751,15 +753,15 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       });
 
       if (!response.ok) {
-        console.warn('Failed to create OneSignal user:', response.statusText);
+        logger.warn('Failed to create OneSignal user:', response.statusText);
         return false;
       }
 
       const result = await response.json();
-      console.log('OneSignal user created:', result);
+      logger.log('OneSignal user created:', result);
       return true;
     } catch (error) {
-      console.warn('Error creating OneSignal user:', error);
+      logger.warn('Error creating OneSignal user:', error);
       return false;
     }
   }
@@ -777,16 +779,16 @@ async sendCustomerInvitation(invitationData, invitationLink) {
     // Create email subject with actual partner name  
     const emailSubject = `Invito a unirti a ${partnerName}`;
     
-    console.log('=== ONESIGNAL EMAIL WOULD BE SENT ===');
-    console.log('To:', invitationData.invited_email);
-    console.log('Subject:', emailSubject);
-    console.log('Template:', invitationData.invited_role === 'admin' ? 'Admin Template' : 'User Template');
-    console.log('Template ID:', invitationData.invited_role === 'admin' ? this.adminTemplateId : this.userTemplateId);
-    console.log('Link:', invitationLink);
-    console.log('Partner:', partnerName);
-    console.log('Role:', invitationData.invited_role);
-    console.log('Custom Message:', invitationData.custom_message || 'None');
-    console.log('========================================');
+    logger.log('=== ONESIGNAL EMAIL WOULD BE SENT ===');
+    logger.log('To:', invitationData.invited_email);
+    logger.log('Subject:', emailSubject);
+    logger.log('Template:', invitationData.invited_role === 'admin' ? 'Admin Template' : 'User Template');
+    logger.log('Template ID:', invitationData.invited_role === 'admin' ? this.adminTemplateId : this.userTemplateId);
+    logger.log('Link:', invitationLink);
+    logger.log('Partner:', partnerName);
+    logger.log('Role:', invitationData.invited_role);
+    logger.log('Custom Message:', invitationData.custom_message || 'None');
+    logger.log('========================================');
   }
 
   /**
@@ -795,7 +797,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
    */
   async testConfiguration() {
     if (!this.isConfigured) {
-      console.error('OneSignal not configured');
+      logger.error('OneSignal not configured');
       return false;
     }
 
@@ -810,19 +812,19 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       });
 
       if (!response.ok) {
-        console.error('OneSignal configuration test failed:', response.statusText);
+        logger.error('OneSignal configuration test failed:', response.statusText);
         return false;
       }
 
       const appInfo = await response.json();
-      console.log('OneSignal configuration test successful:', {
+      logger.log('OneSignal configuration test successful:', {
         appName: appInfo.name,
         appId: this.appId,
         bookingTemplatesConfigured: this.isBookingConfigured
       });
       return true;
     } catch (error) {
-      console.error('OneSignal configuration test error:', error);
+      logger.error('OneSignal configuration test error:', error);
       return false;
     }
   }

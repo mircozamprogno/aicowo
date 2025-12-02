@@ -1,5 +1,6 @@
 // src/services/paymentService.js
 
+import logger from '../utils/logger';
 import { supabase } from './supabase';
 
 export class PaymentService {
@@ -25,7 +26,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching contract payments:', error);
+      logger.error('Error fetching contract payments:', error);
       return { data: null, error: error.message };
     }
   }
@@ -45,7 +46,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching contract payment status:', error);
+      logger.error('Error fetching contract payment status:', error);
       return { data: null, error: error.message };
     }
   }
@@ -98,7 +99,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error creating payment:', error);
+      logger.error('Error creating payment:', error);
       return { data: null, error: error.message };
     }
   }
@@ -129,7 +130,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error updating payment:', error);
+      logger.error('Error updating payment:', error);
       return { data: null, error: error.message };
     }
   }
@@ -147,7 +148,7 @@ export class PaymentService {
       if (error) throw error;
       return { success: true, error: null };
     } catch (error) {
-      console.error('Error deleting payment:', error);
+      logger.error('Error deleting payment:', error);
       return { success: false, error: error.message };
     }
   }
@@ -165,7 +166,7 @@ export class PaymentService {
 
       return await this.updatePayment(paymentId, updates);
     } catch (error) {
-      console.error('Error marking payment as completed:', error);
+      logger.error('Error marking payment as completed:', error);
       return { data: null, error: error.message };
     }
   }
@@ -213,7 +214,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching partner payments:', error);
+      logger.error('Error fetching partner payments:', error);
       return { data: null, error: error.message };
     }
   }
@@ -271,7 +272,7 @@ export class PaymentService {
 
       return { data: stats, error: null };
     } catch (error) {
-      console.error('Error fetching payment stats:', error);
+      logger.error('Error fetching payment stats:', error);
       return { data: null, error: error.message };
     }
   }
@@ -302,7 +303,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching overdue payments:', error);
+      logger.error('Error fetching overdue payments:', error);
       return { data: null, error: error.message };
     }
   }
@@ -325,7 +326,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error creating payment plan:', error);
+      logger.error('Error creating payment plan:', error);
       return { data: null, error: error.message };
     }
   }
@@ -348,7 +349,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error updating payment plan:', error);
+      logger.error('Error updating payment plan:', error);
       return { data: null, error: error.message };
     }
   }
@@ -367,7 +368,7 @@ export class PaymentService {
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
       return { data, error: error?.code === 'PGRST116' ? null : error };
     } catch (error) {
-      console.error('Error fetching payment plan:', error);
+      logger.error('Error fetching payment plan:', error);
       return { data: null, error: error.message };
     }
   }
@@ -401,7 +402,7 @@ export class PaymentService {
 
       return { data: data.publicUrl, error: null };
     } catch (error) {
-      console.error('Error uploading payment receipt:', error);
+      logger.error('Error uploading payment receipt:', error);
       return { data: null, error: error.message };
     }
   }
@@ -425,7 +426,7 @@ export class PaymentService {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('Error bulk updating payments:', error);
+      logger.error('Error bulk updating payments:', error);
       return { data: null, error: error.message };
     }
   }
@@ -494,7 +495,7 @@ export class PaymentService {
 
       return { data: reportData, error: null };
     } catch (error) {
-      console.error('Error generating payment report:', error);
+      logger.error('Error generating payment report:', error);
       return { data: null, error: error.message };
     }
   }

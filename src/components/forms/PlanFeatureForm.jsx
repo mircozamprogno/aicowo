@@ -5,6 +5,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PlanFeatureForm = ({ isOpen, onClose, onSuccess, feature = null }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ const PlanFeatureForm = ({ isOpen, onClose, onSuccess, feature = null }) => {
   // Update form data when feature changes
   useEffect(() => {
     if (feature) {
-      console.log('Loading feature data for editing:', feature);
+      logger.log('Loading feature data for editing:', feature);
       setFormData({
         feature_name: feature.feature_name || '',
         feature_key: feature.feature_key || '',
@@ -49,7 +51,7 @@ const PlanFeatureForm = ({ isOpen, onClose, onSuccess, feature = null }) => {
       });
     } else {
       // Reset form for new feature
-      console.log('Resetting form for new feature');
+      logger.log('Resetting form for new feature');
       setFormData({
         feature_name: '',
         feature_key: '',
@@ -202,7 +204,7 @@ const PlanFeatureForm = ({ isOpen, onClose, onSuccess, feature = null }) => {
       const { data, error } = result;
 
       if (error) {
-        console.error('Error saving feature:', error);
+        logger.error('Error saving feature:', error);
         throw error;
       }
 
@@ -215,7 +217,7 @@ const PlanFeatureForm = ({ isOpen, onClose, onSuccess, feature = null }) => {
       onSuccess(data);
       onClose();
     } catch (error) {
-      console.error('Error saving feature:', error);
+      logger.error('Error saving feature:', error);
       toast.error(error.message || (isEditing ? t('messages.errorUpdatingFeature') : t('messages.errorCreatingFeature')));
     } finally {
       setLoading(false);

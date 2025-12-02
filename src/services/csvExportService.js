@@ -5,6 +5,7 @@
  * Handles exporting contract data with customer information for invoicing purposes
  */
 
+import logger from '../utils/logger';
 import { supabase } from './supabase';
 
 export const CSVExportService = {
@@ -35,7 +36,7 @@ export const CSVExportService = {
                 fullCustomerData = customerData;
               }
             } catch (error) {
-              console.warn('Error fetching customer data for contract:', contract.id, error);
+              logger.warn('Error fetching customer data for contract:', contract.id, error);
             }
           }
 
@@ -52,7 +53,7 @@ export const CSVExportService = {
                 locationData = locationInfo;
               }
             } catch (error) {
-              console.warn('Error fetching location data for contract:', contract.id, error);
+              logger.warn('Error fetching location data for contract:', contract.id, error);
             }
           }
 
@@ -235,7 +236,7 @@ export const CSVExportService = {
       return csvContent;
 
     } catch (error) {
-      console.error('Error generating CSV:', error);
+      logger.error('Error generating CSV:', error);
       throw new Error('Failed to generate CSV export');
     }
   },
@@ -270,7 +271,7 @@ export const CSVExportService = {
       URL.revokeObjectURL(url);
 
     } catch (error) {
-      console.error('Error downloading CSV:', error);
+      logger.error('Error downloading CSV:', error);
       throw new Error('Failed to download CSV file');
     }
   },

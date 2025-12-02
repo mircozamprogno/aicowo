@@ -73,6 +73,8 @@ const CustomerForm = ({
     { value: 'inactive', label: t('customers.inactive') }
   ];
 
+  const needsBusinessInfo = ['freelancer', 'entrepeneur', 'company'].includes(formData.customer_type);
+
   useEffect(() => {
     if (customer) {
       logger.log('Loading customer data for editing:', customer);
@@ -259,7 +261,6 @@ const CustomerForm = ({
           <form onSubmit={handleSubmit} className="modal-form">
             <h3 className="form-section-title">{t('customers.personalInformation')}</h3>
 
-
             <div className="form-group">
               <label htmlFor="company_name" className="form-label">
                 {t('customers.companyName')}
@@ -278,13 +279,12 @@ const CustomerForm = ({
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="first_name" className="form-label">
-                  {t('customers.firstName')} *
+                  {t('customers.firstName')}
                 </label>
                 <input
                   id="first_name"
                   name="first_name"
                   type="text"
-                  required
                   className="form-input"
                   placeholder={t('placeholders.firstNamePlaceholder')}
                   value={formData.first_name}
@@ -293,13 +293,12 @@ const CustomerForm = ({
               </div>
               <div className="form-group">
                 <label htmlFor="second_name" className="form-label">
-                  {t('customers.secondName')} *
+                  {t('customers.secondName')}
                 </label>
                 <input
                   id="second_name"
                   name="second_name"
                   type="text"
-                  required
                   className="form-input"
                   placeholder={t('placeholders.secondNamePlaceholder')}
                   value={formData.second_name}
@@ -342,13 +341,12 @@ const CustomerForm = ({
 
             <div className="form-group">
               <label htmlFor="codice_fiscale" className="form-label">
-                {t('customers.codiceFiscale')} *
+                {t('customers.codiceFiscale')}
               </label>
               <input
                 id="codice_fiscale"
                 name="codice_fiscale"
                 type="text"
-                required
                 className="form-input"
                 placeholder={t('placeholders.codiceFiscalePlaceholder')}
                 value={formData.codice_fiscale}
@@ -462,7 +460,7 @@ const CustomerForm = ({
               </div>
             </div>
 
-            {formData.customer_type === 'company' && (
+            {needsBusinessInfo && (
               <>
                 <h3 className="form-section-title">{t('customers.businessInformation')}</h3>
                 

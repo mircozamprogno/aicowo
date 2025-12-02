@@ -1,4 +1,5 @@
 // src/services/contractArchiveService.js
+import logger from '../utils/logger';
 import { supabase } from './supabase';
 
 export class ContractArchiveService {
@@ -69,7 +70,7 @@ export class ContractArchiveService {
         .eq('is_archived', false);
 
       if (bookingsError) {
-        console.error('Error archiving related bookings:', bookingsError);
+        logger.error('Error archiving related bookings:', bookingsError);
         // Don't fail the whole operation for this
       }
 
@@ -87,7 +88,7 @@ export class ContractArchiveService {
         .eq('is_archived', false);
 
       if (reservationsError) {
-        console.error('Error archiving related package reservations:', reservationsError);
+        logger.error('Error archiving related package reservations:', reservationsError);
         // Don't fail the whole operation for this
       }
 
@@ -97,7 +98,7 @@ export class ContractArchiveService {
       };
 
     } catch (error) {
-      console.error('Error in archiveContract:', error);
+      logger.error('Error in archiveContract:', error);
       return {
         success: false,
         error: error.message
@@ -170,7 +171,7 @@ export class ContractArchiveService {
         .eq('is_archived', true);
 
       if (bookingsError) {
-        console.error('Error restoring related bookings:', bookingsError);
+        logger.error('Error restoring related bookings:', bookingsError);
       }
 
       // 3. Restore related package reservations
@@ -187,7 +188,7 @@ export class ContractArchiveService {
         .eq('is_archived', true);
 
       if (reservationsError) {
-        console.error('Error restoring related package reservations:', reservationsError);
+        logger.error('Error restoring related package reservations:', reservationsError);
       }
 
       return {
@@ -196,7 +197,7 @@ export class ContractArchiveService {
       };
 
     } catch (error) {
-      console.error('Error in restoreContract:', error);
+      logger.error('Error in restoreContract:', error);
       return {
         success: false,
         error: error.message
@@ -269,7 +270,7 @@ export class ContractArchiveService {
       };
 
     } catch (error) {
-      console.error('Error in getArchivedContracts:', error);
+      logger.error('Error in getArchivedContracts:', error);
       return {
         success: false,
         error: error.message
@@ -336,7 +337,7 @@ export class ContractArchiveService {
       };
 
     } catch (error) {
-      console.error('Error in getArchiveAnalytics:', error);
+      logger.error('Error in getArchiveAnalytics:', error);
       return {
         success: false,
         error: error.message
@@ -406,7 +407,7 @@ export class ContractArchiveService {
       };
 
     } catch (error) {
-      console.error('Error in permanentlyDeleteOldArchived:', error);
+      logger.error('Error in permanentlyDeleteOldArchived:', error);
       return {
         success: false,
         error: error.message

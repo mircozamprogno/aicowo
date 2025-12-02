@@ -158,6 +158,8 @@
 }
 
 /* Dark mode support (optional) */
+
+/*
 @media (prefers-color-scheme: dark) {
   .searchable-select-trigger {
     background: #1f2937;
@@ -195,6 +197,7 @@
     color: #dbeafe;
   }
 }
+*/
 
 
 /* In your Select component CSS or inline styles */

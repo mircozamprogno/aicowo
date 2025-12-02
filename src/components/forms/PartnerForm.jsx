@@ -4,6 +4,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
   const { t } = useTranslation();
   const isEditing = !!partner;
@@ -36,7 +38,7 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
   // Update form data when partner changes
   useEffect(() => {
     if (partner) {
-      console.log('Loading partner data for editing:', partner);
+      logger.log('Loading partner data for editing:', partner);
       setFormData({
         first_name: partner.first_name || '',
         second_name: partner.second_name || '',
@@ -61,7 +63,7 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
       });
     } else {
       // Reset form for new partner
-      console.log('Resetting form for new partner');
+      logger.log('Resetting form for new partner');
       setFormData({
         first_name: '',
         second_name: '',
@@ -130,7 +132,7 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
       onSuccess(data[0]);
       onClose();
     } catch (error) {
-      console.error('Error saving partner:', error);
+      logger.error('Error saving partner:', error);
       toast.error(error.message || t('messages.errorSavingPartner'));
     } finally {
       setLoading(false);

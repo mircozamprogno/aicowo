@@ -6,6 +6,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 
+import logger from '../../utils/logger';
+
 const LocationScheduleForm = ({ location }) => {
   const { t } = useTranslation();
   const { user, profile } = useAuth();
@@ -62,7 +64,7 @@ const LocationScheduleForm = ({ location }) => {
 
       setSchedules(fullSchedule);
     } catch (error) {
-      console.error('Error fetching location schedules:', error);
+      logger.error('Error fetching location schedules:', error);
       toast.error(t('messages.errorLoadingSchedules'));
     } finally {
       setLoading(false);
@@ -108,7 +110,7 @@ const LocationScheduleForm = ({ location }) => {
       toast.success(t('calendar.scheduleSaved'));
       fetchSchedules();
     } catch (error) {
-      console.error('Error saving location schedule:', error);
+      logger.error('Error saving location schedule:', error);
       toast.error(t('messages.errorSavingSchedule'));
     } finally {
       setSaving(false);

@@ -10,6 +10,8 @@ import '../../styles/components/PaymentForm.css';
 import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PaymentForm = ({ 
   isOpen, 
   onClose, 
@@ -78,10 +80,10 @@ const PaymentForm = ({
             if (!locationError && locationData) {
               vatPercentage = parseFloat(locationData.vat_percentage) || 0;
             } else {
-              console.warn('Could not load location VAT:', locationError);
+              logger.warn('Could not load location VAT:', locationError);
             }
           } catch (error) {
-            console.error('Error fetching location data:', error);
+            logger.error('Error fetching location data:', error);
           }
         }
         
@@ -101,7 +103,7 @@ const PaymentForm = ({
         const { data, error } = await PaymentService.getContractPayments(contract.id);
         
         if (error) {
-          console.error('Error loading payments:', error);
+          logger.error('Error loading payments:', error);
           setExistingPayments([]);
         } else {
           setExistingPayments(data || []);
@@ -371,7 +373,7 @@ const PaymentForm = ({
         );
         
         if (uploadResult.error) {
-          console.warn('Receipt upload failed:', uploadResult.error);
+          logger.warn('Receipt upload failed:', uploadResult.error);
           toast.warn('Payment saved but receipt upload failed');
         }
         setUploadingReceipt(false);
@@ -384,7 +386,7 @@ const PaymentForm = ({
       onSuccess(result.data);
       onClose();
     } catch (error) {
-      console.error('Error saving payment:', error);
+      logger.error('Error saving payment:', error);
       toast.error(editMode 
         ? t('payments.errorUpdatingPayment') 
         : t('payments.errorRecordingPayment'));
@@ -578,9 +580,9 @@ const PaymentForm = ({
                         Amount exceeds remaining balance of {formatCurrency(validation.remainingAmount)}
                       </span>
                     ) : validation.isValid ? (
-                      <span className="validation-success">
-                        ✓ Valid amount. Remaining: {formatCurrency(validation.remainingAmount - parseFloat(formData.amount || 0))}
-                      </span>
+                    <span className="validation-success">
+                      ✓ {t('payments.validAmountRemaining')} {formatCurrency(validation.remainingAmount - parseFloat(formData.amount || 0))}
+                    </span>
                     ) : (
                       <span className="validation-error">
                         Please enter a valid amount

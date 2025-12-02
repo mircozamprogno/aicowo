@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
+import logger from '../utils/logger';
 
 const TenantIsolationTest = () => {
   const { profile } = useAuth();
@@ -20,7 +21,7 @@ const TenantIsolationTest = () => {
 
   const runIsolationTests = async () => {
     try {
-      console.log('🧪 Running tenant isolation tests for user:', profile);
+      logger.log('🧪 Running tenant isolation tests for user:', profile);
 
       // Test 1: Check user profile has partner_uuid
       const userHasPartnerUuid = !!profile.partner_uuid;
@@ -60,7 +61,7 @@ const TenantIsolationTest = () => {
       });
 
       // Log results for debugging
-      console.log('🔒 Tenant Isolation Test Results:', {
+      logger.log('🔒 Tenant Isolation Test Results:', {
         userHasPartnerUuid,
         userPartnerMatch,
         partnerUuid: profile.partner_uuid,
@@ -71,7 +72,7 @@ const TenantIsolationTest = () => {
       });
 
     } catch (error) {
-      console.error('❌ Tenant isolation test failed:', error);
+      logger.error('❌ Tenant isolation test failed:', error);
       setTestResults(prev => ({ ...prev, error: error.message }));
     }
   };

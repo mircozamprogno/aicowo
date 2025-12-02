@@ -9,6 +9,8 @@ import { generateInvoicePDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 import '../styles/pages/partner-billing-history.css';
 
+import logger from '../utils/logger';
+
 const PartnerBillingHistory = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ const PartnerBillingHistory = () => {
   const { t } = useTranslation();
 
   // Debug: Log profile to see structure
-  console.log('PartnerBillingHistory - Profile:', profile);
+  logger.log('PartnerBillingHistory - Profile:', profile);
 
   // Check if user is a partner by having partner_uuid (more reliable than role check)
   const isPartner = profile?.partner_uuid ? true : false;
@@ -57,13 +59,13 @@ const PartnerBillingHistory = () => {
 
       if (error) throw error;
 
-      console.log('Fetched payments:', data);
-      console.log('First payment invoice_number:', data?.[0]?.invoice_number);
+      logger.log('Fetched payments:', data);
+      logger.log('First payment invoice_number:', data?.[0]?.invoice_number);
 
       setPayments(data || []);
       calculateStats(data || []);
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      logger.error('Error fetching payments:', error);
       toast.error(t('messages.errorLoadingData') || 'Error loading billing history');
     } finally {
       setLoading(false);
@@ -99,8 +101,8 @@ const PartnerBillingHistory = () => {
     
     try {
       // Debug: Log payment object to see invoice_number
-      console.log('Payment object for PDF:', payment);
-      console.log('Invoice number:', payment.invoice_number);
+      logger.log('Payment object for PDF:', payment);
+      logger.log('Invoice number:', payment.invoice_number);
       
       // Fetch partner data
       const { data: partnerData, error: partnerError } = await supabase
@@ -119,7 +121,7 @@ const PartnerBillingHistory = () => {
 
       toast.success(t('messages.pdfGenerated') || 'PDF generated successfully');
     } catch (error) {
-      console.error('Error generating invoice PDF:', error);
+      logger.error('Error generating invoice PDF:', error);
       toast.error(t('messages.errorGeneratingPdf') || 'Error generating PDF');
     } finally {
       setDownloadingId(null);

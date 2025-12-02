@@ -1,5 +1,6 @@
 // src/services/partnerInvitationEmailService.js
 import { DEFAULT_EMAIL_TEMPLATES } from '../utils/defaultEmailTemplates';
+import logger from '../utils/logger';
 import oneSignalEmailService from './oneSignalEmailService';
 import { supabase } from './supabase';
 
@@ -38,11 +39,11 @@ export const sendPartnerInvitationEmail = async (
     let subject, bodyHtml;
     
     if (template && !templateError) {
-      console.log('Using customized partner invitation template');
+      logger.log('Using customized partner invitation template');
       subject = template.subject_line;
       bodyHtml = template.body_html;
     } else {
-      console.log('Using default partner invitation template');
+      logger.log('Using default partner invitation template');
       // Use default from defaultEmailTemplates.js
       const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.partner_invitation || 
                               DEFAULT_EMAIL_TEMPLATES.en.partner_invitation;
@@ -80,19 +81,19 @@ export const sendPartnerInvitationEmail = async (
         bannerUrl = data.publicUrl;
       }
     } catch (bannerError) {
-      console.log('No system banner found or error loading banner:', bannerError);
+      logger.log('No system banner found or error loading banner:', bannerError);
       // Continue without banner
     }
 
     // 5. Send email using OneSignal directly (NOT sendTestEmail which adds [TEST])
-    console.log('Sending partner invitation email');
+    logger.log('Sending partner invitation email');
 
     const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
     const apiKey = import.meta.env.VITE_ONESIGNAL_API_KEY;
     const uniqueTemplateId = import.meta.env.VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID;
 
     if (!appId || !apiKey || !uniqueTemplateId) {
-      console.error('OneSignal not configured');
+      logger.error('OneSignal not configured');
       return false;
     }
 
@@ -114,15 +115,15 @@ export const sendPartnerInvitationEmail = async (
     const success = await oneSignalEmailService.sendOneSignalRequest(payload);
 
     if (success) {
-      console.log('Partner invitation email sent successfully to:', partnerEmail);
+      logger.log('Partner invitation email sent successfully to:', partnerEmail);
     } else {
-      console.error('Failed to send partner invitation email to:', partnerEmail);
+      logger.error('Failed to send partner invitation email to:', partnerEmail);
     }
 
     return success;
 
   } catch (error) {
-    console.error('Error in sendPartnerInvitationEmail:', error);
+    logger.error('Error in sendPartnerInvitationEmail:', error);
     return false;
   }
 };
@@ -186,13 +187,13 @@ export const getPartnerInvitationPreview = async (language = 'en') => {
         bannerUrl = data.publicUrl;
       }
     } catch (error) {
-      console.log('No system banner found');
+      logger.log('No system banner found');
     }
 
     return { subject, bodyHtml, bannerUrl };
 
   } catch (error) {
-    console.error('Error getting partner invitation preview:', error);
+    logger.error('Error getting partner invitation preview:', error);
     return null;
   }
 };

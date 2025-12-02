@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import logger from '../../utils/logger';
 import ResourceScheduleModal from './ResourceScheduleModal';
 
 const ResourceScheduleList = ({ location }) => {
@@ -29,7 +30,7 @@ const ResourceScheduleList = ({ location }) => {
 
   const fetchData = async () => {
     try {
-      console.log('Fetching resources for location:', location.id, location.location_name);
+      logger.log('Fetching resources for location:', location.id, location.location_name);
       
       const { data: resourcesData, error: resourcesError } = await supabase
         .from('location_resources')
@@ -39,7 +40,7 @@ const ResourceScheduleList = ({ location }) => {
 
       if (resourcesError) throw resourcesError;
 
-      console.log('Found resources:', resourcesData?.length, resourcesData);
+      logger.log('Found resources:', resourcesData?.length, resourcesData);
 
       const resourceIds = resourcesData?.map(r => r.id) || [];
       
@@ -57,7 +58,7 @@ const ResourceScheduleList = ({ location }) => {
 
       setResources(resourcesData || []);
     } catch (error) {
-      console.error('Error fetching resource data:', error);
+      logger.error('Error fetching resource data:', error);
       toast.error(t('messages.errorLoadingResources'));
     } finally {
       setLoading(false);
@@ -88,7 +89,7 @@ const ResourceScheduleList = ({ location }) => {
       toast.success(t('calendar.resourceScheduleDeleted'));
       fetchData();
     } catch (error) {
-      console.error('Error deleting resource schedule:', error);
+      logger.error('Error deleting resource schedule:', error);
       toast.error(t('messages.errorDeletingSchedule'));
     }
   };

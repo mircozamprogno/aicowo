@@ -1,4 +1,8 @@
 // Rename your file from generate-version.js to generate-version.cjs
+
+import logger from '../../utils/logger';
+
+
 const fs = require('fs');
 const path = require('path');
 
@@ -22,13 +26,13 @@ try {
     JSON.stringify(versionInfo, null, 2)
   );
 
-  console.log('✅ Version info generated successfully:');
-  console.log('   Commit:', versionInfo.commit);
-  console.log('   Message:', versionInfo.message);
-  console.log('   Branch:', versionInfo.branch);
+  logger.log('✅ Version info generated successfully:');
+  logger.log('   Commit:', versionInfo.commit);
+  logger.log('   Message:', versionInfo.message);
+  logger.log('   Branch:', versionInfo.branch);
   
 } catch (error) {
-  console.error('❌ Error generating version info:', error);
+  logger.error('❌ Error generating version info:', error);
   
   // Create fallback version file
   const fallbackInfo = {
@@ -41,6 +45,6 @@ try {
   try {
     fs.writeFileSync('./public/version.json', JSON.stringify(fallbackInfo, null, 2));
   } catch (writeError) {
-    console.error('Failed to write fallback version file:', writeError);
+    logger.error('Failed to write fallback version file:', writeError);
   }
 }

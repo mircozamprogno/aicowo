@@ -1,5 +1,6 @@
 // Fixed customerService.js to handle database conflicts properly
 
+import logger from '../utils/logger';
 import { supabase } from './supabase';
 
 class CustomerService {
@@ -10,7 +11,7 @@ class CustomerService {
    */
   async getCustomerByUserId(userId) {
     try {
-      console.log('Fetching customer for user ID:', userId);
+      logger.log('Fetching customer for user ID:', userId);
       
       const { data, error } = await supabase
         .from('customers')
@@ -19,14 +20,14 @@ class CustomerService {
         .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no record found
 
       if (error) {
-        console.error('Error fetching customer by user ID:', error);
+        logger.error('Error fetching customer by user ID:', error);
         return null;
       }
 
-      console.log('Customer fetch result:', data);
+      logger.log('Customer fetch result:', data);
       return data;
     } catch (error) {
-      console.error('Error in getCustomerByUserId:', error);
+      logger.error('Error in getCustomerByUserId:', error);
       return null;
     }
   }
@@ -40,7 +41,7 @@ class CustomerService {
    */
   async createCustomerFromRegistration(userData, userId, partnerUuid) {
     try {
-      console.log('Creating customer record for new user:', {
+      logger.log('Creating customer record for new user:', {
         userId,
         partnerUuid,
         userData
@@ -49,7 +50,7 @@ class CustomerService {
       // First check if customer already exists to avoid conflicts
       const existingCustomer = await this.getCustomerByUserId(userId);
       if (existingCustomer) {
-        console.log('Customer record already exists:', existingCustomer);
+        logger.log('Customer record already exists:', existingCustomer);
         return existingCustomer;
       }
 
@@ -76,20 +77,20 @@ class CustomerService {
       if (error) {
         // If it's a conflict error (duplicate), try to fetch existing record
         if (error.code === '23505' || error.message.includes('duplicate')) {
-          console.log('Duplicate customer detected, fetching existing record...');
+          logger.log('Duplicate customer detected, fetching existing record...');
           const existing = await this.getCustomerByUserId(userId);
           if (existing) {
             return existing;
           }
         }
-        console.error('Error creating customer record:', error);
+        logger.error('Error creating customer record:', error);
         throw error;
       }
 
-      console.log('Customer record created successfully:', data);
+      logger.log('Customer record created successfully:', data);
       return data;
     } catch (error) {
-      console.error('Error in createCustomerFromRegistration:', error);
+      logger.error('Error in createCustomerFromRegistration:', error);
       throw error;
     }
   }
@@ -110,14 +111,14 @@ class CustomerService {
         .single();
 
       if (error) {
-        console.error('Error updating customer:', error);
+        logger.error('Error updating customer:', error);
         throw error;
       }
 
-      console.log('Customer updated successfully:', data);
+      logger.log('Customer updated successfully:', data);
       return data;
     } catch (error) {
-      console.error('Error in updateCustomer:', error);
+      logger.error('Error in updateCustomer:', error);
       throw error;
     }
   }
@@ -131,13 +132,13 @@ class CustomerService {
    */
   async ensureCustomerRecord(userId, partnerUuid, userProfile = {}) {
     try {
-      console.log('Ensuring customer record exists for:', { userId, partnerUuid });
+      logger.log('Ensuring customer record exists for:', { userId, partnerUuid });
 
       // Check if customer record exists
       let customer = await this.getCustomerByUserId(userId);
       
       if (!customer) {
-        console.log('No customer record found, creating one...');
+        logger.log('No customer record found, creating one...');
         
         // Prepare the user data for the registration method
         const userData = {
@@ -153,14 +154,14 @@ class CustomerService {
           partnerUuid
         );
         
-        console.log('Created missing customer record with incomplete_profile status:', customer);
+        logger.log('Created missing customer record with incomplete_profile status:', customer);
       } else {
-        console.log('Customer record already exists:', customer);
+        logger.log('Customer record already exists:', customer);
       }
       
       return customer;
     } catch (error) {
-      console.error('Error ensuring customer record:', error);
+      logger.error('Error ensuring customer record:', error);
       // Don't throw here - let the application continue even if customer creation fails
       // This prevents blocking the login process
       return null;
@@ -181,13 +182,13 @@ class CustomerService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching customers by partner:', error);
+        logger.error('Error fetching customers by partner:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error in getCustomersByPartner:', error);
+      logger.error('Error in getCustomersByPartner:', error);
       return [];
     }
   }
@@ -216,7 +217,7 @@ class CustomerService {
         customerData.partner_uuid
       );
     } catch (error) {
-      console.error('Error in upsertCustomer:', error);
+      logger.error('Error in upsertCustomer:', error);
       throw error;
     }
   }

@@ -1,6 +1,8 @@
 // /api/onesignal-proxy.js
 // Production proxy for OneSignal API calls
 
+import logger from '../../utils/logger';
+
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
@@ -22,11 +24,11 @@ export default async function handler(req, res) {
     const apiKey = process.env.ONESIGNAL_API_KEY;
     
     if (!apiKey) {
-      console.error('ONESIGNAL_API_KEY not found in server environment');
+      logger.error('ONESIGNAL_API_KEY not found in server environment');
       return res.status(500).json({ error: 'Service configuration error' });
     }
 
-    console.log('Proxying OneSignal request...');
+    logger.log('Proxying OneSignal request...');
 
     // Forward the request to OneSignal with secure API key
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
@@ -42,16 +44,16 @@ export default async function handler(req, res) {
     
     // Log success/failure (without sensitive data)
     if (response.ok) {
-      console.log('OneSignal notification sent successfully via proxy');
+      logger.log('OneSignal notification sent successfully via proxy');
     } else {
-      console.error('OneSignal API error:', response.status, data);
+      logger.error('OneSignal API error:', response.status, data);
     }
     
     // Return the same status and data as OneSignal
     return res.status(response.status).json(data);
     
   } catch (error) {
-    console.error('OneSignal proxy error:', error);
+    logger.error('OneSignal proxy error:', error);
     return res.status(500).json({ 
       error: 'Internal server error'
     });

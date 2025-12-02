@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import logger from '../../utils/logger';
 
 const ResourceScheduleModal = ({ resource, location, onClose, onSuccess }) => {
   const { profile, user } = useAuth();
@@ -60,7 +61,7 @@ const ResourceScheduleModal = ({ resource, location, onClose, onSuccess }) => {
 
       setSchedules(fullSchedule);
     } catch (error) {
-      console.error('Error fetching resource schedules:', error);
+      logger.error('Error fetching resource schedules:', error);
       toast.error(t('messages.errorLoadingSchedules'));
     } finally {
       setLoading(false);
@@ -106,7 +107,7 @@ const ResourceScheduleModal = ({ resource, location, onClose, onSuccess }) => {
       toast.success(t('calendar.resourceScheduleSaved'));
       onSuccess();
     } catch (error) {
-      console.error('Error saving resource schedule:', error);
+      logger.error('Error saving resource schedule:', error);
       toast.error(t('messages.errorSavingSchedule'));
     } finally {
       setSaving(false);

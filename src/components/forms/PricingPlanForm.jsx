@@ -5,6 +5,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -48,7 +50,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
         minimumFractionDigits: 2,
       }).format(numAmount);
     } catch (error) {
-      console.warn('Currency formatting error:', error);
+      logger.warn('Currency formatting error:', error);
       // Fallback format
       return `${amount} ${currency}`;
     }
@@ -57,7 +59,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
   // Update form data when plan changes
   useEffect(() => {
     if (plan) {
-      console.log('Loading plan data for editing:', plan);
+      logger.log('Loading plan data for editing:', plan);
       setFormData({
         plan_name: plan.plan_name || '',
         plan_description: plan.plan_description || '',
@@ -70,7 +72,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
       });
     } else {
       // Reset form for new plan
-      console.log('Resetting form for new plan');
+      logger.log('Resetting form for new plan');
       setFormData({
         plan_name: '',
         plan_description: '',
@@ -208,7 +210,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
       const { data, error } = result;
 
       if (error) {
-        console.error('Error saving pricing plan:', error);
+        logger.error('Error saving pricing plan:', error);
         throw error;
       }
 
@@ -221,7 +223,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
       onSuccess(data);
       onClose();
     } catch (error) {
-      console.error('Error saving pricing plan:', error);
+      logger.error('Error saving pricing plan:', error);
       toast.error(error.message || (isEditing ? t('messages.errorUpdatingPricingPlan') : t('messages.errorCreatingPricingPlan')));
     } finally {
       setLoading(false);

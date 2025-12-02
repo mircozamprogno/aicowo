@@ -10,6 +10,8 @@ import ClosuresList from './ClosuresList';
 import LocationScheduleForm from './LocationScheduleForm';
 import ResourceScheduleList from './ResourceScheduleList';
 
+import logger from '../../utils/logger';
+
 const OperatingScheduleManager = () => {
   const { t } = useTranslation();
   const { user, profile } = useAuth();
@@ -38,7 +40,7 @@ const OperatingScheduleManager = () => {
         setSelectedLocation(data[0]);
       }
     } catch (error) {
-      console.error('Error fetching locations:', error);
+      logger.error('Error fetching locations:', error);
       toast.error(t('messages.errorLoadingLocations'));
     } finally {
       setLoading(false);

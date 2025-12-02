@@ -5,6 +5,8 @@ import { FattureInCloudService } from '../../services/fattureInCloudService';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const FattureInCloudSettings = ({ partnerUuid, isEnabled = false }) => {
   const [settings, setSettings] = useState({
     fattureincloud_enabled: false,
@@ -28,7 +30,7 @@ const FattureInCloudSettings = ({ partnerUuid, isEnabled = false }) => {
         setSettings(data);
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      logger.error('Error loading settings:', error);
     }
   };
 
@@ -45,7 +47,7 @@ const FattureInCloudSettings = ({ partnerUuid, isEnabled = false }) => {
       toast.success('FattureInCloud settings saved successfully');
       setTestResult(null); // Clear test result when settings change
     } catch (error) {
-      console.error('Error saving settings:', error);
+      logger.error('Error saving settings:', error);
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);

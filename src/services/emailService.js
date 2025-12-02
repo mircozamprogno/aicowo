@@ -1,5 +1,7 @@
 // Email service for sending invitations
 
+import logger from '../utils/logger';
+
 class EmailService {
   constructor() {
     // Get email configuration from environment variables
@@ -14,7 +16,7 @@ class EmailService {
     this.isConfigured = !!(this.smtpHost && this.smtpUser && this.smtpPassword && this.fromEmail);
     
     if (!this.isConfigured) {
-      console.warn('Email service not configured. Check your .env.local file.');
+      logger.warn('Email service not configured. Check your .env.local file.');
     }
   }
 
@@ -26,7 +28,7 @@ class EmailService {
    */
   async sendInvitation(invitationData, invitationLink) {
     if (!this.isConfigured) {
-      console.error('Email service not configured');
+      logger.error('Email service not configured');
       // In development, just log the email details
       this.logEmailDetails(invitationData, invitationLink);
       return false;
@@ -48,7 +50,7 @@ class EmailService {
 
       return success;
     } catch (error) {
-      console.error('Error sending invitation email:', error);
+      logger.error('Error sending invitation email:', error);
       return false;
     }
   }
@@ -70,7 +72,7 @@ class EmailService {
     }
 
     // Option 3: Log email for development
-    console.log('Email would be sent:', { to, subject, html, text });
+    logger.log('Email would be sent:', { to, subject, html, text });
     return true;
   }
 
@@ -95,10 +97,10 @@ class EmailService {
       //   import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       // );
       
-      console.log('EmailJS not implemented yet');
+      logger.log('EmailJS not implemented yet');
       return false;
     } catch (error) {
-      console.error('EmailJS error:', error);
+      logger.error('EmailJS error:', error);
       return false;
     }
   }
@@ -133,7 +135,7 @@ class EmailService {
       const result = await response.json();
       return result.success || true;
     } catch (error) {
-      console.error('Email API error:', error);
+      logger.error('Email API error:', error);
       return false;
     }
   }
@@ -249,16 +251,16 @@ If you weren't expecting this invitation, you can safely ignore this email.
    * Log email details for development
    */
   logEmailDetails(invitationData, invitationLink) {
-    console.log('=== EMAIL WOULD BE SENT ===');
-    console.log('To:', invitationData.invited_email);
-    console.log('Subject:', this.generateSubject(invitationData));
-    console.log('Link:', invitationLink);
-    console.log('Partner:', invitationData.partners?.first_name && invitationData.partners?.second_name 
+    logger.log('=== EMAIL WOULD BE SENT ===');
+    logger.log('To:', invitationData.invited_email);
+    logger.log('Subject:', this.generateSubject(invitationData));
+    logger.log('Link:', invitationLink);
+    logger.log('Partner:', invitationData.partners?.first_name && invitationData.partners?.second_name 
                            ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
                            : invitationData.partners?.first_name || invitationData.partners?.company_name);
-    console.log('Role:', invitationData.invited_role);
-    console.log('Custom Message:', invitationData.custom_message || 'None');
-    console.log('========================');
+    logger.log('Role:', invitationData.invited_role);
+    logger.log('Custom Message:', invitationData.custom_message || 'None');
+    logger.log('========================');
   }
 }
 

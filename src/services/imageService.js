@@ -1,4 +1,5 @@
 // Enhanced Supabase service with image management for locations
+import logger from '../utils/logger';
 import { supabase } from './supabase';
 
 export const imageService = {
@@ -87,7 +88,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', error);
       return {
         success: false,
         error: error.message
@@ -148,7 +149,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error fetching location images:', error);
+      logger.error('Error fetching location images:', error);
       return {
         success: false,
         error: error.message
@@ -174,7 +175,7 @@ export const imageService = {
         .remove([imageData.storage_path]);
 
       if (storageError) {
-        console.warn('Error deleting from storage:', storageError);
+        logger.warn('Error deleting from storage:', storageError);
         // Continue with database deletion even if storage deletion fails
       }
 
@@ -191,7 +192,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error deleting image:', error);
+      logger.error('Error deleting image:', error);
       return {
         success: false,
         error: error.message
@@ -220,7 +221,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error updating image order:', error);
+      logger.error('Error updating image order:', error);
       return {
         success: false,
         error: error.message
@@ -256,7 +257,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error updating image metadata:', error);
+      logger.error('Error updating image metadata:', error);
       return {
         success: false,
         error: error.message
@@ -291,7 +292,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error grouping location images:', error);
+      logger.error('Error grouping location images:', error);
       return {
         success: false,
         error: error.message
@@ -319,7 +320,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error reordering images:', error);
+      logger.error('Error reordering images:', error);
       return {
         success: false,
         error: error.message
@@ -363,7 +364,7 @@ export const imageService = {
       };
 
     } catch (error) {
-      console.error('Error getting storage usage:', error);
+      logger.error('Error getting storage usage:', error);
       return {
         success: false,
         error: error.message

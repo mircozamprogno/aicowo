@@ -143,26 +143,23 @@
 }
 
 /* ===== Standardized Outlined Buttons ===== */
-.add-contract-btn,
-.export-csv-btn {
+.add-contract-btn {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 8px 12px;
   border: 2px solid var(--color-primary);
-  background-color: transparent;
-  color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.add-contract-btn:hover:not(:disabled),
-.export-csv-btn:hover:not(:disabled) {
-  background-color: var(--color-primary);
-  color: white;
+.add-contract-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
 }
@@ -1459,4 +1456,119 @@ button.btn-primary:hover:not(:disabled) {
   border-color: var(--color-gray-400);
   color: var(--color-gray-400);
   background-color: transparent;
+}
+
+/* Make Crea Contratto button full green  */
+
+.add-contract-btn {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 2px solid var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.add-contract-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+}
+
+/* ===== Action Menu Dropdown Fix - COMPLETE ===== */
+
+/* Table cell must allow overflow */
+.contracts-table-cell {
+  padding: var(--spacing-md) 1.5rem;
+  font-size: 0.875rem;
+  color: var(--color-gray-900);
+  vertical-align: top;
+  overflow: visible !important; /* CRITICAL */
+  position: relative;
+}
+
+/* Table row must allow overflow */
+.contracts-table-row {
+  border-bottom: 1px solid var(--color-gray-200);
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+/* Actions container */
+.contract-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  position: relative;
+}
+
+/* Dropdown menu */
+
+/*
+.action-menu-dropdown,
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.25rem;
+  z-index: 9999 !important;
+  background: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
+  min-width: 160px;
+}
+
+*/
+
+/* Table wrapper and container */
+.contracts-table-wrapper {
+  overflow-x: auto;
+  overflow-y: visible !important;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-lg);
+}
+
+.contracts-table-container {
+  margin-top: var(--spacing-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: visible !important;
+}
+
+/* Table body must allow overflow */
+.contracts-table-body {
+  background-color: white;
+  border-top: 1px solid var(--color-gray-200);
+  overflow: visible !important;
+}
+
+/* Table itself */
+.contracts-table {
+  min-width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  overflow: visible !important;
+}
+
+
+.contracts-table-row {
+  border-bottom: 1px solid var(--color-gray-200);
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.contracts-table-cell {
+  padding: var(--spacing-md) 1.5rem;
+  font-size: 0.875rem;
+  color: var(--color-gray-900);
+  vertical-align: top;
+  position: relative;
 }

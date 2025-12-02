@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const NotificationModal = ({ 
   notifications = [], 
   currentIndex = 0,
@@ -56,7 +58,7 @@ const NotificationModal = ({
         onClose?.();
       }
     } catch (error) {
-      console.error('Error acknowledging notification:', error);
+      logger.error('Error acknowledging notification:', error);
       toast.error(t('notifications.errorAcknowledging'));
     } finally {
       setAcknowledging(false);

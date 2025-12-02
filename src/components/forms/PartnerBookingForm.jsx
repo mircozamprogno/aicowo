@@ -8,6 +8,8 @@ import '../../styles/components/PartnerBookingForm.css';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PartnerBookingForm = ({ 
   isOpen, 
   onClose, 
@@ -101,7 +103,7 @@ const PartnerBookingForm = ({
         onClose();
       }
     } catch (error) {
-      console.error('Error fetching customer data:', error);
+      logger.error('Error fetching customer data:', error);
       toast.error(t('customers.errorLoadingProfile'));
       onClose();
     } finally {
@@ -146,7 +148,7 @@ const PartnerBookingForm = ({
 
       setCustomers(customersWithPackages);
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
       toast.error(t('customers.errorLoadingCustomers'));
     } finally {
       setLoadingCustomers(false);
@@ -201,7 +203,7 @@ const PartnerBookingForm = ({
 
       setAvailablePackages(availablePackages);
     } catch (error) {
-      console.error('Error fetching packages:', error);
+      logger.error('Error fetching packages:', error);
       toast.error(t('contracts.errorLoadingPackages'));
       setAvailablePackages([]);
     } finally {
@@ -415,7 +417,7 @@ const PartnerBookingForm = ({
       });
 
     } catch (error) {
-      console.error('Error checking availability:', error);
+      logger.error('Error checking availability:', error);
       setAvailabilityStatus({ available: false, error: t('reservations.errorCheckingAvailability') });
     } finally {
       setCheckingAvailability(false);
@@ -527,10 +529,10 @@ const PartnerBookingForm = ({
         );
 
         if (!emailSent) {
-          console.warn('Booking confirmation email not sent');
+          logger.warn('Booking confirmation email not sent');
         }
       } catch (emailError) {
-        console.error('Error sending booking confirmation:', emailError);
+        logger.error('Error sending booking confirmation:', emailError);
       }
 
       toast.success(t('reservations.bookingConfirmed'));
@@ -538,7 +540,7 @@ const PartnerBookingForm = ({
       onClose();
       
     } catch (error) {
-      console.error('Error creating reservation:', error);
+      logger.error('Error creating reservation:', error);
       toast.error(t('reservations.errorCreatingReservation') + ': ' + error.message);
     } finally {
       setLoading(false);

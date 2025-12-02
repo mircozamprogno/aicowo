@@ -1,4 +1,4 @@
-// src/components/services/ServiceForm.jsx
+// src/components/forms/ServiceForm.jsx
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -37,6 +37,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showContractsExist, setShowContractsExist] = useState(false);
   const [contractCount, setContractCount] = useState(0);
+  const [contractsList, setContractsList] = useState([]);
 
   const formatDuration = (days) => {
     const numDays = parseFloat(days);
@@ -159,7 +160,10 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       cost: newType === 'free_trial' ? '0' : prev.cost,
       duration_days: newType === 'abbonamento' ? '30' : 
                     newType === 'pacchetto' ? '90' : 
-                    newType === 'free_trial' ? '7' : prev.duration_days
+                    newType === 'free_trial' ? '7' :
+                    newType === 'giornaliero' ? '1' : prev.duration_days,
+      is_renewable: newType === 'giornaliero' ? false : prev.is_renewable,
+      auto_renew: newType === 'giornaliero' ? false : prev.auto_renew
     }));
   };
 
@@ -256,7 +260,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           throw error;
         }
 
-        // Log activity for update
         await logActivity({
           action_category: 'service',
           action_type: 'updated',
@@ -307,7 +310,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         if (data && data[0]) {
           await onServiceCreated(data[0]);
           
-          // Log activity for creation
           await logActivity({
             action_category: 'service',
             action_type: 'created',
@@ -355,7 +357,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         throw error;
       }
 
-      // Log activity for deletion
       await logActivity({
         action_category: 'service',
         action_type: 'deleted',
@@ -390,8 +391,11 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     try {
       const { data, error, count } = await supabase
         .from('contracts')
-        .select('id', { count: 'exact', head: true })
-        .eq('service_id', service.id);
+        .select('id, contract_number, customer_id, customers(first_name, second_name)', { count: 'exact' })
+        .eq('service_id', service.id)
+        .eq('contract_status', 'active')
+        .eq('is_archived', false)
+        .order('contract_number', { ascending: true });
 
       if (error) {
         logger.error('Error checking contracts:', error);
@@ -400,6 +404,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
       if (count > 0) {
         setContractCount(count);
+        setContractsList(data || []);
         setShowContractsExist(true);
       } else {
         setShowDeleteConfirm(true);
@@ -435,7 +440,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         </div>
 
         <div className="modal-form">
-          {/* Basic Information Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('services.basicInformation')}</h3>
             
@@ -481,6 +485,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   options={[
                     { value: 'abbonamento', label: t('services.subscription') },
                     { value: 'pacchetto', label: t('services.package') },
+                    { value: 'giornaliero', label: t('services.dayPass') },
                     { value: 'free_trial', label: t('services.freeTrial') }
                   ]}
                   placeholder={t('services.selectType')}
@@ -504,7 +509,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
             </div>
           </div>
 
-          {/* Location and Resource Selection Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('services.locationAndResource')}</h3>
             
@@ -578,7 +582,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
             )}
           </div>
 
-          {/* Pricing and Duration Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('services.pricingAndDuration')}</h3>
             
@@ -634,6 +637,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   placeholder="30"
                   value={formData.duration_days}
                   onChange={handleChange}
+                  disabled={formData.service_type === 'giornaliero'}
                 />
                 {formData.duration_days && (
                   <p className="form-help-text" style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#6b7280' }}>
@@ -670,7 +674,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
             )}
           </div>
 
-          {/* Advanced Settings Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('services.advancedSettings')}</h3>
 
@@ -684,6 +687,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                     className="form-checkbox"
                     checked={formData.is_renewable}
                     onChange={handleChange}
+                    disabled={formData.service_type === 'giornaliero'}
                   />
                   <label htmlFor="is_renewable" className="form-checkbox-label">
                     {t('services.isRenewable')}
@@ -704,6 +708,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                       className="form-checkbox"
                       checked={formData.auto_renew}
                       onChange={handleChange}
+                      disabled={formData.service_type === 'giornaliero'}
                     />
                     <label htmlFor="auto_renew" className="form-checkbox-label">
                       {t('services.autoRenew')}
@@ -736,7 +741,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
             </div>
           </div>
 
-          {/* Form Actions */}
           <div className="modal-actions" style={{ justifyContent: 'space-between' }}>
             <div>
               {isEditing && (
@@ -775,10 +779,9 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         </div>
       </div>
 
-      {/* Contracts Exist Warning Modal */}
       {showContractsExist && (
         <div className="modal-overlay" style={{ zIndex: 1001 }}>
-          <div className="modal-container" style={{ maxWidth: '450px' }}>
+          <div className="modal-container" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <h2 className="modal-title">{t('services.cannotDeleteTitle')}</h2>
               <button onClick={() => setShowContractsExist(false)} className="modal-close-btn">
@@ -789,9 +792,65 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               <p style={{ marginBottom: '1rem' }}>
                 {t('services.cannotDeleteMessage', { count: contractCount })}
               </p>
-              <p style={{ color: '#dc2626', fontWeight: '500' }}>
+              <p style={{ color: '#dc2626', fontWeight: '500', marginBottom: '1rem' }}>
                 {t('services.cannotDeleteHint')}
               </p>
+              
+              <div style={{ 
+                backgroundColor: '#f9fafb', 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '0.5rem', 
+                padding: '1rem',
+                marginBottom: '1rem'
+              }}>
+                <h4 style={{ 
+                  fontSize: '0.875rem', 
+                  fontWeight: '600', 
+                  marginBottom: '0.75rem',
+                  color: '#374151'
+                }}>
+                  {t('services.affectedContracts')}:
+                </h4>
+                <div style={{ 
+                  maxHeight: '300px', 
+                  overflowY: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}>
+                  {contractsList.map((contract) => (
+                    <div key={contract.id} style={{ 
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.375rem',
+                      padding: '0.75rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <span style={{ 
+                          fontWeight: '600',
+                          fontSize: '0.875rem',
+                          color: '#111827'
+                        }}>
+                          {contract.contract_number}
+                        </span>
+                        {contract.customers && (
+                          <span style={{ 
+                            marginLeft: '0.5rem',
+                            fontSize: '0.875rem',
+                            color: '#6b7280'
+                          }}>
+                            ({contract.customers.first_name} {contract.customers.second_name})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="modal-actions">
                 <button
                   type="button"
@@ -806,7 +865,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="modal-overlay" style={{ zIndex: 1001 }}>
           <div className="modal-container" style={{ maxWidth: '400px' }}>

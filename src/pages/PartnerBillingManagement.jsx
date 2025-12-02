@@ -8,6 +8,8 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/pages/partner-billing-management.css';
 
+import logger from '../utils/logger';
+
 const PartnerBillingManagement = () => {
   const [executions, setExecutions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const PartnerBillingManagement = () => {
       if (error) throw error;
       setExecutions(data || []);
     } catch (error) {
-      console.error('Error fetching execution history:', error);
+      logger.error('Error fetching execution history:', error);
       toast.error(t('messages.errorLoadingData') || 'Error loading execution history');
     } finally {
       setLoading(false);
@@ -54,7 +56,7 @@ const PartnerBillingManagement = () => {
       if (error) throw error;
       setLastExecution(data?.[0] || null);
     } catch (error) {
-      console.error('Error fetching last execution:', error);
+      logger.error('Error fetching last execution:', error);
     }
   };
 
@@ -93,7 +95,7 @@ const PartnerBillingManagement = () => {
         toast.error(result.error || 'Failed to trigger billing');
       }
     } catch (error) {
-      console.error('Error triggering billing:', error);
+      logger.error('Error triggering billing:', error);
       toast.error(t('messages.errorProcessing') || 'Error triggering billing');
     } finally {
       setTriggering(false);

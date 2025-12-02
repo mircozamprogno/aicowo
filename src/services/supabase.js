@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import logger from '../utils/logger';
 
 // Supabase configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -369,7 +370,7 @@ export const archiveService = {
       };
 
     } catch (error) {
-      console.error('Error checking contract dependencies:', error);
+      logger.error('Error checking contract dependencies:', error);
       return {
         hasActiveBookings: false,
         hasActiveReservations: false,
@@ -455,7 +456,7 @@ export const archiveService = {
       };
 
     } catch (error) {
-      console.error('Error in bulk archive operation:', error);
+      logger.error('Error in bulk archive operation:', error);
       return {
         success: false,
         error: error.message

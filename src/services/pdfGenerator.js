@@ -1,5 +1,6 @@
 // src/services/pdfGenerator.js
 import jsPDF from 'jspdf';
+import logger from '../utils/logger';
 
 /**
  * Generate a professional contract PDF receipt
@@ -74,7 +75,7 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
           };
           
           img.onerror = () => {
-            console.warn('Could not load logo for PDF');
+            logger.warn('Could not load logo for PDF');
             resolve(); // Continue without logo
           };
           
@@ -83,7 +84,7 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
         
         currentY += 30; // Space after logo
       } catch (error) {
-        console.warn('Error loading logo:', error);
+        logger.warn('Error loading logo:', error);
         currentY += 10;
       }
     }
@@ -469,7 +470,7 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
     return true;
     
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    logger.error('Error generating PDF:', error);
     throw new Error('Failed to generate PDF');
   }
 };
@@ -486,11 +487,11 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
 export const generateInvoicePDF = async (payment, partnerData, logoUrl, t) => {
   try {
     // DEBUG: Log the payment object to see what data we have
-    console.log('=== PDF GENERATION DEBUG ===');
-    console.log('Full payment object:', payment);
-    console.log('invoice_number field:', payment.invoice_number);
-    console.log('All payment keys:', Object.keys(payment));
-    console.log('=========================');
+    logger.log('=== PDF GENERATION DEBUG ===');
+    logger.log('Full payment object:', payment);
+    logger.log('invoice_number field:', payment.invoice_number);
+    logger.log('All payment keys:', Object.keys(payment));
+    logger.log('=========================');
     
     // Create new PDF document - A4 size
     const pdf = new jsPDF('portrait', 'mm', 'a4');
@@ -821,7 +822,7 @@ export const generateInvoicePDF = async (payment, partnerData, logoUrl, t) => {
     return true;
     
   } catch (error) {
-    console.error('Error generating invoice PDF:', error);
+    logger.error('Error generating invoice PDF:', error);
     throw new Error('Failed to generate invoice PDF');
   }
 };

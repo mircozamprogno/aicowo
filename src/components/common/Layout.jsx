@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import NotificationBell from '../notifications/NotificationBell';
-import LanguageSwitcher from './LanguageSwitcher';
 import Sidebar from './Sidebar';
 
 const Layout = ({ children, pageTitle }) => {
@@ -44,7 +43,6 @@ const Layout = ({ children, pageTitle }) => {
             </div>
             <div className="topbar-actions">
               {profile && <NotificationBell />}
-              <LanguageSwitcher />
               <div className="user-info">
                 <span className="user-name">
                   {profile?.first_name} {profile?.last_name} ({t(`roles.${profile?.role}`)})

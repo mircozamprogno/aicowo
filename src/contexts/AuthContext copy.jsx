@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.jsx
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { customerService } from '../services/customerService';
 import { supabase } from '../services/supabase';
@@ -12,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [partnerStatusError, setPartnerStatusError] = useState(null);
 
   // Refs to prevent race conditions
   const lastUserIdRef = useRef(null);
@@ -23,6 +21,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     logger.log('🚀 AuthProvider: Starting initialization');
     
+    // Prevent double initialization
     if (initializingRef.current) {
       logger.log('⚠️ Already initializing, skipping');
       return;
@@ -55,6 +54,7 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
           lastUserIdRef.current = session.user.id;
           
+          // Fetch profile
           await fetchProfile(session.user.id).catch(err => {
             logger.error('❌ Profile fetch failed:', err);
           });
@@ -79,6 +79,7 @@ export const AuthProvider = ({ children }) => {
 
     checkSession();
 
+    // Auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log('=== AUTH STATE CHANGE ===');
       logger.log('Event:', event);
@@ -89,11 +90,13 @@ export const AuthProvider = ({ children }) => {
       
       if (!mountedRef.current) return;
 
+      // CRITICAL: Ignore duplicate INITIAL_SESSION after initialization
       if (event === 'INITIAL_SESSION' && isInitialized) {
         logger.log('🚫 Ignoring duplicate INITIAL_SESSION');
         return;
       }
 
+      // Handle password recovery
       if (event === 'PASSWORD_RECOVERY') {
         logger.log('🔐 Password recovery mode');
         setIsPasswordRecovery(true);
@@ -107,6 +110,7 @@ export const AuthProvider = ({ children }) => {
 
       const newUserId = session?.user?.id || null;
       
+      // Check if user actually changed
       if (lastUserIdRef.current !== newUserId) {
         logger.log('👤 User changed, updating state');
         
@@ -115,7 +119,6 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
           setProfile(null);
           setIsPasswordRecovery(false);
-          setPartnerStatusError(null);
           lastUserIdRef.current = null;
           setLoading(false);
         } else if (event === 'SIGNED_IN' && session) {
@@ -140,6 +143,7 @@ export const AuthProvider = ({ children }) => {
             });
         }
       } else {
+        // Same user - minimal update
         logger.log('👤 Same user, minimal update');
         
         if (event === 'TOKEN_REFRESHED' && session) {
@@ -151,7 +155,6 @@ export const AuthProvider = ({ children }) => {
           setUser(null);
           setProfile(null);
           setIsPasswordRecovery(false);
-          setPartnerStatusError(null);
           lastUserIdRef.current = null;
           setLoading(false);
         } else {
@@ -167,9 +170,10 @@ export const AuthProvider = ({ children }) => {
       initializingRef.current = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependencies - run once!
 
   const fetchProfile = async (userId) => {
+    // Prevent duplicate fetches
     if (profileFetchingRef.current) {
       logger.log('⏳ Profile fetch already in progress');
       return;
@@ -179,6 +183,7 @@ export const AuthProvider = ({ children }) => {
       profileFetchingRef.current = true;
       logger.log('📥 Fetching profile for:', userId);
       
+      // Add timeout protection
       const queryPromise = supabase
         .from('profiles')
         .select('*')
@@ -196,6 +201,7 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         logger.error('❌ Profile fetch error:', error);
         
+        // Create emergency profile
         const emergencyProfile = {
           id: userId,
           first_name: user?.email?.split('@')[0] || 'User',
@@ -216,67 +222,6 @@ export const AuthProvider = ({ children }) => {
         first_name: data.first_name,
         last_name: data.last_name
       });
-
-
-
-      // CHECK PARTNER STATUS for partner and admin roles
-      if ((data.role === 'partner' || data.role === 'admin') && data.partner_uuid) {
-        logger.log('🏢 Checking partner status for:', data.partner_uuid);
-        
-        const { data: partnerData, error: partnerError } = await supabase
-          .from('partners')
-          .select('partner_status, company_name')
-          .eq('partner_uuid', data.partner_uuid)
-          .single();
-
-        if (partnerError) {
-          logger.error('❌ Partner status check error:', partnerError);
-          
-          // Store error data in sessionStorage before signOut
-          sessionStorage.setItem('partnerStatusError', JSON.stringify({
-            type: 'check_failed',
-            companyName: null
-          }));
-          
-          // Force sign out
-          await supabase.auth.signOut();
-          
-          // Clear state
-          lastUserIdRef.current = null;
-          if (mountedRef.current) {
-            setUser(null);
-            setProfile(null);
-          }
-          return;
-        }
-
-        logger.log('🏢 Partner status:', partnerData.partner_status);
-
-        if (partnerData.partner_status !== 'active') {
-          logger.warn('⚠️ Partner not active:', partnerData.partner_status);
-          
-          // Store error data in sessionStorage before signOut
-          sessionStorage.setItem('partnerStatusError', JSON.stringify({
-            type: 'not_active',
-            status: partnerData.partner_status,
-            companyName: partnerData.company_name
-          }));
-          
-          // Force sign out
-          await supabase.auth.signOut();
-          
-          // Clear state
-          lastUserIdRef.current = null;
-          if (mountedRef.current) {
-            setUser(null);
-            setProfile(null);
-          }
-          
-          return;
-        }
-
-        logger.log('✅ Partner is active');
-      }
       
       setProfile(data);
 
@@ -292,6 +237,7 @@ export const AuthProvider = ({ children }) => {
           logger.log('✅ Customer record ensured');
         } catch (error) {
           logger.error('❌ Customer record error:', error);
+          // Don't fail auth if customer creation fails
         }
       }
 
@@ -318,8 +264,6 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     logger.log('🔑 Signing in:', email);
-    setPartnerStatusError(null); // Clear any previous errors
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -366,6 +310,7 @@ export const AuthProvider = ({ children }) => {
 
         logger.log('✅ Profile created:', profileResult);
 
+        // Create customer record for regular users
         if (profileResult.role === 'user' && profileResult.partner_uuid) {
           try {
             const customerData = {
@@ -384,6 +329,7 @@ export const AuthProvider = ({ children }) => {
             logger.log('✅ Customer record created');
           } catch (customerError) {
             logger.error('❌ Customer creation error:', customerError);
+            // Don't fail signup if customer creation fails
           }
         }
 
@@ -410,6 +356,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       logger.warn('⚠️ Signout exception (will clear local state anyway):', error);
     } finally {
+      // ALWAYS clear state and redirect
       logger.log('🧹 Clearing local state and redirecting...');
       
       lastUserIdRef.current = null;
@@ -419,10 +366,10 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setProfile(null);
         setIsPasswordRecovery(false);
-        setPartnerStatusError(null);
         setLoading(false);
       }
       
+      // Redirect to login
       window.location.href = '/#/login';
     }
   };
@@ -450,10 +397,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const clearPartnerStatusError = () => {
-    setPartnerStatusError(null);
-  };
-
   logger.log('🔍 AuthProvider state:', {
     hasUser: !!user,
     hasProfile: !!profile,
@@ -461,8 +404,7 @@ export const AuthProvider = ({ children }) => {
     partnerUuid: profile?.partner_uuid,
     loading,
     isPasswordRecovery,
-    isInitialized,
-    hasPartnerError: !!partnerStatusError
+    isInitialized
   });
 
   const value = {
@@ -470,8 +412,6 @@ export const AuthProvider = ({ children }) => {
     profile,
     loading,
     isPasswordRecovery,
-    partnerStatusError,
-    clearPartnerStatusError,
     signIn,
     signUp,
     signOut,

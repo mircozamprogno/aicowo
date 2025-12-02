@@ -6,6 +6,8 @@ import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 import EmailTemplateEditor from './EmailTemplateEditor';
 
+import logger from '../../utils/logger';
+
 const PARTNER_TEMPLATE_CONFIGS = {
   customer_invitation: {
     id: 'customer_invitation',
@@ -57,14 +59,14 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
         .eq('partner_uuid', partnerUuid);
 
       if (error) {
-        console.error('Error fetching templates:', error);
+        logger.error('Error fetching templates:', error);
         throw error;
       }
 
-      console.log('Templates fetched:', data);
+      logger.log('Templates fetched:', data);
       setTemplates(data || []);
     } catch (error) {
-      console.error('Error in fetchTemplates:', error);
+      logger.error('Error in fetchTemplates:', error);
       toast.error('Error loading templates');
       setTemplates([]);
     } finally {

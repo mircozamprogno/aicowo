@@ -2,6 +2,7 @@
 // This runs as a serverless function on Vercel
 
 import nodemailer from 'nodemailer';
+import logger from '../../utils/logger';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -56,7 +57,7 @@ export default async function handler(req, res) {
       text: text
     });
 
-    console.log('Email sent:', info.messageId);
+    logger.log('Email sent:', info.messageId);
     
     return res.status(200).json({ 
       success: true, 
@@ -64,7 +65,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Email proxy error:', error);
+    logger.error('Email proxy error:', error);
     return res.status(500).json({ 
       error: 'Failed to send email',
       message: error.message 

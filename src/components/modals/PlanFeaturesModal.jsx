@@ -4,6 +4,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
   const { t } = useTranslation();
   const [availableFeatures, setAvailableFeatures] = useState([]);
@@ -30,7 +32,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         .order('feature_name', { ascending: true });
 
       if (error) {
-        console.error('Error fetching features:', error);
+        logger.error('Error fetching features:', error);
         // Mock data for development
         setAvailableFeatures([
           {
@@ -62,7 +64,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         setAvailableFeatures(data || []);
       }
     } catch (error) {
-      console.error('Error fetching features:', error);
+      logger.error('Error fetching features:', error);
     }
   };
 
@@ -88,7 +90,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error fetching assigned features:', error);
+        logger.error('Error fetching assigned features:', error);
         // Mock data for development
         setAssignedFeatures([
           {
@@ -122,7 +124,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         setAssignedFeatures(data || []);
       }
     } catch (error) {
-      console.error('Error fetching assigned features:', error);
+      logger.error('Error fetching assigned features:', error);
     } finally {
       setLoading(false);
     }
@@ -177,7 +179,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         .single();
 
       if (error) {
-        console.error('Error adding feature:', error);
+        logger.error('Error adding feature:', error);
         toast.error(t('messages.errorAddingFeature') || 'Error adding feature');
         return;
       }
@@ -191,7 +193,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         onFeaturesUpdated();
       }
     } catch (error) {
-      console.error('Error adding feature:', error);
+      logger.error('Error adding feature:', error);
       toast.error(t('messages.errorAddingFeature') || 'Error adding feature');
     } finally {
       setSaving(false);
@@ -207,7 +209,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         .eq('id', mappingId);
 
       if (error) {
-        console.error('Error removing feature:', error);
+        logger.error('Error removing feature:', error);
         toast.error(t('messages.errorRemovingFeature') || 'Error removing feature');
         return;
       }
@@ -219,7 +221,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         onFeaturesUpdated();
       }
     } catch (error) {
-      console.error('Error removing feature:', error);
+      logger.error('Error removing feature:', error);
       toast.error(t('messages.errorRemovingFeature') || 'Error removing feature');
     } finally {
       setSaving(false);
@@ -235,7 +237,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
         .eq('id', mappingId);
 
       if (error) {
-        console.error('Error updating feature value:', error);
+        logger.error('Error updating feature value:', error);
         toast.error(t('messages.errorUpdatingFeature') || 'Error updating feature');
         return;
       }
@@ -248,7 +250,7 @@ const PlanFeaturesModal = ({ isOpen, onClose, plan, onFeaturesUpdated }) => {
       
       toast.success(t('messages.featureUpdatedSuccessfully') || 'Feature updated successfully');
     } catch (error) {
-      console.error('Error updating feature value:', error);
+      logger.error('Error updating feature value:', error);
       toast.error(t('messages.errorUpdatingFeature') || 'Error updating feature');
     } finally {
       setSaving(false);

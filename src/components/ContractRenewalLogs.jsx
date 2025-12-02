@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/components/contractrenewallogs.css';
+import logger from '../utils/logger';
 import { toast } from './common/ToastContainer';
 
 const ContractRenewalLogs = () => {
@@ -72,7 +73,7 @@ const ContractRenewalLogs = () => {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching renewal logs:', error);
+        logger.error('Error fetching renewal logs:', error);
         toast.error(t('renewalLogs.errorLoading'));
         return;
       }
@@ -80,7 +81,7 @@ const ContractRenewalLogs = () => {
       setLogs(data || []);
       calculateStats(data || []);
     } catch (error) {
-      console.error('Error fetching renewal logs:', error);
+      logger.error('Error fetching renewal logs:', error);
       toast.error(t('renewalLogs.errorLoading'));
     } finally {
       setLoading(false);

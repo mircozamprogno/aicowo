@@ -139,7 +139,8 @@
       "activeContracts": "{{count}} active contract(s)",
       "activeReservations": "{{count}} active reservation(s)",
       "relatedPayments": "{{count}} related payment(s)"
-    }
+    },
+    "confirmDelete": "Confirm Delete"
   },
   "settings": {
     "title": "Settings",
@@ -174,7 +175,8 @@
     "uploadSystemEmailBanner": "Upload System Email Banner",
     "operatingCalendar": "Operating Calendar",
     "manageOperatingCalendar": "Manage Operating Calendar",
-    "operatingCalendarDescription": "Configure when your locations and resources are available for booking"
+    "operatingCalendarDescription": "Configure when your locations and resources are available for booking",
+    "invoices": "Invoices Powercowo"
   },
   "locations": {
     "addLocation": "Add Location",
@@ -375,7 +377,14 @@
     "invalidResetLinkMessage": "This password reset link is invalid or has expired. Please request a new one.",
     "requestNewResetLink": "Request New Reset Link",
     "goToLogin": "Go to Login",
-    "phone": "Phone Number"
+    "phone": "Phone Number",
+    "loginFailed": "Login Failed",
+    "partnerStatusCheckFailed": "Unable to verify partner status. Please contact support.",
+    "partnerStatus": {
+      "pending": "Your partner account \"{{companyName}}\" is pending approval. Please contact support.",
+      "inactive": "Your partner account \"{{companyName}}\" is inactive. Please contact support to reactivate.",
+      "suspended": "Your partner account \"{{companyName}}\" has been suspended. Please contact support."
+    }
   },
   "roles": {
     "superadmin": "Super Admin",
@@ -479,6 +488,7 @@
     "individual": "Individual",
     "freelancer": "Free Lance",
     "entrepeneur": "Entrepeneur",
+    "company": "Entrepeneur",
     "employee": "Employee",
     "tourist": "Tourist",
     "student": "Student",
@@ -594,7 +604,10 @@
     "noResultsFound": "No results found",
     "showing": "Showing",
     "rowsPerPage": "Rows per page",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "previous": "Previous",
+    "next": "Next",
+    "account": "Account"
   },
   "messages": {
     "signedInSuccessfully": "Signed in successfully",
@@ -820,7 +833,14 @@
     "oneDay": "1 Day",
     "daysCount": "{{count}} Days",
     "privateService": "Private Service",
-    "privateServiceHelp": "Private services are only visible to administrators and cannot be selected by customers when creating contracts"
+    "privateServiceHelp": "Private services are only visible to administrators and cannot be selected by customers when creating contracts",
+
+    "dayPass": "Day Pass",
+    "dayPassInfo": "Day Pass Services",
+    "dayPassDescription": "unlimited access for one day with advance booking",
+    "dayPassExample": "Example: Desk day pass, meeting room daily access",
+    "dayPasses": "Day Passes",
+    "affectedContracts": "Affected Contracts"
   },
   "reservations": {
     "title": "Package Reservations",
@@ -894,7 +914,7 @@
   },
   "contracts": {
     "title": "Contracts",
-    "manageYourContracts": "View and manage your active service contracts",
+    "manageYourContracts": "View and manage your service contracts",
     "managePartnerContracts": "Manage your contracts",
     "createContract": "Create Contract",
     "createFirstContract": "Create First Contract",
@@ -1070,7 +1090,8 @@
     "finalPrice": "Final Price",
     "contractAmountBreakdown": "Contract Amount Breakdown",
     "contractTotal": "Contract Total",
-    "contractDetails": "Contract Details"
+    "contractDetails": "Contract Details",
+    "dayPassValidOnlyThisDay": "Day pass valid only on the selected date"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
@@ -1436,7 +1457,9 @@
     "number": "Number",
     "method": "Method",
     "date": "Date",
-    "fileUploadHint": "JPEG, PNG, WebP, PDF up to 5MB"
+    "fileUploadHint": "JPEG, PNG, WebP, PDF up to 5MB",
+    "validAmountRemaining": "Valid amount. Remaining:",
+    "afterPayment": "Outstanding after payment"
   },
   "tour": {
     "welcome": {
@@ -2233,6 +2256,8 @@
     "billingHistorySubtitle": "View and manage your invoices",
     "allPartnersBilling": "All Partners Billing",
     "allPartnersBillingSubtitle": "Manage billing for all partners",
+    "title": "Partner Billing Management",
+    "subtitle": "Manage automated and manual billing executions",
     "totalInvoices": "Total Invoices",
     "pending": "Pending",
     "paid": "Paid",
@@ -2243,7 +2268,7 @@
     "status": "Status",
     "year": "Year",
     "partner": "Partner",
-    "invoiceNumber": "Invoice Number",
+    "invoiceNumber": "Invoice No.",
     "period": "Period",
     "plan": "Plan",
     "amount": "Amount",
@@ -2255,14 +2280,45 @@
     "noInvoices": "No invoices found",
     "downloadInvoice": "Download Invoice",
     "searchInvoices": "Search invoices or partners...",
+    "triggerBilling": "Trigger Manual Billing",
+    "lastExecution": "Last Execution",
+    "billingMonth": "Billing Month",
+    "executionType": "Execution Type",
+    "started": "Started",
+    "duration": "Duration",
+    "totalPartners": "Total Partners",
+    "successful": "Successful",
+    "errors": "Errors",
+    "skipped": "Skipped",
+    "executionHistory": "Execution History",
+    "type": "Type",
+    "results": "Results",
+    "triggeredBy": "Triggered By",
+    "viewDetails": "View Details",
+    "noExecutions": "No billing executions found",
+    "triggerDescription": "Select the billing month to process. This will create payment records for all active partners.",
+    "selectBillingMonth": "Billing Month",
+    "selectMonth": "Select month",
+    "duplicateWarning": "If billing has already been processed for this month, duplicate records will be skipped.",
+    "processing": "Processing...",
+    "triggerNow": "Trigger Billing",
+    "executionDetails": "Execution Details",
+    "executionSummary": "Execution Summary",
+    "executionId": "Execution ID",
+    "completed": "Completed",
+    "partnerResults": "Partner Results",
+    "partnerName": "Partner Name",
+    "result": "Result",
     "errorMessage": "Error Message",
+    "closeDetails": "Close Details",
+    "noResults": "No results available",
     "yes": "Yes",
     "no": "No",
     "invoice": "INVOICE",
     "billingPeriod": "Billing Period",
     "issueDate": "Issue Date",
     "paymentDate": "Payment Date",
-    "transactionRef": "Transaction Ref",
+    "transactionRef": "Transaction Ref.",
     "serviceDetails": "Service Details",
     "description": "Description",
     "subscriptionService": "Subscription Service",

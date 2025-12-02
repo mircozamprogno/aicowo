@@ -4,6 +4,8 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { FattureInCloudService } from '../../services/fattureInCloudService';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUuid, onImportSuccess }) => {
   const { t } = useTranslation();
   const [clients, setClients] = useState([]);
@@ -30,7 +32,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
       );
       
       if (result.success) {
-        console.log('✅ Fetched clients:', result.clients.map(c => ({ id: c.id, name: c.name })));
+        logger.log('✅ Fetched clients:', result.clients.map(c => ({ id: c.id, name: c.name })));
         setClients(result.clients);
       } else {
         toast.error(`Failed to fetch clients: ${result.error}`);
@@ -45,23 +47,23 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
   const handleSelectAll = (checked) => {
     if (checked) {
       const allIds = new Set(clients.map(c => c.id));
-      console.log('📋 Selecting all clients:', Array.from(allIds));
+      logger.log('📋 Selecting all clients:', Array.from(allIds));
       setSelectedClients(allIds);
     } else {
-      console.log('📋 Deselecting all clients');
+      logger.log('📋 Deselecting all clients');
       setSelectedClients(new Set());
     }
   };
 
   const handleSelectClient = (clientId, checked) => {
-    console.log(`📌 ${checked ? 'Selecting' : 'Deselecting'} client:`, clientId);
+    logger.log(`📌 ${checked ? 'Selecting' : 'Deselecting'} client:`, clientId);
     const newSelected = new Set(selectedClients);
     if (checked) {
       newSelected.add(clientId);
     } else {
       newSelected.delete(clientId);
     }
-    console.log('📋 Current selection:', Array.from(newSelected));
+    logger.log('📋 Current selection:', Array.from(newSelected));
     setSelectedClients(newSelected);
   };
 
@@ -73,7 +75,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
       return;
     }
 
-    console.log('🚀 Starting import for clients:', selectedArray);
+    logger.log('🚀 Starting import for clients:', selectedArray);
     setImporting(true);
     setImportResults([]);
 
@@ -85,7 +87,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
         partnerUuid
       );
 
-      console.log('📊 Import results:', results);
+      logger.log('📊 Import results:', results);
       setImportResults(results);
 
       // Get successfully imported client IDs
@@ -93,17 +95,17 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
         .filter(r => r.success)
         .map(r => r.clientId);
       
-      console.log('✅ Successfully imported client IDs:', successfulClientIds);
+      logger.log('✅ Successfully imported client IDs:', successfulClientIds);
 
       // Remove successfully imported clients from the list
       setClients(prev => {
         const updated = prev.filter(c => !successfulClientIds.includes(c.id));
-        console.log('📋 Remaining clients after removal:', updated.map(c => ({ id: c.id, name: c.name })));
+        logger.log('📋 Remaining clients after removal:', updated.map(c => ({ id: c.id, name: c.name })));
         return updated;
       });
 
       // COMPLETELY CLEAR the selection
-      console.log('🧹 Clearing all selections');
+      logger.log('🧹 Clearing all selections');
       setSelectedClients(new Set());
 
       const successCount = successfulClientIds.length;
@@ -119,7 +121,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
       }
 
     } catch (error) {
-      console.error('❌ Import error:', error);
+      logger.error('❌ Import error:', error);
       toast.error(`Import error: ${error.message}`);
     } finally {
       setImporting(false);

@@ -139,7 +139,8 @@
       "activeContracts": "{{count}} contratto/i attivo/i",
       "activeReservations": "{{count}} prenotazione/i attiva/e",
       "relatedPayments": "{{count}} pagamento/i correlato/i"
-    }
+    },
+    "confirmDelete": "Conferma Cancellazione"
   },
   "settings": {
     "title": "Impostazioni",
@@ -174,7 +175,8 @@
     "uploadSystemEmailBanner": "Carica Banner Email di Sistema",
     "operatingCalendar": "Calendario Operativo",
     "manageOperatingCalendar": "Gestisci Calendario Operativo",
-    "operatingCalendarDescription": "Configura quando le tue sedi e risorse sono disponibili per le prenotazioni"
+    "operatingCalendarDescription": "Configura quando le tue sedi e risorse sono disponibili per le prenotazioni",
+    "invoices": "Fatture Powercowo"
   },
   "locations": {
     "addLocation": "Aggiungi Sede",
@@ -375,7 +377,14 @@
     "invalidResetLinkMessage": "Questo link per il reset della password non è valido o è scaduto. Per favore richiedine uno nuovo.",
     "requestNewResetLink": "Richiedi Nuovo Link di Reset",
     "goToLogin": "Vai al Login",
-    "phone": "Numero di Telefono"
+    "phone": "Numero di Telefono",
+    "loginFailed": "Accesso Negato",
+    "partnerStatusCheckFailed": "Impossibile verificare lo stato del partner. Contatta il supporto.",
+    "partnerStatus": {
+      "pending": "Il tuo account partner \"{{companyName}}\" è in attesa di approvazione. Contatta il supporto.",
+      "inactive": "Il tuo account partner \"{{companyName}}\" è inattivo. Contatta il supporto per riattivarlo.",
+      "suspended": "Il tuo account partner \"{{companyName}}\" è stato sospeso. Contatta il supporto."
+    }
   },
   "roles": {
     "superadmin": "Super Amministratore",
@@ -479,6 +488,7 @@
     "individual": "Individuale",
     "freelancer": "Free Lance",
     "entrepeneur": "Imprenditore",
+    "company": "Imprenditore",
     "employee": "Impiegato",
     "tourist": "Turista",
     "student": "Studente",
@@ -594,7 +604,10 @@
     "noResultsFound": "Nessun risultato",
     "showing": "Visualizzati",
     "rowsPerPage": "Righe per pagina",
-    "refresh": "Aggiorna"
+    "refresh": "Aggiorna",
+    "previous": "Precedenti",
+    "next": "Successive",
+    "account": "Account"
   },
   "messages": {
     "signedInSuccessfully": "Accesso effettuato con successo",
@@ -821,7 +834,13 @@
     "oneDay": "1 Giorno",
     "daysCount": "{{count}} Giorni",
     "privateService": "Servizio Privato",
-    "privateServiceHelp": "I Servizi Privati sono visibili solo ai partner e non possono essere selezionati dai clienti "
+    "privateServiceHelp": "I Servizi Privati sono visibili solo ai partner e non possono essere selezionati dai clienti ",
+    "dayPass": "Giornaliero",
+    "dayPassInfo": "Servizi Giornalieri",
+    "dayPassDescription": "accesso illimitato per una giornata con prenotazione anticipata",
+    "dayPassExample": "Esempio: Day pass scrivania, accesso giornaliero sala riunioni",
+    "dayPasses": "Giornalieri",
+    "affectedContracts": "Contratti Coinvolti"
   },
   "reservations": {
     "title": "Prenotazioni Pacchetto",
@@ -847,7 +866,7 @@
     "bookingSummary": "Riepilogo Prenotazione",
     "dateLabel": "Data",
     "durationLabel": "Durata",
-    "entriesToUse": "Ingressi da utilizzare",
+    "entriesToUse": "Ingressi utilizzati",
     "remainingAfter": "Rimanenti dopo",
     "morningSlot": "Mattino (9:00-13:00)",
     "afternoonSlot": "Pomeriggio (14:00-18:00)",
@@ -898,7 +917,7 @@
   },
   "contracts": {
     "title": "Contratti",
-    "manageYourContracts": "Visualizza e gestisci i tuoi contratti di servizio attivi",
+    "manageYourContracts": "Visualizza e gestisci i tuoi contratti",
     "managePartnerContracts": "Gestisci i tuoi contratti",
     "createContract": "Crea Contratto",
     "createFirstContract": "Crea Primo Contratto",
@@ -1036,7 +1055,7 @@
     "freeTrialAlreadyUsed": "Hai già utilizzato la tua prova gratuita",
     "freeTrialOncePerCustomer": "I servizi di prova gratuita possono essere utilizzati una sola volta per cliente, anche se eliminati o archiviati.",
     "cancelledContracts": "Cancellati",
-    "pricesExcludeVAT": "I prezzi sono senza IVA",
+    "pricesExcludeVAT": "I prezzi indicati sono IVA Esclusa",
     "overridePrice": "Personalizza prezzo",
     "enterCustomPrice": "Inserisci prezzo personalizzato",
     "customEndDate": "Personalizza data fine",
@@ -1074,7 +1093,8 @@
     "finalPrice": "Prezzo finale",
     "contractAmountBreakdown": "Dettaglio Importo Contratto",
     "contractTotal": "Totale Contratto",
-    "contractDetails": "Dettagli contratto"
+    "contractDetails": "Dettagli contratto",
+    "dayPassValidOnlyThisDay": "Giornaliero valido solo per la data selezionata"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",
@@ -1440,7 +1460,9 @@
     "number": "Numero",
     "method": "Metodo",
     "date": "Data",
-    "fileUploadHint": "JPEG, PNG, WebP, PDF fino a 5MB"
+    "fileUploadHint": "JPEG, PNG, WebP, PDF fino a 5MB",
+    "validAmountRemaining": "Importo valido. Rimanente:",
+    "afterPayment": "Residuo dopo il pagamento"
   },
   "tour": {
     "welcome": {
@@ -2238,6 +2260,8 @@
     "billingHistorySubtitle": "Visualizza e gestisci le tue fatture",
     "allPartnersBilling": "Fatturazione Tutti i Partner",
     "allPartnersBillingSubtitle": "Gestisci la fatturazione di tutti i partner",
+    "title": "Gestione Fatturazione Partner",
+    "subtitle": "Gestisci le esecuzioni automatiche e manuali della fatturazione",
     "totalInvoices": "Totale Fatture",
     "pending": "In Attesa",
     "paid": "Pagato",
@@ -2260,7 +2284,38 @@
     "noInvoices": "Nessuna fattura trovata",
     "downloadInvoice": "Scarica Fattura",
     "searchInvoices": "Cerca fatture o partner...",
+    "triggerBilling": "Avvia Fatturazione Manuale",
+    "lastExecution": "Ultima Esecuzione",
+    "billingMonth": "Mese Fatturazione",
+    "executionType": "Tipo Esecuzione",
+    "started": "Inizio",
+    "duration": "Durata",
+    "totalPartners": "Totale Partner",
+    "successful": "Completate",
+    "errors": "Errori",
+    "skipped": "Saltate",
+    "executionHistory": "Storico Esecuzioni",
+    "type": "Tipo",
+    "results": "Risultati",
+    "triggeredBy": "Avviato Da",
+    "viewDetails": "Visualizza Dettagli",
+    "noExecutions": "Nessuna esecuzione trovata",
+    "triggerDescription": "Seleziona il mese di fatturazione da processare. Verranno creati i record di pagamento per tutti i partner attivi.",
+    "selectBillingMonth": "Mese Fatturazione",
+    "selectMonth": "Seleziona mese",
+    "duplicateWarning": "Se la fatturazione per questo mese è già stata processata, i record duplicati verranno saltati.",
+    "processing": "Elaborazione in corso...",
+    "triggerNow": "Avvia Fatturazione",
+    "executionDetails": "Dettagli Esecuzione",
+    "executionSummary": "Riepilogo Esecuzione",
+    "executionId": "ID Esecuzione",
+    "completed": "Completato",
+    "partnerResults": "Risultati per Partner",
+    "partnerName": "Nome Partner",
+    "result": "Risultato",
     "errorMessage": "Messaggio di Errore",
+    "closeDetails": "Chiudi Dettagli",
+    "noResults": "Nessun risultato disponibile",
     "yes": "Sì",
     "no": "No",
     "invoice": "FATTURA",

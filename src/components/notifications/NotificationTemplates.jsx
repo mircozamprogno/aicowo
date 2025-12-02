@@ -10,6 +10,8 @@ import { toast } from '../common/ToastContainer';
 import NotificationEditor from './NotificationEditor';
 import NotificationModal from './NotificationModal';
 
+import logger from '../../utils/logger';
+
 const NotificationTemplates = () => {
   const { t } = useTranslation();
   const { profile } = useAuth();
@@ -46,7 +48,7 @@ const NotificationTemplates = () => {
       if (error) throw error;
       setTemplates(data || []);
     } catch (error) {
-      console.error('Error loading templates:', error);
+      logger.error('Error loading templates:', error);
       toast.error(t('notifications.errorLoadingTemplates'));
     } finally {
       setLoading(false);
@@ -67,7 +69,7 @@ const NotificationTemplates = () => {
       toast.success(t('notifications.templateDeleted'));
       loadTemplates();
     } catch (error) {
-      console.error('Error deleting template:', error);
+      logger.error('Error deleting template:', error);
       toast.error(t('notifications.errorDeletingTemplate'));
     } finally {
       setDeletingTemplate(null);
@@ -279,7 +281,7 @@ const TemplateEditor = ({ template, onSaved, onCancel }) => {
       toast.success(t('notifications.templateSaved'));
       onSaved();
     } catch (error) {
-      console.error('Error saving template:', error);
+      logger.error('Error saving template:', error);
       toast.error(t('notifications.errorSavingTemplate'));
     } finally {
       setSaving(false);

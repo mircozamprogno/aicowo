@@ -6,6 +6,8 @@ import { supabase } from '../../services/supabase';
 import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const RecipientSelector = ({ userRole, partnerUuid, selectedRecipients, onRecipientsChange }) => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const RecipientSelector = ({ userRole, partnerUuid, selectedRecipients, onRecipi
         name: loc.location_name
       })));
     } catch (error) {
-      console.error('Error loading structures:', error);
+      logger.error('Error loading structures:', error);
     }
   };
 
@@ -105,7 +107,7 @@ const RecipientSelector = ({ userRole, partnerUuid, selectedRecipients, onRecipi
 
       }
     } catch (error) {
-      console.error('Error loading recipients:', error);
+      logger.error('Error loading recipients:', error);
       toast.error(t('notifications.errorLoadingRecipients'));
     } finally {
       setLoading(false);

@@ -45,11 +45,14 @@
   flex-shrink: 0;
 }
 
+/* src/styles/pages/partner-discount-codes.css */
+
+/* Update the add-code-btn styles (around line 53) */
 .add-code-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #4f46e5;
+  background-color: #16a34a; /* Changed from #4f46e5 to green */
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -61,7 +64,7 @@
 }
 
 .add-code-btn:hover {
-  background-color: #3730a3;
+  background-color: #15803d; /* Changed from #3730a3 to darker green */
 }
 
 /* Table Styles */

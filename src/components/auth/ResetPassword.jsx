@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import logger from '../../utils/logger';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import { toast } from '../common/ToastContainer';
 
@@ -30,7 +31,7 @@ const ResetPassword = () => {
     const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
     const type = hashParams.get('type') || urlParams.get('type');
     
-    console.log('Reset password URL analysis:', {
+    logger.log('Reset password URL analysis:', {
       fullUrl,
       hash: window.location.hash,
       search: window.location.search,
@@ -47,7 +48,7 @@ const ResetPassword = () => {
   };
 
   useEffect(() => {
-    console.log('=== RESET PASSWORD COMPONENT DEBUG ===');
+    logger.log('=== RESET PASSWORD COMPONENT DEBUG ===');
     
     const { accessToken, refreshToken, type } = getResetTokenFromURL();
     
@@ -59,7 +60,7 @@ const ResetPassword = () => {
     const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
     const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
     
-    console.log('Reset password validation:', { 
+    logger.log('Reset password validation:', { 
       type, 
       hasAccessToken: !!accessToken,
       error,
@@ -70,15 +71,15 @@ const ResetPassword = () => {
     
     // Handle specific error cases
     if (error) {
-      console.log('❌ Error detected in reset password URL');
+      logger.log('❌ Error detected in reset password URL');
       if (errorCode === 'otp_expired') {
-        console.log('🕐 Reset link has expired');
+        logger.log('🕐 Reset link has expired');
         toast.error('Password reset link has expired. Please request a new one.');
       } else if (error === 'access_denied') {
-        console.log('🚫 Access denied - link may be invalid');
+        logger.log('🚫 Access denied - link may be invalid');
         toast.error('Invalid password reset link. Please request a new one.');
       } else {
-        console.log('❓ Unknown error:', error);
+        logger.log('❓ Unknown error:', error);
         toast.error(`Reset link error: ${decodeURIComponent(errorDescription || error)}`);
       }
       setTokenValid(false);
@@ -89,14 +90,14 @@ const ResetPassword = () => {
     // SIMPLIFIED validation - rely on AuthContext password recovery state
     if (type === 'recovery' || accessToken || isPasswordRecovery) {
       setTokenValid(true);
-      console.log('✅ ResetPassword: Valid recovery token detected');
+      logger.log('✅ ResetPassword: Valid recovery token detected');
     } else {
-      console.log('❌ ResetPassword: Invalid or missing recovery token');
+      logger.log('❌ ResetPassword: Invalid or missing recovery token');
       setTokenValid(false);
       toast.error(t('messages.invalidResetLink'));
     }
     
-    console.log('=====================================');
+    logger.log('=====================================');
     setValidatingToken(false);
   }, [isPasswordRecovery]); // ← ADD DEPENDENCY
 
@@ -132,14 +133,14 @@ const ResetPassword = () => {
       setTimeout(async () => {
         try {
           await supabase.auth.signOut();
-          console.log('User signed out after password reset');
+          logger.log('User signed out after password reset');
         } catch (signOutError) {
-          console.log('Note: Could not sign out user after password reset:', signOutError);
+          logger.log('Note: Could not sign out user after password reset:', signOutError);
         }
       }, 2000);
       
     } catch (error) {
-      console.error('Password reset error:', error);
+      logger.error('Password reset error:', error);
       toast.error(error.message || t('messages.errorResettingPassword'));
     } finally {
       setLoading(false);

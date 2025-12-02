@@ -954,3 +954,10 @@
     gap: 0.5rem;
   }
 }
+
+
+/* Day Pass Badge Style */
+.service-type-daypass {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}

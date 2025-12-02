@@ -9,6 +9,8 @@ import { logActivity } from '../../utils/activityLogger';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const ContractForm = ({ 
   isOpen, 
   onClose, 
@@ -224,7 +226,7 @@ const ContractForm = ({
       // Set calculated end date from existing contract
       setCalculatedEndDate(contractToEdit.end_date || '');
     } catch (error) {
-      console.error('Error loading contract for editing:', error);
+      logger.error('Error loading contract for editing:', error);
       toast.error('Error loading contract data');
       setLoadingEditContract(false);
     }
@@ -263,7 +265,7 @@ const ContractForm = ({
         .single();
 
       if (error) {
-        console.error('Error fetching customer data:', error);
+        logger.error('Error fetching customer data:', error);
         return;
       }
 
@@ -271,7 +273,7 @@ const ContractForm = ({
         setFormData(prev => ({ ...prev, customer_id: data.id.toString() }));
       }
     } catch (error) {
-      console.error('Error fetching customer data:', error);
+      logger.error('Error fetching customer data:', error);
     }
   };
 
@@ -284,7 +286,7 @@ const ContractForm = ({
         .order('location_name');
 
       if (error) {
-        console.error('Error fetching locations:', error);
+        logger.error('Error fetching locations:', error);
         // Mock data for development
         setCustomerLocations([
           { id: 1, location_name: 'Milano Centro' },
@@ -294,7 +296,7 @@ const ContractForm = ({
         setCustomerLocations(data || []);
       }
     } catch (error) {
-      console.error('Error fetching locations:', error);
+      logger.error('Error fetching locations:', error);
       setCustomerLocations([]);
     }
   };
@@ -329,7 +331,7 @@ const ContractForm = ({
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching services:', error);
+        logger.error('Error fetching services:', error);
         const mockServices = [
           {
             id: 1,
@@ -357,7 +359,7 @@ const ContractForm = ({
         setAvailableServices(filteredServices);
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      logger.error('Error fetching services:', error);
       setAvailableServices([]);
     }
   };
@@ -374,7 +376,7 @@ const ContractForm = ({
         .limit(1);
 
       if (error) {
-        console.error('Error checking free trial:', error);
+        logger.error('Error checking free trial:', error);
         return;
       }
 
@@ -385,7 +387,7 @@ const ContractForm = ({
         setHasExistingFreeTrial(false);
       }
     } catch (error) {
-      console.error('Error checking free trial:', error);
+      logger.error('Error checking free trial:', error);
     } finally {
       setCheckingFreeTrial(false);
     }
@@ -469,7 +471,7 @@ const ContractForm = ({
       setAppliedDiscount(data);
 
     } catch (error) {
-      console.error('Error validating discount code:', error);
+      logger.error('Error validating discount code:', error);
       setDiscountValidation({ valid: false, error: t('contracts.errorValidatingDiscount') || 'Error validating discount code' });
       setAppliedDiscount(null);
     } finally {
@@ -498,11 +500,21 @@ const ContractForm = ({
     };
   };
 
+  // ONLY THE CHANGES - Replace the calculateEndDate function and the related useEffect
+
   const calculateEndDate = () => {
     if (!selectedService || !formData.start_date) return;
 
     const startDate = new Date(formData.start_date);
-    const daysToAdd = Math.ceil(selectedService.duration_days); // Round up to next full day
+    
+    // For day pass (giornaliero), end date equals start date
+    if (selectedService.service_type === 'giornaliero') {
+      setCalculatedEndDate(formData.start_date);
+      return;
+    }
+    
+    // For other service types, add duration days
+    const daysToAdd = Math.ceil(selectedService.duration_days);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + daysToAdd);
     
@@ -531,7 +543,7 @@ const ContractForm = ({
         .single();
 
       if (serviceError) {
-        console.error('Error fetching service resource:', serviceError);
+        logger.error('Error fetching service resource:', serviceError);
         setAvailabilityStatus({ available: false, error: 'Error checking availability' });
         return;
       }
@@ -551,7 +563,7 @@ const ContractForm = ({
         .or(`and(start_date.lte.${endDate},end_date.gte.${formData.start_date})`);
 
       if (bookingsError) {
-        console.error('Error checking existing bookings:', bookingsError);
+        logger.error('Error checking existing bookings:', bookingsError);
         setAvailabilityStatus({ available: false, error: 'Error checking existing bookings' });
         return;
       }
@@ -588,7 +600,7 @@ const ContractForm = ({
       });
 
     } catch (error) {
-      console.error('Error checking availability:', error);
+      logger.error('Error checking availability:', error);
       setAvailabilityStatus({ available: false, error: 'Unexpected error checking availability' });
     } finally {
       setCheckingAvailability(false);
@@ -798,7 +810,7 @@ const ContractForm = ({
           .single();
 
         if (error) {
-          console.error('Contract update error:', error);
+          logger.error('Contract update error:', error);
           throw error;
         }
 
@@ -884,7 +896,7 @@ const ContractForm = ({
           .single();
 
         if (error) {
-          console.error('Contract creation error:', error);
+          logger.error('Contract creation error:', error);
           throw error;
         }
 
@@ -932,7 +944,7 @@ const ContractForm = ({
       onSuccess(result);
       onClose();
     } catch (error) {
-      console.error('Error saving contract:', error);
+      logger.error('Error saving contract:', error);
       toast.error(error.message || (editMode ? t('messages.errorUpdatingContract') : t('messages.errorCreatingContract')));
     } finally {
       setLoading(false);
@@ -949,10 +961,10 @@ const ContractForm = ({
       });
 
       if (error) {
-        console.error('Error incrementing discount usage:', error);
+        logger.error('Error incrementing discount usage:', error);
       }
     } catch (error) {
-      console.error('Error incrementing discount usage:', error);
+      logger.error('Error incrementing discount usage:', error);
     }
   };
 
@@ -964,10 +976,10 @@ const ContractForm = ({
       });
 
       if (error) {
-        console.error('Error decrementing discount usage:', error);
+        logger.error('Error decrementing discount usage:', error);
       }
     } catch (error) {
-      console.error('Error decrementing discount usage:', error);
+      logger.error('Error decrementing discount usage:', error);
     }
   };
 
@@ -1010,11 +1022,11 @@ const ContractForm = ({
         .insert([bookingData]);
 
       if (error) {
-        console.error('Error creating booking:', error);
+        logger.error('Error creating booking:', error);
         throw error;
       }
     } catch (error) {
-      console.error('Error in createBookingForContract:', error);
+      logger.error('Error in createBookingForContract:', error);
       throw error;
     }
   };
@@ -1046,11 +1058,11 @@ const ContractForm = ({
         .eq('contract_id', contractId);
 
       if (error) {
-        console.error('Error updating booking:', error);
+        logger.error('Error updating booking:', error);
         throw error;
       }
     } catch (error) {
-      console.error('Error in updateBookingForContract:', error);
+      logger.error('Error in updateBookingForContract:', error);
       throw error;
     }
   };
@@ -1061,6 +1073,15 @@ const ContractForm = ({
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const formatDateDDMMYYYY = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const getServiceTypeLabel = (type) => {
@@ -1170,7 +1191,7 @@ const ContractForm = ({
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.period')}:</span>
                 <span className="summary-value">
-                  {formData.start_date} - {getFinalEndDate()} 
+                  {formatDateDDMMYYYY(formData.start_date)} - {formatDateDDMMYYYY(getFinalEndDate())} 
                   {overrideEndDate && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customDuration')})</span>}
                 </span>
               </div>
@@ -1198,6 +1219,16 @@ const ContractForm = ({
                   {overridePrice && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customPrice')})</span>}
                 </span>
               </div>
+
+              <p style={{ 
+                fontSize: '0.75rem', 
+                color: '#6b7280', 
+                fontStyle: 'italic', 
+                marginTop: '0.25rem',
+                marginBottom: 0
+              }}>
+                +IVA se applicabile
+              </p>
 
               {selectedService?.service_type === 'pacchetto' && selectedService?.max_entries && (
                 <div className="summary-item">
@@ -1540,12 +1571,13 @@ const ContractForm = ({
                   />
               </div>
               
+              {/* REPLACE THE END DATE SECTION WITH THIS */}
               <div className="form-group">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <label className="form-label" style={{ marginBottom: 0 }}>
                     {t('contracts.endDate')} *
                   </label>
-                  {canOverride && (
+                  {canOverride && selectedService?.service_type !== 'giornaliero' && (
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: 0 }}>
                       <input
                         type="checkbox"
@@ -1565,7 +1597,7 @@ const ContractForm = ({
                   )}
                 </div>
                 
-                {canOverride && overrideEndDate ? (
+                {canOverride && overrideEndDate && selectedService?.service_type !== 'giornaliero' ? (
                   <input
                     type="date"
                     className="form-input"
@@ -1582,7 +1614,21 @@ const ContractForm = ({
                     style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                   />
                 )}
+                
+                {selectedService?.service_type === 'giornaliero' && calculatedEndDate && (
+                  <p style={{ 
+                    fontSize: '0.8125rem', 
+                    color: '#059669', 
+                    marginTop: '0.375rem',
+                    marginBottom: 0,
+                    fontStyle: 'italic'
+                  }}>
+                    ℹ️ {t('contracts.dayPassValidOnlyThisDay') || 'Day pass valid only on the selected date'}
+                  </p>
+                )}
               </div>
+
+
             </div>
 
             {!overrideEndDate && calculatedEndDate && (

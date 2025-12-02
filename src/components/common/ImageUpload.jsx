@@ -2,6 +2,8 @@ import { AlertCircle, Image, Plus, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 
+import logger from '../../utils/logger';
+
 const ImageUpload = ({ 
   category, 
   images = [], 
@@ -122,7 +124,7 @@ const ImageUpload = ({
         // Call the parent's delete handler
         await onImageDelete(imageToRemove);
       } catch (error) {
-        console.error('Error deleting image:', error);
+        logger.error('Error deleting image:', error);
         setDeletingImageId(null);
         return; // Don't remove from UI if deletion failed
       }

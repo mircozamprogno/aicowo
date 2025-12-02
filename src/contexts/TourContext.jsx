@@ -4,6 +4,8 @@ import { toast } from '../components/common/ToastContainer';
 import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
 
+import logger from '../utils/logger';
+
 const TourContext = createContext();
 
 export const useTour = () => {
@@ -49,7 +51,7 @@ export const TourProvider = ({ children }) => {
         .single();
 
       if (error) {
-        console.error('Error checking onboarding status:', error);
+        logger.error('Error checking onboarding status:', error);
         return;
       }
 
@@ -68,7 +70,7 @@ export const TourProvider = ({ children }) => {
       }));
 
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      logger.error('Error checking onboarding status:', error);
     }
   };
 
@@ -130,7 +132,7 @@ export const TourProvider = ({ children }) => {
       }
 
     } catch (error) {
-      console.error('Error verifying actual setup status:', error);
+      logger.error('Error verifying actual setup status:', error);
     }
   };
 
@@ -199,7 +201,7 @@ export const TourProvider = ({ children }) => {
         .eq('partner_uuid', profile.partner_uuid);
 
       if (error) {
-        console.error('Error updating onboarding progress:', error);
+        logger.error('Error updating onboarding progress:', error);
         toast.error('Error saving progress');
         return;
       }
@@ -216,7 +218,7 @@ export const TourProvider = ({ children }) => {
       }
 
     } catch (error) {
-      console.error('Error updating step progress:', error);
+      logger.error('Error updating step progress:', error);
       toast.error('Error saving progress');
     } finally {
       setLoading(false);
@@ -252,13 +254,13 @@ export const TourProvider = ({ children }) => {
         .eq('partner_uuid', profile.partner_uuid);
 
       if (error) {
-        console.error('Error updating onboarding status:', error);
+        logger.error('Error updating onboarding status:', error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error updating onboarding status:', error);
+      logger.error('Error updating onboarding status:', error);
       return false;
     } finally {
       setLoading(false);
@@ -282,7 +284,7 @@ export const TourProvider = ({ children }) => {
         .eq('partner_uuid', profile.partner_uuid);
 
       if (error) {
-        console.error('Error resetting onboarding:', error);
+        logger.error('Error resetting onboarding:', error);
         return;
       }
 
@@ -298,7 +300,7 @@ export const TourProvider = ({ children }) => {
       }));
 
     } catch (error) {
-      console.error('Error resetting onboarding:', error);
+      logger.error('Error resetting onboarding:', error);
     }
   };
 

@@ -6,6 +6,8 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import Link from '../common/Link';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -48,7 +50,7 @@ const Register = () => {
         // partner_uuid: invitationData?.partner_uuid || null
       };
 
-      console.log('Registering user with metadata:', userMetadata);
+      logger.log('Registering user with metadata:', userMetadata);
 
       await signUp(formData.email, formData.password, userMetadata);
       
@@ -60,7 +62,7 @@ const Register = () => {
       }, 1000);
       
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       toast.error(error.message);
     } finally {
       setLoading(false);

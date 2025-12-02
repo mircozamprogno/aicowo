@@ -8,6 +8,8 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import '../styles/pages/billing-statistics-dashboard.css';
 
+import logger from '../utils/logger';
+
 const BillingStatisticsDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('12'); // months
@@ -52,7 +54,7 @@ const BillingStatisticsDashboard = () => {
         fetchOverLimitPartners()
       ]);
     } catch (error) {
-      console.error('Error fetching statistics:', error);
+      logger.error('Error fetching statistics:', error);
       toast.error(t('messages.errorLoadingData') || 'Error loading statistics');
     } finally {
       setLoading(false);
@@ -162,7 +164,7 @@ const BillingStatisticsDashboard = () => {
         averageRevenuePerPartner: activePartnersCount > 0 ? totalRevenue / activePartnersCount : 0
       });
     } catch (error) {
-      console.error('Error fetching overview stats:', error);
+      logger.error('Error fetching overview stats:', error);
       throw error;
     }
   };
@@ -214,7 +216,7 @@ const BillingStatisticsDashboard = () => {
 
       setMonthlyData(monthlyArray);
     } catch (error) {
-      console.error('Error fetching monthly revenue:', error);
+      logger.error('Error fetching monthly revenue:', error);
       throw error;
     }
   };
@@ -259,7 +261,7 @@ const BillingStatisticsDashboard = () => {
 
       setTopPartners(topPartnersArray);
     } catch (error) {
-      console.error('Error fetching top partners:', error);
+      logger.error('Error fetching top partners:', error);
       throw error;
     }
   };
@@ -282,7 +284,7 @@ const BillingStatisticsDashboard = () => {
       if (error) throw error;
       setRecentActivity(data || []);
     } catch (error) {
-      console.error('Error fetching recent activity:', error);
+      logger.error('Error fetching recent activity:', error);
       throw error;
     }
   };
@@ -324,7 +326,7 @@ const BillingStatisticsDashboard = () => {
 
       setOverLimitPartnersList(Object.values(uniquePartners));
     } catch (error) {
-      console.error('Error fetching over-limit partners:', error);
+      logger.error('Error fetching over-limit partners:', error);
       throw error;
     }
   };

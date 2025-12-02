@@ -1,5 +1,6 @@
 // src/services/partnerContractPdfGenerator.js
 import jsPDF from 'jspdf';
+import logger from '../utils/logger';
 
 /**
  * Generate a professional partner contract PDF
@@ -76,7 +77,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
           };
           
           img.onerror = () => {
-            console.warn('Could not load logo for PDF');
+            logger.warn('Could not load logo for PDF');
             resolve(); // Continue without logo
           };
           
@@ -85,7 +86,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
         
         currentY += 30; // Space after logo
       } catch (error) {
-        console.warn('Error loading logo:', error);
+        logger.warn('Error loading logo:', error);
         currentY += 10;
       }
     }
@@ -202,13 +203,13 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
     pdf.setTextColor(secondaryColor);
 
     
-    console.log('=== PDF DEBUG DATA ===');
-    console.log('Contract data:', contract);
-    console.log('Partner data:', partnerData);
-    console.log('Contract pricing plan:', contract.partners_pricing_plans);
-    console.log('Contract currency:', contract.currency);
-    console.log('Plan currency:', contract.partners_pricing_plans?.currency);
-    console.log('======================');
+    logger.log('=== PDF DEBUG DATA ===');
+    logger.log('Contract data:', contract);
+    logger.log('Partner data:', partnerData);
+    logger.log('Contract pricing plan:', contract.partners_pricing_plans);
+    logger.log('Contract currency:', contract.currency);
+    logger.log('Plan currency:', contract.partners_pricing_plans?.currency);
+    logger.log('======================');
 
     if (partnerData) {
       // Company name (if exists)
@@ -266,8 +267,8 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
       }
       
       // DEBUG: Log what fields are available
-      console.log('Available partner fields:', Object.keys(partnerData));
-      console.log('Partner data details:', {
+      logger.log('Available partner fields:', Object.keys(partnerData));
+      logger.log('Partner data details:', {
         company_name: partnerData.company_name,
         first_name: partnerData.first_name,
         second_name: partnerData.second_name,
@@ -280,7 +281,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
         phone: partnerData.phone
       });
     } else {
-      console.log('ERROR: partnerData is null or undefined');
+      logger.log('ERROR: partnerData is null or undefined');
     }
     
     // 5. PRICING PLAN DETAILS
@@ -346,9 +347,9 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
       let price = 0;
       const currency = contract.partners_pricing_plans?.currency || contract.currency || 'EUR';
       
-      console.log('Currency being used:', currency);
-      console.log('Plan currency:', contract.partners_pricing_plans?.currency);
-      console.log('Contract currency:', contract.currency);
+      logger.log('Currency being used:', currency);
+      logger.log('Plan currency:', contract.partners_pricing_plans?.currency);
+      logger.log('Contract currency:', contract.currency);
 
 
       if (contract.billing_frequency === 'monthly') {
@@ -476,7 +477,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
     return true;
     
   } catch (error) {
-    console.error('Error generating partner contract PDF:', error);
+    logger.error('Error generating partner contract PDF:', error);
     throw new Error('Failed to generate partner contract PDF');
   }
 };

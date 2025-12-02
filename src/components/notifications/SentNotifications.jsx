@@ -9,6 +9,8 @@ import { toast } from '../common/ToastContainer';
 import CreateNotification from './CreateNotification';
 import NotificationModal from './NotificationModal';
 
+import logger from '../../utils/logger';
+
 const SentNotifications = () => {
   const { t } = useTranslation();
   const { profile } = useAuth();
@@ -55,7 +57,7 @@ const SentNotifications = () => {
 
       setNotifications(enrichedNotifications);
     } catch (error) {
-      console.error('Error loading sent notifications:', error);
+      logger.error('Error loading sent notifications:', error);
       toast.error(t('notifications.errorLoading'));
     } finally {
       setLoading(false);
@@ -87,7 +89,7 @@ const SentNotifications = () => {
       toast.success(t('notifications.notificationDeleted'));
       loadNotifications();
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      logger.error('Error deleting notification:', error);
       toast.error(t('notifications.errorDeleting'));
     } finally {
       setDeletingNotification(null);
@@ -117,7 +119,7 @@ const SentNotifications = () => {
       toast.success(t('notifications.notificationPublished'));
       loadNotifications();
     } catch (error) {
-      console.error('Error publishing notification:', error);
+      logger.error('Error publishing notification:', error);
       toast.error(t('notifications.errorPublishing'));
     }
   };

@@ -1,10 +1,12 @@
-import { Activity, BellRing, Building, Calendar, Camera, Cog, CreditCard, DollarSign, File, FileText, HelpCircle, Home, Layers, LogOut, Mail, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
+import { Activity, BellRing, Building, Calendar, Camera, Cog, CreditCard, DollarSign, File, FileText, Home, Layers, LogOut, Mail, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import Link from './Link';
 import { toast } from './ToastContainer';
+
+import logger from '../../utils/logger';
 
 // Add these imports at the top:
 import { useTour } from '../../contexts/TourContext';
@@ -47,7 +49,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       window.location.hash = '/login';
       toast.success(t('messages.signedOutSuccessfully'));
     } catch (error) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error:', error);
       toast.error(t('messages.errorSigningOut'));
     }
   };
@@ -80,10 +82,8 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
       { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
-      { name: t('navigation.notifications'), href: '/notifications', icon: BellRing, roles: ['user', 'admin', 'superadmin'] },
+      { name: t('navigation.notifications'), href: '/notifications', icon: BellRing, roles: ['admin', 'superadmin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
-      { name: t('navigation.billing-history'), href: '/billing-history', icon: DollarSign, roles: ['admin'] },
-      { name: t('navigation.support'), href: '/support', icon: HelpCircle, roles: ['admin'] },
 
 
       
@@ -119,20 +119,20 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
     if (!isLocalhost()) {
       fetchVersionInfo();
     } else {
-      console.log('🏠 Running on localhost - skipping version fetch');
+      logger.log('🏠 Running on localhost - skipping version fetch');
     }
   }, []);
 
   const fetchVersionInfo = async () => {
     try {
-      console.log('Fetching version info from /version.json...');
+      logger.log('Fetching version info from /version.json...');
       
       // Fetch version info from the JSON file created during build
       const response = await fetch('/version.json?t=' + Date.now()); // Cache busting
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Version data loaded:', data);
+        logger.log('✅ Version data loaded:', data);
         
         setVersionInfo({
           commit: data.commit,
@@ -140,7 +140,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
           buildDate: data.buildDate
         });
       } else {
-        console.log('❌ Failed to load version.json, status:', response.status);
+        logger.log('❌ Failed to load version.json, status:', response.status);
         
         // Fallback for debugging
         setVersionInfo({
@@ -149,7 +149,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
         });
       }
     } catch (error) {
-      console.error('❌ Error fetching version info:', error);
+      logger.error('❌ Error fetching version info:', error);
       
       // Show error state for debugging
       setVersionInfo({
@@ -158,6 +158,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       });
     }
   };
+
+  // src/components/layout/Sidebar.jsx
+  // Modify only the fetchPartnerBranding function
 
   const fetchPartnerBranding = async () => {
     if (!profile?.partner_uuid) {
@@ -171,18 +174,17 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
     }
 
     try {
-      console.log('Fetching partner branding for:', profile.partner_uuid);
+      logger.log('Fetching partner branding for:', profile.partner_uuid);
       
-      // Fetch partner data
+      // Fetch partner data (both company_name and structure_name)
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
-        .select('company_name')
+        .select('company_name, structure_name')
         .eq('partner_uuid', profile.partner_uuid)
         .single();
 
       if (partnerError) {
-        console.error('Error fetching partner data:', partnerError);
-        // Fallback with debugging
+        logger.error('Error fetching partner data:', partnerError);
         setPartnerBranding({
           logo: null,
           companyName: 'PowerCowo (Partner Error)',
@@ -191,7 +193,14 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
         return;
       }
 
-      console.log('Partner data fetched:', partnerData);
+      logger.log('Partner data fetched:', partnerData);
+
+      // Show structure_name for user and admin, company_name for superadmin
+      const displayName = profile.role === 'superadmin'
+        ? (partnerData?.company_name || 'PowerCowo (No Company Name)')
+        : (partnerData?.structure_name || 'PowerCowo (No Structure Name)');
+
+      logger.log('Display name:', displayName);
 
       // Fetch partner logo
       let logoUrl = null;
@@ -211,24 +220,21 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
               .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
             
             logoUrl = data.publicUrl;
-            console.log('Logo URL found:', logoUrl);
+            logger.log('Logo URL found:', logoUrl);
           }
         }
       } catch (logoError) {
-        console.log('No logo found or error loading logo:', logoError);
+        logger.log('No logo found or error loading logo:', logoError);
       }
-
-      const companyName = partnerData?.company_name || 'PowerCowo (No Company Name)';
-      console.log('Setting company name:', companyName);
 
       setPartnerBranding({
         logo: logoUrl,
-        companyName: companyName,
+        companyName: displayName,
         loading: false
       });
 
     } catch (error) {
-      console.error('Error fetching partner branding:', error);
+      logger.error('Error fetching partner branding:', error);
       setPartnerBranding({
         logo: null,
         companyName: 'PowerCowo (Error)',

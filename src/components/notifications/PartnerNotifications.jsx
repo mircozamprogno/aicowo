@@ -7,6 +7,8 @@ import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 import NotificationModal from './NotificationModal';
 
+import logger from '../../utils/logger';
+
 const PartnerNotifications = () => {
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
@@ -32,7 +34,7 @@ const PartnerNotifications = () => {
       if (error) throw error;
       setPartners(data || []);
     } catch (error) {
-      console.error('Error loading partners:', error);
+      logger.error('Error loading partners:', error);
     }
   };
 
@@ -66,7 +68,7 @@ const PartnerNotifications = () => {
 
       setNotifications(enrichedNotifications);
     } catch (error) {
-      console.error('Error loading partner notifications:', error);
+      logger.error('Error loading partner notifications:', error);
       toast.error(t('notifications.errorLoading'));
     } finally {
       setLoading(false);

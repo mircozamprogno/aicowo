@@ -1,27 +1,14 @@
-// Add state after line 31
-const [recipientTypeFilter, setRecipientTypeFilter] = useState('all'); // all, partners, customers
-
-// Add filter UI before RecipientSelector (around line 374):
-{isSuperadmin && (
-  <div className="form-field">
-    <label>{t('notifications.recipientType')}</label>
-    <Select
-      value={recipientTypeFilter}
-      onChange={(e) => setRecipientTypeFilter(e.target.value)}
-      options={[
-        { value: 'all', label: t('notifications.allRecipientTypes') },
-        { value: 'partners', label: t('notifications.partnersOnly') },
-        { value: 'customers', label: t('notifications.customersOnly') }
-      ]}
-    />
-  </div>
-)}
-
-// Update RecipientSelector call (around line 379):
-<RecipientSelector
-  userRole={profile.role}
-  partnerUuid={profile.partner_uuid}
-  selectedRecipients={selectedRecipients}
-  onRecipientsChange={setSelectedRecipients}
-  recipientTypeFilter={isSuperadmin ? recipientTypeFilter : undefined}
-/>
+{
+  "auth": {
+    "loginFailed": "Accesso Negato",
+    "partnerStatusCheckFailed": "Impossibile verificare lo stato del partner. Contatta il supporto.",
+    "partnerStatus": {
+      "pending": "Il tuo account partner \"{{companyName}}\" è in attesa di approvazione. Contatta il supporto.",
+      "inactive": "Il tuo account partner \"{{companyName}}\" è inattivo. Contatta il supporto per riattivarlo.",
+      "suspended": "Il tuo account partner \"{{companyName}}\" è stato sospeso. Contatta il supporto."
+    }
+  },
+  "common": {
+    "account": "Account"
+  }
+}

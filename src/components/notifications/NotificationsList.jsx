@@ -8,6 +8,8 @@ import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 import NotificationModal from './NotificationModal';
 
+import logger from '../../utils/logger';
+
 const NotificationsList = () => {
   const { t } = useTranslation();
   const { profile } = useAuth(); // Use profile, not user
@@ -42,7 +44,7 @@ const NotificationsList = () => {
 
       // Safety check
       if (!userUuid) {
-        console.error('NotificationsList - userUuid is undefined!');
+        logger.error('NotificationsList - userUuid is undefined!');
         setNotifications([]);
         setLoading(false);
         return;
@@ -102,7 +104,7 @@ const NotificationsList = () => {
 
       setNotifications(enrichedNotifications);
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      logger.error('Error loading notifications:', error);
       toast.error(t('notifications.errorLoading'));
     } finally {
       setLoading(false);
@@ -134,7 +136,7 @@ const NotificationsList = () => {
           n.id === notification.id ? { ...n, isRead: true, viewedAt: new Date().toISOString() } : n
         ));
       } catch (error) {
-        console.error('Error marking notification as read:', error);
+        logger.error('Error marking notification as read:', error);
       }
     }
   };

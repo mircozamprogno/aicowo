@@ -34,6 +34,8 @@ const Dashboard = () => {
   const [partnersUsersData, setPartnersUsersData] = useState([]);
   const [partnersUsersLoading, setPartnersUsersLoading] = useState(true);
 
+  const [chartsReady, setChartsReady] = useState(false);
+
   // ADD THIS DEBUG LOG
   logger.log('🔍 DASHBOARD DEBUG - Profile object:', profile);
   logger.log('🔍 Role:', profile?.role);
@@ -174,6 +176,16 @@ const Dashboard = () => {
       setProfileCheckComplete(true);
     }
   }, [profile?.id, user?.id, profile?.role]); // Include role in dependencies
+
+
+  useEffect(() => {
+    // Delay chart rendering to ensure containers have dimensions
+    const timer = setTimeout(() => {
+      setChartsReady(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Enhanced Business Metrics Fetching
   const fetchBusinessMetrics = async () => {
@@ -1514,6 +1526,10 @@ const renderEnhancedPartnerDashboard = () => {
                 <div className="loading-spinner"></div>
                 <span>Caricamento dati...</span>
               </div>
+            ) : !chartsReady ? (
+              <div className="chart-loading">
+                <div className="loading-spinner"></div>
+              </div>
             ) : (
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
@@ -2050,7 +2066,11 @@ const renderEnhancedPartnerDashboard = () => {
                     <div className="loading-spinner"></div>
                     <span>Caricamento dati...</span>
                   </div>
-                ) : (
+                  ) : !chartsReady ? (
+                    <div className="chart-loading">
+                      <div className="loading-spinner"></div>
+                    </div>
+                  ) : (
                   <div className="chart-container">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
