@@ -217,3 +217,43 @@
 .language-switcher {
   position: relative;
 }
+
+
+
+/* Staging environment styling */
+.topbar.topbar-staging {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border-bottom: 2px solid #c2410c;
+}
+
+.topbar-staging .mobile-menu-btn {
+  color: white;
+}
+
+.topbar-staging .user-name {
+  color: white;
+}
+
+.env-badge {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: white;
+  vertical-align: middle;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.topbar-staging .notification-bell {
+  color: white;
+}

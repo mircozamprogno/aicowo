@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { useEnvironment } from '../../hooks/useEnvironment';
 import NotificationBell from '../notifications/NotificationBell';
 import Sidebar from './Sidebar';
 
@@ -10,6 +11,7 @@ const Layout = ({ children, pageTitle }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { profile } = useAuth();
   const { t } = useTranslation();
+  const { isStaging } = useEnvironment();
 
   return (
     <div className="layout">
@@ -30,7 +32,7 @@ const Layout = ({ children, pageTitle }) => {
       </div>
 
       <div className="main-content">
-        <div className="topbar">
+        <div className={`topbar ${isStaging ? 'topbar-staging' : ''}`}>
           <button
             className="mobile-menu-btn"
             onClick={() => setSidebarOpen(true)}
@@ -39,7 +41,10 @@ const Layout = ({ children, pageTitle }) => {
           </button>
           <div className="topbar-content">
             <div className="topbar-title">
-              <h1 className="app-title">{pageTitle ? t(pageTitle) : t('app.appName')}</h1>
+              <h1 className="app-title">
+                {pageTitle ? t(pageTitle) : t('app.appName')}
+                {isStaging && <span className="env-badge">STAGING</span>}
+              </h1>
             </div>
             <div className="topbar-actions">
               {profile && <NotificationBell />}
