@@ -1,0 +1,51 @@
+Align Staging with Main
+bash# Step 1: Make sure main is up to date
+git checkout main
+git pull origin main
+
+# Step 2: Switch to staging
+git checkout staging
+
+# Step 3: Reset staging to match main exactly
+git reset --hard main
+
+# Step 4: Force push to GitHub staging (overwrites remote)
+git push origin staging --force
+
+# Done! staging is now identical to main
+
+Explanation
+
+git reset --hard main → Makes your local staging identical to main
+--force → Required because you're rewriting staging history
+Both local and remote staging now match main exactly
+
+
+git checkout staging
+git commit --allow-empty -m "Trigger redeploy"
+git push origin staging
+
+
+
+Workflow
+bash# Daily development
+git checkout staging
+git pull origin staging
+# Make changes
+git add .
+git commit -m "feature: xyz"
+git push origin staging
+# → Auto-deploys to staging.powercowo.com
+
+# When staging is stable and tested
+git checkout main
+git merge staging
+git push origin main
+# → Auto-deploys to my.powercowo.com
+
+4. Verification
+
+Push to staging → Check staging.powercowo.com
+Push to main → Check my.powercowo.com
+Verify environment variables: Check Supabase project URLs in Network tab
+

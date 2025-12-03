@@ -23,23 +23,40 @@ class OneSignalEmailService {
     // Check if booking templates are configured
     this.isBookingConfigured = !!(this.isConfigured && this.customerBookingTemplateId && this.partnerBookingTemplateId);
     
+    // ENHANCED DEBUG LOGGING
+    logger.log('=== ONESIGNAL CONFIGURATION DEBUG ===');
+    logger.log('Environment Variables Status:');
+    logger.log('  VITE_ONESIGNAL_APP_ID:', this.appId ? `✅ SET (${this.appId.substring(0, 8)}...)` : '❌ MISSING');
+    logger.log('  VITE_ONESIGNAL_API_KEY:', this.apiKey ? `✅ SET (${this.apiKey.substring(0, 8)}...)` : '❌ MISSING');
+    logger.log('  VITE_ONESIGNAL_ADMIN_TEMPLATE_ID:', this.adminTemplateId ? `✅ SET (${this.adminTemplateId})` : '❌ MISSING');
+    logger.log('  VITE_ONESIGNAL_USER_TEMPLATE_ID:', this.userTemplateId ? `✅ SET (${this.userTemplateId})` : '❌ MISSING');
+    logger.log('  VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID:', this.uniqueTemplateId ? `✅ SET (${this.uniqueTemplateId})` : '❌ MISSING');
+    logger.log('  VITE_ONESIGNAL_CUSTOMER_BOOKING_TEMPLATE_ID:', this.customerBookingTemplateId ? `✅ SET (${this.customerBookingTemplateId})` : '⚠️ OPTIONAL (not set)');
+    logger.log('  VITE_ONESIGNAL_PARTNER_BOOKING_TEMPLATE_ID:', this.partnerBookingTemplateId ? `✅ SET (${this.partnerBookingTemplateId})` : '⚠️ OPTIONAL (not set)');
+    logger.log('  VITE_USE_ONESIGNAL:', this.useOneSignal ? '✅ true' : '❌ NOT true (value: ' + import.meta.env.VITE_USE_ONESIGNAL + ')');
+    logger.log('');
+    logger.log('Configuration Status:');
+    logger.log('  isConfigured:', this.isConfigured ? '✅ YES' : '❌ NO');
+    logger.log('  isBookingConfigured:', this.isBookingConfigured ? '✅ YES' : '❌ NO');
+    logger.log('=====================================');
+    
     if (!this.isConfigured) {
-      logger.warn('OneSignal email service not configured. Check your .env.local file.');
-      logger.log('Required variables:', {
-        VITE_ONESIGNAL_APP_ID: !!this.appId,
-        VITE_ONESIGNAL_API_KEY: !!this.apiKey,
-        VITE_ONESIGNAL_ADMIN_TEMPLATE_ID: !!this.adminTemplateId,
-        VITE_ONESIGNAL_USER_TEMPLATE_ID: !!this.userTemplateId,
-        VITE_USE_ONESIGNAL: this.useOneSignal
-      });
+      logger.error('❌ OneSignal email service NOT CONFIGURED');
+      logger.error('Missing required variables:');
+      if (!this.appId) logger.error('  - VITE_ONESIGNAL_APP_ID');
+      if (!this.apiKey) logger.error('  - VITE_ONESIGNAL_API_KEY');
+      if (!this.adminTemplateId) logger.error('  - VITE_ONESIGNAL_ADMIN_TEMPLATE_ID');
+      if (!this.userTemplateId) logger.error('  - VITE_ONESIGNAL_USER_TEMPLATE_ID');
+      if (!this.useOneSignal) logger.error('  - VITE_USE_ONESIGNAL (must be exactly "true")');
+      logger.error('Add these to Vercel → Settings → Environment Variables → Enable for Preview');
+    } else {
+      logger.log('✅ OneSignal email service configured successfully');
     }
 
     if (!this.isBookingConfigured) {
-      logger.warn('OneSignal booking templates not configured. Check your .env.local file.');
-      logger.log('Booking template variables:', {
-        VITE_ONESIGNAL_CUSTOMER_BOOKING_TEMPLATE_ID: !!this.customerBookingTemplateId,
-        VITE_ONESIGNAL_PARTNER_BOOKING_TEMPLATE_ID: !!this.partnerBookingTemplateId
-      });
+      logger.warn('⚠️ Booking templates not configured (optional):');
+      if (!this.customerBookingTemplateId) logger.warn('  - VITE_ONESIGNAL_CUSTOMER_BOOKING_TEMPLATE_ID');
+      if (!this.partnerBookingTemplateId) logger.warn('  - VITE_ONESIGNAL_PARTNER_BOOKING_TEMPLATE_ID');
     }
   }
 

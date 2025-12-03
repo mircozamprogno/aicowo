@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2025.12.03 V 0.912 Debug ONeSignal Email services 
 2025.12.03 V 0.911 Secure User Registration 
 2025.12.02 V 0.900 Multiple bug fixes and implementation 
 2025.11.27 V 0.860 Fatturazione + Gestione utenti 
