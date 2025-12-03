@@ -26,7 +26,27 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{custom_message}}', description: 'Your personal message' }
       ]
     },
-    
+
+    confirmation_email: {
+      subject: 'Confirm your email address - {{partner_name}}',
+      body: `<h2><span style="font-size: 16px; font-weight: 400;">Dear Customer, 
+      <br>{{partner_name}} welcomes you.&nbsp;</span></h2>
+      <h2><span style="font-size: 16px; font-weight: 400;">To complete your registration, please confirm your email address.</span></h2>
+      <h2><a href="{{confirmation_link}}">Confirm Email</a></h2>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">The Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
+      <span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">-&nbsp;</span></p><p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
+      <span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">You are receiving this email to confirm your account.<br></span>
+      <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;"><b>⚡️ PowerCowo</b>&nbsp; -&nbsp;</span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">MLM Media Logistic Management GmbH<br></span>
+      <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{confirmation_link}}', description: 'Email confirmation link' },
+        { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{user_email}}', description: 'User email' }
+      ]
+    } ,
+
     partner_admin_invitation: {
       subject: 'Admin Invitation - {{partner_name}}',
       body: `<h2>You've Been Invited as Administrator</h2>
@@ -162,7 +182,28 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{custom_message}}', description: 'Your personal message' }
       ]
     },
+
     
+  confirmation_email: {
+    subject: 'Conferma il tuo indirizzo email - {{partner_name}}',
+    body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente, 
+    <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
+    <h2><span style="font-size: 16px; font-weight: 400;">Per completare la registrazione, conferma il tuo indirizzo email.</span></h2>
+    <h2><a href="{{confirmation_link}}">Conferma Email</a></h2>
+    <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">Lo Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
+    <span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
+    <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">-&nbsp;</span></p><p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
+    <span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Ricevi questa email per confermare il tuo account.<br></span>
+    <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;"><b>⚡️ PowerCowo</b>&nbsp; -&nbsp;</span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">MLM Media Logistic Management GmbH<br></span>
+    <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+    variables: [
+      { name: '{{confirmation_link}}', description: 'Link di conferma email' },
+      { name: '{{partner_name}}', description: 'Nome azienda' },
+      { name: '{{structure_name}}', description: 'Nome struttura' },
+      { name: '{{user_email}}', description: 'Email utente' }
+    ]
+  },  
+
     partner_admin_invitation: {
       subject: 'Invito Amministratore - {{partner_name}}',
       body: `<h2>Sei Stato Invitato come Amministratore</h2>

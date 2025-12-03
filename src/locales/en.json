@@ -1986,7 +1986,9 @@
     "testEmailHint": "Inserisci l'indirizzo email dove vuoi ricevere l'email di test",
     "testEmailRequired": "Inserisci un indirizzo email di test",
     "invalidEmailFormat": "Inserisci un indirizzo email valido",
-    "testEmailSentSuccessfully": "Email di test inviata con successo!"
+    "testEmailSentSuccessfully": "Email di test inviata con successo!",
+    "confirmationEmail": "Email Confirmation",
+    "confirmationEmailDescription": "Sent when users register to confirm their email address"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",

@@ -1,5 +1,5 @@
 // src/components/email/EmailTemplateList.jsx
-import { Bell, CheckCircle, ChevronRight, Shield, UserPlus } from 'lucide-react';
+import { Bell, CheckCircle, ChevronRight, Mail, Shield, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -20,6 +20,12 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.customerBookingConfirmation',
     descriptionKey: 'emailTemplates.customerBookingConfirmationDescription',
     icon: 'CheckCircle'
+  },
+  confirmation_email: {
+    id: 'confirmation_email',
+    nameKey: 'emailTemplates.confirmationEmail',
+    descriptionKey: 'emailTemplates.confirmationEmailDescription',
+    icon: 'Mail'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
@@ -79,7 +85,8 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       UserPlus: UserPlus,
       Shield: Shield,
       CheckCircle: CheckCircle,
-      Bell: Bell
+      Bell: Bell,
+      Mail: Mail
     };
     const Icon = icons[iconName] || UserPlus;
     return <Icon size={24} />;

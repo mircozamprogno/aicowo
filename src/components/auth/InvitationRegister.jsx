@@ -95,6 +95,7 @@ const InvitationRegister = () => {
     });
   };
 
+  // src/components/auth/InvitationRegister.jsx
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -106,42 +107,22 @@ const InvitationRegister = () => {
     setSubmitting(true);
 
     try {
-      // Create auth user with phone in metadata
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone, // Set phone at auth level
-        options: {
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone, // Also in metadata for trigger function
-            role: invitation.invited_role,
-            partner_uuid: invitation.partner_uuid,
-            username: `${formData.firstName} ${formData.lastName}`.toLowerCase().replace(' ', '_')
-          }
+      // Call backend function instead of supabase.auth.signUp
+      const { data, error } = await supabase.functions.invoke('register-invited-user', {
+        body: {
+          invitationToken,
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone
         }
       });
 
-      if (authError) {
-        logger.error('Registration error:', authError);
-        throw authError;
-      }
+      if (error) throw error;
 
-      logger.log('User created successfully:', authData);
-
-      // Mark invitation as used
-      await supabase
-        .from('invitations')
-        .update({ 
-          status: 'used', 
-          used_at: new Date().toISOString() 
-        })
-        .eq('invitation_uuid', invitationToken);
-      
       setUserEmail(formData.email);
       setRegistrationComplete(true);
-      
       toast.success(t('messages.registrationCompletePleaseVerify'));
     } catch (error) {
       logger.error('Registration error:', error);

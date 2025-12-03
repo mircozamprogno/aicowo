@@ -1990,7 +1990,9 @@
     "testEmailHint": "Enter the email address where you want to receive the test email",
     "testEmailRequired": "Please enter a test email address",
     "invalidEmailFormat": "Please enter a valid email address",
-    "testEmailSentSuccessfully": "Test email sent successfully!"
+    "testEmailSentSuccessfully": "Test email sent successfully!",
+    "confirmationEmail": "Email di conferma utente",
+    "confirmationEmailDescription": "Inviata quando gli utenti si registrano per confermare il loro indirizzo email"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto Clienti",

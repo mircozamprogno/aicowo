@@ -1,14 +1,51 @@
-{
-  "auth": {
-    "loginFailed": "Accesso Negato",
-    "partnerStatusCheckFailed": "Impossibile verificare lo stato del partner. Contatta il supporto.",
-    "partnerStatus": {
-      "pending": "Il tuo account partner \"{{companyName}}\" è in attesa di approvazione. Contatta il supporto.",
-      "inactive": "Il tuo account partner \"{{companyName}}\" è inattivo. Contatta il supporto per riattivarlo.",
-      "suspended": "Il tuo account partner \"{{companyName}}\" è stato sospeso. Contatta il supporto."
-    }
+// src/components/email/EmailTemplateList.jsx
+
+// Add Mail import at top
+import { Bell, CheckCircle, ChevronRight, Mail, Shield, UserPlus } from 'lucide-react';
+
+// Update PARTNER_TEMPLATE_CONFIGS
+const PARTNER_TEMPLATE_CONFIGS = {
+  customer_invitation: {
+    id: 'customer_invitation',
+    nameKey: 'emailTemplates.customerInvitation',
+    descriptionKey: 'emailTemplates.customerInvitationDescription',
+    icon: 'UserPlus'
   },
-  "common": {
-    "account": "Account"
+  customer_booking_confirmation: {
+    id: 'customer_booking_confirmation',
+    nameKey: 'emailTemplates.customerBookingConfirmation',
+    descriptionKey: 'emailTemplates.customerBookingConfirmationDescription',
+    icon: 'CheckCircle'
+  },
+  confirmation_email: {
+    id: 'confirmation_email',
+    nameKey: 'emailTemplates.confirmationEmail',
+    descriptionKey: 'emailTemplates.confirmationEmailDescription',
+    icon: 'Mail'
   }
+};
+
+// Update getIcon function to include Mail
+const getIcon = (iconName) => {
+  const icons = {
+    UserPlus: UserPlus,
+    Shield: Shield,
+    CheckCircle: CheckCircle,
+    Bell: Bell,
+    Mail: Mail
+  };
+  const Icon = icons[iconName] || UserPlus;
+  return <Icon size={24} />;
+};
+
+// en.json
+"emailTemplates": {
+  "confirmationEmail": "Email Confirmation",
+  "confirmationEmailDescription": "Sent when users register to confirm their email address"
+}
+
+// it.json
+"emailTemplates": {
+  "confirmationEmail": "Conferma Email",
+  "confirmationEmailDescription": "Inviata quando gli utenti si registrano per confermare il loro indirizzo email"
 }

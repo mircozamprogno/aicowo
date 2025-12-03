@@ -5,11 +5,12 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
 import { DEFAULT_EMAIL_TEMPLATES } from '../../utils/defaultEmailTemplates';
-import logger from '../../utils/logger';
 import { toast } from '../common/ToastContainer';
 
+import logger from '../../utils/logger';
+
 const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }) => {
-  const { t, currentLanguage } = useTranslation();
+  const { t, language } = useTranslation();
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [saving, setSaving] = useState(false);
@@ -22,59 +23,20 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
   const [bannerUrl, setBannerUrl] = useState('');
   const isTypingRef = useRef(false);
 
-  const defaultTemplate = (() => {
-    // Try current language first
-    if (DEFAULT_EMAIL_TEMPLATES[currentLanguage]?.[template.id]) {
-      logger.log('Using template for language:', currentLanguage);
-      return DEFAULT_EMAIL_TEMPLATES[currentLanguage][template.id];
-    }
-    
-    // Fallback to English
-    if (DEFAULT_EMAIL_TEMPLATES.en?.[template.id]) {
-      logger.log('Falling back to English template');
-      return DEFAULT_EMAIL_TEMPLATES.en[template.id];
-    }
-    
-    // Final fallback
-    logger.warn('No template found, using default');
-    return {
-      subject: 'Email Template',
-      body: '<p>Email content</p>',
-      variables: []
-    };
-  })();
+  const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.[template.id] || 
+                          DEFAULT_EMAIL_TEMPLATES.en?.[template.id] ||
+                          {
+                            subject: 'Email Template',
+                            body: '<p>Email content</p>',
+                            variables: []
+                          };
 
-  logger.log('Default template loaded:', {
-    id: template.id,
-    language: currentLanguage,
-    hasSubject: !!defaultTemplate.subject,
-    hasBody: !!defaultTemplate.body,
-    subjectLength: defaultTemplate.subject?.length,
-    bodyLength: defaultTemplate.body?.length,
-    bodyPreview: defaultTemplate.body?.substring(0, 100)
-  });
-
-  // Sync bodyHtml to editor when it changes (but not when user is typing)
+  // Only sync when NOT typing (e.g., when loading data)
   useEffect(() => {
-    logger.log('Editor sync useEffect triggered:', {
-      hasEditor: !!editorRef.current,
-      hasBodyHtml: !!bodyHtml,
-      bodyHtmlLength: bodyHtml?.length,
-      showPreview,
-      isTyping: isTypingRef.current
-    });
-    
     if (editorRef.current && bodyHtml && !showPreview && !isTypingRef.current) {
-      logger.log('Updating editor innerHTML');
       editorRef.current.innerHTML = bodyHtml;
     }
   }, [bodyHtml, showPreview]);
-
-  useEffect(() => {
-    loadTemplate();
-    loadPartnerData();
-    loadBannerUrl();
-  }, [template.id, partnerUuid]);
 
   const loadPartnerData = async () => {
     try {
@@ -87,6 +49,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       if (error) throw error;
       setPartnerEmail(data.email);
       
+      // Load last used test email from localStorage, or use partner email as default
       const savedTestEmail = localStorage.getItem('lastTestEmail');
       setTestEmail(savedTestEmail || data.email);
     } catch (error) {
@@ -114,6 +77,86 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
     }
   };
 
+  const handleSendTest = async () => {
+    // Validate test email
+    if (!testEmail || !testEmail.trim()) {
+      toast.error(t('emailTemplates.testEmailRequired') || 'Please enter a test email address');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(testEmail)) {
+      toast.error(t('emailTemplates.invalidEmailFormat') || 'Please enter a valid email address');
+      return;
+    }
+
+    if (!bodyHtml.trim()) {
+      toast.error(t('emailTemplates.bodyRequired'));
+      return;
+    }
+
+    setSendingTest(true);
+    try {
+      // Save test email to localStorage for next time
+      localStorage.setItem('lastTestEmail', testEmail);
+
+      let testBodyHtml = bodyHtml;
+      let testSubject = subject;
+      const sampleData = mode === 'superadmin' ? {
+        '{{partner_name}}': 'Demo Company',
+        '{{structure_name}}': 'Demo Structure',
+        '{{partner_firstname}}': 'Mario',
+        '{{partner_lastname}}': 'Rossi',
+        '{{partner_email}}': 'demo@example.com',
+        '{{invitation_link}}': '#',
+        '{{admin_name}}': 'PowerCowo Team'
+      } : {
+        '{{partner_name}}': 'Your Company',
+        '{{structure_name}}': 'Main Branch',
+        '{{partner_firstname}}': 'Mario',
+        '{{partner_lastname}}': 'Rossi',
+        '{{customer_name}}': 'John Doe',
+        '{{admin_name}}': 'Jane Smith',
+        '{{invitation_link}}': '#',
+        '{{custom_message}}': 'Welcome to our platform!',
+        '{{booking_date}}': 'Monday, December 15, 2024',
+        '{{resource}}': 'Meeting Room A',
+        '{{remaining_count}}': '5',
+        '{{service_name}}': 'Hot Desk Monthly'
+      };
+
+      Object.entries(sampleData).forEach(([variable, value]) => {
+        testBodyHtml = testBodyHtml.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
+        testSubject = testSubject.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
+      });
+
+      const success = await oneSignalEmailService.sendTestEmail(
+        testEmail,
+        bannerUrl,
+        testBodyHtml,
+        testSubject
+      );
+
+      if (success) {
+        toast.success(t('emailTemplates.testEmailSentSuccessfully') || `Test email sent successfully to ${testEmail}!`);
+      } else {
+        toast.error('Errore durante l\'invio dell\'email di test. Verifica la configurazione OneSignal.');
+      }
+    } catch (error) {
+      logger.error('Error sending test email:', error);
+      toast.error('Errore durante l\'invio dell\'email di test.');
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTemplate();
+    loadPartnerData();
+    loadBannerUrl();
+  }, [template.id, partnerUuid]);
+
   const loadTemplate = async () => {
     setLoading(true);
     isTypingRef.current = false;
@@ -131,11 +174,9 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       }
 
       if (data) {
-        logger.log('Loaded from database:', { subject: data.subject_line, bodyLength: data.body_html?.length });
         setSubject(data.subject_line);
         setBodyHtml(data.body_html);
       } else {
-        logger.log('Using default template:', { subject: defaultTemplate.subject, bodyLength: defaultTemplate.body?.length });
         setSubject(defaultTemplate.subject);
         setBodyHtml(defaultTemplate.body);
       }
@@ -194,79 +235,6 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
     }
   };
 
-  const handleSendTest = async () => {
-    if (!testEmail || !testEmail.trim()) {
-      toast.error(t('emailTemplates.testEmailRequired') || 'Please enter a test email address');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(testEmail)) {
-      toast.error(t('emailTemplates.invalidEmailFormat') || 'Please enter a valid email address');
-      return;
-    }
-
-    if (!bodyHtml.trim()) {
-      toast.error(t('emailTemplates.bodyRequired'));
-      return;
-    }
-
-    setSendingTest(true);
-    try {
-      localStorage.setItem('lastTestEmail', testEmail);
-
-      let testBodyHtml = bodyHtml;
-      let testSubject = subject;
-      const sampleData = mode === 'superadmin' ? {
-        '{{partner_name}}': 'Demo Company',
-        '{{structure_name}}': 'Demo Structure',
-        '{{partner_firstname}}': 'Mario',
-        '{{partner_lastname}}': 'Rossi',
-        '{{partner_email}}': 'demo@example.com',
-        '{{invitation_link}}': '#',
-        '{{admin_name}}': 'PowerCowo Team'
-      } : {
-        '{{partner_name}}': 'Your Company',
-        '{{structure_name}}': 'Main Branch',
-        '{{partner_firstname}}': 'Mario',
-        '{{partner_lastname}}': 'Rossi',
-        '{{customer_name}}': 'John Doe',
-        '{{admin_name}}': 'Jane Smith',
-        '{{invitation_link}}': '#',
-        '{{custom_message}}': 'Welcome to our platform!',
-        '{{booking_date}}': 'Monday, December 15, 2024',
-        '{{resource}}': 'Meeting Room A',
-        '{{remaining_count}}': '5',
-        '{{service_name}}': 'Hot Desk Monthly',
-        '{{confirmation_link}}': 'https://my.powercowo.com/#/confirm-email',
-        '{{user_email}}': testEmail
-      };
-
-      Object.entries(sampleData).forEach(([variable, value]) => {
-        testBodyHtml = testBodyHtml.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
-        testSubject = testSubject.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), value);
-      });
-
-      const success = await oneSignalEmailService.sendTestEmail(
-        testEmail,
-        bannerUrl,
-        testBodyHtml,
-        testSubject
-      );
-
-      if (success) {
-        toast.success(t('emailTemplates.testEmailSentSuccessfully') || `Test email sent successfully to ${testEmail}!`);
-      } else {
-        toast.error('Errore durante l\'invio dell\'email di test. Verifica la configurazione OneSignal.');
-      }
-    } catch (error) {
-      logger.error('Error sending test email:', error);
-      toast.error('Errore durante l\'invio dell\'email di test.');
-    } finally {
-      setSendingTest(false);
-    }
-  };
-
   const insertVariable = (variable) => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -295,6 +263,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     
+    // Update bodyHtml after formatting command
     if (editorRef.current) {
       isTypingRef.current = true;
       setBodyHtml(editorRef.current.innerHTML);
@@ -331,9 +300,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       '{{booking_date}}': 'Monday, December 15, 2024',
       '{{resource}}': 'Meeting Room A',
       '{{remaining_count}}': '5',
-      '{{service_name}}': 'Hot Desk Monthly',
-      '{{confirmation_link}}': 'https://my.powercowo.com/#/confirm-email',
-      '{{user_email}}': 'user@example.com'
+      '{{service_name}}': 'Hot Desk Monthly'
     };
 
     Object.entries(sampleData).forEach(([variable, value]) => {
