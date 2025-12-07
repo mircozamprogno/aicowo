@@ -15,15 +15,12 @@ const CustomersDiscountCodes = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCode, setEditingCode] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [codeToDelete, setCodeToDelete] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
 
   const { profile } = useAuth();
   const { t } = useTranslation();
 
-  // Check if user is admin
   const isAdmin = profile?.role === 'admin';
   const partnerUuid = profile?.partner_uuid;
 
@@ -84,39 +81,10 @@ const CustomersDiscountCodes = () => {
     setEditingCode(null);
   };
 
-  const handleDeleteCode = (code) => {
-    setCodeToDelete(code);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    try {
-      const { error } = await supabase
-        .from('customers_discount_codes')
-        .delete()
-        .eq('id', codeToDelete.id)
-        .eq('partner_uuid', partnerUuid);
-
-      if (error) {
-        logger.error('Error deleting discount code:', error);
-        toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
-        return;
-      }
-
-      setDiscountCodes(prev => prev.filter(c => c.id !== codeToDelete.id));
-      toast.success(t('messages.discountCodeDeletedSuccessfully') || 'Discount code deleted successfully');
-    } catch (error) {
-      logger.error('Error deleting discount code:', error);
-      toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
-    } finally {
-      setShowDeleteConfirm(false);
-      setCodeToDelete(null);
-    }
-  };
-
-  const handleDeleteCancel = () => {
-    setShowDeleteConfirm(false);
-    setCodeToDelete(null);
+  const handleDeleteSuccess = (deletedCodeId) => {
+    setDiscountCodes(prev => prev.filter(c => c.id !== deletedCodeId));
+    setShowForm(false);
+    setEditingCode(null);
   };
 
   const formatDate = (dateString) => {
@@ -158,18 +126,15 @@ const CustomersDiscountCodes = () => {
     return Math.min((code.usage_count / code.usage_limit) * 100, 100);
   };
 
-  // Filter codes
   const filteredCodes = discountCodes.filter(code => {
     const statusMatch = filterStatus === 'all' || getStatusBadgeClass(code).includes(filterStatus);
     const typeMatch = filterType === 'all' || code.discount_type === filterType;
     return statusMatch && typeMatch;
   });
 
-  // Get unique statuses and types for filters
   const uniqueStatuses = [...new Set(discountCodes.map(c => getStatusBadgeClass(c).replace('status-', '')))];
   const uniqueTypes = [...new Set(discountCodes.map(c => c.discount_type))];
 
-  // Status filter options for Select component
   const getStatusOptions = () => {
     return [
       { value: 'all', label: t('common.all') },
@@ -180,7 +145,6 @@ const CustomersDiscountCodes = () => {
     ];
   };
 
-  // Type filter options for Select component
   const getTypeOptions = () => {
     return [
       { value: 'all', label: t('common.all') },
@@ -191,7 +155,6 @@ const CustomersDiscountCodes = () => {
     ];
   };
 
-  // Access control
   if (!isAdmin) {
     return (
       <div className="customers-discount-codes-page">
@@ -245,7 +208,6 @@ const CustomersDiscountCodes = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="customers-discount-codes-filters">
         <div className="filter-group">
           <label htmlFor="status-filter" className="filter-label">
@@ -376,13 +338,6 @@ const CustomersDiscountCodes = () => {
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
-                        className="action-btn delete-btn"
-                        onClick={() => handleDeleteCode(code)}
-                        title={t('common.delete')}
-                      >
-                        <Trash2 size={16} />
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -406,68 +361,21 @@ const CustomersDiscountCodes = () => {
         </div>
       </div>
 
-      {/* Discount Code Form Modal */}
       {showForm && (
         <DiscountCodeForm
           isOpen={showForm}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+          onDeleteSuccess={handleDeleteSuccess}
           code={editingCode}
           partnerUuid={partnerUuid}
         />
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && codeToDelete && (
-        <div className="modal-overlay">
-          <div className="modal-container delete-modal">
-            <div className="modal-header">
-              <h2 className="modal-title">
-                {t('common.confirmDelete')}
-              </h2>
-              <button onClick={handleDeleteCancel} className="modal-close-btn">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="delete-modal-content">
-              <div className="delete-warning">
-                <Trash2 size={24} className="warning-icon" />
-                <div className="warning-text">
-                  <h3>{t('common.warning') || 'Warning'}</h3>
-                  <p>Are you sure you want to delete discount code "{codeToDelete.code}"?</p>
-                  <p className="warning-note">
-                    This action cannot be undone and will affect any contracts using this discount code.
-                  </p>
-                </div>
-              </div>
-
-              <div className="delete-modal-actions">
-                <button
-                  type="button"
-                  onClick={handleDeleteCancel}
-                  className="btn-secondary"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteConfirm}
-                  className="btn-danger"
-                >
-                  {t('common.delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
 };
 
-// Discount Code Form Component
-const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid }) => {
+const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = null, partnerUuid }) => {
   const { profile } = useAuth();
   const { t } = useTranslation();
   const isEditing = !!code;
@@ -484,8 +392,8 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
   });
   
   const [loading, setLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Discount type options for Select component
   const discountTypeOptions = [
     { value: 'percentage', label: t('discountCodes.percentage') },
     { value: 'fixed_amount', label: t('discountCodes.fixedAmount') }
@@ -498,13 +406,12 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
         discount_type: code.discount_type || 'percentage',
         discount_value: code.discount_value?.toString() || '',
         description: code.description || '',
-        valid_from: code.valid_from || new Date().toISOString().split('T')[0],
-        valid_until: code.valid_until || '',
+        valid_from: code.valid_from ? new Date(code.valid_from).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        valid_until: code.valid_until ? new Date(code.valid_until).toISOString().split('T')[0] : '',
         usage_limit: code.usage_limit?.toString() || '',
         is_active: code.is_active !== undefined ? code.is_active : true
       });
     } else {
-      // Set default end date to 1 year from now
       const nextYear = new Date();
       nextYear.setFullYear(nextYear.getFullYear() + 1);
       setFormData(prev => ({
@@ -628,7 +535,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
       onClose();
     } catch (error) {
       logger.error('Error saving discount code:', error);
-      if (error.code === '23505') { // Unique violation
+      if (error.code === '23505') {
         toast.error(t('discountCodes.codeAlreadyExists') || 'This discount code already exists');
       } else {
         toast.error(error.message || (isEditing ? t('messages.errorUpdatingDiscountCode') : t('messages.errorCreatingDiscountCode')));
@@ -638,214 +545,298 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null, partnerUuid
     }
   };
 
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const { error } = await supabase
+        .from('customers_discount_codes')
+        .delete()
+        .eq('id', code.id)
+        .eq('partner_uuid', partnerUuid);
+
+      if (error) {
+        logger.error('Error deleting discount code:', error);
+        toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
+        return;
+      }
+
+      toast.success(t('messages.discountCodeDeletedSuccessfully') || 'Discount code deleted successfully');
+      onDeleteSuccess(code.id);
+    } catch (error) {
+      logger.error('Error deleting discount code:', error);
+      toast.error(t('messages.errorDeletingDiscountCode') || 'Error deleting discount code');
+    } finally {
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container customers-discount-code-modal">
-        <div className="modal-header">
-          <h2 className="modal-title">
-            {isEditing ? t('discountCodes.editCode') : t('discountCodes.addCode')}
-          </h2>
-          <button onClick={onClose} className="modal-close-btn">
-            <X size={24} />
-          </button>
-        </div>
+    <>
+      <div className="modal-overlay">
+        <div className="modal-container customers-discount-code-modal">
+          <div className="modal-header">
+            <h2 className="modal-title">
+              {isEditing ? t('discountCodes.editCode') : t('discountCodes.addCode')}
+            </h2>
+            <button onClick={onClose} className="modal-close-btn">
+              <X size={24} />
+            </button>
+          </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-section">
-            <h3 className="form-section-title">{t('discountCodes.basicInfo')}</h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="code" className="form-label">
-                  {t('discountCodes.code')} *
-                </label>
-                <div className="code-input-group">
+          <form onSubmit={handleSubmit} className="modal-form">
+            <div className="form-section">
+              <h3 className="form-section-title">{t('discountCodes.basicInfo')}</h3>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="code" className="form-label">
+                    {t('discountCodes.code')} *
+                  </label>
+                  <div className="code-input-group">
+                    <input
+                      id="code"
+                      name="code"
+                      type="text"
+                      required
+                      className="form-input"
+                      value={formData.code}
+                      onChange={handleChange}
+                      placeholder="SUMMER25"
+                      style={{ textTransform: 'uppercase' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={generateRandomCode}
+                      className="btn-secondary generate-btn"
+                    >
+                      {t('discountCodes.generate')}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="description" className="form-label">
+                    {t('discountCodes.description')}
+                  </label>
                   <input
-                    id="code"
-                    name="code"
+                    id="description"
+                    name="description"
+                    type="text"
+                    className="form-input"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Summer promotion discount"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h3 className="form-section-title">{t('discountCodes.discountSettings')}</h3>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="discount_type" className="form-label">
+                    {t('discountCodes.discountType')} *
+                  </label>
+                  <Select
+                    name="discount_type"
+                    value={formData.discount_type}
+                    onChange={handleChange}
+                    options={discountTypeOptions}
+                    placeholder={t('discountCodes.selectType')}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="discount_value" className="form-label">
+                    {t('discountCodes.discountValue')} *
+                  </label>
+                  <input
+                    id="discount_value"
+                    name="discount_value"
                     type="text"
                     required
                     className="form-input"
-                    value={formData.code}
+                    value={formData.discount_value}
                     onChange={handleChange}
-                    placeholder="SUMMER25"
-                    style={{ textTransform: 'uppercase' }}
+                    placeholder={formData.discount_type === 'percentage' ? '25' : '50.00'}
                   />
-                  <button
-                    type="button"
-                    onClick={generateRandomCode}
-                    className="btn-secondary generate-btn"
-                  >
-                    {t('discountCodes.generate')}
-                  </button>
+                  <small className="form-help">
+                    {formData.discount_type === 'percentage' 
+                      ? t('discountCodes.percentageHelp') || 'Enter percentage (0-100)'
+                      : t('discountCodes.fixedAmountHelp') || 'Enter fixed amount in USD'
+                    }
+                  </small>
                 </div>
               </div>
-              
-              <div className="form-group">
-                <label htmlFor="description" className="form-label">
-                  {t('discountCodes.description')}
-                </label>
-                <input
-                  id="description"
-                  name="description"
-                  type="text"
-                  className="form-input"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Summer promotion discount"
-                />
-              </div>
             </div>
-          </div>
 
-          <div className="form-section">
-            <h3 className="form-section-title">{t('discountCodes.discountSettings')}</h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="discount_type" className="form-label">
-                  {t('discountCodes.discountType')} *
-                </label>
-                <Select
-                  name="discount_type"
-                  value={formData.discount_type}
-                  onChange={handleChange}
-                  options={discountTypeOptions}
-                  placeholder={t('discountCodes.selectType')}
-                />
-              </div>
+            <div className="form-section">
+              <h3 className="form-section-title">{t('discountCodes.validity')}</h3>
               
-              <div className="form-group">
-                <label htmlFor="discount_value" className="form-label">
-                  {t('discountCodes.discountValue')} *
-                </label>
-                <input
-                  id="discount_value"
-                  name="discount_value"
-                  type="number"
-                  step={formData.discount_type === 'percentage' ? '1' : '0.01'}
-                  min="0"
-                  max={formData.discount_type === 'percentage' ? '100' : undefined}
-                  required
-                  className="form-input"
-                  value={formData.discount_value}
-                  onChange={handleChange}
-                  placeholder={formData.discount_type === 'percentage' ? '25' : '50.00'}
-                />
-                <small className="form-help">
-                  {formData.discount_type === 'percentage' 
-                    ? t('discountCodes.percentageHelp') || 'Enter percentage (0-100)'
-                    : t('discountCodes.fixedAmountHelp') || 'Enter fixed amount in USD'
-                  }
-                </small>
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3 className="form-section-title">{t('discountCodes.validity')}</h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="valid_from" className="form-label">
-                  {t('discountCodes.validFrom')} *
-                </label>
-                <input
-                  id="valid_from"
-                  name="valid_from"
-                  type="date"
-                  required
-                  className="form-input"
-                  value={formData.valid_from}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="valid_until" className="form-label">
-                  {t('discountCodes.validUntil')} *
-                </label>
-                <input
-                  id="valid_until"
-                  name="valid_until"
-                  type="date"
-                  required
-                  className="form-input"
-                  value={formData.valid_until}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3 className="form-section-title">{t('discountCodes.usageSettings')}</h3>
-            
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="usage_limit" className="form-label">
-                  {t('discountCodes.usageLimit')} ({t('common.optional')})
-                </label>
-                <input
-                  id="usage_limit"
-                  name="usage_limit"
-                  type="number"
-                  min="1"
-                  className="form-input"
-                  value={formData.usage_limit}
-                  onChange={handleChange}
-                  placeholder="100"
-                />
-                <small className="form-help">
-                  {t('discountCodes.usageLimitHelp') || 'Leave empty for unlimited usage'}
-                </small>
-              </div>
-              
-              <div className="form-group">
-                <label className="form-checkbox-label">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="valid_from" className="form-label">
+                    {t('discountCodes.validFrom')} *
+                  </label>
                   <input
-                    type="checkbox"
-                    name="is_active"
-                    checked={formData.is_active}
+                    id="valid_from"
+                    name="valid_from"
+                    type="date"
+                    required
+                    className="form-input"
+                    value={formData.valid_from}
                     onChange={handleChange}
-                    className="form-checkbox"
                   />
-                  <span className="checkbox-text">
-                    {t('discountCodes.isActive')}
-                  </span>
-                </label>
-                <small className="form-help">
-                  {t('discountCodes.isActiveHelp') || 'Inactive codes cannot be used'}
-                </small>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="valid_until" className="form-label">
+                    {t('discountCodes.validUntil')} *
+                  </label>
+                  <input
+                    id="valid_until"
+                    name="valid_until"
+                    type="date"
+                    required
+                    className="form-input"
+                    value={formData.valid_until}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h3 className="form-section-title">{t('discountCodes.usageSettings')}</h3>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="usage_limit" className="form-label">
+                    {t('discountCodes.usageLimit')} ({t('common.optional')})
+                  </label>
+                  <input
+                    id="usage_limit"
+                    name="usage_limit"
+                    type="text"
+                    className="form-input"
+                    value={formData.usage_limit}
+                    onChange={handleChange}
+                    placeholder="100"
+                  />
+                  <small className="form-help">
+                    {t('discountCodes.usageLimitHelp') || 'Leave empty for unlimited usage'}
+                  </small>
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={formData.is_active}
+                      onChange={handleChange}
+                      className="form-checkbox"
+                    />
+                    <span className="checkbox-text">
+                      {t('discountCodes.isActive')}
+                    </span>
+                  </label>
+                  <small className="form-help">
+                    {t('discountCodes.isActiveHelp') || 'Inactive codes cannot be used'}
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="btn-danger"
+                  disabled={loading}
+                >
+                  <Trash2 size={16} className="mr-2" />
+                  {t('common.delete')}
+                </button>
+              )}
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="btn-secondary"
+                  disabled={loading}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                >
+                  {loading 
+                    ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...') 
+                    : (isEditing ? t('common.save') : t('common.create'))
+                  }
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-container delete-modal">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {t('common.confirmDelete')}
+              </h2>
+              <button onClick={() => setShowDeleteConfirm(false)} className="modal-close-btn">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="delete-modal-content">
+              <div className="delete-warning">
+                <Trash2 size={24} className="warning-icon" />
+                <div className="warning-text">
+                  <h3>{t('common.warning') || 'Warning'}</h3>
+                  <p>Are you sure you want to delete discount code "{code.code}"?</p>
+                  <p className="warning-note">
+                    This action cannot be undone and will affect any contracts using this discount code.
+                  </p>
+                </div>
+              </div>
+
+              <div className="delete-modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="btn-secondary"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="btn-danger"
+                >
+                  {t('common.delete')}
+                </button>
               </div>
             </div>
           </div>
-
-          <div className="modal-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-              disabled={loading}
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-            >
-              {loading 
-                ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...') 
-                : (isEditing ? t('common.save') : t('common.create'))
-              }
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

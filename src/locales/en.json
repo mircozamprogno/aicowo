@@ -1837,7 +1837,7 @@
     "endDateMustBeAfterStartDate": "End date must be after start date",
     "codeAlreadyExists": "This discount code already exists",
     "percentageHelp": "Enter percentage (0-100)",
-    "fixedAmountHelp": "Enter fixed amount in USD",
+    "fixedAmountHelp": "Enter fixed amount in EUR",
     "usageLimitHelp": "Leave empty for unlimited usage"
   },
   "support": {
