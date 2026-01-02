@@ -16,9 +16,9 @@ const Layout = ({ children, pageTitle }) => {
   return (
     <div className="layout">
       <div className={`mobile-sidebar-overlay ${sidebarOpen ? 'open' : ''}`}>
-        <div 
-          className="mobile-sidebar-backdrop" 
-          onClick={() => setSidebarOpen(false)} 
+        <div
+          className="mobile-sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
         />
         <div className={`mobile-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <Sidebar mobile onClose={() => setSidebarOpen(false)} />
@@ -50,7 +50,10 @@ const Layout = ({ children, pageTitle }) => {
               {profile && <NotificationBell />}
               <div className="user-info">
                 <span className="user-name">
-                  {profile?.first_name} {profile?.last_name} ({t(`roles.${profile?.role}`)})
+                  {profile?.first_name} {profile?.last_name}
+                </span>
+                <span className="user-role">
+                  {t(`roles.${profile?.role}`)}
                 </span>
               </div>
             </div>
