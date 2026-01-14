@@ -32,11 +32,11 @@ const Partners = () => {
     logger.log('Starting to fetch partners...');
     try {
       let query = supabase.from('partners').select('*');
-      
+
       if (profile?.role !== 'superadmin' && profile?.partner_uuid) {
         query = query.eq('partner_uuid', profile.partner_uuid);
       }
-      
+
       const { data, error } = await query.order('created_at', { ascending: false });
 
       logger.log('Supabase response:', { data, error });
@@ -101,7 +101,7 @@ const Partners = () => {
 
   const handleFormSuccess = (savedPartner) => {
     if (editingPartner) {
-      setPartners(prev => 
+      setPartners(prev =>
         prev.map(p => p.id === savedPartner.id ? savedPartner : p)
       );
     } else {
@@ -157,7 +157,7 @@ const Partners = () => {
         <div className="partners-header-content">
           <h1 className="partners-title">{t('partners.title')}</h1>
           <p className="partners-description">
-            {canManagePartners 
+            {canManagePartners
               ? t('partners.managePartners')
               : t('partners.viewPartnerInfo')
             }
@@ -227,6 +227,9 @@ const Partners = () => {
                   {t('partners.partner')}
                 </th>
                 <th className="partners-table-header">
+                  Nome Struttura
+                </th>
+                <th className="partners-table-header">
                   {t('auth.email')}
                 </th>
                 <th className="partners-table-header">
@@ -246,13 +249,16 @@ const Partners = () => {
                   <td className="partners-table-cell">
                     <div className="partner-info">
                       <div className="partner-name">
-                        {partner.first_name && partner.second_name 
+                        {partner.first_name && partner.second_name
                           ? `${partner.first_name} ${partner.second_name}`
                           : partner.first_name || partner.company_name
                         }
                       </div>
                       <div className="partner-location">{partner.city}, {partner.country}</div>
                     </div>
+                  </td>
+                  <td className="partners-table-cell">
+                    {partner.structure_name || '-'}
                   </td>
                   <td className="partners-table-cell">
                     {partner.email}
@@ -268,7 +274,7 @@ const Partners = () => {
                   <td className="partners-table-cell">
                     <div className="partner-actions">
                       {canManagePartners && (
-                        <button 
+                        <button
                           className="partner-action-btn edit-btn"
                           onClick={() => handleEditPartner(partner)}
                           title={t('partners.edit')}
@@ -277,11 +283,11 @@ const Partners = () => {
                         </button>
                       )}
                       {canInvite && (
-                        <button 
+                        <button
                           className="partner-action-btn invite-btn"
                           onClick={() => handleSendInvitation(partner)}
                           title={
-                            profile?.role === 'superadmin' 
+                            profile?.role === 'superadmin'
                               ? t('invitations.invitePartnerAdmin')
                               : t('invitations.inviteUser')
                           }
@@ -302,7 +308,7 @@ const Partners = () => {
           {partners.length === 0 && (
             <div className="partners-empty">
               <p>
-                {canManagePartners 
+                {canManagePartners
                   ? t('partners.noPartnersFound')
                   : t('partners.noPartnerAssigned')
                 }

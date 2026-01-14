@@ -1,6 +1,6 @@
 // src/components/modals/PaymentHistoryModal.jsx
 
-import { Calendar, CreditCard, DollarSign, Edit2, Eye, FileText, Trash2, X } from 'lucide-react';
+import { DollarSign, Edit2, Eye, FileText, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -9,12 +9,12 @@ import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
 
-const PaymentHistoryModal = ({ 
-  isOpen, 
-  onClose, 
+const PaymentHistoryModal = ({
+  isOpen,
+  onClose,
   contract,
   onEditPayment,
-  onRefresh 
+  onRefresh
 }) => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ const PaymentHistoryModal = ({
     setLoading(true);
     try {
       const { data, error } = await PaymentService.getContractPayments(contract.id);
-      
+
       if (error) {
         toast.error(t('payments.errorLoadingPayments'));
         logger.error('Error loading payments:', error);
@@ -59,28 +59,28 @@ const PaymentHistoryModal = ({
   const calculateStats = (paymentsData) => {
     const completed = paymentsData.filter(p => p.payment_status === 'completed');
     const pending = paymentsData.filter(p => p.payment_status === 'pending');
-    
+
     // Use amount_gross if available, otherwise fall back to amount
     const totalPaid = completed.reduce((sum, p) => {
-      const amount = p.amount_gross !== null && p.amount_gross !== undefined 
-        ? parseFloat(p.amount_gross) 
+      const amount = p.amount_gross !== null && p.amount_gross !== undefined
+        ? parseFloat(p.amount_gross)
         : parseFloat(p.amount);
       return sum + (amount || 0);
     }, 0);
-    
+
     const pendingAmount = pending.reduce((sum, p) => {
-      const amount = p.amount_gross !== null && p.amount_gross !== undefined 
-        ? parseFloat(p.amount_gross) 
+      const amount = p.amount_gross !== null && p.amount_gross !== undefined
+        ? parseFloat(p.amount_gross)
         : parseFloat(p.amount);
       return sum + (amount || 0);
     }, 0);
-    
+
     // Calculate contract total with VAT
     const baseAmount = parseFloat(contract?.service_cost) || 0;
     const vatPercentage = parseFloat(contract?.locations?.vat_percentage) || 0;
     const vatAmount = baseAmount * (vatPercentage / 100);
     const contractCostGross = baseAmount + vatAmount;
-    
+
     const outstanding = Math.max(0, contractCostGross - totalPaid);
 
     setPaymentStats({
@@ -106,7 +106,7 @@ const PaymentHistoryModal = ({
 
     try {
       const { success, error } = await PaymentService.deletePayment(paymentToDelete.id);
-      
+
       if (error) {
         toast.error(error);
         return;
@@ -173,8 +173,8 @@ const PaymentHistoryModal = ({
   };
 
   const getPaymentAmount = (payment) => {
-    return payment.amount_gross !== null && payment.amount_gross !== undefined 
-      ? payment.amount_gross 
+    return payment.amount_gross !== null && payment.amount_gross !== undefined
+      ? payment.amount_gross
       : payment.amount;
   };
 
@@ -198,40 +198,21 @@ const PaymentHistoryModal = ({
             {paymentStats && (
               <div className="payment-stats-section">
                 <div className="payment-stats-grid">
-                  <div className="stat-card stat-paid">
-                    <div className="stat-icon">
-                      <DollarSign size={20} />
-                    </div>
+                  <div className="stat-card">
                     <div className="stat-info">
                       <div className="stat-value">{formatCurrency(paymentStats.totalPaid)}</div>
                       <div className="stat-label">{t('payments.totalPaid')}</div>
                     </div>
                   </div>
 
-                  <div className="stat-card stat-outstanding">
-                    <div className="stat-icon">
-                      <Calendar size={20} />
-                    </div>
+                  <div className="stat-card">
                     <div className="stat-info">
                       <div className="stat-value">{formatCurrency(paymentStats.outstanding)}</div>
                       <div className="stat-label">{t('payments.outstanding')}</div>
                     </div>
                   </div>
 
-                  <div className="stat-card stat-count">
-                    <div className="stat-icon">
-                      <CreditCard size={20} />
-                    </div>
-                    <div className="stat-info">
-                      <div className="stat-value">{paymentStats.totalPayments}</div>
-                      <div className="stat-label">{t('payments.totalPayments') || 'Pagamenti Totali'}</div>
-                    </div>
-                  </div>
-
-                  <div className={`stat-card stat-progress ${paymentStats.isFullyPaid ? 'fully-paid' : ''}`}>
-                    <div className="stat-icon">
-                      <FileText size={20} />
-                    </div>
+                  <div className="stat-card">
                     <div className="stat-info">
                       <div className="stat-value">{Math.round(paymentStats.paymentPercentage)}%</div>
                       <div className="stat-label">{t('payments.paymentProgress') || 'Progresso Pagamento'}</div>
@@ -247,7 +228,7 @@ const PaymentHistoryModal = ({
                     </span>
                   </div>
                   <div className="progress-bar-wrapper">
-                    <div 
+                    <div
                       className={`progress-bar-fill ${paymentStats.isFullyPaid ? 'fully-paid' : ''}`}
                       style={{ width: `${paymentStats.paymentPercentage}%` }}
                     />
@@ -261,7 +242,7 @@ const PaymentHistoryModal = ({
                 <h3>{t('payments.paymentHistory') || 'Storico Pagamenti'}</h3>
                 {paymentStats && (
                   <span className={`payment-status-badge ${paymentStats.isFullyPaid ? 'fully-paid' : 'outstanding'}`}>
-                    {paymentStats.isFullyPaid 
+                    {paymentStats.isFullyPaid
                       ? (t('contracts.fullyPaid') || 'Completamente Pagato')
                       : (t('contracts.awaitingPayment') || 'Da Pagare')}
                   </span>
@@ -296,7 +277,7 @@ const PaymentHistoryModal = ({
                           <td>
                             <span className="payment-number">{payment.payment_number}</span>
                           </td>
-                          
+
                           <td>
                             <div className="payment-amount-cell">
                               <span className="amount-value">{formatCurrency(getPaymentAmount(payment))}</span>
@@ -305,20 +286,19 @@ const PaymentHistoryModal = ({
                               </span>
                             </div>
                           </td>
-                          
+
                           <td>
                             <div className="payment-method-cell">
-                              <span className="method-icon">{getMethodIcon(payment.payment_method)}</span>
                               <span className="method-name">
                                 {t(`payments.methods.${payment.payment_method}`)}
                               </span>
                             </div>
                           </td>
-                          
+
                           <td className="payment-date-cell">
                             {formatDate(payment.payment_date)}
                           </td>
-                          
+
                           {canEditPayments && (
                             <td>
                               <div className="payment-actions">
@@ -329,7 +309,7 @@ const PaymentHistoryModal = ({
                                 >
                                   <Edit2 size={16} />
                                 </button>
-                                
+
                                 {payment.receipt_url && (
                                   <button
                                     className="action-btn view-btn"
@@ -339,7 +319,7 @@ const PaymentHistoryModal = ({
                                     <Eye size={16} />
                                   </button>
                                 )}
-                                
+
                                 <button
                                   className="action-btn delete-btn"
                                   onClick={() => handleDeletePayment(payment)}
@@ -374,8 +354,8 @@ const PaymentHistoryModal = ({
               <h2 className="modal-title">
                 {t('payments.confirmDeletePayment') || 'Conferma Eliminazione Pagamento'}
               </h2>
-              <button 
-                onClick={() => setShowDeleteConfirm(false)} 
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
                 className="modal-close-btn"
               >
                 <X size={24} />

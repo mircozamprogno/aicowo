@@ -1,19 +1,20 @@
-// src/components/common/SearchableSelect.jsx
 import { ChevronDown, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from '../../contexts/LanguageContext';
 import '../../styles/components/searchable-select.css';
 
-const SearchableSelect = ({ 
-    value, 
-    onChange, 
-    options, 
+const SearchableSelect = ({
+    value,
+    onChange,
+    options,
     placeholder = "Search...",
     emptyMessage = "No results found",
     className = "",
     name = "", // Add name prop
     autoSelectSingle = true // New prop to control auto-selection
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -53,7 +54,7 @@ const SearchableSelect = ({
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
-                dropdownRef.current && 
+                dropdownRef.current &&
                 !dropdownRef.current.contains(event.target) &&
                 triggerRef.current &&
                 !triggerRef.current.contains(event.target)
@@ -74,7 +75,7 @@ const SearchableSelect = ({
             updateDropdownPosition();
             window.addEventListener('scroll', updateDropdownPosition, true);
             window.addEventListener('resize', updateDropdownPosition);
-            
+
             return () => {
                 window.removeEventListener('scroll', updateDropdownPosition, true);
                 window.removeEventListener('resize', updateDropdownPosition);
@@ -113,7 +114,7 @@ const SearchableSelect = ({
 
     // Dropdown content
     const dropdownContent = isOpen ? (
-        <div 
+        <div
             ref={dropdownRef}
             className="searchable-select-dropdown"
             style={{
@@ -129,7 +130,7 @@ const SearchableSelect = ({
                 <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search..."
+                    placeholder={t('common.search')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
@@ -159,7 +160,7 @@ const SearchableSelect = ({
     return (
         <>
             <div className={`searchable-select ${className}`}>
-                <div 
+                <div
                     ref={triggerRef}
                     className={`searchable-select-trigger ${isOpen ? 'open' : ''}`}
                     onClick={handleTriggerClick}
@@ -169,14 +170,14 @@ const SearchableSelect = ({
                     </span>
                     <div className="searchable-select-icons">
                         {value && (
-                            <X 
-                                size={16} 
+                            <X
+                                size={16}
                                 onClick={handleClear}
                                 className="clear-icon"
                             />
                         )}
-                        <ChevronDown 
-                            size={16} 
+                        <ChevronDown
+                            size={16}
                             className={`chevron-icon ${isOpen ? 'rotate' : ''}`}
                         />
                     </div>

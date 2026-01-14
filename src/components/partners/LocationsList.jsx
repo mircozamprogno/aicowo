@@ -15,7 +15,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
   const [loading, setLoading] = useState(true);
   const [showLocationForm, setShowLocationForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
-  
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [locationToDelete, setLocationToDelete] = useState(null);
   const [deleteValidation, setDeleteValidation] = useState({
@@ -46,7 +46,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
 
     try {
       logger.log('Fetching locations for partner:', partner.partner_uuid);
-      
+
       const { data: locationsData, error: locationsError } = await supabase
         .from('locations')
         .select(`
@@ -273,7 +273,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
           const { error: storageError } = await supabase.storage
             .from('locations')
             .remove([`${partner.partner_uuid}/${locationToDelete.id}`]);
-          
+
           if (storageError) {
             logger.warn('Error deleting location images:', storageError);
           }
@@ -336,7 +336,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
       [location.postal_code, location.city].filter(Boolean).join(' '),
       location.country
     ].filter(Boolean);
-    
+
     return parts.join(', ') || t('locations.noAddressYet');
   };
 
@@ -390,7 +390,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                   </p>
                 )}
               </div>
-              <button 
+              <button
                 onClick={handleAddLocation}
                 className="add-location-btn"
               >
@@ -403,7 +403,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
               <div className="locations-empty">
                 <MapPin size={48} className="empty-icon" />
                 <p>{t('locations.noLocationsFound')}</p>
-                <button 
+                <button
                   onClick={handleAddLocation}
                   className="add-location-btn"
                 >
@@ -446,6 +446,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                         onClick={() => handleEditLocation(location)}
                         className="btn-icon btn-edit"
                         title={t('common.edit')}
+                        style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}
                       >
                         <Edit size={16} />
                       </button>
@@ -453,6 +454,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                         onClick={() => handleDeleteLocation(location)}
                         className="btn-icon btn-danger"
                         title={t('common.delete')}
+                        style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -499,8 +501,8 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
                   </>
                 )}
               </h2>
-              <button 
-                onClick={() => setShowDeleteConfirm(false)} 
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
                 className="modal-close-btn"
               >
                 <X size={24} />
@@ -617,7 +619,7 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
               >
                 {t('common.cancel')}
               </button>
-              
+
               {!deleteValidation.loading && deleteValidation.canDelete && (
                 <button
                   onClick={confirmDeleteLocation}

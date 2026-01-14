@@ -15,8 +15,8 @@
 }
 
 .notification-bell:hover {
-  background: #f3f4f6;
-  color: #16a34a;
+  background: #f3e8ff !important;
+  color: #4f46e5 !important;
 }
 
 .notification-bell-badge {

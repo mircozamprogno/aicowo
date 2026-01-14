@@ -80,3 +80,33 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+/* Primary Purple Button */
+.btn-primary-purple {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #4f46e5 !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary-purple:hover:not(:disabled) {
+  background-color: #4338ca !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary-purple:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

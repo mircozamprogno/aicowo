@@ -119,12 +119,12 @@
   cursor: pointer;
   transition: all 0.2s;
   border: none;
-  background-color: #16a34a;
-  color: white;
+  background-color: #4f46e5 !important;
+  color: white !important;
 }
 
 .modal-confirm-btn:hover {
-  background-color: #15803d;
+  background-color: #4338ca !important;
 }
 
 /* Mobile responsive */

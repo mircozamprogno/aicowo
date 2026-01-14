@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
+import { generateAndUploadICS } from '../../services/calendarService';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
 import '../../styles/components/PartnerBookingForm.css';
@@ -10,18 +11,18 @@ import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
 
-const PartnerBookingForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess 
+const PartnerBookingForm = ({
+  isOpen,
+  onClose,
+  onSuccess
 }) => {
   const { user, profile } = useAuth();
   const { t } = useTranslation();
-  
+
   // Determine if user is a customer (end user) or partner admin
   const isCustomerUser = profile?.role === 'user';
   const isPartnerAdmin = profile?.role === 'admin';
-  
+
   const [step, setStep] = useState(1); // 1: Select Customer (partner only), 2: Select Package & Book
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -29,13 +30,13 @@ const PartnerBookingForm = ({
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     reservation_date: '',
     duration_type: 'full_day',
     time_slot: 'morning'
   });
-  
+
   const [availabilityStatus, setAvailabilityStatus] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ const PartnerBookingForm = ({
       });
       setAvailabilityStatus(null);
       setShowConfirmation(false);
-      
+
       // If customer user, automatically load their data and go to step 2
       if (isCustomerUser) {
         setStep(2); // Skip customer selection
@@ -125,7 +126,7 @@ const PartnerBookingForm = ({
 
       // Get active package contracts for these customers
       const customerIds = customersData.map(c => c.id);
-      
+
       const { data: contractsData, error: contractsError } = await supabase
         .from('contracts')
         .select('customer_id, service_max_entries, entries_used')
@@ -159,7 +160,7 @@ const PartnerBookingForm = ({
     setLoadingPackages(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      
+
       const { data: packagesData, error: packagesError } = await supabase
         .from('contracts')
         .select(`
@@ -215,7 +216,7 @@ const PartnerBookingForm = ({
     const customerId = e.target.value;
     const customer = customers.find(c => c.id === parseInt(customerId));
     setSelectedCustomer(customer);
-    
+
     if (customer) {
       setStep(2);
       // Packages will be loaded by useEffect
@@ -239,14 +240,14 @@ const PartnerBookingForm = ({
 
   const checkAvailability = async () => {
     if (!selectedPackage || !formData.reservation_date) return;
-    
+
     setCheckingAvailability(true);
-    
+
     try {
       const locationResourceId = selectedPackage.location_resource_id;
       const locationId = selectedPackage.location_id;
       const resourceType = selectedPackage.resource_type;
-      
+
       // Get day of week (0 = Sunday, 6 = Saturday)
       const reservationDate = new Date(formData.reservation_date);
       const dayOfWeek = reservationDate.getDay();
@@ -262,14 +263,14 @@ const PartnerBookingForm = ({
       if (closuresError) throw closuresError;
 
       // Check for location-level closure
-      const locationClosure = closures?.find(c => 
+      const locationClosure = closures?.find(c =>
         c.closure_scope === 'location' && c.location_id === locationId
       );
-      
+
       if (locationClosure) {
         setAvailabilityStatus({
           available: false,
-          conflictReason: t('reservations.locationClosedOnDate', { 
+          conflictReason: t('reservations.locationClosedOnDate', {
             reason: locationClosure.closure_reason || t(`reservations.closureType.${locationClosure.closure_type}`)
           }),
           closureInfo: locationClosure
@@ -279,16 +280,16 @@ const PartnerBookingForm = ({
       }
 
       // Check for resource-type closure
-      const resourceTypeClosure = closures?.find(c => 
-        c.closure_scope === 'resource_type' && 
+      const resourceTypeClosure = closures?.find(c =>
+        c.closure_scope === 'resource_type' &&
         c.location_id === locationId &&
         c.resource_type === resourceType
       );
-      
+
       if (resourceTypeClosure) {
         setAvailabilityStatus({
           available: false,
-          conflictReason: t('reservations.resourceTypeClosedOnDate', { 
+          conflictReason: t('reservations.resourceTypeClosedOnDate', {
             resourceType: t(`resources.${resourceType}`),
             reason: resourceTypeClosure.closure_reason || t(`reservations.closureType.${resourceTypeClosure.closure_type}`)
           }),
@@ -299,15 +300,15 @@ const PartnerBookingForm = ({
       }
 
       // Check for specific resource closure
-      const resourceClosure = closures?.find(c => 
-        c.closure_scope === 'resource' && 
+      const resourceClosure = closures?.find(c =>
+        c.closure_scope === 'resource' &&
         c.location_resource_id === locationResourceId
       );
-      
+
       if (resourceClosure) {
         setAvailabilityStatus({
           available: false,
-          conflictReason: t('reservations.resourceClosedOnDate', { 
+          conflictReason: t('reservations.resourceClosedOnDate', {
             reason: resourceClosure.closure_reason || t(`reservations.closureType.${resourceClosure.closure_type}`)
           }),
           closureInfo: resourceClosure
@@ -331,7 +332,7 @@ const PartnerBookingForm = ({
         if (resourceSchedule.is_closed) {
           setAvailabilityStatus({
             available: false,
-            conflictReason: t('reservations.resourceClosedOnDay', { 
+            conflictReason: t('reservations.resourceClosedOnDay', {
               day: t(`calendar.${getDayName(dayOfWeek)}`)
             }),
             scheduleInfo: resourceSchedule
@@ -354,7 +355,7 @@ const PartnerBookingForm = ({
         if (locationSchedule && locationSchedule.is_closed) {
           setAvailabilityStatus({
             available: false,
-            conflictReason: t('reservations.locationClosedOnDay', { 
+            conflictReason: t('reservations.locationClosedOnDay', {
               day: t(`calendar.${getDayName(dayOfWeek)}`)
             }),
             scheduleInfo: locationSchedule
@@ -385,17 +386,17 @@ const PartnerBookingForm = ({
           usedSlots = existingReservations.reduce((total, res) => {
             return total + (res.duration_type === 'full_day' ? 1 : 0.5);
           }, 0);
-          
+
           if (usedSlots >= totalQuantity) {
             hasConflict = true;
             conflictReason = t('reservations.resourceFullyBooked');
           }
         } else {
           const hasFullDayConflict = existingReservations.some(res => res.duration_type === 'full_day');
-          const sameTimeSlotReservations = existingReservations.filter(res => 
+          const sameTimeSlotReservations = existingReservations.filter(res =>
             res.duration_type === 'half_day' && res.time_slot === formData.time_slot
           );
-          
+
           if (hasFullDayConflict) {
             hasConflict = true;
             conflictReason = t('reservations.resourceBookedFullDay');
@@ -433,7 +434,7 @@ const PartnerBookingForm = ({
   const validateReservation = () => {
     const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
     const remainingEntries = selectedPackage.service_max_entries - (selectedPackage.entries_used || 0);
-    
+
     if (remainingEntries < entriesNeeded) {
       toast.error(t('reservations.insufficientEntries'));
       return false;
@@ -442,7 +443,7 @@ const PartnerBookingForm = ({
     const reservationDate = new Date(formData.reservation_date);
     const contractStart = new Date(selectedPackage.start_date);
     const contractEnd = new Date(selectedPackage.end_date);
-    
+
     if (reservationDate < contractStart || reservationDate > contractEnd) {
       toast.error(t('reservations.dateOutsideContract'));
       return false;
@@ -458,7 +459,7 @@ const PartnerBookingForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateReservation()) {
       return;
     }
@@ -521,11 +522,19 @@ const PartnerBookingForm = ({
           .eq('partner_uuid', selectedPackage.partner_uuid)
           .single();
 
+        let calendarLink = null;
+        try {
+          calendarLink = await generateAndUploadICS(data, 'package', selectedPackage.partner_uuid);
+        } catch (icsError) {
+          logger.error('Error generating ICS:', icsError);
+        }
+
         const emailSent = await oneSignalEmailService.sendBookingConfirmation(
           data,
           selectedPackage,
           t,
-          partnerData
+          partnerData,
+          calendarLink
         );
 
         if (!emailSent) {
@@ -538,7 +547,7 @@ const PartnerBookingForm = ({
       toast.success(t('reservations.bookingConfirmed'));
       onSuccess(data);
       onClose();
-      
+
     } catch (error) {
       logger.error('Error creating reservation:', error);
       toast.error(t('reservations.errorCreatingReservation') + ': ' + error.message);
@@ -555,18 +564,18 @@ const PartnerBookingForm = ({
 
   const getMinSelectableDate = () => {
     if (!selectedPackage) return new Date().toISOString().split('T')[0];
-    
+
     const today = new Date();
     const contractStart = new Date(selectedPackage.start_date);
-    
-    return today > contractStart 
+
+    return today > contractStart
       ? today.toISOString().split('T')[0]
       : selectedPackage.start_date;
   };
 
   if (!isOpen) return null;
 
-  const remainingEntries = selectedPackage 
+  const remainingEntries = selectedPackage
     ? selectedPackage.service_max_entries - (selectedPackage.entries_used || 0)
     : 0;
   const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
@@ -582,7 +591,7 @@ const PartnerBookingForm = ({
     const remaining = pkg.service_max_entries - (pkg.entries_used || 0);
     return {
       value: pkg.id.toString(),
-      label: `${pkg.contract_number} - ${pkg.service_name} (${remaining} ${t('bookings.entriesRemaining')}) - ${pkg.resource_name} @ ${pkg.location_name}`
+      label: `${pkg.contract_number} - ${pkg.service_name} (${remaining} ${t('bookings.entriesRemaining')})`
     };
   });
 
@@ -610,28 +619,12 @@ const PartnerBookingForm = ({
             <div className="confirmation-warning">
               <AlertTriangle size={24} className="warning-icon" />
               <div className="warning-text">
-                <h3>{t('contracts.importantNotice')}</h3>                
+                <h3>{t('contracts.importantNotice')}</h3>
                 <p>{t('reservations.confirmationMessage')}</p>
               </div>
             </div>
 
             <div className="contract-summary">
-              <div className="summary-section">
-                <h5>{t('customers.customerDetails')}</h5>
-                <div>
-                  <div className="summary-item">
-                    <span className="summary-label">{t('customers.customer')}</span>
-                    <span className="summary-value">
-                      {selectedCustomer.company_name || `${selectedCustomer.first_name} ${selectedCustomer.second_name}`}
-                    </span>
-                  </div>
-                  <div className="summary-item">
-                    <span className="summary-label">{t('customers.email')}</span>
-                    <span className="summary-value">{selectedCustomer.email}</span>
-                  </div>
-                </div>
-              </div>
-
               <div className="summary-section">
                 <h5>{t('reservations.reservationDetails')}</h5>
                 <div>
@@ -688,7 +681,7 @@ const PartnerBookingForm = ({
               <button
                 type="button"
                 onClick={handleConfirmReservation}
-                className="btn-primary"
+                className="btn-booking-primary"
                 disabled={loading}
               >
                 {loading ? (
@@ -754,16 +747,7 @@ const PartnerBookingForm = ({
             <>
               {/* Selected Customer Info - Show ONLY for partner admin */}
               {isPartnerAdmin && selectedCustomer && (
-                <div style={{ 
-                  background: '#f9fafb', 
-                  border: '1px solid #e5e7eb', 
-                  borderRadius: '0.375rem', 
-                  padding: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1.5rem'
-                }}>
+                <div className="partner-selection-info">
                   <div>
                     <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{t('bookings.bookingFor')}</div>
                     <div style={{ fontWeight: '600', fontSize: '1rem' }}>
@@ -834,7 +818,7 @@ const PartnerBookingForm = ({
                         </small>
                       )}
                     </div>
-                    
+
                     <div className="form-group">
                       <label htmlFor="duration_type" className="form-label">
                         {t('reservations.duration')} *
@@ -854,13 +838,13 @@ const PartnerBookingForm = ({
                     <div className="form-group">
                       <label className="form-label">{t('reservations.timeSlot')} *</label>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                        <label style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '0.75rem', 
-                          padding: '0.75rem', 
-                          border: '1px solid #d1d5db', 
-                          borderRadius: '0.375rem', 
+                        <label style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '0.375rem',
                           cursor: 'pointer',
                           backgroundColor: formData.time_slot === 'morning' ? '#eff6ff' : 'white',
                           borderColor: formData.time_slot === 'morning' ? '#3b82f6' : '#d1d5db'
@@ -877,13 +861,13 @@ const PartnerBookingForm = ({
                             <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>9:00 - 13:00</div>
                           </div>
                         </label>
-                        <label style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '0.75rem', 
-                          padding: '0.75rem', 
-                          border: '1px solid #d1d5db', 
-                          borderRadius: '0.375rem', 
+                        <label style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          padding: '0.75rem',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '0.375rem',
                           cursor: 'pointer',
                           backgroundColor: formData.time_slot === 'afternoon' ? '#eff6ff' : 'white',
                           borderColor: formData.time_slot === 'afternoon' ? '#3b82f6' : '#d1d5db'
@@ -913,26 +897,38 @@ const PartnerBookingForm = ({
                           <span>{t('reservations.checkingAvailability')}...</span>
                         </div>
                       ) : availabilityStatus ? (
-                        <div className={`availability-status ${availabilityStatus.available ? 'available' : 'unavailable'}`}>
+                        <div style={availabilityStatus.available ? {
+                          background: '#f0fdf4',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '0.375rem',
+                          padding: '1rem',
+                          borderLeft: '4px solid #22c55e'
+                        } : {
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '0.375rem',
+                          padding: '1rem',
+                          borderLeft: '4px solid #ef4444'
+                        }}>
                           {availabilityStatus.available ? (
-                            <div className="availability-success">
-                              <CheckCircle size={20} />
-                              <div className="availability-details">
-                                <p><strong>{t('reservations.available')}</strong></p>
-                                <p>{t('reservations.resourceAvailableFor', { resource: availabilityStatus.resourceName })}</p>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                              <CheckCircle size={20} color="#16a34a" style={{ marginTop: '2px', flexShrink: 0 }} />
+                              <div style={{ color: '#166534', fontSize: '0.875rem' }}>
+                                <p style={{ margin: '0 0 0.25rem 0', fontWeight: '600' }}>{t('reservations.resourceAvailable')}</p>
+                                <p style={{ margin: '0 0 0.25rem 0' }}>{availabilityStatus.resourceName} is available for your selected time</p>
                                 {availabilityStatus.totalQuantity > 1 && (
-                                  <p>
+                                  <p style={{ margin: 0 }}>
                                     {t('reservations.capacity')}: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} {t('common.of')} {availabilityStatus.totalQuantity} {t('reservations.available')}
                                   </p>
                                 )}
                               </div>
                             </div>
                           ) : (
-                            <div className="availability-error">
-                              <AlertTriangle size={20} />
-                              <div className="availability-details">
-                                <p><strong>{t('reservations.resourceNotAvailable')}</strong></p>
-                                <p>{availabilityStatus.conflictReason || availabilityStatus.error}</p>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                              <AlertTriangle size={20} color="#dc2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+                              <div style={{ color: '#991b1b', fontSize: '0.875rem' }}>
+                                <p style={{ margin: '0 0 0.25rem 0', fontWeight: '600' }}>{t('reservations.resourceNotAvailable')}</p>
+                                <p style={{ margin: 0 }}>{availabilityStatus.conflictReason || availabilityStatus.error}</p>
                               </div>
                             </div>
                           )}
@@ -957,7 +953,7 @@ const PartnerBookingForm = ({
             {step === 2 && selectedPackage && (
               <button
                 type="submit"
-                className="btn-primary"
+                className="btn-booking-primary"
                 disabled={loading || !availabilityStatus?.available || remainingEntries < entriesNeeded}
               >
                 {t('reservations.confirmReservation')}

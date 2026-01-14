@@ -7,16 +7,18 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import logger from '../../utils/logger';
 import ResourceScheduleModal from './ResourceScheduleModal';
-
+import ConfirmModal from '../common/ConfirmModal';
 const ResourceScheduleList = ({ location }) => {
   const { profile } = useAuth();
   const { t } = useTranslation();
-  
+
   const [resources, setResources] = useState([]);
   const [resourceSchedules, setResourceSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [resourceToDelete, setResourceToDelete] = useState(null);
 
   useEffect(() => {
     if (location?.id) {
@@ -31,7 +33,7 @@ const ResourceScheduleList = ({ location }) => {
   const fetchData = async () => {
     try {
       logger.log('Fetching resources for location:', location.id, location.location_name);
-      
+
       const { data: resourcesData, error: resourcesError } = await supabase
         .from('location_resources')
         .select('*')
@@ -43,7 +45,7 @@ const ResourceScheduleList = ({ location }) => {
       logger.log('Found resources:', resourcesData?.length, resourcesData);
 
       const resourceIds = resourcesData?.map(r => r.id) || [];
-      
+
       if (resourceIds.length > 0) {
         const { data: schedulesData, error: schedulesError } = await supabase
           .from('resource_operating_schedules')
@@ -76,13 +78,18 @@ const ResourceScheduleList = ({ location }) => {
   };
 
   const handleDeleteSchedule = async (resourceId) => {
-    if (!confirm(t('calendar.confirmDeleteResourceSchedule'))) return;
+    setResourceToDelete(resourceId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!resourceToDelete) return;
 
     try {
       const { error } = await supabase
         .from('resource_operating_schedules')
         .delete()
-        .eq('location_resource_id', resourceId);
+        .eq('location_resource_id', resourceToDelete);
 
       if (error) throw error;
 
@@ -91,6 +98,8 @@ const ResourceScheduleList = ({ location }) => {
     } catch (error) {
       logger.error('Error deleting resource schedule:', error);
       toast.error(t('messages.errorDeletingSchedule'));
+    } finally {
+      setResourceToDelete(null);
     }
   };
 
@@ -129,7 +138,7 @@ const ResourceScheduleList = ({ location }) => {
       <div className="resources-grid">
         {resources.map(resource => {
           const hasOverride = resourceSchedules.some(s => s.location_resource_id === resource.id);
-          
+
           return (
             <div key={resource.id} className="resource-schedule-row">
               <div className="resource-info">
@@ -140,7 +149,7 @@ const ResourceScheduleList = ({ location }) => {
                   {resource.resource_type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni')}
                 </div>
               </div>
-              
+
               <div className="resource-schedule-status">
                 {hasOverride ? (
                   <>
@@ -209,6 +218,19 @@ const ResourceScheduleList = ({ location }) => {
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setResourceToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title={t('calendar.deleteResourceSchedule')}
+        message={t('calendar.confirmDeleteResourceSchedule')}
+        confirmText={t('common.delete')}
+        isDestructive={true}
+      />
     </div>
   );
 };

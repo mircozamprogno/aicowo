@@ -1,5 +1,4 @@
-// src/components/locations/LocationForm.jsx
-import { Calendar, Image, Mail, Map, MapPin, Monitor, Navigation, Phone, Plus, Trash2, Users, X } from 'lucide-react';
+import { Calendar, Image, Map, MapPin, Monitor, Navigation, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -18,7 +17,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const isEditing = !!location;
 
   const { profile } = useAuth();
-  
+
   const getDefaultVatByCountry = (country) => {
     const vatRates = {
       'Italy': 22.00,
@@ -64,7 +63,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
-  
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalInfo, setDeleteModalInfo] = useState({
     index: null,
@@ -132,7 +131,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         timezone: 'Europe/Rome',
         vat_percentage: getDefaultVatByCountry(defaultCountry)
       };
-      
+
       setFormData(defaultFormData);
       if (profile?.role === 'superadmin') {
         setResources([]);
@@ -168,7 +167,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'vat_percentage') {
       const numValue = parseFloat(value);
       if (value !== '' && (isNaN(numValue) || numValue < 0 || numValue > 100)) {
@@ -180,7 +179,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       }));
       return;
     }
-    
+
     if (name === 'country' && !isEditing) {
       setFormData(prev => ({
         ...prev,
@@ -189,7 +188,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       }));
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -197,7 +196,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   };
 
   const handleResourceChange = (index, field, value) => {
-    setResources(prev => prev.map((resource, i) => 
+    setResources(prev => prev.map((resource, i) =>
       i === index ? { ...resource, [field]: value } : resource
     ));
   };
@@ -213,7 +212,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const handleResourceDelete = async (index) => {
     const resource = resources[index];
-    
+
     if (!resource.id) {
       removeResource(index);
       return;
@@ -252,7 +251,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       setShowDeleteModal(false);
       return;
     }
-    
+
     removeResource(deleteModalInfo.index);
     setShowDeleteModal(false);
   };
@@ -260,11 +259,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const removeResource = (index) => {
     if (resources.length > 1) {
       const resource = resources[index];
-      
+
       if (resource.id) {
         setResourcesToDelete(prev => [...prev, resource.id]);
       }
-      
+
       setResources(prev => prev.filter((_, i) => i !== index));
     }
   };
@@ -323,16 +322,16 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const geocodeAddress = async () => {
     const { address, city, postal_code, country } = formData;
-    
+
     logger.log('🗺️ Geocoding request:', { address, city, postal_code, country });
-    
+
     if (!address && !city) {
       toast.error(t('locations.addressOrCityRequired'));
       return;
     }
 
     setGeocoding(true);
-    
+
     try {
       const addressComponents = [
         address,
@@ -340,34 +339,34 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         postal_code,
         country
       ].filter(Boolean);
-      
+
       const query = addressComponents.join(', ');
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=${country === 'Italy' ? 'it' : ''}`;
-      
+
       logger.log('🔍 Query:', query);
       logger.log('🌐 URL:', url);
-      
+
       const response = await fetch(url);
       logger.log('📡 Response status:', response.status);
-      
+
       const data = await response.json();
       logger.log('📊 Response data:', data);
-      
+
       if (data && data.length > 0) {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
-        
+
         logger.log('✅ Found coordinates:', { lat, lng });
-        
+
         setFormData(prev => ({
           ...prev,
           latitude: lat,
           longitude: lng
         }));
-        
+
         toast.success(t('locations.addressGeocodedSuccessfully'));
-        setActiveTab('location');
+
       } else {
         logger.log('❌ No results found');
         toast.error(t('locations.addressNotFound'));
@@ -387,7 +386,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
     for (const [category, categoryImages] of Object.entries(images)) {
       const newImages = categoryImages.filter(img => img.isNew && img.file);
-      
+
       if (newImages.length > 0) {
         totalNewImages += newImages.length;
         const files = newImages.map(img => img.file);
@@ -401,10 +400,10 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
     try {
       const results = await Promise.all(uploadPromises);
-      
+
       const allResults = results.flat();
       const failed = allResults.filter(r => !r.success);
-      
+
       if (failed.length > 0) {
         logger.error('Some images failed to upload:', failed);
         toast.error(t('locations.someImagesFailedToUpload', { count: failed.length }));
@@ -479,10 +478,10 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
   const getLocationChanges = (original, updated) => {
     const changes = {};
-    const fields = ['location_name', 'address', 'city', 'postal_code', 'country', 
-                    'phone', 'email', 'description', 'timezone', 'vat_percentage',
-                    'latitude', 'longitude'];
-    
+    const fields = ['location_name', 'address', 'city', 'postal_code', 'country',
+      'phone', 'email', 'description', 'timezone', 'vat_percentage',
+      'latitude', 'longitude'];
+
     fields.forEach(field => {
       if (original[field] !== updated[field]) {
         changes[field] = {
@@ -491,13 +490,13 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         };
       }
     });
-    
+
     return changes;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -506,10 +505,10 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
     try {
       let locationData;
-      
+
       if (isEditing) {
         const locationChanges = getLocationChanges(location, formData);
-        
+
         const { data: updatedLocation, error: locationError } = await supabase
           .from('locations')
           .update({
@@ -549,12 +548,12 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
         if (resourcesToDelete.length > 0) {
           logger.log('Deleting resources:', resourcesToDelete);
-          
+
           const { data: resourcesToLog } = await supabase
             .from('location_resources')
             .select('id, resource_name, resource_type')
             .in('id', resourcesToDelete);
-          
+
           const { error: deleteResourcesError } = await supabase
             .from('location_resources')
             .delete()
@@ -735,11 +734,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
       await uploadImages(locationData.id);
 
       toast.success(
-        isEditing 
-          ? t('messages.locationUpdatedSuccessfully') 
+        isEditing
+          ? t('messages.locationUpdatedSuccessfully')
           : t('messages.locationCreatedSuccessfully')
       );
-      
+
       onSuccess(locationData);
       onClose();
     } catch (error) {
@@ -780,7 +779,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           <div className="location-form-header-content">
             <MapPin />
             <h2 className="location-form-title">
-              {isEditing ? t('locations.editLocation') : t('locations.addLocation')}
+              {isEditing ? `${t('locations.editLocation')} - ${formData.location_name}` : t('locations.addLocation')}
             </h2>
           </div>
           <button onClick={onClose} className="location-form-close">
@@ -789,136 +788,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
         </div>
 
         <form onSubmit={handleSubmit} className="location-form-layout">
-          <div className="location-form-sidebar">
-            <div className="location-form-sidebar-content">
-              <div className="location-details-section">
-                <h3 className="location-details-header">
-                  <MapPin />
-                  {t('locations.basicInformation')}
-                </h3>
-                
-                <div className="location-form-group">
-                  <div className="location-input-group">
-                    <label htmlFor="location_name" className="location-form-label">
-                      {t('locations.locationName')} *
-                    </label>
-                    <input
-                      id="location_name"
-                      name="location_name"
-                      type="text"
-                      required
-                      className="location-form-input"
-                      placeholder={t('placeholders.locationNamePlaceholder')}
-                      value={formData.location_name}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="contact-summary">
-                <h4 className="contact-summary-title">
-                  <Phone size={16} />
-                  {t('locations.contactInformation')}
-                </h4>
-                <div className="contact-summary-list">
-                  {formData.phone && (
-                    <div className="contact-summary-item">
-                      <Phone size={14} />
-                      <span>{formData.phone}</span>
-                    </div>
-                  )}
-                  {formData.email && (
-                    <div className="contact-summary-item">
-                      <Mail size={14} />
-                      <span>{formData.email}</span>
-                    </div>
-                  )}
-                  {!formData.phone && !formData.email && (
-                    <p className="contact-summary-empty">{t('locations.noContactInfoYet')}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="address-summary">
-                <h4 className="address-summary-title">
-                  <MapPin size={16} />
-                  {t('locations.addressInformation')}
-                </h4>
-                <div className="address-summary-content">
-                  {formData.address || formData.city ? (
-                    <div className="address-summary-text">
-                      {formData.address && <div>{formData.address}</div>}
-                      <div>
-                        {[formData.postal_code, formData.city].filter(Boolean).join(' ')}
-                      </div>
-                      {formData.country && <div>{formData.country}</div>}
-                      {formData.latitude && formData.longitude && (
-                        <div className="coordinates-display">
-                          <Navigation size={12} />
-                          <span>{formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}</span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="address-summary-empty">{t('locations.noAddressYet')}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="vat-summary">
-                <h4 className="vat-summary-title">
-                  <span className="vat-icon">🧾</span>
-                  {t('locations.vatInformation')}
-                </h4>
-                <div className="vat-summary-content">
-                  <div className="vat-summary-display">
-                    <span className="vat-percentage-large">{formData.vat_percentage}%</span>
-                    <span className="vat-country-label">
-                      {t('locations.vatFor')} {formData.country}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="resource-summary">
-                <h4 className="resource-summary-title">{t('locations.resourcesSummary')}</h4>
-                <div className="resource-summary-list">
-                  {resources.filter(r => r.resource_name.trim()).map((resource, index) => (
-                    <div key={index} className="resource-summary-item">
-                      <div className="resource-summary-info">
-                        {getResourceIcon(resource.resource_type)}
-                        <span>{resource.resource_name || t('locations.unnamed')}</span>
-                      </div>
-                      <span className="resource-summary-quantity">×{resource.quantity}</span>
-                    </div>
-                  ))}
-                  {resources.filter(r => r.resource_name.trim()).length === 0 && (
-                    <p className="resource-summary-empty">{t('locations.noResourcesAddedYet')}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="images-summary">
-                <h4 className="images-summary-title">
-                  <Image size={16} />
-                  {t('locations.imagesSummary')} ({getTotalImages()})
-                </h4>
-                <div className="images-summary-categories">
-                  {Object.entries(images).map(([category, categoryImages]) => (
-                    <div key={category} className="images-summary-item">
-                      <span className="images-summary-category">
-                        {getImageTabLabel(category)}
-                      </span>
-                      <span className="images-summary-count">
-                        {categoryImages.length}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Sidebar removed as per request */}
 
           <div className="location-form-main">
             <div className="form-tabs-nav">
@@ -938,14 +808,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 <Navigation />
                 {t('locations.address')}
               </button>
-              <button
-                type="button"
-                className={`form-tab ${activeTab === 'location' ? 'active' : ''}`}
-                onClick={() => setActiveTab('location')}
-              >
-                <Map />
-                {t('locations.mapLocation')}
-              </button>
+
               <button
                 type="button"
                 className={`form-tab ${activeTab === 'resources' ? 'active' : ''}`}
@@ -969,10 +832,25 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 <div className="basic-info-tab">
                   <div className="basic-info-content">
                     <h3 className="tab-section-title">
-                      <Phone />
                       {t('locations.contactDetails')}
                     </h3>
-                    
+
+                    <div className="form-group">
+                      <label htmlFor="location_name" className="form-label">
+                        {t('locations.locationName')} *
+                      </label>
+                      <input
+                        id="location_name"
+                        name="location_name"
+                        type="text"
+                        required
+                        className="form-input"
+                        placeholder={t('placeholders.locationNamePlaceholder')}
+                        value={formData.location_name}
+                        onChange={handleChange}
+                      />
+                    </div>
+
                     <div className="form-grid">
                       <div className="form-group">
                         <label htmlFor="phone" className="form-label">
@@ -988,7 +866,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                           onChange={handleChange}
                         />
                       </div>
-                      
+
                       <div className="form-group">
                         <label htmlFor="email" className="form-label">
                           {t('locations.emailAddress')}
@@ -1007,7 +885,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
                     <div className="form-group">
                       <label htmlFor="description" className="form-label">
-                        {t('locations.description')} <span style={{color: '#6b7280'}}>({t('common.optional')})</span>
+                        {t('locations.description')} <span style={{ color: '#6b7280' }}>({t('common.optional')})</span>
                       </label>
                       <textarea
                         id="description"
@@ -1040,7 +918,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                           <option value="Europe/Zurich">Europe/Zurich (GMT+1)</option>
                         </select>
                       </div>
-                      
+
                       <div className="form-group">
                         <label htmlFor="vat_percentage" className="form-label">
                           {t('locations.vatPercentage')} *
@@ -1098,7 +976,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                         )}
                       </button>
                     </div>
-                    
+
                     <div className="form-grid">
                       <div className="form-group form-group-full">
                         <label htmlFor="address" className="form-label">
@@ -1131,7 +1009,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                           onChange={handleChange}
                         />
                       </div>
-                      
+
                       <div className="form-group">
                         <label htmlFor="city" className="form-label">
                           {t('locations.city')}
@@ -1146,7 +1024,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                           onChange={handleChange}
                         />
                       </div>
-                      
+
                       <div className="form-group">
                         <label htmlFor="country" className="form-label">
                           {t('locations.country')}
@@ -1201,17 +1079,13 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       </ul>
                     </div>
                   </div>
-                </div>
-              )}
 
-              {activeTab === 'location' && (
-                <div className="location-tab">
-                  <div className="location-content">
+                  <div className="map-section" style={{ marginTop: '2rem', borderTop: '1px solid #e5e7eb', paddingTop: '2rem' }}>
                     <h3 className="tab-section-title">
                       <Map />
                       {t('locations.mapLocation')}
                     </h3>
-                    
+
                     <div className="map-instructions">
                       <p>{t('locations.mapInstructions')}</p>
                     </div>
@@ -1224,7 +1098,10 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                     />
                   </div>
                 </div>
+
               )}
+
+
 
               {activeTab === 'resources' && (
                 <div className="resources-tab">
@@ -1267,7 +1144,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                               </button>
                             )}
                           </div>
-                          
+
                           <div className="resource-item-form">
                             <div className="resource-form-grid">
                               <div className="resource-form-col-3">
@@ -1286,7 +1163,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                   </select>
                                 </div>
                               </div>
-                              
+
                               <div className="resource-form-col-5">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
@@ -1302,7 +1179,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                   />
                                 </div>
                               </div>
-                              
+
                               <div className="resource-form-col-2">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
@@ -1319,7 +1196,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                   />
                                 </div>
                               </div>
-                              
+
                               <div className="resource-form-col-2">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
@@ -1332,11 +1209,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                   </div>
                                 </div>
                               </div>
-                              
+
                               <div className="resource-description-group">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
-                                    {t('locations.description')} <span style={{color: '#6b7280'}}>({t('common.optional')})</span>
+                                    {t('locations.description')} <span style={{ color: '#6b7280' }}>({t('common.optional')})</span>
                                   </label>
                                   <textarea
                                     rows={2}
@@ -1391,17 +1268,22 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       <Image />
                       {t('locations.locationImages')}
                     </h3>
-                    
+
+                    <div className="image-upload-tips" style={{ marginBottom: '1.5rem' }}>
+                      <h5 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>{t('locations.imageUploadTips')}</h5>
+                      <ul style={{ fontSize: '0.875rem', color: '#4b5563', paddingLeft: 0, listStyle: 'none' }}>
+                        <li>• {t('locations.tipSupportedFormats')}</li>
+                        <li>• {t('locations.tipMaxSize')}</li>
+                        <li>• {t('locations.tipBestQuality')}</li>
+                        <li>• {t('locations.tipDescriptiveNames')}</li>
+                      </ul>
+                    </div>
+
                     <div className="image-categories">
                       {Object.entries(images).map(([category, categoryImages]) => (
                         <div key={category} className="image-category-section">
-                          <h4 className="image-category-title">
-                            {category === 'exterior' && <Image size={16} />}
-                            {category === 'scrivania' && <Monitor size={16} />}
-                            {category === 'sala_riunioni' && <Users size={16} />}
-                            {getImageTabLabel(category)} ({categoryImages.length})
-                          </h4>
-                          
+
+
                           <ImageUpload
                             category={category}
                             images={categoryImages}
@@ -1410,6 +1292,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                             maxImages={10}
                             disabled={loading || uploadingImages}
                             showAltText={true}
+                            showTips={false}
                           />
                         </div>
                       ))}
@@ -1437,14 +1320,14 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                   <div className="form-loading-spinner" />
                 )}
                 {loading || uploadingImages
-                  ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
+                  ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...')
                   : (isEditing ? t('common.save') : t('common.create'))
                 }
               </button>
             </div>
           </div>
         </form>
-      </div>
+      </div >
 
       {showDeleteModal && (
         <div className="modal-overlay">
@@ -1460,7 +1343,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="delete-modal-content">
               {deleteModalInfo.hasBookings ? (
                 <>
@@ -1482,7 +1365,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                 </>
               )}
             </div>
-            
+
             <div className="delete-modal-actions">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -1502,7 +1385,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 };
 

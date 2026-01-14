@@ -1,5 +1,5 @@
 // src/components/customers/CustomerForm.jsx
-import { Trash2, X } from 'lucide-react';
+import { FileText, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -8,20 +8,20 @@ import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
 
-const CustomerForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
+const CustomerForm = ({
+  isOpen,
+  onClose,
+  onSuccess,
   onDelete,
   checkConstraints,
-  customer = null, 
-  partnerUuid, 
-  userId = null, 
-  isProfileCompletion = false 
+  customer = null,
+  partnerUuid,
+  userId = null,
+  isProfileCompletion = false
 }) => {
   const { t } = useTranslation();
   const isEditing = !!customer;
-  
+
   const [formData, setFormData] = useState({
     first_name: '',
     second_name: '',
@@ -47,11 +47,16 @@ const CustomerForm = ({
     billing_country: 'Italy',
     notes: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConstraints, setDeleteConstraints] = useState([]);
+
+  // Document upload states
+  const [documentUrl, setDocumentUrl] = useState(null);
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [documentType, setDocumentType] = useState(null);
 
   const customerTypeOptions = [
     { value: 'individual', label: t('customers.individual') },
@@ -133,6 +138,13 @@ const CustomerForm = ({
     }
   }, [customer]);
 
+  // Load existing document
+  useEffect(() => {
+    if (customer && partnerUuid) {
+      loadCurrentDocument();
+    }
+  }, [customer, partnerUuid]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -147,7 +159,7 @@ const CustomerForm = ({
 
     try {
       let result;
-      
+
       if (isEditing) {
         result = await supabase
           .from('customers')
@@ -160,7 +172,7 @@ const CustomerForm = ({
           partner_uuid: partnerUuid,
           user_id: userId || null
         };
-        
+
         result = await supabase
           .from('customers')
           .insert([customerData])
@@ -172,13 +184,13 @@ const CustomerForm = ({
       if (error) throw error;
 
       toast.success(
-        isEditing 
-          ? t('messages.customerUpdatedSuccessfully') 
-          : isProfileCompletion 
+        isEditing
+          ? t('messages.customerUpdatedSuccessfully')
+          : isProfileCompletion
             ? t('customers.profileCompletedSuccessfully')
             : t('messages.customerCreatedSuccessfully')
       );
-      
+
       onSuccess(data[0]);
       if (!isProfileCompletion) {
         onClose();
@@ -193,7 +205,7 @@ const CustomerForm = ({
 
   const handleDeleteClick = async () => {
     if (!customer || !checkConstraints) return;
-    
+
     setDeleteLoading(true);
     const constraints = await checkConstraints(customer.id);
     setDeleteConstraints(constraints);
@@ -213,7 +225,7 @@ const CustomerForm = ({
     setDeleteLoading(true);
     const result = await onDelete(customer);
     setDeleteLoading(false);
-    
+
     if (result.success) {
       setShowDeleteConfirm(false);
       setDeleteConstraints([]);
@@ -228,6 +240,139 @@ const CustomerForm = ({
     setDeleteConstraints([]);
   };
 
+  const loadCurrentDocument = async () => {
+    if (!customer || !partnerUuid) return;
+
+    try {
+      const { data: files, error } = await supabase.storage
+        .from('partners')
+        .list(`${partnerUuid}/${customer.customer_uuid}`, {
+          search: 'document_id'
+        });
+
+      if (error || !files || files.length === 0) {
+        return;
+      }
+
+      const docFile = files[0];
+      const extension = docFile.name.split('.').pop();
+      setDocumentType(extension);
+
+      const { data } = supabase.storage
+        .from('partners')
+        .getPublicUrl(`${partnerUuid}/${customer.customer_uuid}/${docFile.name}`);
+
+      setDocumentUrl(data.publicUrl);
+    } catch (error) {
+      logger.error('Error loading document:', error);
+    }
+  };
+
+  const handleDocumentSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileType = file.type;
+    const validTypes = ['application/pdf', 'image/png'];
+
+    if (!validTypes.includes(fileType)) {
+      toast.error(t('customers.documentTypeError'));
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(t('customers.documentSizeError'));
+      return;
+    }
+
+    setDocumentUploading(true);
+
+    try {
+      await uploadDocumentFile(file);
+      toast.success(t('messages.documentUploadedSuccessfully') || 'Document uploaded successfully');
+    } catch (error) {
+      logger.error('Error uploading document:', error);
+      toast.error(t('messages.errorUploadingDocument') || 'Error uploading document');
+    } finally {
+      setDocumentUploading(false);
+    }
+  };
+
+  const uploadDocumentFile = async (file) => {
+    if (!file || !partnerUuid) return;
+
+    const customerUuid = customer?.customer_uuid;
+    if (!customerUuid) {
+      throw new Error('Customer UUID required for document upload');
+    }
+
+    try {
+      // Remove existing document
+      const { data: existingFiles } = await supabase.storage
+        .from('partners')
+        .list(`${partnerUuid}/${customerUuid}`, {
+          search: 'document_id'
+        });
+
+      if (existingFiles && existingFiles.length > 0) {
+        for (const existingFile of existingFiles) {
+          await supabase.storage
+            .from('partners')
+            .remove([`${partnerUuid}/${customerUuid}/${existingFile.name}`]);
+        }
+      }
+    } catch (deleteError) {
+      logger.log('No existing document to delete:', deleteError);
+    }
+
+    const extension = file.type === 'application/pdf' ? 'pdf' : 'png';
+    const fileName = `document_id.${extension}`;
+    const filePath = `${partnerUuid}/${customerUuid}/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from('partners')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+      .from('partners')
+      .getPublicUrl(filePath);
+
+    setDocumentUrl(data.publicUrl);
+    setDocumentType(extension);
+  };
+
+  const handleDocumentRemove = async () => {
+    if (!customer || !partnerUuid) return;
+
+    try {
+      const { data: files } = await supabase.storage
+        .from('partners')
+        .list(`${partnerUuid}/${customer.customer_uuid}`, {
+          search: 'document_id'
+        });
+
+      if (files && files.length > 0) {
+        for (const file of files) {
+          await supabase.storage
+            .from('partners')
+            .remove([`${partnerUuid}/${customer.customer_uuid}/${file.name}`]);
+        }
+      }
+
+      setDocumentUrl(null);
+      setDocumentType(null);
+      toast.success(t('messages.documentRemovedSuccessfully') || 'Document removed successfully');
+    } catch (error) {
+      logger.error('Error removing document:', error);
+      toast.error(t('messages.errorRemovingDocument') || 'Error removing document');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -236,10 +381,10 @@ const CustomerForm = ({
         <div className="modal-container customer-form-modal">
           <div className="modal-header">
             <h2 className="modal-title">
-              {isProfileCompletion 
+              {isProfileCompletion
                 ? t('customers.completeYourProfile')
-                : isEditing 
-                  ? t('customers.editCustomer') 
+                : isEditing
+                  ? t('customers.editCustomer')
                   : t('customers.addCustomer')
               }
             </h2>
@@ -261,30 +406,16 @@ const CustomerForm = ({
           <form onSubmit={handleSubmit} className="modal-form">
             <h3 className="form-section-title">{t('customers.personalInformation')}</h3>
 
-            <div className="form-group">
-              <label htmlFor="company_name" className="form-label">
-                {t('customers.companyName')}
-              </label>
-              <input
-                id="company_name"
-                name="company_name"
-                type="text"
-                className="form-input"
-                placeholder={t('placeholders.companyNamePlaceholder')}
-                value={formData.company_name}
-                onChange={handleChange}
-              />
-            </div>
-
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="first_name" className="form-label">
-                  {t('customers.firstName')}
+                  {t('customers.firstName')} *
                 </label>
                 <input
                   id="first_name"
                   name="first_name"
                   type="text"
+                  required
                   className="form-input"
                   placeholder={t('placeholders.firstNamePlaceholder')}
                   value={formData.first_name}
@@ -293,12 +424,13 @@ const CustomerForm = ({
               </div>
               <div className="form-group">
                 <label htmlFor="second_name" className="form-label">
-                  {t('customers.secondName')}
+                  {t('customers.secondName')} *
                 </label>
                 <input
                   id="second_name"
                   name="second_name"
                   type="text"
+                  required
                   className="form-input"
                   placeholder={t('placeholders.secondNamePlaceholder')}
                   value={formData.second_name}
@@ -325,12 +457,13 @@ const CustomerForm = ({
               </div>
               <div className="form-group">
                 <label htmlFor="phone" className="form-label">
-                  {t('customers.phone')}
+                  {t('customers.phone')} *
                 </label>
                 <input
                   id="phone"
                   name="phone"
                   type="tel"
+                  required
                   className="form-input"
                   placeholder={t('placeholders.phonePlaceholder')}
                   value={formData.phone}
@@ -357,7 +490,7 @@ const CustomerForm = ({
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="customer_type" className="form-label">
-                  {t('customers.type')} *
+                  {t('customers.type')}
                 </label>
                 <Select
                   name="customer_type"
@@ -380,8 +513,8 @@ const CustomerForm = ({
                     value={t(`customers.${formData.customer_status}`)}
                     readOnly
                     disabled
-                    style={{ 
-                      backgroundColor: '#f5f5f5', 
+                    style={{
+                      backgroundColor: '#f5f5f5',
                       cursor: 'not-allowed',
                       color: '#666'
                     }}
@@ -398,72 +531,99 @@ const CustomerForm = ({
               </div>
             </div>
 
-            <h3 className="form-section-title">{t('customers.addressInformation')}</h3>
-            
+            {/* Document ID Upload */}
             <div className="form-group">
-              <label htmlFor="address" className="form-label">
-                {t('customers.address')}
+              <label className="form-label">
+                {t('customers.documentId')}
               </label>
-              <input
-                id="address"
-                name="address"
-                type="text"
-                className="form-input"
-                placeholder={t('placeholders.addressPlaceholder')}
-                value={formData.address}
-                onChange={handleChange}
-              />
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="zip" className="form-label">
-                  {t('customers.zip')}
-                </label>
-                <input
-                  id="zip"
-                  name="zip"
-                  type="text"
-                  className="form-input"
-                  placeholder={t('placeholders.zipPlaceholder')}
-                  value={formData.zip}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="city" className="form-label">
-                  {t('customers.city')}
-                </label>
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  className="form-input"
-                  placeholder={t('placeholders.cityPlaceholder')}
-                  value={formData.city}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="country" className="form-label">
-                  {t('customers.country')}
-                </label>
-                <input
-                  id="country"
-                  name="country"
-                  type="text"
-                  className="form-input"
-                  placeholder={t('placeholders.countryPlaceholder')}
-                  value={formData.country}
-                  onChange={handleChange}
-                />
-              </div>
+              {!documentUrl ? (
+                <div className="document-upload-area">
+                  <input
+                    id="document-upload"
+                    type="file"
+                    accept="application/pdf,image/png"
+                    onChange={handleDocumentSelect}
+                    style={{ display: 'none' }}
+                    disabled={!customer || documentUploading}
+                  />
+                  <label
+                    htmlFor="document-upload"
+                    className={`btn-fc-import ${(!customer || documentUploading) ? 'disabled' : ''}`}
+                    style={{ cursor: (!customer || documentUploading) ? 'not-allowed' : 'pointer' }}
+                  >
+                    <Upload size={16} />
+                    {documentUploading ? t('customers.documentUploading') : t('customers.uploadDocument')}
+                  </label>
+                  {!customer && (
+                    <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>
+                      {t('customers.saveCustomerFirst') || 'Save customer first to upload document'}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="document-preview">
+                  <div className="document-info">
+                    <FileText size={20} style={{ color: '#4f46e5' }} />
+                    <a
+                      href={documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="document-link"
+                    >
+                      {t('customers.viewDocument')} ({documentType?.toUpperCase()})
+                    </a>
+                  </div>
+                  <div className="document-actions">
+                    <label
+                      htmlFor="document-replace"
+                      className="btn-fc-import"
+                      style={{ cursor: documentUploading ? 'not-allowed' : 'pointer' }}
+                    >
+                      <Upload size={16} />
+                      {t('customers.replaceDocument')}
+                    </label>
+                    <input
+                      id="document-replace"
+                      type="file"
+                      accept="application/pdf,image/png"
+                      onChange={handleDocumentSelect}
+                      style={{ display: 'none' }}
+                      disabled={documentUploading}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDocumentRemove}
+                      className="btn-secondary"
+                      disabled={documentUploading}
+                    >
+                      <X size={16} />
+                      {t('customers.removeDocument')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {needsBusinessInfo && (
               <>
                 <h3 className="form-section-title">{t('customers.businessInformation')}</h3>
-                
+
+                <div className="form-group">
+                  <label htmlFor="company_name" className="form-label">
+                    {t('customers.companyName')}
+                  </label>
+                  <input
+                    id="company_name"
+                    name="company_name"
+                    type="text"
+                    className="form-input"
+                    placeholder={t('placeholders.companyNamePlaceholder')}
+                    value={formData.company_name}
+                    onChange={handleChange}
+                  />
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="piva" className="form-label">
@@ -527,7 +687,7 @@ const CustomerForm = ({
                 </div>
 
                 <h3 className="form-section-title">{t('customers.billingInformation')}</h3>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="billing_email" className="form-label">
@@ -652,26 +812,16 @@ const CustomerForm = ({
                   )}
                 </button>
               )}
-              
+
               <div className="modal-actions-right">
-                {!isProfileCompletion && (
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="btn-secondary"
-                    disabled={loading}
-                  >
-                    {t('common.cancel')}
-                  </button>
-                )}
                 <button
                   type="submit"
-                  className="btn-primary-green"
+                  className="btn-primary-purple"
                   disabled={loading}
                 >
-                  {loading 
-                    ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
-                    : isProfileCompletion 
+                  {loading
+                    ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...')
+                    : isProfileCompletion
                       ? t('customers.completeProfile')
                       : (isEditing ? t('common.save') : t('common.create'))
                   }
@@ -687,7 +837,7 @@ const CustomerForm = ({
           <div className="modal-container delete-modal">
             <div className="modal-header">
               <h2 className="modal-title">
-                {deleteConstraints.length > 0 
+                {deleteConstraints.length > 0
                   ? t('customers.cannotDeleteCustomer')
                   : t('customers.confirmDelete')
                 }
@@ -696,7 +846,7 @@ const CustomerForm = ({
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="delete-modal-content">
               {deleteConstraints.length > 0 ? (
                 <>
@@ -716,13 +866,13 @@ const CustomerForm = ({
                 </>
               ) : (
                 <p className="delete-modal-message">
-                  {t('customers.confirmDeleteCustomer', { 
-                    customerName: `${customer?.first_name} ${customer?.second_name}` 
+                  {t('customers.confirmDeleteCustomer', {
+                    customerName: `${customer?.first_name} ${customer?.second_name}`
                   })}
                 </p>
               )}
             </div>
-            
+
             <div className="delete-modal-actions">
               <button
                 className="btn-secondary"
@@ -731,7 +881,7 @@ const CustomerForm = ({
               >
                 {deleteConstraints.length > 0 ? t('common.close') : t('common.cancel')}
               </button>
-              
+
               {deleteConstraints.length === 0 && (
                 <button
                   className="btn-danger"

@@ -9,13 +9,14 @@ import { logActivity } from '../../utils/activityLogger';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
 
+import oneSignalEmailService from '../../services/oneSignalEmailService';
 import logger from '../../utils/logger';
 
-const ContractForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  partnerUuid, 
+const ContractForm = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  partnerUuid,
   isCustomerMode = false,
   customers = [],
   locations = [],
@@ -24,14 +25,14 @@ const ContractForm = ({
 }) => {
   const { profile, user } = useAuth();
   const { t } = useTranslation();
-  
+
   const [formData, setFormData] = useState({
     customer_id: '',
     location_id: '',
     service_id: '',
     start_date: ''
   });
-  
+
   const [availableServices, setAvailableServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -103,8 +104,8 @@ const ContractForm = ({
   useEffect(() => {
     if (formData.location_id) {
       fetchServicesForLocation(formData.location_id);
-      setSelectedLocation(customerLocations.find(loc => loc.id.toString() === formData.location_id) || 
-                         locations.find(loc => loc.id.toString() === formData.location_id));
+      setSelectedLocation(customerLocations.find(loc => loc.id.toString() === formData.location_id) ||
+        locations.find(loc => loc.id.toString() === formData.location_id));
     } else {
       setAvailableServices([]);
       setSelectedLocation(null);
@@ -124,8 +125,8 @@ const ContractForm = ({
   // Check availability when we have service, dates, and it's an abbonamento
   useEffect(() => {
     const endDate = overrideEndDate ? manualEndDate : calculatedEndDate;
-    if (selectedService && formData.start_date && endDate && 
-        selectedService.service_type === 'abbonamento') {
+    if (selectedService && formData.start_date && endDate &&
+      selectedService.service_type === 'abbonamento') {
       checkResourceAvailability();
     } else {
       setAvailabilityStatus(null);
@@ -160,7 +161,7 @@ const ContractForm = ({
 
     try {
       setLoadingEditContract(true);
-      
+
       // Load ALL services for this location first
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
@@ -184,28 +185,28 @@ const ContractForm = ({
       if (!servicesError && servicesData) {
         // Set available services first
         setAvailableServices(servicesData);
-        
+
         // Find and set the selected service
         const selectedSvc = servicesData.find(s => s.id === contractToEdit.service_id);
         if (selectedSvc) {
           setSelectedService(selectedSvc);
-          
+
           // Check if dates or price were manually overridden
           const calculatedEnd = new Date(contractToEdit.start_date);
           calculatedEnd.setDate(calculatedEnd.getDate() + selectedSvc.duration_days);
           const calculatedEndStr = calculatedEnd.toISOString().split('T')[0];
-          
+
           if (contractToEdit.end_date !== calculatedEndStr && canOverride) {
             setOverrideEndDate(true);
             setManualEndDate(contractToEdit.end_date);
           }
-          
+
           if (parseFloat(contractToEdit.service_cost) !== parseFloat(selectedSvc.cost) && canOverride) {
             setOverridePrice(true);
             setManualPrice(contractToEdit.service_cost.toString());
           }
         }
-        
+
         // Store the service_id to be set after services are loaded
         setPendingServiceId(contractToEdit.service_id?.toString() || '');
       }
@@ -281,7 +282,7 @@ const ContractForm = ({
     try {
       const { data, error } = await supabase
         .from('locations')
-        .select('id, location_name')
+        .select('id, location_name, vat_percentage')
         .eq('partner_uuid', partnerUuid)
         .order('location_name');
 
@@ -313,7 +314,8 @@ const ContractForm = ({
             resource_type,
             locations (
               id,
-              location_name
+              location_name,
+              vat_percentage
             )
           )
         `)
@@ -351,11 +353,11 @@ const ContractForm = ({
         setAvailableServices(mockServices);
       } else {
         let filteredServices = data || [];
-        
+
         if (isCustomerMode && hasExistingFreeTrial) {
           filteredServices = filteredServices.filter(service => service.service_type !== 'free_trial');
         }
-        
+
         setAvailableServices(filteredServices);
       }
     } catch (error) {
@@ -506,18 +508,18 @@ const ContractForm = ({
     if (!selectedService || !formData.start_date) return;
 
     const startDate = new Date(formData.start_date);
-    
+
     // For day pass (giornaliero), end date equals start date
     if (selectedService.service_type === 'giornaliero') {
       setCalculatedEndDate(formData.start_date);
       return;
     }
-    
+
     // For other service types, add duration days
     const daysToAdd = Math.ceil(selectedService.duration_days);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + daysToAdd);
-    
+
     setCalculatedEndDate(endDate.toISOString().split('T')[0]);
   };
 
@@ -526,7 +528,7 @@ const ContractForm = ({
     if (!selectedService || !formData.start_date || !endDate) return;
 
     setCheckingAvailability(true);
-    
+
     try {
       // Get the location resource for this service
       const { data: serviceData, error: serviceError } = await supabase
@@ -582,7 +584,7 @@ const ContractForm = ({
           .eq('contract_id', contractToEdit.id)
           .eq('location_resource_id', locationResource.id)
           .single();
-        
+
         if (currentBooking) {
           editExclusion = 1;
         }
@@ -618,7 +620,7 @@ const ContractForm = ({
     if (name === 'service_id') {
       const service = availableServices.find(s => s.id.toString() === value);
       setSelectedService(service);
-      
+
       // Reset price override and discount when service changes
       if (!editMode) {
         setOverridePrice(false);
@@ -653,7 +655,7 @@ const ContractForm = ({
       const startDate = new Date(formData.start_date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       if (startDate < today) {
         toast.error(t('messages.startDateCannotBeInPast'));
         return false;
@@ -708,12 +710,12 @@ const ContractForm = ({
         toast.error(t('messages.availabilityCheckInProgress'));
         return false;
       }
-      
+
       if (!availabilityStatus) {
         toast.error(t('messages.pleaseWaitForAvailabilityCheck'));
         return false;
       }
-      
+
       if (!availabilityStatus.available) {
         toast.error(t('messages.resourceNotAvailable'));
         return false;
@@ -725,7 +727,7 @@ const ContractForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -739,7 +741,7 @@ const ContractForm = ({
     try {
       const finalEndDate = overrideEndDate ? manualEndDate : calculatedEndDate;
       const basePrice = overridePrice ? parseFloat(manualPrice) : selectedService.cost;
-      
+
       // Calculate discount if applied
       const discountCalc = appliedDiscount ? calculateDiscount() : null;
 
@@ -750,7 +752,7 @@ const ContractForm = ({
         partner_uuid: partnerUuid,
         start_date: formData.start_date,
         end_date: finalEndDate,
-        
+
         // Service snapshot
         service_name: selectedService.service_name,
         service_type: selectedService.service_type,
@@ -758,12 +760,12 @@ const ContractForm = ({
         service_currency: selectedService.currency,
         service_duration_days: selectedService.duration_days,
         service_max_entries: selectedService.max_entries,
-        
+
         // Location snapshot
         location_name: selectedLocation?.location_name || 'Unknown Location',
         resource_name: selectedService.location_resources?.resource_name || 'Unknown Resource',
         resource_type: selectedService.location_resources?.resource_type || 'scrivania',
-        
+
         // Discount fields
         discount_code: appliedDiscount ? discountCode.trim().toUpperCase() : null,
         discount_type: appliedDiscount ? appliedDiscount.discount_type : null,
@@ -771,17 +773,17 @@ const ContractForm = ({
         original_price: discountCalc ? discountCalc.originalPrice : null,
         discount_amount: discountCalc ? discountCalc.discountAmount : null,
         final_price: discountCalc ? discountCalc.finalPrice : null,
-        
+
         // Contract settings
         contract_status: 'active',
         is_renewable: selectedService.is_renewable || false,
         auto_renew: selectedService.auto_renew || false,
-        
+
         updated_at: new Date().toISOString()
       };
 
       let result;
-      
+
       if (editMode && contractToEdit) {
         // Update existing contract
         const { data, error } = await supabase
@@ -816,10 +818,10 @@ const ContractForm = ({
 
         // Update booking for abbonamento and free_trial services
         if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
-          const bookingEndDate = selectedService.service_type === 'free_trial' 
+          const bookingEndDate = selectedService.service_type === 'free_trial'
             ? formData.start_date
             : finalEndDate;
-            
+
           await updateBookingForContract(contractToEdit.id, formData.start_date, bookingEndDate);
         }
 
@@ -827,7 +829,7 @@ const ContractForm = ({
         if (appliedDiscount) {
           const oldDiscount = contractToEdit.discount_code;
           const newDiscount = discountCode.trim().toUpperCase();
-          
+
           if (oldDiscount !== newDiscount) {
             if (oldDiscount) {
               await decrementDiscountUsage(oldDiscount);
@@ -902,10 +904,10 @@ const ContractForm = ({
 
         // Create booking for abbonamento and free_trial services
         if (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') {
-          const bookingEndDate = selectedService.service_type === 'free_trial' 
+          const bookingEndDate = selectedService.service_type === 'free_trial'
             ? formData.start_date
             : finalEndDate;
-            
+
           await createBookingForContract(data.id, formData.start_date, bookingEndDate);
         }
 
@@ -939,6 +941,20 @@ const ContractForm = ({
         });
 
         toast.success(t('messages.contractCreatedSuccessfully'));
+
+        // Send contract creation email to customer
+        try {
+          logger.log('📧 Attempting to send contract creation email...');
+          const emailSent = await oneSignalEmailService.sendContractCreationEmail(result, t);
+          if (emailSent) {
+            logger.log('✅ Contract creation email sent successfully');
+          } else {
+            logger.warn('⚠️ Failed to send contract creation email (non-blocking)');
+          }
+        } catch (emailError) {
+          logger.error('Error sending contract creation email:', emailError);
+          // Don't block contract creation if email fails
+        }
       }
 
       onSuccess(result);
@@ -1093,9 +1109,7 @@ const ContractForm = ({
     return types[type] || type;
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🖥️' : '🏢';
-  };
+
 
   const getFinalPrice = () => {
     const discountCalc = appliedDiscount ? calculateDiscount() : null;
@@ -1147,17 +1161,11 @@ const ContractForm = ({
           </div>
 
           <div className="confirmation-content">
-            <div className="confirmation-warning">
-              <AlertTriangle size={24} className="warning-icon" />
-              <div className="warning-text">
-                <h3>{t('contracts.importantNotice')}</h3>
-                <p>{editMode ? t('contracts.contractUpdateWarning') : t('contracts.contractImmutableWarning')}</p>
-              </div>
-            </div>
+
 
             <div className="contract-summary">
               <h4>{editMode ? t('contracts.updateSummary') : t('contracts.contractSummary')}</h4>
-              
+
               {!isCustomerMode && (
                 <div className="summary-item">
                   <span className="summary-label">{t('contracts.customer')}:</span>
@@ -1167,35 +1175,34 @@ const ContractForm = ({
                   </span>
                 </div>
               )}
-              
+
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.location')}:</span>
                 <span className="summary-value">{selectedLocation?.location_name}</span>
               </div>
-              
+
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.service')}:</span>
                 <span className="summary-value">
                   {selectedService?.service_name} ({getServiceTypeLabel(selectedService?.service_type)})
                 </span>
               </div>
-              
+
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.resource')}:</span>
                 <span className="summary-value">
-                  {getResourceTypeIcon(selectedService?.location_resources?.resource_type)} {' '}
                   {selectedService?.location_resources?.resource_name}
                 </span>
               </div>
-              
+
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.period')}:</span>
                 <span className="summary-value">
-                  {formatDateDDMMYYYY(formData.start_date)} - {formatDateDDMMYYYY(getFinalEndDate())} 
+                  {formatDateDDMMYYYY(formData.start_date)} - {formatDateDDMMYYYY(getFinalEndDate())}
                   {overrideEndDate && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customDuration')})</span>}
                 </span>
               </div>
-              
+
               {discountCalc && (
                 <>
                   <div className="summary-item">
@@ -1211,24 +1218,39 @@ const ContractForm = ({
                   </div>
                 </>
               )}
-              
+
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.cost')}:</span>
-                <span className="summary-value cost">
-                  {formatCurrency(getFinalPrice(), selectedService?.currency)}
-                  {overridePrice && <span style={{ color: '#f59e0b', marginLeft: '0.5rem' }}>({t('contracts.customPrice')})</span>}
-                </span>
+                <div className="price-breakdown-confirmation" style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ fontWeight: 'normal', color: '#6b7280' }}>{t('contracts.baseAmount') || 'Imponibile'}:</span>
+                    <span>{formatCurrency(getFinalPrice(), selectedService?.currency)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ fontWeight: 'normal', color: '#6b7280' }}>
+                      {t('contracts.vat') || 'IVA'} ({selectedService?.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22}%):
+                    </span>
+                    <span>
+                      {formatCurrency(
+                        getFinalPrice() *
+                        ((selectedService?.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100),
+                        selectedService?.currency
+                      )}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e5e7eb', paddingTop: '0.25rem', marginTop: '0.25rem', fontWeight: 600 }}>
+                    <span style={{ color: '#111827' }}>{t('contracts.total') || 'Totale'}:</span>
+                    <span style={{ color: '#4f46e5' }}>
+                      {formatCurrency(
+                        getFinalPrice() *
+                        (1 + ((selectedService?.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100)),
+                        selectedService?.currency
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
-
-              <p style={{ 
-                fontSize: '0.75rem', 
-                color: '#6b7280', 
-                fontStyle: 'italic', 
-                marginTop: '0.25rem',
-                marginBottom: 0
-              }}>
-                +IVA se applicabile
-              </p>
+              <p style={{ display: 'none' }}></p>
 
               {selectedService?.service_type === 'pacchetto' && selectedService?.max_entries && (
                 <div className="summary-item">
@@ -1250,7 +1272,7 @@ const ContractForm = ({
               <button
                 type="button"
                 onClick={handleConfirmContract}
-                className="btn-primary-green"
+                className="btn-contract-modal-primary"
                 disabled={loading}
               >
                 {loading ? (
@@ -1353,21 +1375,13 @@ const ContractForm = ({
                   handleChange({ target: { name: 'service_id', value } });
                 }}
                 options={serviceOptions}
-                placeholder={!formData.location_id 
+                placeholder={!formData.location_id
                   ? t('contracts.selectLocationFirst')
                   : t('contracts.selectService')
                 }
                 emptyMessage={t('common.noResultsFound')}
               />
-              <p style={{ 
-                fontSize: '0.8125rem', 
-                color: '#6b7280', 
-                fontStyle: 'italic', 
-                marginTop: '0.375rem',
-                marginBottom: 0 
-              }}>
-                {t('contracts.pricesExcludeVAT')}
-              </p>
+              <p style={{ display: 'none' }}></p>
             </div>
 
             {selectedService && (
@@ -1384,7 +1398,6 @@ const ContractForm = ({
                   <div className="service-detail-item">
                     <span className="detail-label">{t('contracts.resource')}:</span>
                     <span className="detail-value">
-                      {getResourceTypeIcon(selectedService.location_resources?.resource_type)} {' '}
                       {selectedService.location_resources?.resource_name}
                     </span>
                   </div>
@@ -1413,6 +1426,16 @@ const ContractForm = ({
                     </span>
                   </div>
                 </div>
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: '#6b7280',
+                  fontStyle: 'italic',
+                  marginTop: '-0.25rem',
+                  marginBottom: '0.5rem',
+                  textAlign: 'right'
+                }}>
+                  {t('contracts.pricesExcludeVAT')}
+                </p>
               </div>
             )}
           </div>
@@ -1423,11 +1446,13 @@ const ContractForm = ({
               <div className="form-group">
                 <label htmlFor="discount_code" className="form-label">
                   {t('contracts.discountCode')} ({t('common.optional')})
+                  {/*
                   {!canOverride && isCustomerMode && (
                     <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal', marginLeft: '0.5rem' }}>
                       ({t('contracts.askPartnerForCode') || 'Ask your partner for discount codes'})
                     </span>
                   )}
+                  */}
                 </label>
                 <input
                   id="discount_code"
@@ -1507,28 +1532,10 @@ const ContractForm = ({
           {canOverride && selectedService && !appliedDiscount && (
             <div className="form-section-clean">
               <div className="form-group">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <label className="form-label" style={{ marginBottom: 0 }}>
-                    {t('contracts.price')}
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: 0 }}>
-                    <input
-                      type="checkbox"
-                      checked={overridePrice}
-                      onChange={(e) => {
-                        setOverridePrice(e.target.checked);
-                        if (!e.target.checked) {
-                          setManualPrice('');
-                        } else {
-                          setManualPrice(selectedService.cost.toString());
-                        }
-                      }}
-                      style={{ width: 'auto', margin: 0 }}
-                    />
-                    <span>{t('contracts.overridePrice')}</span>
-                  </label>
-                </div>
-                
+                <label className="form-label">
+                  {t('contracts.price')}
+                </label>
+
                 {overridePrice ? (
                   <input
                     type="number"
@@ -1548,6 +1555,56 @@ const ContractForm = ({
                     style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                   />
                 )}
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={overridePrice}
+                    onChange={(e) => {
+                      setOverridePrice(e.target.checked);
+                      if (!e.target.checked) {
+                        setManualPrice('');
+                      } else {
+                        setManualPrice(selectedService.cost.toString());
+                      }
+                    }}
+                    style={{ width: 'auto', margin: 0 }}
+                  />
+                  <span>{t('contracts.overridePrice')}</span>
+                </label>
+              </div>
+
+              {/* VAT Calculation Display */}
+              <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
+                  <span style={{ color: '#6b7280' }}>{t('contracts.baseAmount') || 'Prezzo Netto'}:</span>
+                  <span>{formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                  <span style={{ color: '#6b7280' }}>
+                    {t('contracts.vat') || 'IVA'} ({selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22}%):
+                  </span>
+                  <span>
+                    {formatCurrency(
+                      (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
+                      ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100),
+                      selectedService.currency
+                    )}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', paddingTop: '0.5rem', fontWeight: 600 }}>
+                  <span style={{ color: '#111827' }}>{t('contracts.total') || 'Totale'}:</span>
+                  <span style={{ color: '#4f46e5' }}>
+                    {formatCurrency(
+                      (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
+                      (1 + ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100)),
+                      selectedService.currency
+                    )}
+                  </span>
+                </div>
+
               </div>
             </div>
           )}
@@ -1559,44 +1616,24 @@ const ContractForm = ({
                 <label htmlFor="start_date" className="form-label">
                   {t('contracts.startDate')} *
                 </label>
-                  <input
-                    id="start_date"
-                    name="start_date"
-                    type="date"
-                    required
-                    className="form-input"
-                    value={formData.start_date}
-                    onChange={handleChange}
-                    min={!isCustomerMode || editMode ? undefined : new Date().toISOString().split('T')[0]}
-                  />
+                <input
+                  id="start_date"
+                  name="start_date"
+                  type="date"
+                  required
+                  className="form-input"
+                  value={formData.start_date}
+                  onChange={handleChange}
+                  min={!isCustomerMode || editMode ? undefined : new Date().toISOString().split('T')[0]}
+                />
               </div>
-              
+
               {/* REPLACE THE END DATE SECTION WITH THIS */}
               <div className="form-group">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <label className="form-label" style={{ marginBottom: 0 }}>
-                    {t('contracts.endDate')} *
-                  </label>
-                  {canOverride && selectedService?.service_type !== 'giornaliero' && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: 0 }}>
-                      <input
-                        type="checkbox"
-                        checked={overrideEndDate}
-                        onChange={(e) => {
-                          setOverrideEndDate(e.target.checked);
-                          if (!e.target.checked) {
-                            setManualEndDate('');
-                          } else if (calculatedEndDate) {
-                            setManualEndDate(calculatedEndDate);
-                          }
-                        }}
-                        style={{ width: 'auto', margin: 0 }}
-                      />
-                      <span>{t('contracts.customEndDate')}</span>
-                    </label>
-                  )}
-                </div>
-                
+                <label className="form-label">
+                  {t('contracts.endDate')} *
+                </label>
+
                 {canOverride && overrideEndDate && selectedService?.service_type !== 'giornaliero' ? (
                   <input
                     type="date"
@@ -1614,11 +1651,30 @@ const ContractForm = ({
                     style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                   />
                 )}
-                
+
+                {canOverride && selectedService?.service_type !== 'giornaliero' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={overrideEndDate}
+                      onChange={(e) => {
+                        setOverrideEndDate(e.target.checked);
+                        if (!e.target.checked) {
+                          setManualEndDate('');
+                        } else if (calculatedEndDate) {
+                          setManualEndDate(calculatedEndDate);
+                        }
+                      }}
+                      style={{ width: 'auto', margin: 0 }}
+                    />
+                    <span>{t('contracts.customEndDate')}</span>
+                  </label>
+                )}
+
                 {selectedService?.service_type === 'giornaliero' && calculatedEndDate && (
-                  <p style={{ 
-                    fontSize: '0.8125rem', 
-                    color: '#059669', 
+                  <p style={{
+                    fontSize: '0.8125rem',
+                    color: '#059669',
                     marginTop: '0.375rem',
                     marginBottom: 0,
                     fontStyle: 'italic'
@@ -1633,7 +1689,14 @@ const ContractForm = ({
 
             {!overrideEndDate && calculatedEndDate && (
               <div className="date-calculation">
-                <p className="calculation-note">
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: '#6b7280',
+                  fontStyle: 'italic',
+                  marginTop: '-0.25rem',
+                  marginBottom: '0.5rem',
+                  textAlign: 'right'
+                }}>
                   {t('contracts.endDateCalculated')}
                 </p>
               </div>
@@ -1687,15 +1750,15 @@ const ContractForm = ({
             </button>
             <button
               type="submit"
-              className="btn-primary-green"
+              className="btn-contract-modal-primary"
               disabled={loading || !getFinalEndDate()}
             >
               {editMode ? t('contracts.reviewUpdate') : t('contracts.reviewContract')}
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </form >
+      </div >
+    </div >
   );
 };
 

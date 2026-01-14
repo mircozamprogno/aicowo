@@ -1,4 +1,3 @@
-
 /* ===== CSS Variables ===== */
 :root {
   /* Colors */
@@ -10,7 +9,7 @@
   --color-danger-dark: #b91c1c;
   --color-warning: #f59e0b;
   --color-warning-dark: #d97706;
-  
+
   /* Grays */
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
@@ -20,7 +19,7 @@
   --color-gray-500: #6b7280;
   --color-gray-600: #374151;
   --color-gray-900: #111827;
-  
+
   /* Status Colors */
   --color-success-bg: #dcfce7;
   --color-success-text: #166534;
@@ -30,20 +29,20 @@
   --color-warning-text: #92400e;
   --color-info-bg: #dbeafe;
   --color-info-text: #1e40af;
-  
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
-  
+
   /* Border Radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-full: 9999px;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -142,13 +141,13 @@
   flex-shrink: 0;
 }
 
-/* ===== Standardized Outlined Buttons ===== */
+/* ===== Standardized Purple Buttons ===== */
 .add-contract-btn {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  border: 2px solid var(--color-primary);
-  background-color: var(--color-primary);
+  border: 2px solid #4f46e5;
+  background-color: #4f46e5;
   color: white;
   border-radius: 8px;
   font-size: 13px;
@@ -159,9 +158,46 @@
 }
 
 .add-contract-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
+  background-color: #4338ca;
+  border-color: #4338ca;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+}
+
+.add-contract-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Specific Contract Primary Button - Purple Theme */
+.btn-contract-modal-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-contract-modal-primary:hover:not(:disabled) {
+  background-color: #4338ca;
+  transform: translateY(-1px);
+}
+
+.btn-contract-modal-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-contract-modal-primary:focus {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
 }
 
 .add-contract-btn:disabled,
@@ -407,6 +443,7 @@ button.btn-primary:hover:not(:disabled) {
 .service-type-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-xs);
   padding: 0.125rem var(--spacing-sm);
   font-size: 0.75rem;
@@ -414,6 +451,7 @@ button.btn-primary:hover:not(:disabled) {
   border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center;
 }
 
 .status-active,
@@ -535,6 +573,11 @@ button.btn-primary:hover:not(:disabled) {
   align-items: flex-start;
 }
 
+.contract-info {
+  min-width: 180px;
+  max-width: 220px;
+}
+
 .contract-number,
 .customer-name,
 .service-name,
@@ -545,6 +588,7 @@ button.btn-primary:hover:not(:disabled) {
 
 .contract-number {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
 }
 
 .contract-created,
@@ -872,15 +916,18 @@ button.btn-primary:hover:not(:disabled) {
 
 /* ===== Animations ===== */
 @keyframes spin {
-  to { 
-    transform: rotate(360deg); 
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @keyframes pulse-danger {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
   }
@@ -891,6 +938,7 @@ button.btn-primary:hover:not(:disabled) {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -937,7 +985,7 @@ button.btn-primary:hover:not(:disabled) {
     width: 100%;
     gap: 8px;
   }
-  
+
   .export-csv-btn,
   .add-contract-btn,
   .archived-contracts-btn,
@@ -1008,13 +1056,15 @@ button.btn-primary:hover:not(:disabled) {
 /* ===== CRITICAL FIX: Header Layout ===== */
 .contracts-header {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
+  /* Stack vertically */
   gap: var(--spacing-md);
   width: 100%;
 }
 
 .contracts-header-content {
-  width: 100%; /* FULL WIDTH */
+  width: 100%;
+  /* FULL WIDTH */
   display: flex;
   flex-direction: column;
 }
@@ -1025,11 +1075,13 @@ button.btn-primary:hover:not(:disabled) {
   flex-direction: row;
   gap: 1rem;
   margin-top: 1rem;
-  width: 100%; /* FULL WIDTH */
+  width: 100%;
+  /* FULL WIDTH */
 }
 
 .stat-item {
-  flex: 1; /* Equal width distribution */
+  flex: 1;
+  /* Equal width distribution */
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1066,7 +1118,8 @@ button.btn-primary:hover:not(:disabled) {
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
-  justify-content: flex-start; /* Align left like filters */
+  justify-content: flex-start;
+  /* Align left like filters */
   width: 100%;
 }
 
@@ -1190,7 +1243,7 @@ button.btn-primary:hover:not(:disabled) {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .add-contract-btn,
   .export-csv-btn,
   .archived-contracts-btn,
@@ -1250,8 +1303,10 @@ button.btn-primary:hover:not(:disabled) {
   gap: 12px;
   align-items: center;
   justify-content: flex-end;
-  flex-shrink: 1; /* Allow shrinking */
-  max-width: 65%; /* Constrain to reasonable width */
+  flex-shrink: 1;
+  /* Allow shrinking */
+  max-width: 65%;
+  /* Constrain to reasonable width */
 }
 
 /* ===== Stats Cards - FULL WIDTH ===== */
@@ -1343,7 +1398,7 @@ button.btn-primary:hover:not(:disabled) {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .add-contract-btn,
   .export-csv-btn,
   .archived-contracts-btn,
@@ -1371,8 +1426,10 @@ button.btn-primary:hover:not(:disabled) {
 /* ===== FIXED: Header Actions - ONE ROW ===== */
 .contracts-header-actions {
   display: flex;
-  flex-wrap: nowrap; /* NO WRAPPING! */
-  gap: 8px; /* Smaller gap */
+  flex-wrap: nowrap;
+  /* NO WRAPPING! */
+  gap: 8px;
+  /* Smaller gap */
   align-items: center;
   justify-content: flex-end;
   flex-shrink: 1;
@@ -1386,30 +1443,45 @@ button.btn-primary:hover:not(:disabled) {
 .renewal-logs-btn {
   display: flex;
   align-items: center;
-  padding: 8px 12px; /* Smaller padding */
+  padding: 8px 12px;
+  /* Smaller padding */
   border: 2px solid;
-  background-color: transparent;
   border-radius: 8px;
-  font-size: 13px; /* Slightly smaller font */
+  font-size: 13px;
+  /* Slightly smaller font */
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0;
+  /* Don't shrink */
 }
 
-.add-contract-btn,
+.add-contract-btn {
+  background-color: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
 .export-csv-btn {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background-color: transparent;
+  border-color: #4f46e5;
+  color: #4f46e5;
 }
 
-.add-contract-btn:hover:not(:disabled),
-.export-csv-btn:hover:not(:disabled) {
-  background-color: var(--color-primary);
+.add-contract-btn:hover:not(:disabled) {
+  background-color: #4338ca;
+  border-color: #4338ca;
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.export-csv-btn:hover:not(:disabled) {
+  background-color: #4f46e5;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
 
 .archived-contracts-btn {
@@ -1458,27 +1530,11 @@ button.btn-primary:hover:not(:disabled) {
   background-color: transparent;
 }
 
-/* Make Crea Contratto button full green  */
-
-.add-contract-btn {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  border: 2px solid var(--color-primary);
-  background-color: var(--color-primary);
-  color: white;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
 .add-contract-btn:hover:not(:disabled) {
-  background-color: var(--color-primary-dark);
+  background-color: #4338ca;
+  border-color: #4338ca;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
 }
 
 /* ===== Action Menu Dropdown Fix - COMPLETE ===== */
@@ -1489,7 +1545,8 @@ button.btn-primary:hover:not(:disabled) {
   font-size: 0.875rem;
   color: var(--color-gray-900);
   vertical-align: top;
-  overflow: visible !important; /* CRITICAL */
+  overflow: visible !important;
+  /* CRITICAL */
   position: relative;
 }
 
@@ -1571,4 +1628,162 @@ button.btn-primary:hover:not(:disabled) {
   color: var(--color-gray-900);
   vertical-align: top;
   position: relative;
+}
+
+/* ===== Customer View Mobile Modifications ===== */
+@media (max-width: 768px) {
+
+  .contracts-page-customer .contracts-table th:nth-child(2),
+  .contracts-page-customer .contracts-table td:nth-child(2),
+  .contracts-page-customer .contracts-table th:nth-child(4),
+  .contracts-page-customer .contracts-table td:nth-child(4) {
+    display: none;
+  }
+}
+
+/* ===== Mobile Card View ===== */
+.contracts-mobile-list {
+  display: none;
+  /* Hidden by default on desktop */
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.contract-card {
+  background-color: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.contract-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.contract-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.contract-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.contract-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+
+.card-label {
+  color: var(--color-gray-500);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.contract-card-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-gray-100);
+  width: 100%;
+  flex-wrap: nowrap;
+  /* Prevent stacking */
+}
+
+.contract-card-actions .action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  color: var(--color-gray-700);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+  /* Prevent text wrapping */
+}
+
+.contract-card-actions .action-btn:hover {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+.contract-card-actions .package-booking-btn {
+  background-color: transparent;
+  /* Removed green background */
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.contract-card-actions .package-booking-btn:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Media Query for Mobile */
+@media (max-width: 768px) {
+  .contracts-table-container {
+    display: none;
+    /* Hide table on mobile */
+  }
+
+  .contracts-mobile-list {
+    display: flex;
+    /* Show cards on mobile */
+  }
+
+  /* Adjust header for mobile */
+  .contracts-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .contracts-header-actions {
+    justify-content: flex-start;
+  }
+
+  .contracts-stats {
+    flex-direction: column;
+    /* Stack stats on mobile */
+  }
+
+  /* Force stat items to be row-based if stacked */
+  .stat-item {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    text-align: left;
+  }
+
+  .stat-label {
+    margin-bottom: 0;
+  }
+}
+
+/* Fix for double-box in booking confirmation */
+.availability-success,
+.availability-error {
+  background: transparent !important;
+  border: none !important;
 }

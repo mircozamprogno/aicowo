@@ -16,11 +16,11 @@ export const LanguageProvider = ({ children }) => {
   const t = (keyPath, interpolationValues = {}) => {
     const keys = keyPath.split('.');
     let value = translations[currentLanguage];
-    
+
     for (const key of keys) {
       value = value?.[key];
     }
-    
+
     // Fallback to English if translation not found
     if (!value) {
       value = translations.en;
@@ -28,19 +28,19 @@ export const LanguageProvider = ({ children }) => {
         value = value?.[key];
       }
     }
-    
+
     // If no translation found, return the keyPath
     if (!value) {
       return keyPath;
     }
-    
+
     // Handle interpolation
     if (typeof value === 'string' && Object.keys(interpolationValues).length > 0) {
       return value.replace(/\{\{(\w+)\}\}/g, (match, key) => {
         return interpolationValues[key] !== undefined ? interpolationValues[key] : match;
       });
     }
-    
+
     return value;
   };
 

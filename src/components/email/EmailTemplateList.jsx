@@ -1,5 +1,5 @@
 // src/components/email/EmailTemplateList.jsx
-import { Bell, CheckCircle, ChevronRight, Mail, Shield, UserPlus } from 'lucide-react';
+import { Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Shield, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -26,6 +26,18 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.confirmationEmail',
     descriptionKey: 'emailTemplates.confirmationEmailDescription',
     icon: 'Mail'
+  },
+  expiry_reminder: {
+    id: 'expiry_reminder',
+    nameKey: 'emailTemplates.expiryReminder',
+    descriptionKey: 'emailTemplates.expiryReminderDescription',
+    icon: 'Clock'
+  },
+  contract_creation: {
+    id: 'contract_creation',
+    nameKey: 'emailTemplates.contractCreation',
+    descriptionKey: 'emailTemplates.contractCreationDescription',
+    icon: 'FileText'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
@@ -46,8 +58,8 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
   const [loading, setLoading] = useState(true);
 
   // Select the appropriate template configs based on mode
-  const TEMPLATE_CONFIGS = mode === 'superadmin' 
-    ? SUPERADMIN_TEMPLATE_CONFIGS 
+  const TEMPLATE_CONFIGS = mode === 'superadmin'
+    ? SUPERADMIN_TEMPLATE_CONFIGS
     : PARTNER_TEMPLATE_CONFIGS;
 
   useEffect(() => {
@@ -86,7 +98,9 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       Shield: Shield,
       CheckCircle: CheckCircle,
       Bell: Bell,
-      Mail: Mail
+      Mail: Mail,
+      Clock: Clock,
+      FileText: FileText
     };
     const Icon = icons[iconName] || UserPlus;
     return <Icon size={24} />;
@@ -97,7 +111,7 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
     if (!config) return;
 
     const dbTemplate = templates.find(t => t.template_type === templateType);
-    
+
     setSelectedTemplate({
       ...config,
       dbId: dbTemplate?.id,
@@ -139,7 +153,7 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
           {t('emailTemplates.manageTemplates')}
         </h3>
         <p className="email-template-list-description">
-          {mode === 'superadmin' 
+          {mode === 'superadmin'
             ? t('emailTemplates.manageSuperadminTemplatesDescription')
             : t('emailTemplates.manageTemplatesDescription')
           }
@@ -149,7 +163,7 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       <div className="template-cards">
         {Object.entries(TEMPLATE_CONFIGS).map(([templateType, config]) => {
           const dbTemplate = templates.find(t => t.template_type === templateType);
-          
+
           return (
             <div
               key={templateType}
@@ -163,16 +177,7 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
                 <h4 className="template-card-title">
                   {t(config.nameKey)}
                   {dbTemplate && (
-                    <span style={{
-                      display: 'inline-block',
-                      marginLeft: '0.5rem',
-                      padding: '0.125rem 0.5rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '500',
-                      color: '#16a34a',
-                      backgroundColor: '#dcfce7',
-                      borderRadius: '9999px'
-                    }}>
+                    <span className="template-customized-badge">
                       Customized
                     </span>
                   )}

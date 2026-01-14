@@ -6,8 +6,8 @@ import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
 
-const NotificationModal = ({ 
-  notifications = [], 
+const NotificationModal = ({
+  notifications = [],
   currentIndex = 0,
   mode = 'read', // 'auto-open', 'read', 'preview'
   onClose,
@@ -16,7 +16,7 @@ const NotificationModal = ({
 }) => {
   const { t } = useTranslation();
   const [acknowledging, setAcknowledging] = useState(false);
-  
+
   if (!notifications || notifications.length === 0) return null;
 
   const notification = notifications[currentIndex];
@@ -28,11 +28,11 @@ const NotificationModal = ({
 
   const getTypeInfo = (type) => {
     const types = {
-      promotion: { label: t('notifications.types.promotion'), color: '#16a34a' },
+      promotion: { label: t('notifications.types.promotion'), color: '#4f46e5' },
       announcement: { label: t('notifications.types.announcement'), color: '#3b82f6' },
       release_note: { label: t('notifications.types.releaseNote'), color: '#8b5cf6' },
       alert: { label: t('notifications.types.alert'), color: '#f97316' },
-      new_location: { label: t('notifications.types.newLocation'), color: '#16a34a' }
+      new_location: { label: t('notifications.types.newLocation'), color: '#4f46e5' }
     };
     return types[type] || { label: type, color: '#6b7280' };
   };
@@ -50,7 +50,7 @@ const NotificationModal = ({
       if (onAcknowledge) {
         await onAcknowledge(notification.id);
       }
-      
+
       // If there are more notifications in auto-open mode, navigate to next
       if (isAutoOpen && canGoNext) {
         onNavigate?.(currentIndex + 1);
@@ -85,7 +85,7 @@ const NotificationModal = ({
             {t('notifications.previewMode')}
           </div>
         )}
-        
+
         <div className="notification-modal-header">
           <div className="notification-modal-type" style={{ backgroundColor: typeInfo.color }}>
             {typeInfo.label}
@@ -94,7 +94,7 @@ const NotificationModal = ({
         </div>
 
         <div className="notification-modal-body">
-          <div 
+          <div
             className="notification-modal-content"
             dangerouslySetInnerHTML={{ __html: notification.message }}
           />
@@ -124,7 +124,7 @@ const NotificationModal = ({
               </button>
             </div>
           )}
-          
+
           <button
             onClick={handleAcknowledge}
             disabled={acknowledging}

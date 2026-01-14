@@ -39,7 +39,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
 
   useEffect(() => {
     loadTemplates();
-    
+
     if (editNotification) {
       populateForm(editNotification);
     } else {
@@ -47,7 +47,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
       const now = new Date();
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 30);
-      
+
       setValidFrom(formatDateTimeLocal(now));
       setValidUntil(formatDateTimeLocal(futureDate));
     }
@@ -68,13 +68,13 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
     setNotificationType(notification.notification_type);
     setValidFrom(formatDateTimeLocal(new Date(notification.valid_from)));
     setValidUntil(formatDateTimeLocal(new Date(notification.valid_until)));
-    
+
     // Load recipients
     const { data: recipients } = await supabase
       .from('notification_recipients')
       .select('recipient_uuid, recipient_type')
       .eq('notification_id', notification.id);
-    
+
     if (recipients) {
       setSelectedRecipients(recipients.map(r => ({
         uuid: r.recipient_uuid,
@@ -110,7 +110,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
 
   const handleTemplateSelect = (templateId) => {
     setSelectedTemplate(templateId);
-    
+
     const template = templates.find(t => t.id === templateId);
     if (template) {
       setTitle(template.title_template);
@@ -148,7 +148,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
 
     setSaving(true);
     try {
-        const notificationData = {
+      const notificationData = {
         title,
         message,
         notification_type: notificationType,
@@ -159,7 +159,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
         creator_role: profile.role,
         partner_uuid: isSuperadmin ? null : profile.partner_uuid,
         template_id: selectedTemplate || null
-        };
+      };
 
       let notificationId;
 
@@ -207,25 +207,25 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
       }
 
       // Activity log
-        await logActivity({
+      await logActivity({
         action_category: ACTIVITY_CATEGORIES.NOTIFICATION,
         action_type: editNotification ? ACTIVITY_ACTIONS.UPDATED : ACTIVITY_ACTIONS.CREATED,
         entity_id: notificationId,
         entity_type: 'notification',
-        description: editNotification 
-            ? `Notification "${title}" updated with status: ${status}`
-            : `Notification "${title}" created with status: ${status}`,
+        description: editNotification
+          ? `Notification "${title}" updated with status: ${status}`
+          : `Notification "${title}" created with status: ${status}`,
         metadata: {
-            notification_id: notificationId,
-            status,
-            recipients_count: selectedRecipients.length,
-            notification_type: notificationType
+          notification_id: notificationId,
+          status,
+          recipients_count: selectedRecipients.length,
+          notification_type: notificationType
         }
-        });
+      });
 
       toast.success(
-        status === 'published' 
-          ? t('notifications.notificationPublished') 
+        status === 'published'
+          ? t('notifications.notificationPublished')
           : t('notifications.notificationSavedAsDraft')
       );
 
@@ -249,7 +249,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
     setNotificationType('announcement');
     setSelectedRecipients([]);
     setSelectedTemplate('');
-    
+
     const now = new Date();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
@@ -423,7 +423,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
             </button>
             <button
               onClick={() => handleSave('published')}
-              className="btn-primary"
+              className="btn-notification-primary"
               disabled={saving}
             >
               {saving ? (
@@ -441,7 +441,7 @@ const CreateNotification = ({ editNotification = null, onSaved, onCancel }) => {
           </div>
         </div>
 
-        
+
       </div>
 
       {showPreviewModal && (

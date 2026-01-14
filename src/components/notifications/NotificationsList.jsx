@@ -118,7 +118,7 @@ const NotificationsList = () => {
     if (!notification.isRead) {
       try {
         const userUuid = profile.role === 'user' ? profile.id : profile.partner_uuid;
-        
+
         await supabase
           .from('notification_views')
           .upsert({
@@ -154,11 +154,11 @@ const NotificationsList = () => {
 
   const getTypeColor = (type) => {
     const colors = {
-      promotion: '#16a34a',
+      promotion: '#4f46e5',
       announcement: '#3b82f6',
       release_note: '#8b5cf6',
       alert: '#f97316',
-      new_location: '#16a34a'
+      new_location: '#4f46e5'
     };
     return colors[type] || '#6b7280';
   };
@@ -241,7 +241,7 @@ const NotificationsList = () => {
               { value: '100', label: '100 / ' + t('common.page') }
             ]}
           />
-          
+
           {totalPages > 1 && (
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <button
@@ -286,7 +286,7 @@ const NotificationsList = () => {
                 onClick={() => handleNotificationClick(notification)}
               >
                 {!notification.isRead && <div className="notification-unread-dot"></div>}
-                
+
                 <div className="notification-item-icon" style={{ backgroundColor: typeColor }}>
                   <TypeIcon size={20} />
                 </div>

@@ -16,9 +16,11 @@ import Partners from '../../pages/Partners';
 import PhotoGallery from '../../pages/PhotoGallery';
 import PlanFeatures from '../../pages/PlanFeatures';
 import PricingPlans from '../../pages/PricingPlans';
+import PrivacyPolicy from '../../pages/PrivacyPolicy';
 import Services from '../../pages/Services';
 import Settings from '../../pages/Settings';
 import SuperAdminEmailTemplates from '../../pages/SuperAdminEmailTemplates';
+import TermsOfService from '../../pages/TermsOfService';
 
 import AllPartnersBilling from '../../pages/AllPartnersBilling';
 import PartnerBillingHistory from '../../pages/PartnerBillingHistory';
@@ -34,6 +36,7 @@ import Register from '../auth/Register';
 import ResetPassword from '../auth/ResetPassword';
 import ProtectedRoute from './ProtectedRoute';
 // Add these imports
+import ContractFormPage from '../../pages/ContractFormPage';
 import CustomersDiscountCodes from '../../pages/CustomersDiscountCodes';
 import PartnerDiscountCodes from '../../pages/PartnerDiscountCodes';
 
@@ -41,7 +44,7 @@ const Router = () => {
   const [currentPath, setCurrentPath] = useState(() => {
     return window.location.hash.slice(1) || '/login';
   });
-  
+
   const { user, loading, isPasswordRecovery } = useAuth();
 
   useEffect(() => {
@@ -59,13 +62,13 @@ const Router = () => {
   const isRecoveryFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    
+
     // Check for various recovery indicators
     const isRecoveryType = urlParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
     const hasAccessToken = urlParams.get('access_token') || hashParams.get('access_token');
     const hasError = urlParams.get('error') || hashParams.get('error');
     const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
-    
+
     logger.log('=== RECOVERY FLOW DEBUG ===');
     logger.log('Full URL:', window.location.href);
     logger.log('Hash:', window.location.hash);
@@ -76,7 +79,7 @@ const Router = () => {
     logger.log('Error code:', errorCode);
     logger.log('isPasswordRecovery from context:', isPasswordRecovery);
     logger.log('==========================');
-    
+
     // Return true if any recovery indicator is present
     return isRecoveryType || hasAccessToken || isPasswordRecovery || (hasError && errorCode === 'otp_expired');
   };
@@ -102,9 +105,12 @@ const Router = () => {
     }
 
     // Special handling for invitation registration and password reset - don't redirect if user is on these pages
-    if (currentPath.startsWith('/invitation-register') || 
-        currentPath.startsWith('/reset-password') || 
-        currentPath.startsWith('/ResetPassword')) {
+    if (currentPath.startsWith('/invitation-register') ||
+      currentPath.startsWith('/reset-password') ||
+      currentPath.startsWith('/ResetPassword') ||
+      currentPath.startsWith('/ResetPassword') ||
+      currentPath.startsWith('/terms-of-service') ||
+      currentPath.startsWith('/privacy-policy')) {
       return; // Let the components handle their own logic
     }
 
@@ -139,6 +145,15 @@ const Router = () => {
     return <InvitationRegister />;
   }
 
+  // Handle Contract Edit Route
+  if (currentPath.startsWith('/contracts/edit/')) {
+    return user ? (
+      <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+        <ContractFormPage />
+      </ProtectedRoute>
+    ) : <Login />;
+  }
+
   // Handle reset password route (can include query parameters)
   if (currentPath.startsWith('/reset-password') || currentPath.startsWith('/ResetPassword')) {
     return <ResetPassword />;
@@ -152,6 +167,10 @@ const Router = () => {
       return <Register />;
     case '/forgot-password':
       return <ForgotPassword />;
+    case '/terms-of-service':
+      return <TermsOfService />;
+    case '/privacy-policy':
+      return <PrivacyPolicy />;
     case '/dashboard':
       return user ? <ProtectedRoute><Dashboard /></ProtectedRoute> : <Login />;
     case '/partners':
@@ -172,6 +191,12 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['user']}>
           <PhotoGallery />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/contracts/new':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+          <ContractFormPage />
         </ProtectedRoute>
       ) : <Login />;
     case '/contracts':
@@ -271,7 +296,7 @@ const Router = () => {
 
     case '/notifications':
       return user ? (
-        <ProtectedRoute requiredRoles={['user','admin','superadmin']}>
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
           <Notifications />
         </ProtectedRoute>
       ) : <Login />;

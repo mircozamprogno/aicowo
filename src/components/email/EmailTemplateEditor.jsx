@@ -1,9 +1,10 @@
 // src/components/email/EmailTemplateEditor.jsx
-import { ArrowLeft, Bold, Eye, Italic, Save, Send, Type } from 'lucide-react';
+import { ArrowLeft, Bold, Eye, Italic, Link as LinkIcon, Save, Send, Type, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
+import '../../styles/components/ConfirmModal.css'; // Reuse modal styles
 import { DEFAULT_EMAIL_TEMPLATES } from '../../utils/defaultEmailTemplates';
 import logger from '../../utils/logger';
 import { toast } from '../common/ToastContainer';
@@ -21,6 +22,17 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
   const [testEmail, setTestEmail] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
   const isTypingRef = useRef(false);
+  const savedSelection = useRef(null);
+
+  // Modal State
+  const [showInputModal, setShowInputModal] = useState(false);
+  const [inputModalConfig, setInputModalConfig] = useState({
+    title: '',
+    label: '',
+    defaultValue: '',
+    onConfirm: () => { }
+  });
+  const [inputModalValue, setInputModalValue] = useState('');
 
   const defaultTemplate = (() => {
     // Try current language first
@@ -28,13 +40,13 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       logger.log('Using template for language:', currentLanguage);
       return DEFAULT_EMAIL_TEMPLATES[currentLanguage][template.id];
     }
-    
+
     // Fallback to English
     if (DEFAULT_EMAIL_TEMPLATES.en?.[template.id]) {
       logger.log('Falling back to English template');
       return DEFAULT_EMAIL_TEMPLATES.en[template.id];
     }
-    
+
     // Final fallback
     logger.warn('No template found, using default');
     return {
@@ -63,7 +75,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       showPreview,
       isTyping: isTypingRef.current
     });
-    
+
     if (editorRef.current && bodyHtml && !showPreview && !isTypingRef.current) {
       logger.log('Updating editor innerHTML');
       editorRef.current.innerHTML = bodyHtml;
@@ -86,7 +98,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
 
       if (error) throw error;
       setPartnerEmail(data.email);
-      
+
       const savedTestEmail = localStorage.getItem('lastTestEmail');
       setTestEmail(savedTestEmail || data.email);
     } catch (error) {
@@ -101,12 +113,12 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
         .list(`${partnerUuid}`, { search: 'email_banner' });
 
       const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-      
+
       if (bannerFile) {
         const { data } = supabase.storage
           .from('partners')
           .getPublicUrl(`${partnerUuid}/${bannerFile.name}`);
-        
+
         setBannerUrl(data.publicUrl);
       }
     } catch (error) {
@@ -117,7 +129,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
   const loadTemplate = async () => {
     setLoading(true);
     isTypingRef.current = false;
-    
+
     try {
       const { data, error } = await supabase
         .from('email_templates')
@@ -273,28 +285,81 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
 
     editor.focus();
 
+    // Simplify: Use standard execCommand for insertion which handles selection/cursor properly
+    if (variable === '{{calendar_link}}') {
+      const defaultLabel = t('bookings.addToCalendar') || 'Add to Calendar';
+
+      // Save selection
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        savedSelection.current = selection.getRangeAt(0);
+      }
+
+      setInputModalConfig({
+        title: t('emailTemplates.enterButtonLabel') || 'Enter Button Label',
+        label: t('emailTemplates.buttonLabel') || 'Label:',
+        defaultValue: defaultLabel,
+        onConfirm: (label) => {
+          if (label) {
+            // Restore selection
+            if (savedSelection.current) {
+              const selection = window.getSelection();
+              selection.removeAllRanges();
+              selection.addRange(savedSelection.current);
+            } else if (editorRef.current) {
+              editorRef.current.focus();
+            }
+
+            const linkHtml = `<a href="{{calendar_link}}" style="background-color: #7c3aed; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">${label}</a>`;
+            document.execCommand('insertHTML', false, linkHtml);
+            isTypingRef.current = true;
+            setBodyHtml(editor.innerHTML);
+          }
+        }
+      });
+      setInputModalValue(defaultLabel);
+      setShowInputModal(true);
+    } else {
+      document.execCommand('insertHTML', false, variable);
+      isTypingRef.current = true;
+      setBodyHtml(editor.innerHTML);
+    }
+  };
+
+  const handleCreateLink = () => {
+    // Save selection
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      const textNode = document.createTextNode(variable);
-      range.insertNode(textNode);
-      range.setStartAfter(textNode);
-      range.setEndAfter(textNode);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    } else {
-      editor.innerHTML += variable;
+      savedSelection.current = selection.getRangeAt(0);
     }
 
-    isTypingRef.current = true;
-    setBodyHtml(editor.innerHTML);
+    setInputModalConfig({
+      title: t('emailTemplates.enterUrl') || 'Insert Link',
+      label: 'URL:',
+      defaultValue: 'https://',
+      onConfirm: (url) => {
+        if (url) {
+          // Restore selection
+          if (savedSelection.current) {
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(savedSelection.current);
+          } else if (editorRef.current) {
+            editorRef.current.focus();
+          }
+
+          execCommand('createLink', url);
+        }
+      }
+    });
+    setInputModalValue('https://');
+    setShowInputModal(true);
   };
 
   const execCommand = (command, value = null) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
-    
+
     if (editorRef.current) {
       isTypingRef.current = true;
       setBodyHtml(editorRef.current.innerHTML);
@@ -310,7 +375,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
 
   const renderPreview = () => {
     let previewHtml = bodyHtml;
-    
+
     const sampleData = mode === 'superadmin' ? {
       '{{partner_name}}': 'Demo Company',
       '{{structure_name}}': 'Demo Structure',
@@ -390,7 +455,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
             <label className="template-field-label">
               {t('emailTemplates.emailBody')} *
             </label>
-            
+
             <div className="template-editor-toolbar">
               <button
                 type="button"
@@ -416,6 +481,14 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
               >
                 <Type size={18} />
               </button>
+              <button
+                type="button"
+                onClick={handleCreateLink}
+                className="toolbar-btn"
+                title={t('emailTemplates.link') || 'Insert Link'}
+              >
+                <LinkIcon size={18} />
+              </button>
               <div className="toolbar-divider"></div>
               <button
                 type="button"
@@ -436,7 +509,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
                 suppressContentEditableWarning={true}
               />
             ) : (
-              <div 
+              <div
                 className="template-preview"
                 dangerouslySetInnerHTML={{ __html: renderPreview() }}
               />
@@ -490,7 +563,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
             <button
               type="button"
               onClick={handleSave}
-              className="btn-primary"
+              className="btn-settings-primary"
               disabled={saving || sendingTest}
             >
               {saving ? (
@@ -515,7 +588,7 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
           <p className="variables-description">
             {t('emailTemplates.variablesDescription')}
           </p>
-          
+
           <div className="variables-list">
             {(defaultTemplate.variables || []).map((variable) => (
               <button
@@ -536,6 +609,53 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
           </div>
         </div>
       </div>
+
+      {/* Input Modal */}
+      {showInputModal && (
+        <div className="modal-overlay" onClick={() => setShowInputModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">{inputModalConfig.title}</h2>
+              <button onClick={() => setShowInputModal(false)} className="modal-close-btn">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              {/* Label removed as requested */}
+              <input
+                type="text"
+                className="template-subject-input"
+                value={inputModalValue}
+                onChange={(e) => setInputModalValue(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    inputModalConfig.onConfirm(inputModalValue);
+                    setShowInputModal(false);
+                  }
+                }}
+              />
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowInputModal(false)}
+                className="modal-cancel-btn"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => {
+                  inputModalConfig.onConfirm(inputModalValue);
+                  setShowInputModal(false);
+                }}
+                className="modal-confirm-btn"
+              >
+                {t('common.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

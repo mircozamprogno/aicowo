@@ -79,9 +79,6 @@ const Login = () => {
           <h2 className="auth-title">
             {t('auth.signIn')}
           </h2>
-          <p className="auth-instructions">
-            {t('auth.loginInstructions')}
-          </p>
         </div>
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
@@ -126,11 +123,7 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="auth-links">
-            <Link to="/forgot-password" className="forgot-password-link">
-              {t('auth.forgotPassword')}?
-            </Link>
-          </div>
+
 
           <div className="form-group">
             <button
@@ -141,6 +134,13 @@ const Login = () => {
               {loading ? `${t('auth.signIn')}...` : t('auth.signIn')}
             </button>
           </div>
+
+          <div className="auth-links">
+            <Link to="/forgot-password" className="forgot-password-link">
+              {t('auth.forgotPassword')}?
+            </Link>
+          </div>
+
         </form>
       </div>
       <div className="auth-language-switcher">

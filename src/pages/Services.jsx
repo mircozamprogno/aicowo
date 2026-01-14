@@ -1,6 +1,7 @@
 // src/pages/Services.jsx
 import { Edit2, HelpCircle, Plus, Settings, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Pagination from '../components/common/Pagination';
 import { toast } from '../components/common/ToastContainer';
 import ServiceForm from '../components/forms/ServiceForm';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,11 +20,20 @@ const Services = () => {
   const { t } = useTranslation();
   const [showServiceInfo, setShowServiceInfo] = useState(false);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   useEffect(() => {
     if (profile?.partner_uuid) {
       fetchServicesAndLocations();
     }
   }, [profile]);
+
+  // Reset page when items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
 
   const fetchServicesAndLocations = async () => {
     setLoading(true);
@@ -100,9 +110,9 @@ const Services = () => {
       fetchServicesAndLocations();
       return;
     }
-    
+
     if (editingService) {
-      setServices(prev => 
+      setServices(prev =>
         prev.map(s => s.id === savedService.id ? savedService : s)
       );
     } else {
@@ -159,6 +169,13 @@ const Services = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Pagination logic
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentServices = services.slice(startIndex, endIndex);
+
+
+
   const canManageServices = profile?.role === 'admin';
 
   if (!canManageServices) {
@@ -187,33 +204,10 @@ const Services = () => {
           <p className="services-description">
             {t('services.manageServices')}
           </p>
-          <div className="services-stats">
-            <div className="stat-item">
-              <span className="stat-label">{t('services.totalServices')}</span>
-              <span className="stat-value">{services.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('services.activeServices')}</span>
-              <span className="stat-value">
-                {services.filter(s => s.service_status === 'active').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('services.subscriptions')}</span>
-              <span className="stat-value">
-                {services.filter(s => s.service_type === 'abbonamento').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('services.dayPasses')}</span>
-              <span className="stat-value">
-                {services.filter(s => s.service_type === 'giornaliero').length}
-              </span>
-            </div>
-          </div>
+
         </div>
         <div className="services-header-actions">
-          <button 
+          <button
             className="service-info-btn"
             onClick={() => setShowServiceInfo(true)}
             title={t('services.serviceInfo')}
@@ -221,12 +215,20 @@ const Services = () => {
             <HelpCircle size={16} className="mr-2" />
             {t('services.serviceInfo')}
           </button>
-          <button className="add-service-btn" onClick={handleAddService}>
+          <button className="btn-service-primary" onClick={handleAddService}>
             <Plus size={16} className="mr-2" />
             {t('services.addService')}
           </button>
         </div>
       </div>
+
+      <Pagination
+        totalItems={services.length}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
 
       <div className="services-table-container">
         <div className="services-table-wrapper">
@@ -257,7 +259,7 @@ const Services = () => {
               </tr>
             </thead>
             <tbody className="services-table-body">
-              {services.map((service) => (
+              {currentServices.map((service) => (
                 <tr key={service.id} className="services-table-row">
                   <td className="services-table-cell">
                     <div className="service-info">
@@ -318,7 +320,7 @@ const Services = () => {
                   </td>
                   <td className="services-table-cell">
                     <div className="service-actions">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => handleEditService(service)}
                         title={t('services.editService')}
@@ -335,7 +337,7 @@ const Services = () => {
             <div className="services-empty">
               <Settings size={48} className="empty-icon" />
               <p>{t('services.noServicesFound')}</p>
-              <button 
+              <button
                 onClick={handleAddService}
                 className="btn-primary mt-4"
               >
@@ -362,8 +364,8 @@ const Services = () => {
               <h2 className="modal-title">
                 {t('services.serviceTypesInformation')}
               </h2>
-              <button 
-                onClick={() => setShowServiceInfo(false)} 
+              <button
+                onClick={() => setShowServiceInfo(false)}
                 className="modal-close-btn"
               >
                 <X size={24} />

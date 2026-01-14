@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Mail, Phone, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Phone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -29,17 +29,17 @@ const InvitationRegister = () => {
   const getInvitationTokenFromURL = () => {
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     const token = hashParams.get('token') || urlParams.get('token');
     logger.log('Invitation token from URL:', {
       hash: window.location.hash,
       search: window.location.search,
       token: token
     });
-    
+
     return token;
   };
-  
+
   const invitationToken = getInvitationTokenFromURL();
 
   useEffect(() => {
@@ -98,7 +98,7 @@ const InvitationRegister = () => {
   // src/components/auth/InvitationRegister.jsx
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error(t('messages.passwordsDoNotMatch'));
       return;
@@ -252,21 +252,17 @@ const InvitationRegister = () => {
           </h2>
           <div className="invitation-info">
             <p className="invitation-text">
-              {invitation.invited_role === 'admin' 
-                ? t('auth.invitedAsPartnerAdmin', { 
-                    partnerName: invitation.partners?.first_name && invitation.partners?.second_name 
-                      ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
-                      : invitation.partners?.first_name || invitation.partners?.company_name
-                  })
-                : t('auth.invitedAsUser', { 
-                    partnerName: invitation.partners?.structure_name || invitation.partners?.company_name
-                  })
+              {invitation.invited_role === 'admin'
+                ? t('auth.invitedAsPartnerAdmin', {
+                  partnerName: invitation.partners?.first_name && invitation.partners?.second_name
+                    ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
+                    : invitation.partners?.first_name || invitation.partners?.company_name
+                })
+                : t('auth.invitedAsUser', {
+                  partnerName: invitation.partners?.structure_name || invitation.partners?.company_name
+                })
               }
             </p>
-            <div className="invitation-badge">
-              <User size={16} />
-              <span>{t(`roles.${invitation.invited_role}`)}</span>
-            </div>
           </div>
         </div>
 
@@ -303,7 +299,7 @@ const InvitationRegister = () => {
               />
             </div>
           </div>
-          
+
           <div className="form-group">
             <label htmlFor="email" className="form-label">
               {t('auth.email')} *
@@ -384,7 +380,7 @@ const InvitationRegister = () => {
                 autoComplete="new-password"
                 required
                 className="form-input has-right-icon"
-                placeholder={t('auth.confirmPassword')}
+                placeholder={t('placeholders.confirmPasswordPlaceholder')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
@@ -416,6 +412,16 @@ const InvitationRegister = () => {
                 {t('auth.signIn')}
               </Link>
             </span>
+          </div>
+
+          <div className="auth-legal-links" style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
+            <a href="#/terms-of-service" target="_blank" rel="noopener noreferrer" style={{ color: '#6b7280', margin: '0 0.5rem', textDecoration: 'none' }}>
+              {t('legal.termsOfServiceTitle')}
+            </a>
+            <span style={{ color: '#d1d5db' }}>•</span>
+            <a href="#/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#6b7280', margin: '0 0.5rem', textDecoration: 'none' }}>
+              {t('legal.privacyPolicyTitle')}
+            </a>
           </div>
         </form>
       </div>

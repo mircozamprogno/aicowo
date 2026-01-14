@@ -13,7 +13,7 @@ import logger from '../../utils/logger';
 const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, locations = [] }) => {
   const { t } = useTranslation();
   const isEditing = !!service;
-  
+
   const [formData, setFormData] = useState({
     service_name: '',
     service_description: '',
@@ -29,11 +29,12 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     auto_renew: false,
     private: false
   });
-  
+
   const [locationResources, setLocationResources] = useState([]);
   const [loadingResources, setLoadingResources] = useState(false);
   const [loading, setLoading] = useState(false);
   const { onServiceCreated } = useTourIntegration();
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showContractsExist, setShowContractsExist] = useState(false);
   const [contractCount, setContractCount] = useState(0);
@@ -64,7 +65,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         auto_renew: service.auto_renew || false,
         private: service.private || false
       });
-      
+
       if (service.location_id) {
         fetchLocationResources(service.location_id.toString());
       }
@@ -85,7 +86,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         auto_renew: false,
         private: false
       });
-      
+
       if (locations.length > 0) {
         fetchLocationResources(locations[0].id.toString());
       }
@@ -126,7 +127,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (type === 'checkbox') {
       setFormData(prev => ({
         ...prev,
@@ -147,7 +148,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       location_id: locationId,
       location_resource_id: ''
     }));
-    
+
     fetchLocationResources(locationId);
   };
 
@@ -158,10 +159,10 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       service_type: newType,
       max_entries: newType === 'pacchetto' ? prev.max_entries : '',
       cost: newType === 'free_trial' ? '0' : prev.cost,
-      duration_days: newType === 'abbonamento' ? '30' : 
-                    newType === 'pacchetto' ? '90' : 
-                    newType === 'free_trial' ? '7' :
-                    newType === 'giornaliero' ? '1' : prev.duration_days,
+      duration_days: newType === 'abbonamento' ? '30' :
+        newType === 'pacchetto' ? '90' :
+          newType === 'free_trial' ? '7' :
+            newType === 'giornaliero' ? '1' : prev.duration_days,
       is_renewable: newType === 'giornaliero' ? false : prev.is_renewable,
       auto_renew: newType === 'giornaliero' ? false : prev.auto_renew
     }));
@@ -206,7 +207,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -232,7 +233,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       };
 
       let result;
-      
+
       if (isEditing) {
         result = await supabase
           .from('services')
@@ -309,7 +310,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
         if (data && data[0]) {
           await onServiceCreated(data[0]);
-          
+
           await logActivity({
             action_category: 'service',
             action_type: 'created',
@@ -343,9 +344,10 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     }
   };
 
+
   const handleDelete = async () => {
     setLoading(true);
-    
+
     try {
       const { error } = await supabase
         .from('services')
@@ -375,7 +377,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       toast.success(t('messages.serviceDeletedSuccessfully'));
       setShowDeleteConfirm(false);
       onClose();
-      
+
       onSuccess(null);
     } catch (error) {
       logger.error('Error deleting service:', error);
@@ -387,7 +389,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
   const checkForContracts = async () => {
     setLoading(true);
-    
+
     try {
       const { data, error, count } = await supabase
         .from('contracts')
@@ -417,13 +419,13 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     }
   };
 
+
+
   const getResourceTypeLabel = (type) => {
     return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🪑' : '🏢';
-  };
+
 
   if (!isOpen) return null;
 
@@ -441,8 +443,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
 
         <div className="modal-form">
           <div className="form-section">
-            <h3 className="form-section-title">{t('services.basicInformation')}</h3>
-            
+
+
             <div className="form-group">
               <label htmlFor="service_name" className="form-label">
                 {t('services.serviceName')} *
@@ -510,8 +512,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           </div>
 
           <div className="form-section">
-            <h3 className="form-section-title">{t('services.locationAndResource')}</h3>
-            
+
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="location_id" className="form-label">
@@ -521,12 +523,12 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   value={formData.location_id}
                   onChange={handleLocationChange}
                   options={
-                    locations.length === 0 
+                    locations.length === 0
                       ? [{ value: '', label: t('services.noLocationsAvailable') }]
                       : locations.map(location => ({
-                          value: location.id.toString(),
-                          label: location.location_name
-                        }))
+                        value: location.id.toString(),
+                        label: location.location_name
+                      }))
                   }
                   placeholder={t('services.selectLocation')}
                   emptyMessage={t('services.noLocationsAvailable')}
@@ -547,9 +549,9 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                         : locationResources.length === 0
                           ? [{ value: '', label: t('services.noResourcesAvailable') }]
                           : locationResources.map(resource => ({
-                              value: resource.id.toString(),
-                              label: `${getResourceTypeIcon(resource.resource_type)} ${resource.resource_name} (${resource.quantity} ${t('services.available')})`
-                            }))
+                            value: resource.id.toString(),
+                            label: `${resource.resource_name} (${resource.quantity} ${t('services.available')})`
+                          }))
                   }
                   placeholder={t('services.selectResource')}
                   emptyMessage={t('services.noResourcesAvailable')}
@@ -583,8 +585,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           </div>
 
           <div className="form-section">
-            <h3 className="form-section-title">{t('services.pricingAndDuration')}</h3>
-            
+
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="cost" className="form-label">
@@ -675,68 +677,74 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
           </div>
 
           <div className="form-section">
-            <h3 className="form-section-title">{t('services.advancedSettings')}</h3>
+
 
             <div className="form-checkboxes">
-              <div className="form-checkbox-group">
-                <div className="checkbox-wrapper">
+              <div className="toggle-row">
+                <div className="toggle-label-group">
+                  <label htmlFor="is_renewable" className="toggle-label">
+                    {t('services.isRenewable')}
+                  </label>
+                  <p className="toggle-help">
+                    {t('services.renewableHelp')}
+                  </p>
+                </div>
+                <label className="switch">
                   <input
                     id="is_renewable"
                     name="is_renewable"
                     type="checkbox"
-                    className="form-checkbox"
                     checked={formData.is_renewable}
                     onChange={handleChange}
                     disabled={formData.service_type === 'giornaliero'}
                   />
-                  <label htmlFor="is_renewable" className="form-checkbox-label">
-                    {t('services.isRenewable')}
-                  </label>
-                </div>
-                <p className="form-help-text">
-                  {t('services.renewableHelp')}
-                </p>
+                  <span className="switch-slider"></span>
+                </label>
               </div>
 
               {formData.is_renewable && (
-                <div className="form-checkbox-group">
-                  <div className="checkbox-wrapper">
+                <div className="toggle-row">
+                  <div className="toggle-label-group">
+                    <label htmlFor="auto_renew" className="toggle-label">
+                      {t('services.autoRenew')}
+                    </label>
+                    <p className="toggle-help">
+                      {t('services.autoRenewHelp')}
+                    </p>
+                  </div>
+                  <label className="switch">
                     <input
                       id="auto_renew"
                       name="auto_renew"
                       type="checkbox"
-                      className="form-checkbox"
                       checked={formData.auto_renew}
                       onChange={handleChange}
                       disabled={formData.service_type === 'giornaliero'}
                     />
-                    <label htmlFor="auto_renew" className="form-checkbox-label">
-                      {t('services.autoRenew')}
-                    </label>
-                  </div>
-                  <p className="form-help-text">
-                    {t('services.autoRenewHelp')}
-                  </p>
+                    <span className="switch-slider"></span>
+                  </label>
                 </div>
               )}
 
-              <div className="form-checkbox-group">
-                <div className="checkbox-wrapper">
+              <div className="toggle-row">
+                <div className="toggle-label-group">
+                  <label htmlFor="private" className="toggle-label">
+                    {t('services.privateService')}
+                  </label>
+                  <p className="toggle-help">
+                    {t('services.privateServiceHelp')}
+                  </p>
+                </div>
+                <label className="switch">
                   <input
                     id="private"
                     name="private"
                     type="checkbox"
-                    className="form-checkbox"
                     checked={formData.private}
                     onChange={handleChange}
                   />
-                  <label htmlFor="private" className="form-checkbox-label">
-                    {t('services.privateService')}
-                  </label>
-                </div>
-                <p className="form-help-text">
-                  {t('services.privateServiceHelp')}
-                </p>
+                  <span className="switch-slider"></span>
+                </label>
               </div>
             </div>
           </div>
@@ -748,12 +756,14 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   type="button"
                   onClick={checkForContracts}
                   className="btn-danger"
+                  style={{ animation: 'none', textTransform: 'none' }}
                   disabled={loading}
                 >
                   {t('common.delete')}
                 </button>
               )}
             </div>
+
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button
                 type="button"
@@ -766,11 +776,11 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="btn-primary"
+                className="btn-service-primary"
                 disabled={loading || locations.length === 0 || !formData.location_resource_id}
               >
-                {loading 
-                  ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...') 
+                {loading
+                  ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...')
                   : (isEditing ? t('common.save') : t('common.create'))
                 }
               </button>
@@ -795,31 +805,31 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               <p style={{ color: '#dc2626', fontWeight: '500', marginBottom: '1rem' }}>
                 {t('services.cannotDeleteHint')}
               </p>
-              
-              <div style={{ 
-                backgroundColor: '#f9fafb', 
-                border: '1px solid #e5e7eb', 
-                borderRadius: '0.5rem', 
+
+              <div style={{
+                backgroundColor: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
                 padding: '1rem',
                 marginBottom: '1rem'
               }}>
-                <h4 style={{ 
-                  fontSize: '0.875rem', 
-                  fontWeight: '600', 
+                <h4 style={{
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
                   marginBottom: '0.75rem',
                   color: '#374151'
                 }}>
                   {t('services.affectedContracts')}:
                 </h4>
-                <div style={{ 
-                  maxHeight: '300px', 
+                <div style={{
+                  maxHeight: '300px',
                   overflowY: 'auto',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.5rem'
                 }}>
                   {contractsList.map((contract) => (
-                    <div key={contract.id} style={{ 
+                    <div key={contract.id} style={{
                       backgroundColor: 'white',
                       border: '1px solid #e5e7eb',
                       borderRadius: '0.375rem',
@@ -829,7 +839,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                       alignItems: 'center'
                     }}>
                       <div>
-                        <span style={{ 
+                        <span style={{
                           fontWeight: '600',
                           fontSize: '0.875rem',
                           color: '#111827'
@@ -837,7 +847,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                           {contract.contract_number}
                         </span>
                         {contract.customers && (
-                          <span style={{ 
+                          <span style={{
                             marginLeft: '0.5rem',
                             fontSize: '0.875rem',
                             color: '#6b7280'
@@ -855,7 +865,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                 <button
                   type="button"
                   onClick={() => setShowContractsExist(false)}
-                  className="btn-primary"
+                  className="btn-service-primary"
                 >
                   {t('common.understood')}
                 </button>
@@ -889,6 +899,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   type="button"
                   onClick={handleDelete}
                   className="btn-danger"
+                  style={{ animation: 'none', textTransform: 'none' }}
                   disabled={loading}
                 >
                   {loading ? t('common.deleting') + '...' : t('common.delete')}

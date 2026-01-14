@@ -6,10 +6,10 @@ export const DEFAULT_EMAIL_TEMPLATES = {
   en: {
     customer_invitation: {
       subject: 'Invito a unirti a {{partner_name}}',
-      body: `<h2><span style="font-size: 14px; font-weight: 400;">Gentile Cliente, 
+      body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente, 
       <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
-      <h2><span style="font-size: 14px; font-weight: 400;">{{custom_message}}&nbsp;</span></h2>
-      <h2><span style="font-size: 14px; font-weight: 400;">Per iniziare a utilizzare i nostri spazi, registrati sul portale.</span></h2>
+      <h2><span style="font-size: 16px; font-weight: 400;">{{custom_message}}&nbsp;</span></h2>
+      <h2><span style="font-size: 16px; font-weight: 400;">Per iniziare a utilizzare i nostri spazi, registrati sul portale.</span></h2>
       <h2><a href="{{invitation_link}}">Completa la registrazione</a></h2>
       <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Lo Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
       <span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
@@ -45,7 +45,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{structure_name}}', description: 'Structure name' },
         { name: '{{user_email}}', description: 'User email' }
       ]
-    } ,
+    },
 
     partner_admin_invitation: {
       subject: 'Admin Invitation - {{partner_name}}',
@@ -68,7 +68,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{custom_message}}', description: 'Personal message' }
       ]
     },
-    
+
     customer_booking_confirmation: {
       subject: 'Booking Confirmed - {{service_name}}',
       body: `<h2>Your Booking is Confirmed!</h2>
@@ -97,7 +97,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{service_name}}', description: 'Service name' }
       ]
     },
-    
+
     partner_booking_notification: {
       subject: 'New Booking - {{customer_name}}',
       body: `<h2>New Booking Received</h2>
@@ -156,16 +156,80 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{invitation_link}}', description: 'Account activation link' },
         { name: '{{admin_name}}', description: 'Admin name who sent invitation' }
       ]
+    },
+
+    expiry_reminder: {
+      subject: 'Reminder: {{expiry_type}} - {{partner_name}}',
+      body: `<h2>Expiry Reminder</h2>
+<p>Dear {{customer_name}},</p>
+<p>This is a friendly reminder regarding your <strong>{{expiry_type}}</strong>.</p>
+<h3>Details:</h3>
+<ul>
+  <li><strong>Type:</strong> {{expiry_type}}</li>
+  <li><strong>Expiry Date:</strong> {{expiry_date}}</li>
+  <li><strong>Contract Number:</strong> {{contract_number}}</li>
+  <li><strong>Amount:</strong> {{amount}}</li>
+</ul>
+<p>Please take the necessary action to avoid any service interruption.</p>
+<p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+<p>Best regards,<br>{{partner_firstname}} {{partner_lastname}}<br>{{structure_name}}</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">--</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp;</span></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
+        { name: '{{customer_name}}', description: 'Customer full name' },
+        { name: '{{expiry_type}}', description: 'Type of expiry (e.g., Contract Expiry, Payment Due, etc.)' },
+        { name: '{{expiry_date}}', description: 'Date of expiry' },
+        { name: '{{contract_number}}', description: 'Contract number' },
+        { name: '{{amount}}', description: 'Amount (for payment reminders)' }
+      ]
+    },
+
+    contract_creation: {
+      subject: 'New Contract Created - {{contract_number}}',
+      body: `<h2>Contract Created Successfully</h2>
+<p>Dear {{customer_name}},</p>
+<p>We're pleased to confirm that your new contract has been created.</p>
+<h3>Contract Details:</h3>
+<ul>
+  <li><strong>Contract Number:</strong> {{contract_number}}</li>
+  <li><strong>Service:</strong> {{service_name}}</li>
+  <li><strong>Type:</strong> {{contract_type}}</li>
+  <li><strong>Start Date:</strong> {{start_date}}</li>
+  <li><strong>End Date:</strong> {{end_date}}</li>
+</ul>
+<p>You can now start using our services. If you have any questions about your contract, please don't hesitate to contact us.</p>
+<p>Thank you for choosing our services!</p>
+<p>Best regards,<br>{{partner_firstname}} {{partner_lastname}}<br>{{structure_name}}</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">--</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp;</span></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
+        { name: '{{customer_name}}', description: 'Customer full name' },
+        { name: '{{contract_number}}', description: 'Contract number' },
+        { name: '{{contract_type}}', description: 'Type of contract (package/subscription)' },
+        { name: '{{service_name}}', description: 'Service name' },
+        { name: '{{start_date}}', description: 'Contract start date' },
+        { name: '{{end_date}}', description: 'Contract end date' }
+      ]
     }
   },
-  
+
   it: {
     customer_invitation: {
       subject: 'Invito a unirti a {{partner_name}}',
-      body: `<h2><span style="font-size: 14px; font-weight: 400;">Gentile Cliente, 
+      body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente, 
       <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
-      <h2><span style="font-size: 14px; font-weight: 400;">{{custom_message}}&nbsp;</span></h2>
-      <h2><span style="font-size: 14px; font-weight: 400;">Per iniziare a utilizzare i nostri spazi, registrati sul portale.</span></h2>
+      <h2><span style="font-size: 16px; font-weight: 400;">{{custom_message}}&nbsp;</span></h2>
+      <h2><span style="font-size: 16px; font-weight: 400;">Per iniziare a utilizzare i nostri spazi, registrati sul portale.</span></h2>
       <h2><a href="{{invitation_link}}">Completa la registrazione</a></h2>
       <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Lo Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
       <span style="color: rgb(17, 24, 39); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
@@ -183,10 +247,10 @@ export const DEFAULT_EMAIL_TEMPLATES = {
       ]
     },
 
-    
-  confirmation_email: {
-    subject: 'Conferma il tuo indirizzo email - {{partner_name}}',
-    body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente, 
+
+    confirmation_email: {
+      subject: 'Conferma il tuo indirizzo email - {{partner_name}}',
+      body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente, 
     <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
     <h2><span style="font-size: 16px; font-weight: 400;">Per completare la registrazione, conferma il tuo indirizzo email.</span></h2>
     <h2><a href="{{confirmation_link}}">Conferma Email</a></h2>
@@ -196,13 +260,13 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     <span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Ricevi questa email per confermare il tuo account.<br></span>
     <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;"><b>⚡️ PowerCowo</b>&nbsp; -&nbsp;</span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">MLM Media Logistic Management GmbH<br></span>
     <span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
-    variables: [
-      { name: '{{confirmation_link}}', description: 'Link di conferma email' },
-      { name: '{{partner_name}}', description: 'Nome azienda' },
-      { name: '{{structure_name}}', description: 'Nome struttura' },
-      { name: '{{user_email}}', description: 'Email utente' }
-    ]
-  },  
+      variables: [
+        { name: '{{confirmation_link}}', description: 'Link di conferma email' },
+        { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{user_email}}', description: 'Email utente' }
+      ]
+    },
 
     partner_admin_invitation: {
       subject: 'Invito Amministratore - {{partner_name}}',
@@ -225,7 +289,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{custom_message}}', description: 'Messaggio personale' }
       ]
     },
-    
+
     customer_booking_confirmation: {
       subject: 'Conferma prenotazione del {{booking_date}}',
       body: `<h2><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-weight: normal;">Gentile {{customer_name}},&nbsp;<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem; font-weight: normal;">la tua prenotazione è confermata:</span></h2>
@@ -247,7 +311,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{service_name}}', description: 'Nome servizio' }
       ]
     },
-    
+
     partner_booking_notification: {
       subject: 'Nuova Prenotazione - {{customer_name}}',
       body: `<h2>Nuova Prenotazione Ricevuta</h2>
@@ -305,6 +369,70 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{partner_email}}', description: 'Indirizzo email del partner' },
         { name: '{{invitation_link}}', description: 'Link di attivazione account' },
         { name: '{{admin_name}}', description: 'Nome dell\'admin che ha inviato l\'invito' }
+      ]
+    },
+
+    expiry_reminder: {
+      subject: 'Promemoria: {{expiry_type}} - {{partner_name}}',
+      body: `<h2>Promemoria Scadenza</h2>
+<p>Gentile {{customer_name}},</p>
+<p>Questo è un promemoria riguardante la tua <strong>{{expiry_type}}</strong>.</p>
+<h3>Dettagli:</h3>
+<ul>
+  <li><strong>Tipo:</strong> {{expiry_type}}</li>
+  <li><strong>Data di Scadenza:</strong> {{expiry_date}}</li>
+  <li><strong>Numero Contratto:</strong> {{contract_number}}</li>
+  <li><strong>Importo:</strong> {{amount}}</li>
+</ul>
+<p>Ti preghiamo di prendere le misure necessarie per evitare interruzioni del servizio.</p>
+<p>Se hai domande o hai bisogno di assistenza, non esitare a contattarci.</p>
+<p>Cordiali saluti,<br>{{partner_firstname}} {{partner_lastname}}<br>{{structure_name}}</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">--</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp;</span></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
+        { name: '{{customer_name}}', description: 'Nome completo del cliente' },
+        { name: '{{expiry_type}}', description: 'Tipo di scadenza (es. Scadenza Contratto, Pagamento in Scadenza, ecc.)' },
+        { name: '{{expiry_date}}', description: 'Data di scadenza' },
+        { name: '{{contract_number}}', description: 'Numero contratto' },
+        { name: '{{amount}}', description: 'Importo (per promemoria di pagamento)' }
+      ]
+    },
+
+    contract_creation: {
+      subject: 'Nuovo Contratto Creato - {{contract_number}}',
+      body: `<h2>Contratto Creato con Successo</h2>
+<p>Gentile {{customer_name}},</p>
+<p>Siamo lieti di confermare che il tuo nuovo contratto è stato creato.</p>
+<h3>Dettagli Contratto:</h3>
+<ul>
+  <li><strong>Numero Contratto:</strong> {{contract_number}}</li>
+  <li><strong>Servizio:</strong> {{service_name}}</li>
+  <li><strong>Tipo:</strong> {{contract_type}}</li>
+  <li><strong>Data Inizio:</strong> {{start_date}}</li>
+  <li><strong>Data Fine:</strong> {{end_date}}</li>
+</ul>
+<p>Ora puoi iniziare a utilizzare i nostri servizi. Se hai domande sul tuo contratto, non esitare a contattarci.</p>
+<p>Grazie per aver scelto i nostri servizi!</p>
+<p>Cordiali saluti,<br>{{partner_firstname}} {{partner_lastname}}<br>{{structure_name}}</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">--</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp;</span></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
+        { name: '{{customer_name}}', description: 'Nome completo del cliente' },
+        { name: '{{contract_number}}', description: 'Numero contratto' },
+        { name: '{{contract_type}}', description: 'Tipo di contratto (pacchetto/abbonamento)' },
+        { name: '{{service_name}}', description: 'Nome servizio' },
+        { name: '{{start_date}}', description: 'Data inizio contratto' },
+        { name: '{{end_date}}', description: 'Data fine contratto' }
       ]
     }
   }

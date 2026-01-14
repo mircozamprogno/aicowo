@@ -5,7 +5,7 @@
     "services": "Services",
     "users": "Users",
     "invitations": "Invitations",
-    "customers": "Customers", 
+    "customers": "Customers",
     "settings": "Settings",
     "partnerInfo": "Partner Info",
     "teamMembers": "Team Members",
@@ -18,7 +18,7 @@
     "photoGallery": "Photo Gallery",
     "archivedContracts": "Archived Contracts",
     "planFeatures": "Plan Features",
-    "pricingPlans": "Pricing Plans", 
+    "pricingPlans": "Pricing Plans",
     "partnerContracts": "Partner Contracts",
     "discountCodes": "Discount Codes",
     "support": "Support",
@@ -140,7 +140,16 @@
       "activeReservations": "{{count}} active reservation(s)",
       "relatedPayments": "{{count}} related payment(s)"
     },
-    "confirmDelete": "Confirm Delete"
+    "confirmDelete": "Confirm Delete",
+    "documentId": "ID Document",
+    "uploadDocument": "Upload Document",
+    "replaceDocument": "Replace Document",
+    "removeDocument": "Remove Document",
+    "viewDocument": "View Document",
+    "documentUploading": "Uploading document...",
+    "documentSizeError": "File must be less than 10MB",
+    "documentTypeError": "Only PDF or PNG are accepted",
+    "saveCustomerFirst": "Save customer first to upload document"
   },
   "settings": {
     "title": "Settings",
@@ -149,7 +158,7 @@
     "saveSettings": "Save Settings",
     "billingInfoDescription": "Leave billing information empty to use the same as your personal information.",
     "uploadLogo": "Upload Logo",
-    "changeLogo": "Change Logo", 
+    "changeLogo": "Change Logo",
     "removeLogo": "Remove Logo",
     "currentLogo": "Current Logo:",
     "logoPreview": "Logo Preview:",
@@ -201,7 +210,6 @@
     "resourceExamples": "Resource Examples",
     "scrivaniaSexamples": "Hot Desks, Dedicated Desks, Private Offices",
     "salaRiunioniExamples": "Small Meeting Room, Conference Room, Phone Booth",
-    
     "manageWorkspacesAndMeetingRooms": "Manage workspaces and meeting rooms across locations",
     "quickStats": "Quick Stats",
     "totalLocations": "Total Locations",
@@ -263,7 +271,7 @@
     "phoneNumber": "Phone Number",
     "emailAddress": "Email Address",
     "addressInformation": "Address Information",
-    "streetAddress": "Street Address", 
+    "streetAddress": "Street Address",
     "postalCode": "Postal Code",
     "city": "City",
     "country": "Country",
@@ -297,7 +305,7 @@
     "mapError": "Error loading map",
     "vatPercentage": "VAT Percentage",
     "vatRate": "VAT Rate",
-    "vatInformation": "VAT Information", 
+    "vatInformation": "VAT Information",
     "vatFor": "VAT for",
     "vatCountryDefaults": "Country VAT Defaults",
     "vatHelpText": "Enter the VAT percentage applied to services at this location. This will be used for billing customers who use services at this location.",
@@ -322,7 +330,7 @@
     "thenRetryDelete": "Then retry the deletion",
     "deleteLocationPermanently": "Delete Location Permanently",
     "deleteWarningActiveContracts": "{{count}} active contract(s) must be resolved first",
-    "deleteWarningFutureBookings": "{{count}} future booking(s) must be cancelled first", 
+    "deleteWarningFutureBookings": "{{count}} future booking(s) must be cancelled first",
     "deleteWarningResources": "{{count}} resource(s) will be permanently deleted",
     "deleteWarningImages": "{{count}} image(s) will be permanently deleted from storage",
     "deleteWarningHistoricalData": "{{count}} historical booking record(s) will lose location reference",
@@ -394,7 +402,7 @@
   "dashboard": {
     "welcomeBack": "Welcome back",
     "totalPartners": "Total Partners",
-    "activeLocations": "Active Locations", 
+    "activeLocations": "Active Locations",
     "totalUsers": "Total Users",
     "totalCustomers": "Total Customers",
     "totalContracts": "Total Contracts",
@@ -447,7 +455,7 @@
     "expiringContracts": "Expiring Contracts",
     "contractsNeedingAttention": "Contracts requiring renewal attention",
     "next7Days": "Next 7 Days",
-    "next15Days": "Next 15 Days", 
+    "next15Days": "Next 15 Days",
     "next30Days": "Next 30 Days",
     "revenueAtRisk": "Revenue at Risk",
     "paymentStatus": "Payment Status",
@@ -458,7 +466,7 @@
     "totalOverdue": "Total Overdue",
     "financialOverview": "Financial Overview",
     "monthlyRecurringRevenue": "Monthly Recurring Revenue",
-    "totalActiveValue": "Total Active Contract Value", 
+    "totalActiveValue": "Total Active Contract Value",
     "monthOverMonthGrowth": "Month-over-Month Growth",
     "packageUtilization": "Package Utilization",
     "customerUsagePatterns": "Customer usage patterns and entry consumption",
@@ -471,7 +479,9 @@
     "title": "Partners",
     "managePartners": "Manage all partners in the system",
     "viewPartnerInfo": "View your partner information and locations",
-    "addPartner": "Add Partner",
+    "addToCalendar": "Add to Calendar",
+    "downloadCalendar": "Download Calendar",
+    "downloadCalendar": "Download Calendar",
     "editPartner": "Edit Partner",
     "partner": "Partner",
     "firstName": "First Name",
@@ -512,7 +522,7 @@
       "documentType": "Document Type",
       "types": {
         "proforma": "Proforma",
-        "invoice": "Invoice", 
+        "invoice": "Invoice",
         "estimate": "Estimate",
         "receipt": "Receipt"
       }
@@ -524,15 +534,9 @@
     "managePartnerInvitations": "Manage your guests invitations",
     "invitePartnerAdmin": "Invite Partner Administrator",
     "inviteUser": "Invite User",
-    "invitingAdminFor": "Inviting Administrator for",
-    "invitingUserFor": "Inviting User for",
     "customMessage": "Custom Message",
-    "emailPreview": "Email Preview",
-    "subject": "Subject",
-    "recipient": "Recipient",
     "sendInvitation": "Send Invitation",
     "sending": "Sending",
-    "emailSubject": "Invitation to join {{partnerName}}",
     "invitee": "Invitee",
     "status": "Status",
     "sentAt": "Sent At",
@@ -578,6 +582,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
+    "closeWindow": "Close Window",
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
@@ -603,6 +608,8 @@
     "page": "Per page",
     "noResultsFound": "No results found",
     "showing": "Showing",
+    "startDate": "Start Date",
+    "endDate": "End Date",
     "rowsPerPage": "Rows per page",
     "refresh": "Refresh",
     "previous": "Previous",
@@ -655,7 +662,7 @@
     "canOnlyCancelPendingInvitations": "You can only cancel pending invitations",
     "confirmCancelInvitation": "Are you sure you want to cancel this invitation?",
     "serviceCreatedSuccessfully": "Service created successfully",
-    "serviceUpdatedSuccessfully": "Service updated successfully", 
+    "serviceUpdatedSuccessfully": "Service updated successfully",
     "errorSavingService": "Error saving service",
     "errorLoadingServices": "Error loading services",
     "serviceNameRequired": "Service name is required",
@@ -696,7 +703,7 @@
     "featureUpdatedSuccessfully": "Feature updated successfully",
     "featureDeletedSuccessfully": "Feature deleted successfully",
     "errorCreatingFeature": "Error creating feature",
-    "errorUpdatingFeature": "Error updating feature", 
+    "errorUpdatingFeature": "Error updating feature",
     "errorDeletingFeature": "Error deleting feature",
     "featureNameRequired": "Feature name is required",
     "featureKeyRequired": "Feature key is required",
@@ -711,6 +718,10 @@
     "errorUpdatingPricingPlan": "Error updating pricing plan",
     "errorDeletingPricingPlan": "Error deleting pricing plan",
     "planNameRequired": "Plan name is required",
+    "documentUploadedSuccessfully": "Document uploaded successfully",
+    "errorUploadingDocument": "Error uploading document",
+    "documentRemovedSuccessfully": "Document removed successfully",
+    "errorRemovingDocument": "Error removing document",
     "planNameExists": "A plan with this name already exists",
     "validTrialDurationRequired": "Valid trial duration is required",
     "validMonthlyPriceRequired": "Valid monthly price is required",
@@ -778,14 +789,14 @@
     "selectLocation": "Select a location",
     "accessDenied": "Access Denied",
     "accessDeniedMessage": "Only partner administrators can access service management.",
-    
     "subscription": "Subscription",
-    "package": "Package", 
+    "package": "Package",
     "freeTrial": "Free Trial",
     "active": "Active",
     "inactive": "Inactive",
     "draft": "Draft",
-    
+    "daily": "Daily",
+    "trial": "Free Trial",
     "basicInformation": "Basic Information",
     "pricingAndDuration": "Pricing & Duration",
     "quantityAndAvailability": "Quantity & Availability",
@@ -805,12 +816,10 @@
     "renewableHelp": "Allow customers to renew this service when it expires",
     "autoRenew": "Auto-renew by default",
     "autoRenewHelp": "Automatically renew this service unless customer opts out",
-    
     "freeTrialNote": "Free Trial",
     "freeTrialDescription": "Free trial services have no cost and are typically used to attract new customers",
-
     "locationAndResource": "Location & Resource",
-    "resource": "Resource", 
+    "resource": "Resource",
     "selectLocationFirst": "Select a location first",
     "selectResource": "Select a resource",
     "noResourcesAvailable": "No resources available for this location",
@@ -819,7 +828,7 @@
     "serviceTypesInformation": "Service Types Information",
     "subscriptionInfo": "Subscription Services",
     "subscriptionDescription": "Recurring payment services with automatic renewal option",
-    "packageInfo": "Package Services", 
+    "packageInfo": "Package Services",
     "packageDescription": "Access tickets that can be used within the expiration date",
     "serviceInfoModalDescription": "Understanding the different service types available in your coworking space",
     "subscriptionExample": "Example: Monthly desk access, yearly meeting room subscription",
@@ -834,7 +843,6 @@
     "daysCount": "{{count}} Days",
     "privateService": "Private Service",
     "privateServiceHelp": "Private services are only visible to administrators and cannot be selected by customers when creating contracts",
-
     "dayPass": "Day Pass",
     "dayPassInfo": "Day Pass Services",
     "dayPassDescription": "unlimited access for one day with advance booking",
@@ -875,7 +883,7 @@
     "noEntriesRemaining": "No Entries",
     "notAvailable": "Not Available",
     "totalEntries": "Total Entries",
-    "usedEntries": "Used Entries", 
+    "usedEntries": "Used Entries",
     "remainingEntries": "Remaining Entries",
     "packageEntries": "Package Entries",
     "usageProgress": "Usage Progress",
@@ -941,7 +949,6 @@
     "activeContracts": "Active Contracts",
     "expiredContracts": "Expired Contracts",
     "noContractsFound": "No contracts found. Create your first contract to get started.",
-    
     "selectCustomer": "Select Customer",
     "selectLocation": "Select Location",
     "selectLocationFirst": "Select a location first",
@@ -951,14 +958,12 @@
     "description": "Description",
     "endDateCalculated": "End date is automatically calculated based on service duration",
     "reviewContract": "Review Contract",
-    
     "confirmContract": "Confirm Contract",
     "importantNotice": "Important Notice",
     "contractImmutableWarning": "Once created, contracts cannot be modified. Please review all details carefully before confirming.",
     "contractSummary": "Contract Summary",
     "confirmAndCreate": "Confirm & Create Contract",
     "creating": "Creating",
-    
     "active": "Active",
     "cancelled": "Cancelled",
     "suspended": "Suspended",
@@ -976,7 +981,7 @@
     "resourceFullyBooked": "All {{total}} {{resource}} are booked for this period",
     "contractNotActive": "Not Active",
     "generatePDF": "Generate PDF",
-    "contractReceipt": "CONTRACT RECEIPT", 
+    "contractReceipt": "CONTRACT RECEIPT",
     "pdfGeneratedSuccessfully": "PDF generated successfully!",
     "errorGeneratingPDF": "Error generating PDF. Please try again.",
     "receiptFooter": "This document is a service contract receipt. It has no fiscal value.",
@@ -1015,7 +1020,7 @@
     "baseAmount": "Net",
     "vat": "VAT",
     "total": "Total",
-    "paymentStatus": "Payment Status", 
+    "paymentStatus": "Payment Status",
     "paymentInfo": "Payment Info",
     "paymentHistory": "Payment History",
     "recordPayment": "Record Payment",
@@ -1031,7 +1036,7 @@
     "after": "after",
     "deleteContract": "Delete Contract",
     "exportCSV": "Export CSV",
-    "exportToCSV": "Export to CSV", 
+    "exportToCSV": "Export to CSV",
     "exporting": "Exporting...",
     "csvExportedSuccessfully": "CSV export completed successfully",
     "errorExportingCSV": "Error exporting CSV. Please try again.",
@@ -1042,11 +1047,11 @@
     "maxEntries": "Max Entries",
     "resourceType": "Resource Type",
     "confirmArchive": "Confirm Archive",
-    "archiveContract": "Archive Contract", 
+    "archiveContract": "Archive Contract",
     "archiveContractWarning": "This will archive the contract and move it to the archived contracts section. The contract can be restored later if needed.",
     "archiveNoteTitle": "What happens when you archive:",
     "archiveNote1": "Contract will be moved to archived contracts",
-    "archiveNote2": "Related bookings and reservations will be preserved", 
+    "archiveNote2": "Related bookings and reservations will be preserved",
     "archiveNote3": "Contract can be restored at any time",
     "archiveNote4": "No data will be permanently lost",
     "freeTrialAlreadyUsed": "You have already used your free trial",
@@ -1073,10 +1078,10 @@
     "actionsColumn": "Actions",
     "actions": {
       "moreActions": "More actions",
-      "downloadPDF": "Download PDF", 
+      "downloadPDF": "Download PDF",
       "recordPayment": "Record Payment",
       "paymentHistory": "Payment History",
-      "editContract": "Edit Contract", 
+      "editContract": "Edit Contract",
       "archiveContract": "Archive Contract"
     },
     "discountCode": "Discount Code",
@@ -1118,6 +1123,7 @@
     "billingZipPlaceholder": "Billing ZIP code",
     "billingCityPlaceholder": "Billing city",
     "billingCountryPlaceholder": "Billing country",
+    "confirmPasswordPlaceholder": "Confirm password",
     "notesPlaceholder": "Additional notes or comments",
     "serviceNamePlaceholder": "Enter service name",
     "serviceDescriptionPlaceholder": "Describe what this service includes...",
@@ -1151,6 +1157,11 @@
     "allResources": "All Resources",
     "location": "Location",
     "allLocations": "All Locations",
+    "selectCustomer": "Select Customer",
+    "selectResourceType": "Select Resource Type",
+    "selectLocation": "Select Location",
+    "selectServiceType": "Select Service Type",
+    "allServices": "All Services",
     "clearFilters": "Clear Filters",
     "noBookingsFound": "No bookings found",
     "noBookingsForDay": "No bookings scheduled for this day",
@@ -1241,6 +1252,7 @@
     "usesLocationSchedule": "Uses location schedule",
     "addCustomSchedule": "Add Custom Schedule",
     "confirmDeleteResourceSchedule": "Are you sure you want to delete this custom resource schedule? The resource will revert to using the location schedule.",
+    "deleteResourceSchedule": "Delete Custom Schedule",
     "resourceScheduleDeleted": "Resource schedule deleted successfully",
     "noResourcesInLocation": "No resources found in this location",
     "resourceOverridesIntro": "Resources listed below will use the location's operating schedule unless you add a custom schedule.",
@@ -1257,6 +1269,7 @@
     "closure": "Closure",
     "recurring": "Recurring",
     "confirmDeleteClosure": "Are you sure you want to delete this closure?",
+    "deleteClosure": "Delete Closure",
     "closureDeleted": "Closure deleted successfully",
     "addNewClosure": "Add New Closure",
     "editClosure": "Edit Closure",
@@ -1343,8 +1356,8 @@
     "updatePayment": "Update Payment",
     "immediate": "Immediate",
     "net15": "Net 15 days",
-    "net30": "Net 30 days", 
-    "net60": "Net 60 days",    
+    "net30": "Net 30 days",
+    "net60": "Net 60 days",
     "methods": {
       "cash": "Cash",
       "bank_transfer": "Bank Transfer",
@@ -1353,7 +1366,6 @@
       "credit_card": "Credit Card",
       "other": "Other"
     },
-    
     "status": {
       "paid": "Paid",
       "unpaid": "Unpaid",
@@ -1366,36 +1378,31 @@
       "cancelled": "Cancelled",
       "not_required": "No Payment Required"
     },
-    
     "types": {
       "full": "Full Payment",
       "partial": "Partial Payment",
       "installment": "Installment",
       "deposit": "Deposit"
     },
-    
     "terms": {
       "immediate": "Due Immediately",
       "net_7": "Net 7 Days",
-      "net_15": "Net 15 Days", 
+      "net_15": "Net 15 Days",
       "net_30": "Net 30 Days",
       "net_45": "Net 45 Days",
       "net_60": "Net 60 Days"
     },
-    
     "planTypes": {
       "single": "Single Payment",
       "installments": "Installment Plan",
       "recurring": "Recurring Payment"
     },
-    
     "frequency": {
       "monthly": "Monthly",
-      "quarterly": "Quarterly", 
+      "quarterly": "Quarterly",
       "semi_annually": "Semi-Annually",
       "annually": "Annually"
     },
-    
     "confirmPayment": "Confirm Payment",
     "recordPaymentFor": "Record Payment for",
     "paymentRecorded": "Payment recorded successfully",
@@ -1411,7 +1418,6 @@
     "selectPaymentDate": "Select payment date",
     "uploadProofOfPayment": "Upload proof of payment (optional)",
     "paymentNotes": "Payment notes (optional)",
-    
     "bulkActions": {
       "title": "Bulk Payment Actions",
       "markMultipleAsPaid": "Mark Multiple as Paid",
@@ -1421,7 +1427,6 @@
       "confirmBulkPaid": "Mark {{count}} payments as paid?",
       "bulkPaymentSuccess": "{{count}} payments updated successfully"
     },
-    
     "reminders": {
       "title": "Payment Reminders",
       "sendReminder": "Send Reminder",
@@ -1431,16 +1436,14 @@
       "daysBefore": "days before due date",
       "daysAfter": "days after due date"
     },
-    
     "reports": {
       "title": "Payment Reports",
       "monthlyRevenue": "Monthly Revenue",
-      "outstandingPayments": "Outstanding Payments", 
+      "outstandingPayments": "Outstanding Payments",
       "overdueReport": "Overdue Report",
       "paymentsByMethod": "Payments by Method",
       "customerPaymentHistory": "Customer Payment History"
     },
-    
     "tooltips": {
       "recordPayment": "Record a new payment for this contract",
       "viewHistory": "View complete payment history",
@@ -1535,7 +1538,7 @@
     "categoriesCount": "Categories",
     "featureTypes": {
       "boolean": "Boolean (Yes/No)",
-      "numeric": "Numeric (Number)", 
+      "numeric": "Numeric (Number)",
       "text": "Text (String)"
     },
     "categories": {
@@ -1774,7 +1777,7 @@
     "confirmDeletePaymentRecord": "Are you sure you want to delete this payment record?",
     "actionCannotBeUndone": "This action cannot be undone.",
     "partnerContract": "Partner Contract",
-    "partnerInfo": "Partner Information", 
+    "partnerInfo": "Partner Information",
     "pricingDetails": "Pricing Details",
     "planType": "Plan Type",
     "paymentTerms": "Payment Terms",
@@ -1782,7 +1785,7 @@
     "contractFooter": "This document represents the partnership contract. For changes contact administration.",
     "generatedOn": "Generated on",
     "statusActive": "Active",
-    "statusInactive": "Inactive", 
+    "statusInactive": "Inactive",
     "statusPending": "Pending",
     "statusExpired": "Expired",
     "statusCancelled": "Cancelled",
@@ -1882,7 +1885,7 @@
   "filters": {
     "filters": "Filters",
     "customer": "Customer",
-    "location": "Location", 
+    "location": "Location",
     "dateFrom": "Date From",
     "dateTo": "Date To",
     "status": "Status",
@@ -1895,7 +1898,9 @@
     "clearAll": "Clear All",
     "clearFilters": "Clear Filters",
     "noResultsFound": "No contracts found matching your filters",
-    "showingResults": "Showing {{count}} of {{total}} contracts"
+    "showingResults": "Showing {{count}} of {{total}} contracts",
+    "showFilters": "Show Filters",
+    "hideFilters": "Hide Filters"
   },
   "renewalLogs": {
     "title": "Contract Renewal Logs",
@@ -1907,14 +1912,12 @@
     "errorLoading": "Error loading renewal logs",
     "noLogs": "No Renewal Logs",
     "noLogsDescription": "There are no renewal attempts recorded yet. Automatic renewals will appear here.",
-    
     "stats": {
       "total": "Total Attempts",
       "successful": "Successful",
       "failed": "Failed",
       "noAvailability": "No Availability"
     },
-    
     "statusLabels": {
       "success": "Success",
       "failedNoAvailability": "No Availability",
@@ -1922,7 +1925,6 @@
       "failedPayment": "Payment Error",
       "failedError": "System Error"
     },
-    
     "filters": {
       "status": "Status",
       "period": "Period",
@@ -1934,7 +1936,6 @@
       "last90Days": "Last 90 Days",
       "allTime": "All Time"
     },
-    
     "originalContract": "Original Contract",
     "newContract": "New Contract",
     "attemptDate": "Attempt Date",
@@ -1949,10 +1950,12 @@
     "manageTemplates": "Manage Email Templates",
     "manageTemplatesDescription": "Customize the content of your automated email templates. Click on a template to edit its subject line and body content.",
     "customerInvitation": "Customer Invitation",
+    "customerInvitationDescription": "Email sent when inviting new customers to join your workspace",
     "customerInvitationDesc": "Email sent when inviting new customers to join your workspace",
     "partnerAdminInvitation": "Partner Admin Invitation",
     "partnerAdminInvitationDesc": "Email sent when inviting a new administrator",
     "customerBookingConfirmation": "Customer Booking Confirmation",
+    "customerBookingConfirmationDescription": "Email sent to customers when they complete a booking",
     "customerBookingConfirmationDesc": "Email sent to customers when they complete a booking",
     "partnerBookingNotification": "Partner Booking Notification",
     "partnerBookingNotificationDesc": "Email sent to you when a customer makes a booking",
@@ -1988,7 +1991,11 @@
     "invalidEmailFormat": "Inserisci un indirizzo email valido",
     "testEmailSentSuccessfully": "Email di test inviata con successo!",
     "confirmationEmail": "Email Confirmation",
-    "confirmationEmailDescription": "Sent when users register to confirm their email address"
+    "confirmationEmailDescription": "Sent when users register to confirm their email address",
+    "expiryReminder": "Expiry Reminder",
+    "expiryReminderDescription": "Sent to remind customers about upcoming expirations (contracts, payments, etc.)",
+    "contractCreation": "Contract Creation",
+    "contractCreationDescription": "Sent to customers when a new contract is created"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",
@@ -2134,14 +2141,12 @@
     "sentNotifications": "Sent Notifications",
     "templates": "Templates",
     "partnerNotifications": "Partner Notifications",
-    
     "all": "All",
     "unread": "Unread",
     "allTypes": "All Types",
     "searchPlaceholder": "Search notifications...",
     "noNotifications": "No notifications found",
     "errorLoading": "Error loading notifications",
-    
     "types": {
       "promotion": "Promotion",
       "announcement": "Announcement",
@@ -2151,7 +2156,6 @@
       "newLocation": "New Location",
       "new_location": "New Location"
     },
-    
     "createNewNotification": "Create New Notification",
     "editNotification": "Edit Notification",
     "createDescription": "Create and send notifications to your partners or customers",
@@ -2174,14 +2178,12 @@
     "saveAsDraft": "Save as Draft",
     "publish": "Publish",
     "gotIt": "Got it",
-    
     "bold": "Bold",
     "italic": "Italic",
     "heading": "Heading",
     "insertLink": "Insert Link",
     "enterLinkUrl": "Enter URL:",
     "enterLinkText": "Enter link text:",
-    
     "searchRecipients": "Search recipients...",
     "allCustomers": "All Customers",
     "activeContracts": "Active Contracts",
@@ -2192,7 +2194,6 @@
     "deselectAll": "Deselect All",
     "noRecipientsFound": "No recipients found",
     "errorLoadingRecipients": "Error loading recipients",
-    
     "draft": "Draft",
     "published": "Published",
     "active": "Active",
@@ -2213,7 +2214,6 @@
     "notificationSavedAsDraft": "Notification saved as draft",
     "errorSaving": "Error saving notification",
     "errorAcknowledging": "Error acknowledging notification",
-    
     "createTemplate": "Create Template",
     "editTemplate": "Edit Template",
     "noTemplates": "No templates found",
@@ -2236,7 +2236,6 @@
     "availableVariables": "Available Variables",
     "templateSaved": "Template saved successfully",
     "errorSavingTemplate": "Error saving template",
-    
     "variables": {
       "partnerName": "Partner name",
       "customerName": "Customer name",
@@ -2244,7 +2243,6 @@
       "offerPercentage": "Offer percentage",
       "locationName": "Location name"
     },
-    
     "partnerNotificationsDescription": "View notifications created by partners",
     "noPartnerNotifications": "No partner notifications found",
     "allPartners": "All Partners",
@@ -2330,6 +2328,13 @@
     "invoiceFooter": "This document represents a valid invoice for the service provided.",
     "paymentInstructions": "PAYMENT INSTRUCTIONS",
     "paymentInstructionsText": "Please make payment by the due date using the following methods: bank transfer, credit card, or direct debit."
+  },
+  "legal": {
+    "termsOfServiceTitle": "Terms of Service",
+    "privacyPolicyTitle": "Privacy Policy",
+    "lastUpdated": "Last updated",
+    "termsOfServiceContent": "# Terms of Service\n\nWelcome to PowerCowo. By using our services, you agree to the following terms...\n\n## 1. Acceptance of Terms\nBy accessing or using our application, you agree to be bound by these Terms of Service.\n\n## 2. User Responsibilities\nYou are responsible for maintaining the confidentiality of your account and password.\n\n## 3. Privacy\nYour use of our services is also governed by our Privacy Policy.\n\n## 4. Limitation of Liability\nPowerCowo shall not be liable for any indirect, incidental, or consequential damages.",
+    "privacyPolicyContent": "# Privacy Policy\n\nAt PowerCowo, we respect your privacy and are committed to protecting your personal data.\n\n## 1. Information We Collect\nWe collect information that you provide to us when creating an account or using our services.\n\n## 2. How We Use Your Information\nWe use your information to provide and improve our services, and to communicate with you.\n\n## 3. Data Protection\nWe implement security measures to protect your personal data from unauthorized access.\n\n## 4. Your Rights\nYou have the right to access, correct, or delete your personal data."
   },
   "app": {
     "appName": " ",

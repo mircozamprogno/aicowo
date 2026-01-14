@@ -13,16 +13,16 @@ class OneSignalEmailService {
     this.partnerBookingTemplateId = import.meta.env.VITE_ONESIGNAL_PARTNER_BOOKING_TEMPLATE_ID;
     this.uniqueTemplateId = import.meta.env.VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID;
     this.useOneSignal = import.meta.env.VITE_USE_ONESIGNAL === 'true';
-    
+
     // OneSignal API endpoint
     this.apiEndpoint = 'https://onesignal.com/api/v1/notifications';
-    
+
     // Check if OneSignal is configured for invitations
     this.isConfigured = !!(this.appId && this.apiKey && this.adminTemplateId && this.userTemplateId && this.useOneSignal);
-    
+
     // Check if booking templates are configured
     this.isBookingConfigured = !!(this.isConfigured && this.customerBookingTemplateId && this.partnerBookingTemplateId);
-    
+
     // ENHANCED DEBUG LOGGING
     logger.log('=== ONESIGNAL CONFIGURATION DEBUG ===');
     logger.log('Environment Variables Status:');
@@ -39,7 +39,7 @@ class OneSignalEmailService {
     logger.log('  isConfigured:', this.isConfigured ? '✅ YES' : '❌ NO');
     logger.log('  isBookingConfigured:', this.isBookingConfigured ? '✅ YES' : '❌ NO');
     logger.log('=====================================');
-    
+
     if (!this.isConfigured) {
       logger.error('❌ OneSignal email service NOT CONFIGURED');
       logger.error('Missing required variables:');
@@ -60,201 +60,203 @@ class OneSignalEmailService {
     }
   }
 
-/**
- * Send invitation email via OneSignal
- * @param {Object} invitationData - The invitation data
- * @param {string} invitationLink - The invitation registration link
- * @returns {Promise<boolean>} - Success status
- */
-async sendInvitation(invitationData, invitationLink) {
-  if (!this.isConfigured) {
-    logger.error('OneSignal email service not configured');
-    this.logEmailDetails(invitationData, invitationLink);
-    return false;
-  }
-
-  try {
-    // For user invitations, use unique template with custom body
-    if (invitationData.invited_role === 'user') {
-      return await this.sendCustomerInvitation(invitationData, invitationLink);
-    }
-
-    // For admin invitations, keep legacy system (for now)
-    const templateId = this.adminTemplateId;
-    const partnerName = invitationData.partners?.company_name ||
-                       (invitationData.partners?.first_name && invitationData.partners?.second_name 
-                         ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
-                         : invitationData.partners?.first_name || 'the partner');
-    
-    const firstName = invitationData.invited_first_name || 'User';
-    const lastName = invitationData.invited_last_name || '';
-    const fullName = `${firstName} ${lastName}`.trim();
-    const userUUID = invitationData.partner_uuid;
-    const emailSubject = `Invito a unirti a ${partnerName}`;
-
-    const payload = {
-      app_id: this.appId,
-      email_from_name: "PowerCowo",
-      email_subject: emailSubject,
-      email_from_address: "app@powercowo.com",
-      email_reply_to_address: "app@powercowo.com",
-      template_id: templateId,
-      target_channel: "email",
-      include_email_tokens: [invitationData.invited_email],
-      include_aliases: {
-        external_id: [userUUID]
-      },
-      custom_data: {
-        partner_name: partnerName,
-        link_contract: invitationLink,
-        personal_msg: invitationData.custom_message || ''
-      }
-    };
-
-    logger.log('Sending admin invitation with legacy template:', payload);
-    return await this.sendOneSignalRequest(payload);
-  } catch (error) {
-    logger.error('Error in sendInvitation:', error);
-    return false;
-  }
-}
-
-/**
- * Send customer invitation using unique template with custom body
- * @param {Object} invitationData - The invitation data
- * @param {string} invitationLink - The invitation registration link
- * @returns {Promise<boolean>} - Success status
- */
-async sendCustomerInvitation(invitationData, invitationLink) {
-  if (!this.uniqueTemplateId) {
-    logger.error('Unique template ID not configured');
-    return false;
-  }
-
-  try {
-    // Dynamic import to avoid circular dependencies
-    const { supabase } = await import('./supabase');
-    const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
-
-    // Fetch partner data for email settings
-    const { data: partnerData, error: partnerError } = await supabase
-      .from('partners')
-      .select('company_name, structure_name, first_name, second_name, email')
-      .eq('partner_uuid', invitationData.partner_uuid)
-      .single();
-
-
-    if (partnerError || !partnerData) {
-      logger.error('Error fetching partner data:', partnerError);
+  /**
+   * Send invitation email via OneSignal
+   * @param {Object} invitationData - The invitation data
+   * @param {string} invitationLink - The invitation registration link
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendInvitation(invitationData, invitationLink) {
+    if (!this.isConfigured) {
+      logger.error('OneSignal email service not configured');
+      this.logEmailDetails(invitationData, invitationLink);
       return false;
     }
 
-    // Fetch custom template from database
-    const { data: templateData, error: templateError } = await supabase
-      .from('email_templates')
-      .select('body_html, subject_line')
-      .eq('partner_uuid', invitationData.partner_uuid)
-      .eq('template_type', 'customer_invitation')
-      .single();
-
-    // Use custom template or fallback to default
-    let bodyHtml;
-    let emailSubject = `Invito a unirti a ${partnerData.company_name || 'PowerCowo'}`;
-    
-    if (templateData && !templateError) {
-      bodyHtml = templateData.body_html;
-      if (templateData.subject_line) {
-        emailSubject = templateData.subject_line;
+    try {
+      // For user invitations, use unique template with custom body
+      if (invitationData.invited_role === 'user') {
+        return await this.sendCustomerInvitation(invitationData, invitationLink);
       }
-      logger.log('Using custom customer_invitation template');
-    } else {
-      // Fallback to default template (assuming language is 'it')
-      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_invitation || 
-                             DEFAULT_EMAIL_TEMPLATES.en?.customer_invitation;
-      bodyHtml = defaultTemplate?.body || '<p>Welcome!</p>';
-      logger.log('Using default customer_invitation template');
+
+      // For admin invitations, keep legacy system (for now)
+      const templateId = this.adminTemplateId;
+      const partnerName = invitationData.partners?.company_name ||
+        (invitationData.partners?.first_name && invitationData.partners?.second_name
+          ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+          : invitationData.partners?.first_name || 'the partner');
+
+      const firstName = invitationData.invited_first_name || 'User';
+      const lastName = invitationData.invited_last_name || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      const userUUID = invitationData.partner_uuid;
+      const emailSubject = `Invito a unirti a ${partnerName}`;
+
+      const payload = {
+        app_id: this.appId,
+        email_from_name: "PowerCowo",
+        email_subject: emailSubject,
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
+        template_id: templateId,
+        target_channel: "email",
+        include_email_tokens: [invitationData.invited_email],
+        include_aliases: {
+          external_id: [userUUID]
+        },
+        custom_data: {
+          partner_name: partnerName,
+          link_contract: invitationLink,
+          personal_msg: invitationData.custom_message || ''
+        }
+      };
+
+      logger.log('Sending admin invitation with legacy template:', payload);
+      return await this.sendOneSignalRequest(payload);
+    } catch (error) {
+      logger.error('Error in sendInvitation:', error);
+      return false;
     }
-
-    // Replace variables with actual data
-    const partnerName = partnerData.structure_name || partnerData.company_name || 
-                       invitationData.partners?.company_name ||
-                       (invitationData.partners?.first_name && invitationData.partners?.second_name 
-                         ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
-                         : invitationData.partners?.first_name || 'Partner');
-    
-    // Replace variables in subject
-    emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
-    emailSubject = emailSubject.replace(/\{\{structure_name\}\}/g, partnerData.structure_name || '');
-    emailSubject = emailSubject.replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || '');
-    emailSubject = emailSubject.replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || '');
-    emailSubject = emailSubject.replace(/\{\{invitation_link\}\}/g, invitationLink);
-    
-    // Replace variables in body
-    bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
-    bodyHtml = bodyHtml.replace(/\{\{structure_name\}\}/g, partnerData.structure_name || '');
-    bodyHtml = bodyHtml.replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || '');
-    bodyHtml = bodyHtml.replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || '');
-    bodyHtml = bodyHtml.replace(/\{\{invitation_link\}\}/g, invitationLink);
-    bodyHtml = bodyHtml.replace(/\{\{custom_message\}\}/g, invitationData.custom_message || '');
-
-    // Fetch banner URL
-    const { data: files } = await supabase.storage
-      .from('partners')
-      .list(`${invitationData.partner_uuid}`, { search: 'email_banner' });
-
-    const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-    let bannerUrl = '';
-    
-    if (bannerFile) {
-      const { data } = supabase.storage
-        .from('partners')
-        .getPublicUrl(`${invitationData.partner_uuid}/${bannerFile.name}`);
-      bannerUrl = data.publicUrl;
-    }
-
-    // Send using unique template with partner email settings
-    const payload = {
-      app_id: this.appId,
-      email_from_name: partnerData.structure_name || partnerData.company_name || partnerName,
-      email_subject: emailSubject,
-      email_from_address: "app@powercowo.com",
-      email_reply_to_address: "app@powercowo.com",
-      template_id: this.uniqueTemplateId,
-      target_channel: "email",
-      include_email_tokens: [invitationData.invited_email],
-      include_aliases: {
-        external_id: [invitationData.partner_uuid]
-      },
-      custom_data: {
-        banner_url: bannerUrl,
-        body_html: bodyHtml
-      }
-    };
-
-    logger.log('Sending customer invitation with unique template:', {
-      email: invitationData.invited_email,
-      fromName: partnerData.company_name,
-      fromEmail: partnerData.email,
-      bannerUrl,
-      bodyLength: bodyHtml.length
-    });
-
-    return await this.sendOneSignalRequest(payload);
-  } catch (error) {
-    logger.error('Error sending customer invitation:', error);
-    return false;
   }
-}
 
+  /**
+   * Send customer invitation using unique template with custom body
+   * @param {Object} invitationData - The invitation data
+   * @param {string} invitationLink - The invitation registration link
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendCustomerInvitation(invitationData, invitationLink) {
+    if (!this.uniqueTemplateId) {
+      logger.error('Unique template ID not configured');
+      return false;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { supabase } = await import('./supabase');
+      const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
+
+      // Fetch partner data for email settings
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('company_name, structure_name, first_name, second_name, email')
+        .eq('partner_uuid', invitationData.partner_uuid)
+        .single();
+
+
+      if (partnerError || !partnerData) {
+        logger.error('Error fetching partner data:', partnerError);
+        return false;
+      }
+
+      // Fetch custom template from database
+      const { data: templateData, error: templateError } = await supabase
+        .from('email_templates')
+        .select('body_html, subject_line')
+        .eq('partner_uuid', invitationData.partner_uuid)
+        .eq('template_type', 'customer_invitation')
+        .single();
+
+      // Use custom template or fallback to default
+      let bodyHtml;
+      let emailSubject = `Invito a unirti a ${partnerData.company_name || 'PowerCowo'}`;
+
+      if (templateData && !templateError) {
+        bodyHtml = templateData.body_html;
+        if (templateData.subject_line) {
+          emailSubject = templateData.subject_line;
+        }
+        logger.log('Using custom customer_invitation template');
+      } else {
+        // Fallback to default template (assuming language is 'it')
+        const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_invitation ||
+          DEFAULT_EMAIL_TEMPLATES.en?.customer_invitation;
+        bodyHtml = defaultTemplate?.body || '<p>Welcome!</p>';
+        logger.log('Using default customer_invitation template');
+      }
+
+      // Replace variables with actual data
+      const partnerName = partnerData.structure_name || partnerData.company_name ||
+        invitationData.partners?.company_name ||
+        (invitationData.partners?.first_name && invitationData.partners?.second_name
+          ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+          : invitationData.partners?.first_name || 'Partner');
+
+      // Replace variables in subject
+      emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+      emailSubject = emailSubject.replace(/\{\{structure_name\}\}/g, partnerData.structure_name || '');
+      emailSubject = emailSubject.replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || '');
+      emailSubject = emailSubject.replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || '');
+      emailSubject = emailSubject.replace(/\{\{invitation_link\}\}/g, invitationLink);
+
+      // Replace variables in body
+      bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+      bodyHtml = bodyHtml.replace(/\{\{structure_name\}\}/g, partnerData.structure_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{invitation_link\}\}/g, invitationLink);
+      bodyHtml = bodyHtml.replace(/\{\{custom_message\}\}/g, invitationData.custom_message || '');
+
+      // Fetch banner URL
+      const { data: files } = await supabase.storage
+        .from('partners')
+        .list(`${invitationData.partner_uuid}`, { search: 'email_banner' });
+
+      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+      let bannerUrl = '';
+
+      if (bannerFile) {
+        const { data } = supabase.storage
+          .from('partners')
+          .getPublicUrl(`${invitationData.partner_uuid}/${bannerFile.name}`);
+        bannerUrl = data.publicUrl;
+      }
+
+      // Send using unique template with partner email settings
+      const payload = {
+        app_id: this.appId,
+        email_from_name: partnerData.structure_name || partnerData.company_name || partnerName,
+        email_subject: emailSubject,
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
+        template_id: this.uniqueTemplateId,
+        target_channel: "email",
+        include_email_tokens: [invitationData.invited_email],
+        include_aliases: {
+          external_id: [invitationData.partner_uuid]
+        },
+        custom_data: {
+          banner_url: bannerUrl,
+          body_html: bodyHtml
+        }
+      };
+
+      logger.log('Sending customer invitation with unique template:', {
+        email: invitationData.invited_email,
+        fromName: partnerData.company_name,
+        fromEmail: partnerData.email,
+        bannerUrl,
+        bodyLength: bodyHtml.length
+      });
+
+      return await this.sendOneSignalRequest(payload);
+    } catch (error) {
+      logger.error('Error sending customer invitation:', error);
+      return false;
+    }
+  }
+
+  /**
   /**
    * Send booking confirmation email to customer using internal template
    * @param {Object} bookingData - The booking/reservation data from package_reservations table
    * @param {Object} contractData - The contract data
    * @param {Function} t - Translation function
    * @param {Object} partnerData - Partner data
+   * @param {string} calendarLink - Public URL of the generated ICS file
    * @returns {Promise<boolean>} - Success status
    */
-  async sendBookingConfirmation(bookingData, contractData, t, partnerData = null) {
+  async sendBookingConfirmation(bookingData, contractData, t, partnerData = null, calendarLink = null) {
     if (!this.uniqueTemplateId) {
       logger.error('Unique template ID not configured');
       return false;
@@ -269,9 +271,10 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       logger.log('bookingData:', bookingData);
       logger.log('contractData:', contractData);
       logger.log('partnerData:', partnerData);
+      logger.log('calendarLink:', calendarLink);
 
       // Fetch partner data if not provided (for FROM name and banner)
-      // if (!partnerData) {
+      if (!partnerData) {
         const { data: fetchedPartnerData, error: partnerError } = await supabase
           .from('partners')
           .select('company_name, structure_name, first_name, second_name, email')
@@ -283,7 +286,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
           return false;
         }
         partnerData = fetchedPartnerData;
-      // }
+      }
 
       logger.log('=== BOOKING CONFIRMATION DEBUG 2 ===');
       logger.log('bookingData:', bookingData);
@@ -301,15 +304,15 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       // Use custom template or fallback to default
       let bodyHtml;
       let emailSubject = 'Prenotazione Confermata'; // Default subject
-      
+
       if (templateData && !templateError) {
         bodyHtml = templateData.body_html;
         emailSubject = templateData.subject_line || 'Prenotazione Confermata';
         logger.log('Using custom customer_booking_confirmation template');
       } else {
         logger.log('No custom template, using default. Error:', templateError);
-        const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_booking_confirmation || 
-                               DEFAULT_EMAIL_TEMPLATES.en?.customer_booking_confirmation;
+        const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_booking_confirmation ||
+          DEFAULT_EMAIL_TEMPLATES.en?.customer_booking_confirmation;
         bodyHtml = defaultTemplate?.body || '<p>Booking confirmed</p>';
         if (defaultTemplate?.subject) {
           emailSubject = defaultTemplate.subject;
@@ -328,7 +331,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         customerLastName = bookingData.contracts.customers.second_name || '';
         customerEmail = bookingData.contracts.customers.email || '';
         logger.log('✅ Customer from bookingData.contracts.customers');
-      } 
+      }
       // Fallback to contractData.customers
       else if (contractData.customers) {
         customerFirstName = contractData.customers.first_name || '';
@@ -388,14 +391,14 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
 
       // Get resource info
-      const resourceName = bookingData.location_resources?.resource_name 
+      const resourceName = bookingData.location_resources?.resource_name
         || contractData.services?.location_resources?.resource_name
-        || contractData.resource_name 
+        || contractData.resource_name
         || '';
-      
-      const locationName = bookingData.location_resources?.locations?.location_name 
+
+      const locationName = bookingData.location_resources?.locations?.location_name
         || contractData.services?.location_resources?.locations?.location_name
-        || contractData.location_name 
+        || contractData.location_name
         || '';
 
       // Calculate remaining entries
@@ -405,16 +408,16 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       const remainingEntries = maxEntries - (currentEntriesUsed + entriesUsed);
 
       // Duration and time slot info
-      const durationType = bookingData.duration_type === 'full_day' 
+      const durationType = bookingData.duration_type === 'full_day'
         ? (t('reservations.fullDay') || 'Giornata intera')
         : (t('reservations.halfDay') || 'Mezza giornata');
 
       let timeSlotInfo = '';
       if (bookingData.duration_type === 'half_day' && bookingData.time_slot) {
-        const slotLabel = bookingData.time_slot === 'morning' 
+        const slotLabel = bookingData.time_slot === 'morning'
           ? (t('reservations.morning') || 'Mattina')
           : (t('reservations.afternoon') || 'Pomeriggio');
-        const slotHours = bookingData.time_slot === 'morning' 
+        const slotHours = bookingData.time_slot === 'morning'
           ? '9:00 - 13:00'
           : '14:00 - 18:00';
         timeSlotInfo = `${slotLabel} (${slotHours})`;
@@ -460,6 +463,12 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       bodyHtml = bodyHtml.replace(/\{\{remaining_count\}\}/g, Math.max(0, remainingEntries).toString());
       bodyHtml = bodyHtml.replace(/\{\{remaining_entries\}\}/g, Math.max(0, remainingEntries).toString());
 
+      // Calendar Link Generation - Use passed link or fallback to empty
+      const finalCalendarLink = calendarLink || '#';
+
+      bodyHtml = bodyHtml.replace(/\{\{calendar_link\}\}/g, finalCalendarLink);
+      bodyHtml = bodyHtml.replace(/\{\{calendar_link_label\}\}/g, t?.('bookings.addToCalendar') || 'Aggiungi al Calendario 📅');
+
       // Fetch banner URL
       const { data: files } = await supabase.storage
         .from('partners')
@@ -467,7 +476,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
 
       const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
       let bannerUrl = '';
-      
+
       if (bannerFile) {
         const { data } = supabase.storage
           .from('partners')
@@ -518,7 +527,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
    */
   formatBookingDate(date) {
     if (!date) return '';
-    
+
     try {
       return new Date(date).toLocaleDateString('it-IT', {
         weekday: 'long',
@@ -533,6 +542,169 @@ async sendCustomerInvitation(invitationData, invitationLink) {
   }
 
   /**
+   * Send contract creation email to customer
+   * @param {Object} contractData - The contract data
+   * @param {Function} t - Translation function
+   * @param {Object} partnerData - Partner data (optional)
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendContractCreationEmail(contractData, t, partnerData = null) {
+    if (!this.uniqueTemplateId) {
+      logger.error('Unique template ID not configured');
+      return false;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { supabase } = await import('./supabase');
+      const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
+
+      logger.log('=== CONTRACT CREATION EMAIL DEBUG ===');
+      logger.log('contractData:', contractData);
+
+      // Fetch partner data if not provided
+      const { data: fetchedPartnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('company_name, structure_name, first_name, second_name, email')
+        .eq('partner_uuid', contractData.partner_uuid)
+        .single();
+
+      if (partnerError || !fetchedPartnerData) {
+        logger.error('Error fetching partner data:', partnerError);
+        return false;
+      }
+      partnerData = fetchedPartnerData;
+
+      // Fetch custom template from database
+      const { data: templateData, error: templateError } = await supabase
+        .from('email_templates')
+        .select('body_html, subject_line')
+        .eq('partner_uuid', contractData.partner_uuid)
+        .eq('template_type', 'contract_creation')
+        .single();
+
+      // Use custom template or fallback to default
+      let bodyHtml;
+      let emailSubject = 'Nuovo Contratto Creato';
+
+      if (templateData && !templateError) {
+        bodyHtml = templateData.body_html;
+        emailSubject = templateData.subject_line || 'Nuovo Contratto Creato';
+        logger.log('Using custom contract_creation template');
+      } else {
+        logger.log('No custom template, using default. Error:', templateError);
+        const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.contract_creation ||
+          DEFAULT_EMAIL_TEMPLATES.en?.contract_creation;
+        bodyHtml = defaultTemplate?.body || '<p>Contract created</p>';
+        if (defaultTemplate?.subject) {
+          emailSubject = defaultTemplate.subject;
+        }
+        logger.log('Using default contract_creation template');
+      }
+
+      // Extract customer data
+      let customerFirstName = '';
+      let customerLastName = '';
+      let customerEmail = '';
+
+      if (contractData.customers) {
+        customerFirstName = contractData.customers.first_name || '';
+        customerLastName = contractData.customers.second_name || '';
+        customerEmail = contractData.customers.email || '';
+      }
+
+      const customerName = `${customerFirstName} ${customerLastName}`.trim();
+
+      if (!customerEmail) {
+        logger.error('❌ CUSTOMER EMAIL NOT FOUND!');
+        return false;
+      }
+
+      logger.log('✅ Customer email:', customerEmail);
+
+      // Get contract info
+      const contractNumber = contractData.contract_number || '';
+      const serviceName = contractData.service_name || '';
+      const startDate = contractData.start_date ? new Date(contractData.start_date).toLocaleDateString('it-IT', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }) : '';
+      const endDate = contractData.end_date ? new Date(contractData.end_date).toLocaleDateString('it-IT', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }) : '';
+
+      const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
+      const serviceType = contractData.service_type || '';
+
+      // Replace variables in subject and body
+      emailSubject = emailSubject.replace(/\{\{service_name\}\}/g, serviceName);
+      emailSubject = emailSubject.replace(/\{\{contract_number\}\}/g, contractNumber);
+      emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+      emailSubject = emailSubject.replace(/\{\{customer_name\}\}/g, customerName);
+      emailSubject = emailSubject.replace(/\{\{contract_type\}\}/g, serviceType);
+
+      bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+      bodyHtml = bodyHtml.replace(/\{\{structure_name\}\}/g, partnerData?.structure_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_firstname\}\}/g, partnerData?.first_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_lastname\}\}/g, partnerData?.second_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{customer_name\}\}/g, customerName);
+      bodyHtml = bodyHtml.replace(/\{\{contract_number\}\}/g, contractNumber);
+      bodyHtml = bodyHtml.replace(/\{\{service_name\}\}/g, serviceName);
+      bodyHtml = bodyHtml.replace(/\{\{contract_type\}\}/g, serviceType);
+      bodyHtml = bodyHtml.replace(/\{\{start_date\}\}/g, startDate);
+      bodyHtml = bodyHtml.replace(/\{\{end_date\}\}/g, endDate);
+
+      // Fetch banner URL
+      const { data: files } = await supabase.storage
+        .from('partners')
+        .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+
+      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+      let bannerUrl = '';
+
+      if (bannerFile) {
+        const { data } = supabase.storage
+          .from('partners')
+          .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
+        bannerUrl = data.publicUrl;
+      }
+
+      // Send email
+      const payload = {
+        app_id: this.appId,
+        email_from_name: partnerName,
+        email_subject: emailSubject,
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
+        template_id: this.uniqueTemplateId,
+        target_channel: "email",
+        include_email_tokens: [customerEmail],
+        include_aliases: {
+          external_id: [contractData.partner_uuid]
+        },
+        custom_data: {
+          banner_url: bannerUrl,
+          body_html: bodyHtml
+        }
+      };
+
+      logger.log('📧 Sending contract creation email:', {
+        to: customerEmail,
+        from: partnerName,
+        subject: emailSubject
+      });
+
+      return await this.sendOneSignalRequest(payload);
+    } catch (error) {
+      logger.error('Error sending contract creation email:', error);
+      return false;
+    }
+  }
+
+  /**
    * Send notification via OneSignal API (extracted for reuse)
    * @param {Object} payload - OneSignal notification payload
    * @returns {Promise<boolean>} - Success status
@@ -542,11 +714,11 @@ async sendCustomerInvitation(invitationData, invitationLink) {
       // Check if we should use a backend proxy
       const useProxy = import.meta.env.VITE_ONESIGNAL_PROXY_URL;
       const apiUrl = useProxy || this.apiEndpoint;
-      
+
       const headers = {
         'Content-Type': 'application/json'
       };
-      
+
       // Add authorization header differently based on proxy or direct
       if (useProxy) {
         // If using proxy, send API key in custom header
@@ -570,13 +742,13 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         } catch {
           errorData = { message: errorText };
         }
-        
+
         logger.error('OneSignal API error:', {
           status: response.status,
           statusText: response.statusText,
           error: errorData
         });
-        
+
         // If blocked by client, suggest solutions
         if (response.status === 0 || errorText.includes('ERR_BLOCKED_BY_CLIENT')) {
           logger.error('OneSignal request blocked. Solutions:');
@@ -584,21 +756,21 @@ async sendCustomerInvitation(invitationData, invitationLink) {
           logger.error('2. Add onesignal.com to whitelist');
           logger.error('3. Use a backend proxy (set VITE_ONESIGNAL_PROXY_URL)');
         }
-        
+
         return false;
       }
 
       const result = await response.json();
       logger.log('OneSignal notification sent successfully:', result);
-      
+
       // Check if notification was created successfully
       const success = !!(result.id);
       logger.log('OneSignal success check:', { id: result.id, success });
-      
+
       return success;
     } catch (error) {
       logger.error('OneSignal API request failed:', error);
-      
+
       // Provide helpful error messages
       if (error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
         logger.error('Request blocked by browser security. Try:');
@@ -606,7 +778,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         logger.error('2. Use incognito/private mode');
         logger.error('3. Set up a backend proxy');
       }
-      
+
       return false;
     }
   }
@@ -619,19 +791,19 @@ async sendCustomerInvitation(invitationData, invitationLink) {
   async sendOneSignalNotification({ email, templateId, substitutions, invitationData }) {
     try {
       // Prepare the exact JSON structure for invitations
-      const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
-                         ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
-                         : invitationData.partners?.first_name || 
-                           invitationData.partners?.company_name || 
-                           'the partner';
-      
+      const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name
+        ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+        : invitationData.partners?.first_name ||
+        invitationData.partners?.company_name ||
+        'the partner';
+
       const firstName = invitationData.invited_first_name || 'User';
       const lastName = invitationData.invited_last_name || '';
       const fullName = `${firstName} ${lastName}`.trim();
-      
+
       // For userUUID: use partner_uuid for admin invitations, could be user-specific for users
       const userUUID = invitationData.partner_uuid;
-      
+
       // Create email subject with actual partner name
       const emailSubject = `Invito a unirti a ${partnerName}`;
 
@@ -649,7 +821,7 @@ async sendCustomerInvitation(invitationData, invitationLink) {
         },
         custom_data: {
           // For admin invitations use "partner_name", for user invitations use "user_name"
-          ...(invitationData.invited_role === 'admin' 
+          ...(invitationData.invited_role === 'admin'
             ? { partner_name: partnerName }
             : { user_name: fullName }
           ),
@@ -787,15 +959,15 @@ async sendCustomerInvitation(invitationData, invitationLink) {
    * Log email details for development (invitations)
    */
   logEmailDetails(invitationData, invitationLink) {
-    const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name 
-                       ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
-                       : invitationData.partners?.first_name || 
-                         invitationData.partners?.company_name || 
-                         'the partner';
-    
+    const partnerName = invitationData.partners?.first_name && invitationData.partners?.second_name
+      ? `${invitationData.partners.first_name} ${invitationData.partners.second_name}`
+      : invitationData.partners?.first_name ||
+      invitationData.partners?.company_name ||
+      'the partner';
+
     // Create email subject with actual partner name  
     const emailSubject = `Invito a unirti a ${partnerName}`;
-    
+
     logger.log('=== ONESIGNAL EMAIL WOULD BE SENT ===');
     logger.log('To:', invitationData.invited_email);
     logger.log('Subject:', emailSubject);

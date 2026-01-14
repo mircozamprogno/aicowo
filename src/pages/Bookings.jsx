@@ -1,5 +1,5 @@
 // src/pages/Bookings.jsx
-import { AlertTriangle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Filter, Home, Package, Plus, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Home, Package, Plus, TrendingDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '../components/common/ToastContainer';
 import PartnerBookingForm from '../components/forms/PartnerBookingForm';
@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase';
 import '../styles/pages/bookings.css';
 
 import ConfirmModal from '../components/common/ConfirmModal';
+import SearchableSelect from '../components/common/SearchableSelect';
 
 import { logActivity } from '../utils/activityLogger';
 import logger from '../utils/logger';
@@ -19,24 +20,25 @@ const Bookings = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState('month');
   const [filteredBookings, setFilteredBookings] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [filters, setFilters] = useState({
     customer: '',
     resourceType: '',
-    location: ''
+    location: '',
+    serviceType: ''
   });
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
-  
+
   // Partner booking modal state
   const [showPartnerBooking, setShowPartnerBooking] = useState(false);
-  
+
   // Customer available packages state
   const [hasAvailablePackages, setHasAvailablePackages] = useState(false);
-  
+
   // Customer contracts for enhanced details
   const [customerContracts, setCustomerContracts] = useState([]);
-  
+
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
@@ -82,7 +84,7 @@ const Bookings = () => {
         .from('customers')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!customerData) return;
 
@@ -121,12 +123,12 @@ const Bookings = () => {
   const checkAvailablePackages = async () => {
     try {
       logger.log('Checking available packages for user:', user.id);
-      
+
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (customerError) {
         logger.error('Error fetching customer:', customerError);
@@ -176,16 +178,16 @@ const Bookings = () => {
         const usedReservations = contract.package_reservations?.filter(
           r => r.reservation_status === 'confirmed'
         ).length || 0;
-        
+
         const totalReservations = contract.service_max_entries || 0;
         const available = usedReservations < totalReservations;
-        
+
         logger.log(`Contract ${contract.contract_number}:`, {
           total: totalReservations,
           used: usedReservations,
           available: available
         });
-        
+
         return available;
       });
 
@@ -284,7 +286,7 @@ const Bookings = () => {
           .from('customers')
           .select('id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (customerData) {
           bookingsQuery = bookingsQuery.eq('customer_id', customerData.id);
@@ -305,6 +307,7 @@ const Bookings = () => {
 
       const normalizedPackages = (packagesData || []).map(pkg => ({
         id: `pkg-${pkg.id}`,
+        original_id: pkg.id, // Keep original ID for ICS filename
         start_date: pkg.reservation_date,
         end_date: pkg.reservation_date,
         contracts: pkg.contracts,
@@ -339,14 +342,14 @@ const Bookings = () => {
     try {
       // Calculate date range based on view type
       let startDate, endDate;
-      
+
       if (viewType === 'month') {
         const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         startDate = new Date(firstDay);  // <-- FIXED: assign to outer variable
         const dayOfWeek = firstDay.getDay();
         const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         startDate.setDate(startDate.getDate() - daysToSubtract);
-        
+
         const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         endDate = new Date(lastDay);
         endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
@@ -371,23 +374,46 @@ const Bookings = () => {
           location_resources (
             id,
             resource_name,
-            resource_type
+            resource_type,
+            locations (
+              id,
+              location_name
+            )
           )
-        `)
-        .eq('partner_uuid', profile.partner_uuid)
+        `);
+
+      // Only filter by partner_uuid if it exists
+      if (profile?.partner_uuid) {
+        logger.log('Filtering closures by partner_uuid:', profile.partner_uuid);
+        closuresQuery = closuresQuery.eq('partner_uuid', profile.partner_uuid);
+      } else {
+        logger.log('WARNING: No partner_uuid found, fetching ALL closures');
+      }
+
+      closuresQuery = closuresQuery
         .lte('closure_start_date', formatDate(endDate))
         .gte('closure_end_date', formatDate(startDate));
-
-      // Apply location filter if set
-      if (filters.location) {
-        closuresQuery = closuresQuery.or(`location_id.eq.${filters.location},location_resources.locations.id.eq.${filters.location}`);
-      }
 
       const { data: closuresData, error } = await closuresQuery;
 
       if (error) throw error;
 
-      setClosures(closuresData || []);
+      // Filter by location in memory to avoid complex Supabase OR query with nested relations
+      let filteredClosures = closuresData || [];
+      if (filters.location) {
+        filteredClosures = filteredClosures.filter(closure => {
+          // Check if closure is directly for this location
+          if (closure.location_id?.toString() === filters.location) return true;
+
+          // Check if closure is for a resource in this location
+          // Note: location_resources can be null if it's a location-wide closure
+          if (closure.location_resources?.locations?.id?.toString() === filters.location) return true;
+
+          return false;
+        });
+      }
+
+      setClosures(filteredClosures);
     } catch (error) {
       logger.error('Error fetching closures:', error);
       setClosures([]);
@@ -426,17 +452,20 @@ const Bookings = () => {
     if (filters.location) {
       filtered = filtered.filter(b => b.location_resources?.locations?.id?.toString() === filters.location);
     }
+    if (filters.serviceType) {
+      filtered = filtered.filter(b => b.contracts?.service_type === filters.serviceType);
+    }
     setFilteredBookings(filtered);
   };
 
   const handlePartnerBookingSuccess = async (reservation) => {
     logger.log('Booking successful:', reservation);
-    
+
     try {
       // Fetch full reservation details for logging
       let fullReservation = null;
       let isPackageReservation = false;
-      
+
       // Determine if it's a package reservation or subscription booking
       if (reservation.duration_type) {
         // It's a package reservation
@@ -465,8 +494,8 @@ const Bookings = () => {
             )
           `)
           .eq('id', reservation.id)
-          .single();
-        
+          .maybeSingle();
+
         if (!error && data) {
           fullReservation = data;
         }
@@ -496,32 +525,32 @@ const Bookings = () => {
             )
           `)
           .eq('id', reservation.id)
-          .single();
-        
+          .maybeSingle();
+
         if (!error && data) {
           fullReservation = data;
         }
       }
 
       if (fullReservation) {
-        const customerName = fullReservation.customers?.company_name || 
+        const customerName = fullReservation.customers?.company_name ||
           `${fullReservation.customers?.first_name} ${fullReservation.customers?.second_name}`;
-        
+
         const resourceInfo = `${fullReservation.location_resources?.resource_name} (${fullReservation.location_resources?.resource_type})`;
         const locationName = fullReservation.location_resources?.locations?.location_name;
 
         if (isPackageReservation) {
           // Log package reservation
-          const durationText = fullReservation.duration_type === 'full_day' 
-            ? 'Full Day' 
+          const durationText = fullReservation.duration_type === 'full_day'
+            ? 'Full Day'
             : `Half Day (${fullReservation.time_slot})`;
-          
+
           await logActivity({
             action_category: 'booking',
             action_type: 'created',
             entity_id: fullReservation.id.toString(),
             entity_type: 'package_reservations',
-            description: isCustomer 
+            description: isCustomer
               ? `Customer created package reservation for ${resourceInfo} at ${locationName} on ${fullReservation.reservation_date}`
               : `Created package reservation for ${customerName} at ${resourceInfo}, ${locationName} on ${fullReservation.reservation_date}`,
             metadata: {
@@ -552,7 +581,7 @@ const Bookings = () => {
             action_type: 'created',
             entity_id: fullReservation.id.toString(),
             entity_type: 'bookings',
-            description: isCustomer 
+            description: isCustomer
               ? `Customer created subscription booking for ${resourceInfo} at ${locationName}`
               : `Created subscription booking for ${customerName} at ${resourceInfo}, ${locationName}`,
             metadata: {
@@ -587,7 +616,7 @@ const Bookings = () => {
       fetchCustomerContracts();
     }
     setShowPartnerBooking(false);
-    toast.success(isCustomer ? 'Reservation created successfully' : 'Booking created successfully for customer');
+    toast.success(isCustomer ? t('bookings.reservationCreatedSuccessfully') : t('bookings.bookingCreatedSuccessfully'));
   };
 
 
@@ -616,14 +645,14 @@ const Bookings = () => {
             customers(first_name, second_name, email, company_name)
           `)
           .eq('id', bookingId)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
 
         // Soft delete the package reservation
         const { error: deleteError } = await supabase
           .from('package_reservations')
-          .update({ 
+          .update({
             is_archived: true,
             reservation_status: 'cancelled'
           })
@@ -634,7 +663,7 @@ const Bookings = () => {
         // Restore the entry count in the contract
         const { error: contractError } = await supabase
           .from('contracts')
-          .update({ 
+          .update({
             entries_used: Math.max(0, (packageData.contracts.entries_used || 0) - 1)
           })
           .eq('id', packageData.contract_id);
@@ -642,9 +671,9 @@ const Bookings = () => {
         if (contractError) throw contractError;
 
         // Log activity
-        const customerName = packageData.customers?.company_name || 
+        const customerName = packageData.customers?.company_name ||
           `${packageData.customers?.first_name} ${packageData.customers?.second_name}`;
-        
+
         try {
           await logActivity({
             // partner_uuid: profile.partner_uuid, // ADD THIS
@@ -652,7 +681,7 @@ const Bookings = () => {
             action_type: 'deleted',
             entity_type: 'package_reservations',
             entity_id: parseInt(bookingId),
-            description: isCustomer 
+            description: isCustomer
               ? `Customer deleted package reservation for ${packageData.location_resources?.resource_name}`
               : `Deleted package reservation for ${customerName} at ${packageData.location_resources?.resource_name}`,
             metadata: {
@@ -694,14 +723,14 @@ const Bookings = () => {
             customers(first_name, second_name, email, company_name)
           `)
           .eq('id', bookingId)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
 
         // Soft delete the booking
         const { error: deleteError } = await supabase
           .from('bookings')
-          .update({ 
+          .update({
             is_archived: true,
             booking_status: 'cancelled'
           })
@@ -710,9 +739,9 @@ const Bookings = () => {
         if (deleteError) throw deleteError;
 
         // Log activity
-        const customerName = bookingData.customers?.company_name || 
+        const customerName = bookingData.customers?.company_name ||
           `${bookingData.customers?.first_name} ${bookingData.customers?.second_name}`;
-        
+
         try {
           await logActivity({
             // partner_uuid: profile.partner_uuid, // ADD THIS
@@ -720,7 +749,7 @@ const Bookings = () => {
             action_type: 'deleted',
             entity_type: 'bookings',
             entity_id: parseInt(bookingId),
-            description: isCustomer 
+            description: isCustomer
               ? `Customer deleted subscription booking for ${bookingData.location_resources?.resource_name}`
               : `Deleted subscription booking for ${customerName} at ${bookingData.location_resources?.resource_name}`,
             metadata: {
@@ -841,14 +870,14 @@ const Bookings = () => {
   const getResourceColor = (booking) => {
     const serviceType = booking.contracts?.service_type || 'abbonamento';
     const resourceType = booking.location_resources?.resource_type || 'scrivania';
-    
+
     const colors = {
       'abbonamento_scrivania': '#3b82f6',
       'abbonamento_sala_riunioni': '#8b5cf6',
       'pacchetto_scrivania': '#10b981',
       'pacchetto_sala_riunioni': '#f59e0b'
     };
-    
+
     return colors[`${serviceType}_${resourceType}`] || '#6b7280';
   };
 
@@ -869,28 +898,28 @@ const Bookings = () => {
     // For partners: show customer name
     if (!isCustomer) {
       const customerName = booking.customers?.company_name || booking.customers?.first_name;
-      
+
       if (booking.booking_type === 'package') {
-        const durationText = booking.duration_type === 'full_day' 
-          ? t('reservations.fullDay') 
+        const durationText = booking.duration_type === 'full_day'
+          ? t('reservations.fullDay')
           : `${t('reservations.halfDay')} (${booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`;
         return `${customerName} - ${durationText}`;
       }
-      
+
       return customerName;
     }
-    
+
     // For customers: show resource + location
     const resourceName = booking.location_resources?.resource_name;
     const locationName = booking.location_resources?.locations?.location_name;
-    
+
     if (booking.booking_type === 'package') {
-      const durationText = booking.duration_type === 'full_day' 
-        ? t('reservations.fullDay') 
+      const durationText = booking.duration_type === 'full_day'
+        ? t('reservations.fullDay')
         : booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon');
       return `${resourceName} - ${durationText}`;
     }
-    
+
     return `${resourceName} - ${locationName}`;
   };
 
@@ -912,14 +941,19 @@ const Bookings = () => {
   const renderMonthView = () => {
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    // Correctly align to Monday start
+    const dayOfWeek = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+
     const days = [];
     const tempDate = new Date(startDate);
     for (let i = 0; i < 42; i++) {
       days.push(new Date(tempDate));
       tempDate.setDate(tempDate.getDate() + 1);
     }
-    
+
     return (
       <div className="calendar-month">
         <div className="calendar-weekdays">
@@ -934,7 +968,7 @@ const Bookings = () => {
             const dayBookings = getBookingsForDate(day);
             const dayClosures = getClosuresForDate(day);
             const closureInfo = categorizeClosures(dayClosures);
-            
+
             return (
               <div
                 key={idx}
@@ -944,15 +978,15 @@ const Bookings = () => {
                 <div className="calendar-day-header">
                   <div className="calendar-day-number">{day.getDate()}</div>
                   {closureInfo.hasLocationClosure && (
-                    <div 
+                    <div
                       className="closure-badge full-closure"
                       title={`${t('bookings.locationClosed')}: ${closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}`}
+                      style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}
                     >
-                      🚫
                     </div>
                   )}
                   {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
-                    <div 
+                    <div
                       className="closure-badge partial-closure"
                       title={`${closureInfo.partialClosureCount} ${t('bookings.resourcesClosed')}`}
                     >
@@ -960,7 +994,7 @@ const Bookings = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {closureInfo.hasLocationClosure && (
                   <div className="closure-overlay">
                     <div className="closure-message">
@@ -968,15 +1002,37 @@ const Bookings = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {!closureInfo.hasLocationClosure && (
                   <div className="calendar-day-bookings">
                     {dayBookings.slice(0, 3).map(b => {
                       const contract = getContractForBooking(b);
+
+                      const startDate = new Date(b.start_date);
+                      const endDate = new Date(b.end_date);
+                      const currentDayTime = day.getTime();
+
+                      // Normalize times to midnight for comparison
+                      startDate.setHours(0, 0, 0, 0);
+                      endDate.setHours(0, 0, 0, 0);
+                      day.setHours(0, 0, 0, 0);
+
+                      const isStart = startDate.getTime() === currentDayTime;
+                      const isEnd = endDate.getTime() === currentDayTime;
+
+                      // Use grid index for column detection (Monday based grid)
+                      const isLeftColumn = idx % 7 === 0;
+                      const isRightColumn = (idx + 1) % 7 === 0;
+
+                      // Class logic
+                      let continuityClasses = '';
+                      if (!isStart && !isLeftColumn) continuityClasses += ' continue-left';
+                      if (!isEnd && !isRightColumn) continuityClasses += ' continue-right';
+
                       return (
                         <div
                           key={b.id}
-                          className="calendar-booking-item"
+                          className={`calendar-booking-item ${continuityClasses}`}
                           style={{ backgroundColor: getResourceColor(b) }}
                           title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
                           onClick={(e) => {
@@ -1014,7 +1070,7 @@ const Bookings = () => {
     const dayOfWeek = currentDate.getDay();
     const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     startOfWeek.setDate(currentDate.getDate() - daysToSubtract);
-    
+
     const weekDays = [];
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
@@ -1030,7 +1086,7 @@ const Bookings = () => {
             const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
             const dayClosures = getClosuresForDate(day);
             const closureInfo = categorizeClosures(dayClosures);
-            
+
             return (
               <div key={idx} className={`calendar-week-day-header ${isToday ? 'today' : ''} ${closureInfo.hasLocationClosure ? 'has-closure' : ''}`}>
                 <div className="week-day-name">
@@ -1039,7 +1095,6 @@ const Bookings = () => {
                 <div className="week-day-number">{day.getDate()}</div>
                 {closureInfo.hasLocationClosure && (
                   <div className="week-closure-indicator" title={t('bookings.locationClosed')}>
-                    🚫
                   </div>
                 )}
                 {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
@@ -1057,10 +1112,10 @@ const Bookings = () => {
             const dayBookings = getBookingsForDate(day);
             const dayClosures = getClosuresForDate(day);
             const closureInfo = categorizeClosures(dayClosures);
-            
+
             return (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`calendar-week-day ${isToday ? 'today' : ''} ${closureInfo.hasLocationClosure ? 'location-closed' : ''}`}
                 onClick={() => { setCurrentDate(new Date(day)); setViewType('day'); }}
               >
@@ -1140,13 +1195,16 @@ const Bookings = () => {
                 {closureInfo.allClosures.map((closure, idx) => (
                   <div key={idx} className="closure-item">
                     <span className="closure-scope-badge" style={{ backgroundColor: getClosureColor(closure.closure_type) }}>
-                      {closure.closure_scope === 'resource_type' 
+                      {closure.closure_scope === 'resource_type'
                         ? t(`resources.${closure.resource_type}`)
                         : closure.location_resources?.resource_name
                       }
                     </span>
                     <span className="closure-reason">
                       {closure.closure_reason || t(`reservations.closureType.${closure.closure_type}`)}
+                    </span>
+                    <span className="closure-location">
+                      @ {closure.location_resources?.locations?.location_name || closure.locations?.location_name || 'NO LOCATION'}
                     </span>
                   </div>
                 ))}
@@ -1173,7 +1231,7 @@ const Bookings = () => {
                   {subscriptions.map(booking => {
                     const contract = getContractForBooking(booking);
                     const daysRemaining = contract ? calculateDaysRemaining(contract.end_date) : 0;
-                    
+
                     return (
                       <div key={booking.id} className="customer-booking-card subscription-card">
                         <div className="card-header">
@@ -1205,7 +1263,7 @@ const Bookings = () => {
                               <div className="status-row">
                                 <Clock size={16} />
                                 <span className={`days-remaining ${daysRemaining <= 7 ? 'warning' : ''}`}>
-                                  {daysRemaining > 0 
+                                  {daysRemaining > 0
                                     ? `${daysRemaining} ${t('contracts.daysRemaining')}`
                                     : t('contracts.expired')
                                   }
@@ -1249,13 +1307,13 @@ const Bookings = () => {
                   {packages.map(booking => {
                     const contract = getContractForBooking(booking);
                     const daysRemaining = contract ? calculateDaysRemaining(contract.end_date) : 0;
-                    const entriesRemaining = contract 
-                      ? (contract.service_max_entries - contract.entries_used) 
+                    const entriesRemaining = contract
+                      ? (contract.service_max_entries - contract.entries_used)
                       : 0;
-                    const utilizationPercent = contract 
+                    const utilizationPercent = contract
                       ? ((contract.entries_used / contract.service_max_entries) * 100).toFixed(0)
                       : 0;
-                    
+
                     return (
                       <div key={booking.id} className="customer-booking-card package-card">
                         <div className="card-header">
@@ -1273,9 +1331,9 @@ const Bookings = () => {
                               <div className="package-overview">
                                 <div className="entries-display">
                                   <div className="entries-progress-bar">
-                                    <div 
-                                      className="entries-progress-fill" 
-                                      style={{ 
+                                    <div
+                                      className="entries-progress-fill"
+                                      style={{
                                         width: `${utilizationPercent}%`,
                                         backgroundColor: entriesRemaining <= 2 ? '#ef4444' : entriesRemaining <= 5 ? '#f59e0b' : '#10b981'
                                       }}
@@ -1288,7 +1346,7 @@ const Bookings = () => {
                                     <span className="entries-percent">{utilizationPercent}% {t('bookings.used')}</span>
                                   </div>
                                 </div>
-                                
+
                                 <div className="package-alerts">
                                   {daysRemaining <= 14 && daysRemaining > 0 && (
                                     <div className="alert-item warning">
@@ -1333,7 +1391,7 @@ const Bookings = () => {
                                 <div className="detail-row">
                                   <span className="detail-label">{t('bookings.timeSlot')}:</span>
                                   <span className="detail-value">
-                                    {booking.duration_type === 'full_day' 
+                                    {booking.duration_type === 'full_day'
                                       ? t('reservations.fullDay')
                                       : `${t('reservations.halfDay')} (${booking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`
                                     }
@@ -1352,7 +1410,7 @@ const Bookings = () => {
 
                             {entriesRemaining > 0 && (
                               <div className="card-actions">
-                                <button 
+                                <button
                                   className="action-button primary"
                                   onClick={() => setShowPartnerBooking(true)}
                                 >
@@ -1379,7 +1437,7 @@ const Bookings = () => {
     const dayBookings = getBookingsForDate(currentDate);
     const dayClosures = getClosuresForDate(currentDate);
     const closureInfo = categorizeClosures(dayClosures);
-    
+
     return (
       <div className="calendar-day-view">
         <div className="day-view-header">
@@ -1410,7 +1468,7 @@ const Bookings = () => {
                 {closureInfo.allClosures.map((closure, idx) => (
                   <div key={idx} className="closure-item">
                     <span className="closure-scope-badge" style={{ backgroundColor: getClosureColor(closure.closure_type) }}>
-                      {closure.closure_scope === 'resource_type' 
+                      {closure.closure_scope === 'resource_type'
                         ? t(`resources.${closure.resource_type}`)
                         : closure.location_resources?.resource_name
                       }
@@ -1418,18 +1476,88 @@ const Bookings = () => {
                     <span className="closure-reason">
                       {closure.closure_reason || t(`reservations.closureType.${closure.closure_type}`)}
                     </span>
-                    {closure.locations && (
-                      <span className="closure-location">@ {closure.locations.location_name}</span>
-                    )}
+                    <span className="closure-location">
+                      @ {closure.location_resources?.locations?.location_name || closure.locations?.location_name || 'NO LOCATION'}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         )}
-        
+
         <div className="day-view-content">
-          {/* Rest of existing renderPartnerDayView content */}
+          {dayBookings.length === 0 ? (
+            <div className="day-no-bookings">
+              <Calendar size={48} className="empty-icon" />
+              <p>{t('bookings.noBookingsForDay')}</p>
+            </div>
+          ) : (
+            <div className="partner-day-bookings-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
+              {dayBookings.map(b => {
+                const contract = getContractForBooking(b);
+                const customerName = getBookingDisplayText(b);
+                const resourceName = b.location_resources?.resource_name || t('bookings.unknownResource');
+                const locationName = b.location_resources?.locations?.location_name || '';
+
+                return (
+                  <div
+                    key={b.id}
+                    className="partner-day-booking-card"
+                    style={{
+                      backgroundColor: 'white',
+                      borderLeft: `5px solid ${getResourceColor(b)}`,
+                      padding: '1rem',
+                      borderRadius: '0.5rem',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedBooking(b);
+                      setShowBookingDetails(true);
+                    }}
+                  >
+                    <div className="booking-info">
+                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', fontWeight: '600' }}>{customerName}</h3>
+                      <div style={{ color: '#6b7280', fontSize: '0.9rem', display: 'flex', gap: '1rem' }}>
+                        <span>📍 {locationName}</span>
+                        <span>{resourceName}</span>
+                      </div>
+                    </div>
+
+                    <div className="booking-meta" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span className={`booking-type-badge ${b.booking_type}`}
+                        style={{
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                          backgroundColor: b.booking_type === 'package' ? '#d1fae5' : '#dbeafe',
+                          color: b.booking_type === 'package' ? '#059669' : '#1e40af'
+                        }}
+                      >
+                        {b.booking_type === 'package' ? t('services.package') : t('services.subscription')}
+                      </span>
+
+                      {isCustomer && contract && contract.service_type === 'pacchetto' && (
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#6b7280' }}>
+                          {(contract.service_max_entries - contract.entries_used)} {t('bookings.left')}
+                        </span>
+                      )}
+
+                      <div style={{ color: '#9ca3af' }}>
+                        <ChevronRight size={20} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1457,8 +1585,8 @@ const Bookings = () => {
         </div>
         <div className="bookings-controls">
           {showBookingButton && (
-            <button 
-              className="partner-booking-btn" 
+            <button
+              className="partner-booking-btn"
               onClick={() => setShowPartnerBooking(true)}
               title={isCustomer ? t('bookings.bookPackage') : t('bookings.bookForCustomer')}
             >
@@ -1482,43 +1610,78 @@ const Bookings = () => {
             <Home size={16} />
             {t('bookings.today')}
           </button>
-          {isPartnerAdmin && (
-            <button className="filter-btn" onClick={() => setShowFilters(!showFilters)}>
-              <Filter size={16} />
-              {t('bookings.filters')}
-            </button>
-          )}
+
         </div>
       </div>
 
-      {showFilters && isPartnerAdmin && (
+      {isPartnerAdmin && (
         <div className="filters-panel">
           <div className="filters-row">
             <div className="filter-group">
               <label>{t('bookings.customer')}:</label>
-              <select value={filters.customer} onChange={(e) => setFilters(prev => ({ ...prev, customer: e.target.value }))}>
-                <option value="">{t('bookings.allCustomers')}</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.company_name || `${c.first_name} ${c.second_name}`}</option>)}
-              </select>
+              <SearchableSelect
+                name="customer"
+                value={filters.customer}
+                onChange={(e) => setFilters(prev => ({ ...prev, customer: e.target.value }))}
+                options={[
+                  { value: "", label: t('bookings.allCustomers') },
+                  ...customers.map(c => ({
+                    value: c.id.toString(),
+                    label: c.company_name || `${c.first_name} ${c.second_name}`
+                  }))
+                ]}
+                placeholder={t('bookings.selectCustomer')}
+              />
             </div>
             <div className="filter-group">
               <label>{t('bookings.resourceType')}:</label>
-              <select value={filters.resourceType} onChange={(e) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}>
-                <option value="">{t('bookings.allResources')}</option>
-                <option value="scrivania">{t('locations.scrivania')}</option>
-                <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
-              </select>
+              <SearchableSelect
+                name="resourceType"
+                value={filters.resourceType}
+                onChange={(e) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}
+                options={[
+                  { value: "", label: t('bookings.allResources') },
+                  { value: "scrivania", label: t('locations.scrivania') },
+                  { value: "sala_riunioni", label: t('locations.salaRiunioni') }
+                ]}
+                placeholder={t('bookings.selectResourceType')}
+              />
             </div>
             <div className="filter-group">
               <label>{t('bookings.location')}:</label>
-              <select value={filters.location} onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}>
-                <option value="">{t('bookings.allLocations')}</option>
-                {locations.map(l => <option key={l.id} value={l.id}>{l.location_name}</option>)}
-              </select>
+              <SearchableSelect
+                name="location"
+                value={filters.location}
+                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                options={[
+                  { value: "", label: t('bookings.allLocations') },
+                  ...locations.map(l => ({
+                    value: l.id.toString(),
+                    label: l.location_name
+                  }))
+                ]}
+                placeholder={t('bookings.selectLocation')}
+              />
             </div>
-            <button 
-              className="clear-filters-btn" 
-              onClick={() => setFilters({ customer: '', resourceType: '', location: '' })}
+            <div className="filter-group">
+              <label>{t('bookings.serviceType') || 'Tipo Servizio'}:</label>
+              <SearchableSelect
+                name="serviceType"
+                value={filters.serviceType}
+                onChange={(e) => setFilters(prev => ({ ...prev, serviceType: e.target.value }))}
+                options={[
+                  { value: "", label: t('bookings.allServices') || 'Tutti i Servizi' },
+                  { value: "abbonamento", label: t('services.subscription') || 'Abbonamento' },
+                  { value: "pacchetto", label: t('services.package') || 'Pacchetto' },
+                  { value: "giornaliero", label: t('services.daily') || 'Giornaliero' },
+                  { value: "prova_gratuita", label: t('services.trial') || 'Prova Gratuita' }
+                ]}
+                placeholder={t('bookings.selectServiceType') || 'Seleziona Tipo Servizio'}
+              />
+            </div>
+            <button
+              className="clear-filters-btn"
+              onClick={() => setFilters({ customer: '', resourceType: '', location: '', serviceType: '' })}
             >
               {t('bookings.clearFilters')}
             </button>
@@ -1609,7 +1772,7 @@ const Bookings = () => {
                     <div className="detail-row">
                       <span className="detail-label">{t('bookings.duration')}:</span>
                       <span className="detail-value">
-                        {selectedBooking.duration_type === 'full_day' 
+                        {selectedBooking.duration_type === 'full_day'
                           ? t('reservations.fullDay')
                           : `${t('reservations.halfDay')} (${selectedBooking.time_slot === 'morning' ? t('reservations.morning') : t('reservations.afternoon')})`
                         }
@@ -1632,8 +1795,8 @@ const Bookings = () => {
                 <div className="detail-row">
                   <span className="detail-label">{t('bookings.resourceType')}:</span>
                   <span className="detail-value">
-                    {selectedBooking.location_resources?.resource_type === 'scrivania' 
-                      ? t('locations.scrivania') 
+                    {selectedBooking.location_resources?.resource_type === 'scrivania'
+                      ? t('locations.scrivania')
                       : t('locations.salaRiunioni')
                     }
                   </span>
@@ -1692,15 +1855,46 @@ const Bookings = () => {
               )}
             </div>
             <div className="modal-footer">
-              <button 
-                className="btn-danger" 
+              {/* Add Calendar Download Button */}
+              {selectedBooking.booking_type === 'package' && (
+                <button
+                  className="btn-ghost"
+                  style={{ marginRight: 'auto', color: '#7c3aed', padding: '0', background: 'transparent', border: 'none' }}
+                  onClick={() => {
+                    // Construct filename: package-{original_id}.ics
+                    const idToUse = selectedBooking.original_id || selectedBooking.id.replace('pkg-', '');
+                    const fileName = `package-${idToUse}.ics`;
+                    const partnerUuid = selectedBooking.contracts?.partner_uuid || profile.partner_uuid;
+
+                    if (!partnerUuid) {
+                      toast.error('Partner UUID not found');
+                      return;
+                    }
+
+                    const downloadUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/partners/${partnerUuid}/calendars/${fileName}?download=${fileName}`;
+                    // Create temp link to download
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }}
+                >
+                  <Calendar size={16} className="mr-2" />
+                  {t('bookings.downloadCalendar') || 'Scarica Calendario'}
+                </button>
+              )}
+
+              <button
+                className="btn-danger"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={loading}
               >
                 {t('bookings.deleteBooking')}
               </button>
-              <button 
-                className="btn-secondary" 
+              <button
+                className="btn-secondary"
                 onClick={() => setShowBookingDetails(false)}
                 disabled={loading}
               >

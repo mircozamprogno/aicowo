@@ -69,7 +69,7 @@ const CustomersDiscountCodes = () => {
 
   const handleFormSuccess = (savedCode) => {
     if (editingCode) {
-      setDiscountCodes(prev => 
+      setDiscountCodes(prev =>
         prev.map(c => c.id === savedCode.id ? savedCode : c)
       );
       toast.success(t('messages.discountCodeUpdatedSuccessfully') || 'Discount code updated successfully');
@@ -88,24 +88,25 @@ const CustomersDiscountCodes = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    const date = new Date(dateString);
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
   };
 
   const getStatusBadgeClass = (code) => {
     if (!code.is_active) return 'status-inactive';
-    
+
     const now = new Date();
     const validUntil = new Date(code.valid_until);
     const validFrom = new Date(code.valid_from);
-    
+
     if (now > validUntil) return 'status-expired';
     if (now < validFrom) return 'status-scheduled';
     if (code.usage_limit && code.usage_count >= code.usage_limit) return 'status-used-up';
-    
+
     return 'status-active';
   };
 
@@ -181,27 +182,10 @@ const CustomersDiscountCodes = () => {
           <p className="customers-discount-codes-description">
             {t('customersDiscountCodes.subtitle') || 'Create and manage discount codes for your customers'}
           </p>
-          <div className="customers-discount-codes-stats">
-            <div className="stat-item">
-              <span className="stat-label">{t('discountCodes.totalCodes')}</span>
-              <span className="stat-value">{discountCodes.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('discountCodes.activeCodes')}</span>
-              <span className="stat-value">
-                {discountCodes.filter(c => getStatusBadgeClass(c) === 'status-active').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('discountCodes.totalUsage')}</span>
-              <span className="stat-value">
-                {discountCodes.reduce((sum, c) => sum + (c.usage_count || 0), 0)}
-              </span>
-            </div>
-          </div>
+
         </div>
         <div className="customers-discount-codes-header-actions">
-          <button className="add-code-btn" onClick={handleAddCode}>
+          <button className="btn-discount-primary" onClick={handleAddCode}>
             <Plus size={16} className="mr-2" />
             {t('discountCodes.addCode')}
           </button>
@@ -221,7 +205,7 @@ const CustomersDiscountCodes = () => {
             placeholder={t('common.all')}
           />
         </div>
-        
+
         <div className="filter-group">
           <label htmlFor="type-filter" className="filter-label">
             {t('discountCodes.discountType')}:
@@ -274,12 +258,12 @@ const CustomersDiscountCodes = () => {
                     <div className="discount-info">
                       <div className="discount-value">
                         {code.discount_type === 'percentage' ? (
-                          <span className="percentage-discount">
+                          <span className="percentage-discount" style={{ color: 'black' }}>
                             <Percent size={14} />
                             {code.discount_value}%
                           </span>
                         ) : (
-                          <span className="fixed-discount">
+                          <span className="fixed-discount" style={{ color: 'black' }}>
                             <DollarSign size={14} />
                             {code.discount_value}
                           </span>
@@ -296,8 +280,8 @@ const CustomersDiscountCodes = () => {
                         {formatDate(code.valid_from)} - {formatDate(code.valid_until)}
                       </div>
                       <div className="validity-remaining">
-                        {new Date() > new Date(code.valid_until) 
-                          ? t('discountCodes.expired') 
+                        {new Date() > new Date(code.valid_until)
+                          ? t('discountCodes.expired')
                           : `${Math.ceil((new Date(code.valid_until) - new Date()) / (1000 * 60 * 60 * 24))} days left`
                         }
                       </div>
@@ -316,8 +300,8 @@ const CustomersDiscountCodes = () => {
                       </div>
                       {code.usage_limit && (
                         <div className="usage-bar">
-                          <div 
-                            className="usage-progress" 
+                          <div
+                            className="usage-progress"
                             style={{ width: `${getUsagePercentage(code)}%` }}
                           ></div>
                         </div>
@@ -331,7 +315,7 @@ const CustomersDiscountCodes = () => {
                   </td>
                   <td className="customers-discount-codes-table-cell">
                     <div className="code-actions">
-                      <button 
+                      <button
                         className="action-btn edit-btn"
                         onClick={() => handleEditCode(code)}
                         title={t('discountCodes.editCode')}
@@ -349,9 +333,9 @@ const CustomersDiscountCodes = () => {
               <Tag size={48} className="empty-icon" />
               <p>{discountCodes.length === 0 ? t('discountCodes.noCodesFound') : 'No codes match the current filters'}</p>
               {discountCodes.length === 0 && (
-                <button 
+                <button
                   onClick={handleAddCode}
-                  className="btn-primary mt-4"
+                  className="btn-discount-primary mt-4"
                 >
                   {t('discountCodes.addFirstCode')}
                 </button>
@@ -379,7 +363,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
   const { profile } = useAuth();
   const { t } = useTranslation();
   const isEditing = !!code;
-  
+
   const [formData, setFormData] = useState({
     code: '',
     discount_type: 'percentage',
@@ -390,7 +374,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
     usage_limit: '',
     is_active: true
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -424,7 +408,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: newValue
@@ -468,7 +452,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
 
     const startDate = new Date(formData.valid_from);
     const endDate = new Date(formData.valid_until);
-    
+
     if (endDate <= startDate) {
       toast.error(t('discountCodes.endDateMustBeAfterStartDate') || 'End date must be after start date');
       return false;
@@ -479,7 +463,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -501,7 +485,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
       };
 
       let result;
-      
+
       if (isEditing) {
         result = await supabase
           .from('customers_discount_codes')
@@ -526,11 +510,11 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
       }
 
       toast.success(
-        isEditing 
+        isEditing
           ? t('messages.discountCodeUpdatedSuccessfully') || 'Discount code updated successfully'
           : t('messages.discountCodeCreatedSuccessfully') || 'Discount code created successfully'
       );
-      
+
       onSuccess(data);
       onClose();
     } catch (error) {
@@ -591,13 +575,13 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
           <form onSubmit={handleSubmit} className="modal-form">
             <div className="form-section">
               <h3 className="form-section-title">{t('discountCodes.basicInfo')}</h3>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="code" className="form-label">
                     {t('discountCodes.code')} *
                   </label>
-                  <div className="code-input-group">
+                  <div className="code-input-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
                     <input
                       id="code"
                       name="code"
@@ -607,7 +591,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                       value={formData.code}
                       onChange={handleChange}
                       placeholder="SUMMER25"
-                      style={{ textTransform: 'uppercase' }}
+                      style={{ textTransform: 'uppercase', width: '100%' }}
                     />
                     <button
                       type="button"
@@ -618,7 +602,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="description" className="form-label">
                     {t('discountCodes.description')}
@@ -638,7 +622,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
 
             <div className="form-section">
               <h3 className="form-section-title">{t('discountCodes.discountSettings')}</h3>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="discount_type" className="form-label">
@@ -652,7 +636,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                     placeholder={t('discountCodes.selectType')}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="discount_value" className="form-label">
                     {t('discountCodes.discountValue')} *
@@ -668,7 +652,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                     placeholder={formData.discount_type === 'percentage' ? '25' : '50.00'}
                   />
                   <small className="form-help">
-                    {formData.discount_type === 'percentage' 
+                    {formData.discount_type === 'percentage'
                       ? t('discountCodes.percentageHelp') || 'Enter percentage (0-100)'
                       : t('discountCodes.fixedAmountHelp') || 'Enter fixed amount in USD'
                     }
@@ -679,7 +663,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
 
             <div className="form-section">
               <h3 className="form-section-title">{t('discountCodes.validity')}</h3>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="valid_from" className="form-label">
@@ -695,7 +679,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                     onChange={handleChange}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="valid_until" className="form-label">
                     {t('discountCodes.validUntil')} *
@@ -715,7 +699,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
 
             <div className="form-section">
               <h3 className="form-section-title">{t('discountCodes.usageSettings')}</h3>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="usage_limit" className="form-label">
@@ -734,7 +718,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                     {t('discountCodes.usageLimitHelp') || 'Leave empty for unlimited usage'}
                   </small>
                 </div>
-                
+
                 <div className="form-group">
                   <label className="form-checkbox-label">
                     <input
@@ -761,9 +745,10 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                   type="button"
                   onClick={handleDelete}
                   className="btn-danger"
+                  style={{ animation: 'none', textTransform: 'none' }}
                   disabled={loading}
                 >
-                  <Trash2 size={16} className="mr-2" />
+
                   {t('common.delete')}
                 </button>
               )}
@@ -778,11 +763,11 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, onDeleteSuccess, code = 
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary"
+                  className="btn-discount-primary"
                   disabled={loading}
                 >
-                  {loading 
-                    ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...') 
+                  {loading
+                    ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...')
                     : (isEditing ? t('common.save') : t('common.create'))
                   }
                 </button>

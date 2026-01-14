@@ -1,4 +1,4 @@
-import { Building, Calendar, DollarSign, MapPin, Plus, TrendingDown, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangle, Building, Calendar, DollarSign, MapPin, Plus, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from '../components/common/ToastContainer';
@@ -17,6 +17,7 @@ import { useTour } from '../contexts/TourContext';
 import logger from '../utils/logger';
 
 // Add this import to the top of Dashboard.jsx with your other imports:
+import { generateAndUploadICS } from '../services/calendarService';
 import oneSignalEmailService from '../services/oneSignalEmailService';
 
 
@@ -29,7 +30,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
 
   const [profileCheckRetries, setProfileCheckRetries] = useState(0);
-  const MAX_PROFILE_CHECK_RETRIES = 3;  
+  const MAX_PROFILE_CHECK_RETRIES = 3;
 
   const [partnersUsersData, setPartnersUsersData] = useState([]);
   const [partnersUsersLoading, setPartnersUsersLoading] = useState(true);
@@ -41,7 +42,7 @@ const Dashboard = () => {
   logger.log('🔍 Role:', profile?.role);
   logger.log('🔍 Partner UUID:', profile?.partner_uuid);
   logger.log('🔍 isCustomer calculation:', profile?.role === 'user');
-  
+
   const [stats, setStats] = useState({
     totalPartners: 0,
     totalLocations: 0,
@@ -133,7 +134,7 @@ const Dashboard = () => {
   // Modified useEffect with better dependency management and profile loading check
   useEffect(() => {
     logger.log('Dashboard useEffect triggered - Profile:', !!profile, 'User:', !!user);
-    
+
     // ✅ Wait for BOTH user and profile to be fully loaded
     if (!profile || !user) {
       logger.log('⏳ Waiting for user and profile...');
@@ -183,7 +184,7 @@ const Dashboard = () => {
     const timer = setTimeout(() => {
       setChartsReady(true);
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -363,7 +364,7 @@ const Dashboard = () => {
       if (contractsError) throw contractsError;
 
       const contracts = activeContracts || [];
-      
+
       // Calculate current MRR (Monthly Recurring Revenue)
       const currentMRR = contracts.reduce((sum, contract) => {
         if (contract.service_type === 'abbonamento') {
@@ -399,8 +400,8 @@ const Dashboard = () => {
           return sum;
         }, 0);
 
-        const monthOverMonthGrowth = lastMonthMRR > 0 
-          ? ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100 
+        const monthOverMonthGrowth = lastMonthMRR > 0
+          ? ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100
           : 0;
 
         setBusinessMetrics(prev => ({
@@ -453,11 +454,11 @@ const Dashboard = () => {
           const maxEntries = parseFloat(contract.service_max_entries) || 0;
           const usedEntries = parseFloat(contract.entries_used) || 0;
           const utilizationRate = maxEntries > 0 ? (usedEntries / maxEntries) * 100 : 0;
-          
+
           return {
             id: contract.id,
             serviceName: contract.service_name,
-            customerName: contract.customers?.company_name || 
+            customerName: contract.customers?.company_name ||
               `${contract.customers?.first_name} ${contract.customers?.second_name}`.trim(),
             maxEntries,
             usedEntries,
@@ -486,7 +487,7 @@ const Dashboard = () => {
   // Fetch customer contracts - REMOVED MOCK DATA FALLBACK
   const fetchCustomerContracts = async () => {
     setContractsLoading(true);
-    
+
     try {
       // Get customer ID
       const { data: customerData, error: customerError } = await supabase
@@ -540,7 +541,7 @@ const Dashboard = () => {
 
       logger.log('Processed contracts:', processedContracts);
       setContracts(processedContracts);
-      
+
     } catch (error) {
       logger.error('Error fetching customer contracts:', error);
       // NO MORE MOCK DATA FALLBACK - just set empty array
@@ -565,7 +566,7 @@ const Dashboard = () => {
     // ✅ FIX: Get FRESH values from context/state, NOT from parameters!
     const currentProfile = profile;
     const currentUser = user;
-    
+
     logger.log('=== STARTING PROFILE COMPLETION CHECK ===');
     logger.log('User ID:', currentUser?.id);
     logger.log('Profile partner_uuid:', currentProfile?.partner_uuid);
@@ -580,13 +581,13 @@ const Dashboard = () => {
       return;
     }
 
-    // ✅ SAFETY: Check if profile is fully loaded (including partner_uuid for customers)
-    if (!currentProfile || !currentProfile.role || !currentProfile.id || !currentProfile.partner_uuid) {
-      logger.warn('⚠️ Profile not fully loaded yet (missing partner_uuid), waiting...');
+    // ✅ SAFETY: Check if profile is fully loaded
+    if (!currentProfile || !currentProfile.role || !currentProfile.id) {
+      logger.warn('⚠️ Profile not fully loaded yet, waiting...');
       setProfileCheckComplete(false);
       return;
     }
-    
+
     if (!currentUser?.id) {
       logger.warn('No user ID available for profile check');
       setProfileCheckComplete(true);
@@ -604,7 +605,7 @@ const Dashboard = () => {
 
     try {
       setContractsLoading(true);
-      
+
       logger.log('Fetching customer data for user:', currentUser.id, `(attempt ${retryCount + 1}/${MAX_PROFILE_CHECK_RETRIES})`);
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
@@ -624,7 +625,7 @@ const Dashboard = () => {
 
       if (!customerData) {
         logger.log('No customer record found - waiting for creation...');
-        
+
         if (retryCount < MAX_PROFILE_CHECK_RETRIES) {
           logger.log(`⏳ Will retry in 1 second (${retryCount + 1}/${MAX_PROFILE_CHECK_RETRIES})...`);
           setTimeout(() => {
@@ -669,12 +670,12 @@ const Dashboard = () => {
   // Modified success handler for profile completion
   const handleProfileCompletionSuccess = async (updatedCustomer) => {
     logger.log('🎉 PROFILE COMPLETION SUCCESSFUL:', updatedCustomer);
-    
+
     try {
       // Update customer status to 'tobequalified'
       const { error } = await supabase
         .from('customers')
-        .update({ 
+        .update({
           customer_status: 'tobequalified',
           updated_at: new Date().toISOString()
         })
@@ -694,7 +695,7 @@ const Dashboard = () => {
     // Close the profile completion form
     setShowProfileCompletion(false);
     setCustomerProfileData(null);
-    
+
     // Now fetch contracts normally
     logger.log('Fetching contracts after profile completion...');
     fetchCustomerContracts();
@@ -703,12 +704,12 @@ const Dashboard = () => {
   const handlePackageBookingSuccess = async (reservation) => {
     logger.log('🎯 BOOKING SUCCESS HANDLER CALLED!', reservation);
     logger.log('📧 Selected package contract:', selectedPackageContract);
-    
+
     try {
       // Send booking confirmation emails if we have contract data
       if (selectedPackageContract) {
         logger.log('📧 About to send emails for contract:', selectedPackageContract);
-        
+
         // Get partner data for partner email
         let partnerData = null;
         if (profile?.partner_uuid) {
@@ -718,7 +719,7 @@ const Dashboard = () => {
               .select('email, first_name, second_name, company_name')
               .eq('partner_uuid', profile.partner_uuid)
               .single();
-            
+
             if (!partnerError && partner) {
               partnerData = partner;
             }
@@ -729,7 +730,7 @@ const Dashboard = () => {
 
         // Get full contract data with customer info for the email
         let fullContractData = selectedPackageContract;
-        
+
         try {
           const { data: contractData, error: contractError } = await supabase
             .from('contracts')
@@ -762,12 +763,22 @@ const Dashboard = () => {
           logger.warn('📧 Error fetching full contract data:', error);
         }
 
+        // Generate ICS file content and upload to Supabase Storage
+        let calendarLink = null;
+        try {
+          // Note: reservation is the booking data here
+          calendarLink = await generateAndUploadICS(reservation, 'package', profile.partner_uuid);
+        } catch (icsError) {
+          logger.error('Error generating ICS:', icsError);
+        }
+
         // Send booking confirmation emails
         const emailResults = await oneSignalEmailService.sendBookingConfirmation(
           reservation,
           fullContractData,
           t,
-          partnerData
+          partnerData,
+          calendarLink
         );
 
         // Show toast messages about email status
@@ -793,12 +804,12 @@ const Dashboard = () => {
       }
       return contract;
     }));
-    
+
     // Fetch fresh data after a small delay
     setTimeout(() => {
       fetchCustomerContracts();
     }, 100);
-    
+
     setShowPackageBooking(false);
     setSelectedPackageContract(null);
     toast.success(t('messages.bookingConfirmedSuccessfully') || 'Booking confirmed successfully');
@@ -806,7 +817,7 @@ const Dashboard = () => {
 
   const fetchContractsChartData = async () => {
     setChartLoading(true);
-    
+
     try {
       let query = supabase
         .from('contracts')
@@ -867,9 +878,9 @@ const Dashboard = () => {
         };
       }
 
-      const serviceType = contract.service_type === 'abbonamento' ? 'Abbonamento' : 
-                         contract.service_type === 'pacchetto' ? 'Pacchetto' : 'Altro';
-      
+      const serviceType = contract.service_type === 'abbonamento' ? 'Abbonamento' :
+        contract.service_type === 'pacchetto' ? 'Pacchetto' : 'Altro';
+
       if (serviceType !== 'Altro') {
         monthlyData[createdMonthKey][serviceType]++;
         monthlyData[createdMonthKey].total++;
@@ -886,13 +897,13 @@ const Dashboard = () => {
 
     // Create a complete month sequence for the defined range
     const completeTimeline = [];
-    
+
     for (let d = new Date(startMonth); d <= endMonth; d.setMonth(d.getMonth() + 1)) {
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const monthName = d.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
-      
+
       const existingData = monthlyData[monthKey];
-      
+
       completeTimeline.push(existingData || {
         month: monthName,
         monthKey,
@@ -910,12 +921,16 @@ const Dashboard = () => {
   };
 
   const fetchStats = async () => {
-    if (!profile) return;
+    logger.log('🚀 DASHBOARD FETCHSTATS CALLED');
+    if (!profile) {
+      logger.log('❌ DASHBOARD FETCHSTATS - No profile, exiting');
+      return;
+    }
 
     setStats(prev => ({ ...prev, loading: true }));
 
     try {
-      logger.log('Fetching dashboard stats for role:', profile.role);
+      logger.log('📊 Fetching dashboard stats for role:', profile.role, 'Partner UUID:', profile.partner_uuid);
 
       let partnersCount = 0;
       let locationsCount = 0;
@@ -940,12 +955,12 @@ const Dashboard = () => {
         partnersCount = partnersResult.count || 0;
         locationsCount = locationsResult.count || 0;
         usersCount = usersResult.count || 0;
-        
-        const totalContractValue = contractsResult.data 
+
+        const totalContractValue = contractsResult.data
           ? contractsResult.data.reduce((sum, contract) => sum + (contract.final_price || 0), 0)
           : 0;
 
-setStats({
+        setStats({
           totalPartners: partnersCount,
           totalLocations: locationsCount,
           totalUsers: usersCount,
@@ -963,9 +978,9 @@ setStats({
       } else if (profile.role === 'admin') {
         if (profile.partner_uuid) {
           const [
-            locationsResult, 
-            usersResult, 
-            customersResult, 
+            locationsResult,
+            usersResult,
+            customersResult,
             contractsResult,
             resourcesResult,
             bookingsResult
@@ -990,8 +1005,7 @@ setStats({
             supabase
               .from('location_resources')
               .select('resource_type, quantity')
-              .eq('partner_uuid', profile.partner_uuid)
-              .eq('is_available', true),
+              .eq('partner_uuid', profile.partner_uuid),
             supabase
               .from('bookings')
               .select('location_resource_id', { count: 'exact', head: true })
@@ -1011,37 +1025,66 @@ setStats({
             totalDesks = resources
               .filter(r => r.resource_type === 'scrivania')
               .reduce((sum, r) => sum + r.quantity, 0);
-            
+
             totalMeetingRooms = resources
               .filter(r => r.resource_type === 'sala_riunioni')
               .reduce((sum, r) => sum + r.quantity, 0);
           }
 
-          // Calculate available resources
+          // Calculate available resources for the current month
           if (resourcesResult.data) {
-            const today = new Date().toISOString().split('T')[0];
-            
-            const { data: detailedBookings } = await supabase
-              .from('bookings')
-              .select(`
-                location_resource_id,
-                location_resources (
-                  resource_type
-                )
-              `)
-              .eq('partner_uuid', profile.partner_uuid)
-              .eq('booking_status', 'active')
-              .lte('start_date', today)
-              .gte('end_date', today);
+            // Get first and last day of current month (Local Timesafe)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+            const monthStart = `${year}-${month}-01`;
+            const monthEnd = `${year}-${month}-${lastDay}`;
 
-            if (detailedBookings) {
-              const bookedDesks = detailedBookings.filter(b => 
-                b.location_resources?.resource_type === 'scrivania'
-              ).length;
-              
-              const bookedMeetingRooms = detailedBookings.filter(b => 
-                b.location_resources?.resource_type === 'sala_riunioni'
-              ).length;
+            const [bookingsResult, packageResult] = await Promise.all([
+              supabase
+                .from('bookings')
+                .select(`
+                  location_resource_id,
+                  location_resources!inner (
+                    resource_type,
+                    partner_uuid
+                  )
+                `)
+                .eq('location_resources.partner_uuid', profile.partner_uuid)
+                .eq('booking_status', 'active')
+                .lte('start_date', monthEnd)
+                .gte('end_date', monthStart),
+              supabase
+                .from('package_reservations')
+                .select(`
+                  location_resource_id,
+                  location_resources!inner (
+                    resource_type
+                  )
+                `)
+                .eq('partner_uuid', profile.partner_uuid)
+                .eq('reservation_status', 'confirmed')
+                .lte('reservation_date', monthEnd)
+                .gte('reservation_date', monthStart)
+            ]);
+
+            const detailedBookings = bookingsResult.data || [];
+            const detailedPackages = packageResult.data || [];
+
+            logger.log('📅 Dashboard Stats - Results:', {
+              bookingsCount: detailedBookings.length,
+              packagesCount: detailedPackages.length
+            });
+
+            const allOccupancy = [
+              ...detailedBookings.map(b => ({ type: b.location_resources?.resource_type })),
+              ...detailedPackages.map(p => ({ type: p.location_resources?.resource_type }))
+            ];
+
+            if (allOccupancy.length > 0) {
+              const bookedDesks = allOccupancy.filter(b => b.type === 'scrivania').length;
+              const bookedMeetingRooms = allOccupancy.filter(b => b.type === 'sala_riunioni').length;
 
               availableDesks = Math.max(0, totalDesks - bookedDesks);
               availableMeetingRooms = Math.max(0, totalMeetingRooms - bookedMeetingRooms);
@@ -1050,34 +1093,33 @@ setStats({
               availableMeetingRooms = totalMeetingRooms;
             }
           }
-
-          setStats({
-            totalPartners: 0,
-            totalLocations: locationsCount,
-            totalUsers: usersCount,
-            totalCustomers: customersCount,
-            totalContracts: contractsCount,
-            activeBookings: activeBookingsCount,
-            totalDesks,
-            totalMeetingRooms,
-            availableDesks,
-            availableMeetingRooms,
-            totalContractValue: 0,
-            loading: false
-          });
         }
-      }
 
+        setStats({
+          totalPartners: 0,
+          totalLocations: locationsCount,
+          totalUsers: usersCount,
+          totalCustomers: customersCount,
+          totalContracts: contractsCount,
+          activeBookings: activeBookingsCount,
+          totalDesks,
+          totalMeetingRooms,
+          availableDesks,
+          availableMeetingRooms,
+          totalContractValue: 0,
+          loading: false
+        });
+      }
     } catch (error) {
       logger.error('Error fetching dashboard stats:', error);
-      
+
       // Set all stats to 0 instead of using mock data
-      setStats({ 
-        totalPartners: 0, totalLocations: 0, totalUsers: 0, 
+      setStats({
+        totalPartners: 0, totalLocations: 0, totalUsers: 0,
         totalCustomers: 0, totalContracts: 0, activeBookings: 0,
         totalDesks: 0, totalMeetingRooms: 0, availableDesks: 0, availableMeetingRooms: 0,
-        totalContractValue: 0, 
-        loading: false 
+        totalContractValue: 0,
+        loading: false
       });
     }
   };
@@ -1086,18 +1128,18 @@ setStats({
 
   const fetchPartnersUsersData = async () => {
     setPartnersUsersLoading(true);
-    
+
     try {
       const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-      
+
       // Get all partners
       const { data: partners, error: partnersError } = await supabase
         .from('partners')
         .select('partner_uuid, company_name, first_name, second_name')
         .eq('partner_status', 'active');
-      
+
       if (partnersError) throw partnersError;
-      
+
       // For each partner, get active users count and plan limit
       const partnersData = await Promise.all(
         (partners || []).map(async (partner) => {
@@ -1107,29 +1149,29 @@ setStats({
               p_billing_month: currentMonth,
               p_partner_uuid: partner.partner_uuid
             });
-          
+
           if (activeUsersError) {
             logger.error('❌ Error getting active users:', activeUsersError);
           }
-          
+
           // Call the RPC function to get plan limit
           const { data: planLimitData, error: planLimitError } = await supabase
             .rpc('get_partner_active_users_limit', {
               p_partner_uuid: partner.partner_uuid
             });
-          
+
           if (planLimitError) {
             logger.error('❌ Error getting plan limit:', planLimitError);
           }
-          
+
           const activeUsers = activeUsersData || 0;
           const planLimit = planLimitData || 0;
           const isOverLimit = activeUsers > planLimit;
-          
-          const partnerName = partner.company_name || 
+
+          const partnerName = partner.company_name ||
             `${partner.first_name || ''} ${partner.second_name || ''}`.trim() ||
             'Partner';
-          
+
           return {
             partnerName,
             activeUsers,
@@ -1138,7 +1180,7 @@ setStats({
           };
         })
       );
-      
+
       // Filter out partners with no data and sort
       const chartData = partnersData
         .filter(p => p.activeUsers > 0 || p.planLimit > 0)
@@ -1147,7 +1189,7 @@ setStats({
           return b.activeUsers - a.activeUsers;
         })
         .slice(0, 15); // Top 15 partners
-      
+
       setPartnersUsersData(chartData);
     } catch (error) {
       logger.error('Error fetching partners users data:', error);
@@ -1197,398 +1239,397 @@ setStats({
   };
 
   // Enhanced Partner Dashboard Render
-// Enhanced Partner Dashboard Render
-const renderEnhancedPartnerDashboard = () => {
-  return (
-    <>
-      <h1 className="dashboard-title">
-        {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
-      </h1>
+  // Enhanced Partner Dashboard Render
+  const renderEnhancedPartnerDashboard = () => {
+    return (
+      <>
+        <h1 className="dashboard-title">
+          {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
+        </h1>
 
-      {!isOnboardingComplete && (
-        <div className="dashboard-setup-section">
-          <SetupProgressIndicator />
-        </div>
-      )}
+        {!isOnboardingComplete && (
+          <div className="dashboard-setup-section">
+            <SetupProgressIndicator />
+          </div>
+        )}
 
-      {/* Resources Overview - MOVED TO TOP */}
-      <div className="dashboard-section">
-        <h2 className="section-title">{t('dashboard.resourcesOverview')}</h2>
-        <div className="resources-grid">
-          {/* Desks Section */}
-          <div className="resource-card desks">
-            <div className="resource-header">
-              <div className="resource-title">
-                <h3>{t('dashboard.desks')}</h3>
-                <p>{t('dashboard.allLocations')}</p>
+        {/* Resources Overview - MOVED TO TOP */}
+        <div className="dashboard-section">
+          <h2 className="section-title">{t('dashboard.resourcesOverview')}</h2>
+          <div className="resources-grid">
+            {/* Desks Section */}
+            <div className="resource-card desks">
+              <div className="resource-header">
+                <div className="resource-title">
+                  <h3>{t('dashboard.desks')}</h3>
+                  <p>{new Date().toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' })}</p>
+                </div>
+              </div>
+              <div className="resource-stats">
+                <div className="resource-stat">
+                  <span className="resource-number">{stats.loading ? '...' : stats.totalDesks}</span>
+                  <span className="resource-label">{t('dashboard.total')}</span>
+                </div>
+                <div className="resource-stat">
+                  <span className="resource-number available">{stats.loading ? '...' : stats.availableDesks}</span>
+                  <span className="resource-label">{t('dashboard.available')}</span>
+                </div>
+                <div className="resource-stat">
+                  <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalDesks - stats.availableDesks)}</span>
+                  <span className="resource-label">{t('dashboard.booked')}</span>
+                </div>
+              </div>
+              <div className="resource-progress">
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: stats.totalDesks > 0 ? `${Math.max(0, ((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)}%` : '0%',
+                      backgroundColor: '#3b82f6'
+                    }}
+                  />
+                </div>
+                <span className="progress-text">
+                  {stats.totalDesks > 0 ? Math.max(0, Math.round(((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)) : 0}% Occupazione
+                </span>
               </div>
             </div>
-            <div className="resource-stats">
-              <div className="resource-stat">
-                <span className="resource-number">{stats.loading ? '...' : stats.totalDesks}</span>
-                <span className="resource-label">{t('dashboard.total')}</span>
+
+            {/* Meeting Rooms Section */}
+            <div className="resource-card meeting-rooms">
+              <div className="resource-header">
+                <div className="resource-title">
+                  <h3>{t('dashboard.meetingRooms')}</h3>
+                  <p>{new Date().toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' })}</p>
+                </div>
               </div>
-              <div className="resource-stat">
-                <span className="resource-number available">{stats.loading ? '...' : stats.availableDesks}</span>
-                <span className="resource-label">{t('dashboard.available')}</span>
+              <div className="resource-stats">
+                <div className="resource-stat">
+                  <span className="resource-number">{stats.loading ? '...' : stats.totalMeetingRooms}</span>
+                  <span className="resource-label">{t('dashboard.total')}</span>
+                </div>
+                <div className="resource-stat">
+                  <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
+                  <span className="resource-label">{t('dashboard.available')}</span>
+                </div>
+                <div className="resource-stat">
+                  <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
+                  <span className="resource-label">{t('dashboard.booked')}</span>
+                </div>
               </div>
-              <div className="resource-stat">
-                <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalDesks - stats.availableDesks)}</span>
-                <span className="resource-label">{t('dashboard.booked')}</span>
+              <div className="resource-progress">
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: stats.totalMeetingRooms > 0 ? `${Math.max(0, ((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)}%` : '0%',
+                      backgroundColor: '#f59e0b'
+                    }}
+                  />
+                </div>
+                <span className="progress-text">
+                  {stats.totalMeetingRooms > 0 ? Math.max(0, Math.round(((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)) : 0}% Occupazione
+                </span>
               </div>
-            </div>
-            <div className="resource-progress">
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ 
-                    width: stats.totalDesks > 0 ? `${Math.max(0, ((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)}%` : '0%',
-                    backgroundColor: '#3b82f6'
-                  }}
-                />
-              </div>
-              <span className="progress-text">
-                {stats.totalDesks > 0 ? Math.max(0, Math.round(((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)) : 0}% Occupazione
-              </span>
             </div>
           </div>
+        </div>
 
-          {/* Meeting Rooms Section */}
-          <div className="resource-card meeting-rooms">
-            <div className="resource-header">
-              <div className="resource-title">
-                <h3>{t('dashboard.meetingRooms')}</h3>
-                <p>{t('dashboard.allLocations')}</p>
+        {/* Critical Business Alerts */}
+        <div className="dashboard-section">
+          <h2 className="section-title">{t('dashboard.criticalAlerts')}</h2>
+          <div className="alert-cards-grid">
+            {/* Expiring Contracts Alert */}
+            <div className="alert-card expiring-contracts">
+              <div className="alert-card-header">
+                <div className="alert-icon">
+                  <Calendar size={24} />
+                </div>
+                <div className="alert-title">
+                  <h3>{t('dashboard.expiringContracts')}</h3>
+                  <p>{t('dashboard.contractsNeedingAttention')}</p>
+                </div>
+              </div>
+              <div className="alert-card-body">
+                {businessMetrics.expiringContracts.loading ? (
+                  <div className="loading-spinner"></div>
+                ) : (
+                  <>
+                    <div className="alert-metrics">
+                      <div className="alert-metric">
+                        <span className="metric-number urgent">
+                          {businessMetrics.expiringContracts.next7Days.length}
+                        </span>
+                        <span className="metric-label">{t('dashboard.next7Days')}</span>
+                      </div>
+                      <div className="alert-metric">
+                        <span className="metric-number warning">
+                          {businessMetrics.expiringContracts.next15Days.length}
+                        </span>
+                        <span className="metric-label">{t('dashboard.next15Days')}</span>
+                      </div>
+                      <div className="alert-metric">
+                        <span className="metric-number info">
+                          {businessMetrics.expiringContracts.next30Days.length}
+                        </span>
+                        <span className="metric-label">{t('dashboard.next30Days')}</span>
+                      </div>
+                    </div>
+                    <div className="revenue-at-risk">
+                      <span className="risk-label">{t('dashboard.revenueAtRisk')}:</span>
+                      <span className="risk-amount">
+                        {formatCurrency(businessMetrics.expiringContracts.revenueAtRisk)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-            <div className="resource-stats">
-              <div className="resource-stat">
-                <span className="resource-number">{stats.loading ? '...' : stats.totalMeetingRooms}</span>
-                <span className="resource-label">{t('dashboard.total')}</span>
+
+            {/* Payment Status Alert */}
+            <div className="alert-card payment-status">
+              <div className="alert-card-header">
+                <div className="alert-icon">
+                  <DollarSign size={24} />
+                </div>
+                <div className="alert-title">
+                  <h3>{t('dashboard.paymentStatus')}</h3>
+                  <p>{t('dashboard.paymentHealthCheck')}</p>
+                </div>
               </div>
-              <div className="resource-stat">
-                <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
-                <span className="resource-label">{t('dashboard.available')}</span>
+              <div className="alert-card-body">
+                {businessMetrics.paymentStatus.loading ? (
+                  <div className="loading-spinner"></div>
+                ) : (
+                  <>
+                    <div className="alert-metrics">
+                      <div className="alert-metric">
+                        <span className="metric-number urgent">
+                          {businessMetrics.paymentStatus.overdue.length}
+                        </span>
+                        <span className="metric-label">{t('dashboard.overduePayments')}</span>
+                      </div>
+                      <div className="alert-metric">
+                        <span className="metric-number warning">
+                          {businessMetrics.paymentStatus.dueThisWeek.length}
+                        </span>
+                        <span className="metric-label">{t('dashboard.dueThisWeek')}</span>
+                      </div>
+                      <div className="alert-metric">
+                        <span className="metric-number info">
+                          {businessMetrics.paymentStatus.dueThisMonth.length}
+                        </span>
+                        <span className="metric-label">{t('dashboard.dueThisMonth')}</span>
+                      </div>
+                    </div>
+                    <div className="overdue-amount">
+                      <span className="overdue-label">{t('dashboard.totalOverdue')}:</span>
+                      <span className="overdue-value">
+                        {formatCurrency(businessMetrics.paymentStatus.totalOverdue)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="resource-stat">
-                <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
-                <span className="resource-label">{t('dashboard.booked')}</span>
-              </div>
-            </div>
-            <div className="resource-progress">
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ 
-                    width: stats.totalMeetingRooms > 0 ? `${Math.max(0, ((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)}%` : '0%',
-                    backgroundColor: '#f59e0b'
-                  }}
-                />
-              </div>
-              <span className="progress-text">
-                {stats.totalMeetingRooms > 0 ? Math.max(0, Math.round(((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)) : 0}% Occupazione
-              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Critical Business Alerts */}
-      <div className="dashboard-section">
-        <h2 className="section-title">{t('dashboard.criticalAlerts')}</h2>
-        <div className="alert-cards-grid">
-          {/* Expiring Contracts Alert */}
-          <div className="alert-card expiring-contracts">
-            <div className="alert-card-header">
-              <div className="alert-icon">
-                <Calendar size={24} />
+        {/* Financial Overview */}
+        <div className="dashboard-section">
+          <h2 className="section-title">{t('dashboard.financialOverview')}</h2>
+          <div className="financial-metrics-grid">
+            <div className="financial-metric-card mrr">
+              <div className="metric-header">
+                <div className="metric-icon">
+                  <TrendingUp size={20} />
+                </div>
+                <h3>{t('dashboard.monthlyRecurringRevenue')}</h3>
               </div>
-              <div className="alert-title">
-                <h3>{t('dashboard.expiringContracts')}</h3>
-                <p>{t('dashboard.contractsNeedingAttention')}</p>
-              </div>
-            </div>
-            <div className="alert-card-body">
-              {businessMetrics.expiringContracts.loading ? (
-                <div className="loading-spinner"></div>
-              ) : (
-                <>
-                  <div className="alert-metrics">
-                    <div className="alert-metric">
-                      <span className="metric-number urgent">
-                        {businessMetrics.expiringContracts.next7Days.length}
-                      </span>
-                      <span className="metric-label">{t('dashboard.next7Days')}</span>
-                    </div>
-                    <div className="alert-metric">
-                      <span className="metric-number warning">
-                        {businessMetrics.expiringContracts.next15Days.length}
-                      </span>
-                      <span className="metric-label">{t('dashboard.next15Days')}</span>
-                    </div>
-                    <div className="alert-metric">
-                      <span className="metric-number info">
-                        {businessMetrics.expiringContracts.next30Days.length}
-                      </span>
-                      <span className="metric-label">{t('dashboard.next30Days')}</span>
-                    </div>
-                  </div>
-                  <div className="revenue-at-risk">
-                    <span className="risk-label">{t('dashboard.revenueAtRisk')}:</span>
-                    <span className="risk-amount">
-                      {formatCurrency(businessMetrics.expiringContracts.revenueAtRisk)}
+              <div className="metric-value">
+                {businessMetrics.revenueMetrics.loading ? (
+                  <div className="loading-spinner small"></div>
+                ) : (
+                  <>
+                    <span className="value-main">
+                      {formatCurrency(businessMetrics.revenueMetrics.currentMRR)}
                     </span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Payment Status Alert */}
-          <div className="alert-card payment-status">
-            <div className="alert-card-header">
-              <div className="alert-icon">
-                <DollarSign size={24} />
-              </div>
-              <div className="alert-title">
-                <h3>{t('dashboard.paymentStatus')}</h3>
-                <p>{t('dashboard.paymentHealthCheck')}</p>
-              </div>
-            </div>
-            <div className="alert-card-body">
-              {businessMetrics.paymentStatus.loading ? (
-                <div className="loading-spinner"></div>
-              ) : (
-                <>
-                  <div className="alert-metrics">
-                    <div className="alert-metric">
-                      <span className="metric-number urgent">
-                        {businessMetrics.paymentStatus.overdue.length}
-                      </span>
-                      <span className="metric-label">{t('dashboard.overduePayments')}</span>
-                    </div>
-                    <div className="alert-metric">
-                      <span className="metric-number warning">
-                        {businessMetrics.paymentStatus.dueThisWeek.length}
-                      </span>
-                      <span className="metric-label">{t('dashboard.dueThisWeek')}</span>
-                    </div>
-                    <div className="alert-metric">
-                      <span className="metric-number info">
-                        {businessMetrics.paymentStatus.dueThisMonth.length}
-                      </span>
-                      <span className="metric-label">{t('dashboard.dueThisMonth')}</span>
-                    </div>
-                  </div>
-                  <div className="overdue-amount">
-                    <span className="overdue-label">{t('dashboard.totalOverdue')}:</span>
-                    <span className="overdue-value">
-                      {formatCurrency(businessMetrics.paymentStatus.totalOverdue)}
+                    <span className={`value-change ${businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
+                      }`}>
+                      {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? '+' : ''}
+                      {businessMetrics.revenueMetrics.monthOverMonthGrowth.toFixed(1)}%
                     </span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Financial Overview */}
-      <div className="dashboard-section">
-        <h2 className="section-title">{t('dashboard.financialOverview')}</h2>
-        <div className="financial-metrics-grid">
-          <div className="financial-metric-card mrr">
-            <div className="metric-header">
-              <div className="metric-icon">
-                <TrendingUp size={20} />
+                  </>
+                )}
               </div>
-              <h3>{t('dashboard.monthlyRecurringRevenue')}</h3>
             </div>
-            <div className="metric-value">
-              {businessMetrics.revenueMetrics.loading ? (
-                <div className="loading-spinner small"></div>
-              ) : (
-                <>
+
+            <div className="financial-metric-card total-value">
+              <div className="metric-header">
+                <div className="metric-icon">
+                  <Building size={20} />
+                </div>
+                <h3>{t('dashboard.totalActiveValue')}</h3>
+              </div>
+              <div className="metric-value">
+                {businessMetrics.revenueMetrics.loading ? (
+                  <div className="loading-spinner small"></div>
+                ) : (
                   <span className="value-main">
-                    {formatCurrency(businessMetrics.revenueMetrics.currentMRR)}
+                    {formatCurrency(businessMetrics.revenueMetrics.totalActiveValue)}
                   </span>
-                  <span className={`value-change ${
-                    businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
-                  }`}>
+                )}
+              </div>
+            </div>
+
+            <div className="financial-metric-card growth">
+              <div className="metric-header">
+                <div className="metric-icon">
+                  {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ?
+                    <TrendingUp size={20} /> : <TrendingDown size={20} />
+                  }
+                </div>
+                <h3>{t('dashboard.monthOverMonthGrowth')}</h3>
+              </div>
+              <div className="metric-value">
+                {businessMetrics.revenueMetrics.loading ? (
+                  <div className="loading-spinner small"></div>
+                ) : (
+                  <span className={`value-main ${businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
+                    }`}>
                     {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? '+' : ''}
                     {businessMetrics.revenueMetrics.monthOverMonthGrowth.toFixed(1)}%
                   </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="financial-metric-card total-value">
-            <div className="metric-header">
-              <div className="metric-icon">
-                <Building size={20} />
+                )}
               </div>
-              <h3>{t('dashboard.totalActiveValue')}</h3>
-            </div>
-            <div className="metric-value">
-              {businessMetrics.revenueMetrics.loading ? (
-                <div className="loading-spinner small"></div>
-              ) : (
-                <span className="value-main">
-                  {formatCurrency(businessMetrics.revenueMetrics.totalActiveValue)}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="financial-metric-card growth">
-            <div className="metric-header">
-              <div className="metric-icon">
-                {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 
-                  <TrendingUp size={20} /> : <TrendingDown size={20} />
-                }
-              </div>
-              <h3>{t('dashboard.monthOverMonthGrowth')}</h3>
-            </div>
-            <div className="metric-value">
-              {businessMetrics.revenueMetrics.loading ? (
-                <div className="loading-spinner small"></div>
-              ) : (
-                <span className={`value-main ${
-                  businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? 'positive' : 'negative'
-                }`}>
-                  {businessMetrics.revenueMetrics.monthOverMonthGrowth >= 0 ? '+' : ''}
-                  {businessMetrics.revenueMetrics.monthOverMonthGrowth.toFixed(1)}%
-                </span>
-              )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Business Overview Stats - REMOVED "Sedi Attive" (Active Locations) */}
-      <div className="dashboard-section">
-        <h2 className="section-title">{t('dashboard.businessOverview')}</h2>
-        <div className="dashboard-stats">
-          <div className="stat-card">
-            <div className="stat-card-content">
-              <div className="stat-icon">
-                <Users size={24} color="#9ca3af" />
-              </div>
-              <div className="stat-info">
-                <div className="stat-label">{t('dashboard.totalCustomers')}</div>
-                <div className="stat-value">
-                  {stats.loading ? '...' : stats.totalCustomers}
+        {/* Business Overview Stats - REMOVED "Sedi Attive" (Active Locations) */}
+        <div className="dashboard-section">
+          <h2 className="section-title">{t('dashboard.businessOverview')}</h2>
+          <div className="dashboard-stats">
+            <div className="stat-card">
+              <div className="stat-card-content">
+                <div className="stat-icon">
+                  <Users size={24} color="#9ca3af" />
+                </div>
+                <div className="stat-info">
+                  <div className="stat-label">{t('dashboard.totalCustomers')}</div>
+                  <div className="stat-value">
+                    {stats.loading ? '...' : stats.totalCustomers}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="stat-card">
-            <div className="stat-card-content">
-              <div className="stat-icon">
-                <Building size={24} color="#9ca3af" />
-              </div>
-              <div className="stat-info">
-                <div className="stat-label">{t('dashboard.totalContracts')}</div>
-                <div className="stat-value">
-                  {stats.loading ? '...' : stats.totalContracts}
+            <div className="stat-card">
+              <div className="stat-card-content">
+                <div className="stat-icon">
+                  <Building size={24} color="#9ca3af" />
+                </div>
+                <div className="stat-info">
+                  <div className="stat-label">{t('dashboard.totalContracts')}</div>
+                  <div className="stat-value">
+                    {stats.loading ? '...' : stats.totalContracts}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="stat-card">
-            <div className="stat-card-content">
-              <div className="stat-icon">
-                <Calendar size={24} color="#9ca3af" />
-              </div>
-              <div className="stat-info">
-                <div className="stat-label">{t('dashboard.activeBookings')}</div>
-                <div className="stat-value">
-                  {stats.loading ? '...' : stats.activeBookings}
+            <div className="stat-card">
+              <div className="stat-card-content">
+                <div className="stat-icon">
+                  <Calendar size={24} color="#9ca3af" />
+                </div>
+                <div className="stat-info">
+                  <div className="stat-label">{t('dashboard.activeBookings')}</div>
+                  <div className="stat-value">
+                    {stats.loading ? '...' : stats.activeBookings}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Analytics Charts Section */}
-      <div className="dashboard-analytics-section">
-        {/* Contracts Analytics Chart - ONLY SHOW IF THERE'S DATA */}
+        {/* Analytics Charts Section - Contracts */}
         {hasContractData && (
-          <div className="dashboard-chart">
-            <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
-            <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
-            {chartLoading ? (
-              <div className="chart-loading">
-                <div className="loading-spinner"></div>
-                <span>Caricamento dati...</span>
-              </div>
-            ) : !chartsReady ? (
-              <div className="chart-loading">
-                <div className="loading-spinner"></div>
-              </div>
-            ) : (
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Package Utilization Chart */}
-        {!businessMetrics.utilizationMetrics.loading && 
-         businessMetrics.utilizationMetrics.packageUtilization.length > 0 && (
-          <div className="dashboard-chart">
-            <h2 className="chart-title">{t('dashboard.packageUtilization')}</h2>
-            <p className="chart-subtitle">{t('dashboard.customerUsagePatterns')}</p>
-            <div className="chart-container utilization">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={businessMetrics.utilizationMetrics.packageUtilization.slice(0, 10)} 
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="customerName" 
-                    tick={{ fontSize: 10 }} 
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                  />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip 
-                    formatter={(value) => [`${value.toFixed(1)}%`, 'Utilization']}
-                    labelFormatter={(label) => `Customer: ${label}`}
-                  />
-                  <Bar 
-                    dataKey="utilizationRate" 
-                    fill="#10b981" 
-                    name="Utilization Rate (%)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+          <div className="dashboard-section">
+            <div className="dashboard-chart">
+              <h2 className="chart-title">{t('dashboard.contractsAnalytics')}</h2>
+              <p className="chart-subtitle">{t('dashboard.contractsAnalyticsSubtitle')}</p>
+              {chartLoading ? (
+                <div className="chart-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Caricamento dati...</span>
+                </div>
+              ) : !chartsReady ? (
+                <div className="chart-loading">
+                  <div className="loading-spinner"></div>
+                </div>
+              ) : (
+                <div className="chart-container">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="Abbonamento" stackId="a" fill="#3b82f6" name={t('dashboard.subscriptions')} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="Pacchetto" stackId="a" fill="#f59e0b" name={t('dashboard.packages')} radius={[2, 2, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         )}
-      </div>
-    </>
-  );
-};
+
+        {/* Analytics Charts Section - Utilization */}
+        {!businessMetrics.utilizationMetrics.loading &&
+          businessMetrics.utilizationMetrics.packageUtilization.length > 0 && (
+            <div className="dashboard-section">
+              <div className="dashboard-chart">
+                <h2 className="chart-title">{t('dashboard.packageUtilization')}</h2>
+                <p className="chart-subtitle">{t('dashboard.customerUsagePatterns')}</p>
+                <div className="chart-container utilization">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={businessMetrics.utilizationMetrics.packageUtilization.slice(0, 10)}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="customerName"
+                        tick={{ fontSize: 10 }}
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        formatter={(value) => [`${value.toFixed(1)}%`, 'Utilization']}
+                        labelFormatter={(label) => `Customer: ${label}`}
+                      />
+                      <Bar
+                        dataKey="utilizationRate"
+                        fill="#10b981"
+                        name="Utilization Rate (%)"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+      </>
+    );
+  };
 
   // Customer Dashboard Render
   const renderCustomerDashboard = () => {
@@ -1615,7 +1656,7 @@ const renderEnhancedPartnerDashboard = () => {
       );
     }
     const activeContracts = contracts.filter(c => c.contract_status === 'active');
-    
+
     // Calculate days remaining for a contract
     const calculateDaysRemaining = (endDate) => {
       const today = new Date();
@@ -1626,7 +1667,7 @@ const renderEnhancedPartnerDashboard = () => {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays;
     };
-    
+
     // Check if contract is expired
     const isContractExpired = (endDate) => {
       const today = new Date();
@@ -1635,26 +1676,26 @@ const renderEnhancedPartnerDashboard = () => {
       end.setHours(0, 0, 0, 0);
       return today > end;
     };
-    
+
     // Handle auto-renewal toggle
     const handleAutoRenewToggle = async (contractId, currentValue) => {
       setUpdatingAutoRenew(prev => ({ ...prev, [contractId]: true }));
-      
+
       try {
         const { error } = await supabase
           .from('contracts')
           .update({ auto_renew: !currentValue })
           .eq('id', contractId);
-        
+
         if (error) throw error;
-        
+
         // Update local state
-        setContracts(prev => prev.map(c => 
+        setContracts(prev => prev.map(c =>
           c.id === contractId ? { ...c, auto_renew: !currentValue } : c
         ));
-        
+
         toast.success(
-          !currentValue 
+          !currentValue
             ? t('messages.autoRenewEnabled') || 'Rinnovo automatico attivato'
             : t('messages.autoRenewDisabled') || 'Rinnovo automatico disattivato'
         );
@@ -1665,14 +1706,14 @@ const renderEnhancedPartnerDashboard = () => {
         setUpdatingAutoRenew(prev => ({ ...prev, [contractId]: false }));
       }
     };
-    
+
     // Handle package booking
     const handleBookPackage = (contract) => {
       logger.log('Opening package booking for contract:', contract);
       setSelectedPackageContract(contract);
       setShowPackageBooking(true);
     };
-    
+
     // Handle purchase more entries or new package
     const handlePurchaseMore = (contract = null) => {
       logger.log('Opening contract form for new purchase');
@@ -1685,7 +1726,7 @@ const renderEnhancedPartnerDashboard = () => {
       }
       setShowForm(true);
     };
-    
+
     // Check if can book package entry
     const canBookPackageEntry = (contract) => {
       if (contract.service_type !== 'pacchetto') return false;
@@ -1699,7 +1740,7 @@ const renderEnhancedPartnerDashboard = () => {
         <h1 className="dashboard-title">
           {t('dashboard.welcomeBack')}, {profile?.first_name || 'User'}!
         </h1>
-        
+
         <div className="dashboard-section">
           <div className="contract-cards-grid">
             {contractsLoading ? (
@@ -1713,7 +1754,7 @@ const renderEnhancedPartnerDashboard = () => {
                   <Building size={48} />
                 </div>
                 <p>{t('dashboard.noContractsYet') || 'No contracts yet'}</p>
-                <button 
+                <button
                   className="btn-contract-primary"
                   onClick={() => handlePurchaseMore()}
                 >
@@ -1725,7 +1766,7 @@ const renderEnhancedPartnerDashboard = () => {
               activeContracts.map((contract) => {
                 const isExpired = isContractExpired(contract.end_date);
                 const daysRemaining = calculateDaysRemaining(contract.end_date);
-                
+
                 // Calculate remaining entries with proper decimal handling
                 let remainingEntries = null;
                 if (contract.service_type === 'pacchetto') {
@@ -1733,28 +1774,28 @@ const renderEnhancedPartnerDashboard = () => {
                   const usedEntries = parseFloat(contract.entries_used || 0);
                   remainingEntries = Math.round((maxEntries - usedEntries) * 10) / 10;
                 }
-                
+
                 const canBook = canBookPackageEntry(contract);
-                
+
                 return (
                   <div key={contract.id} className="contract-card">
                     <div className="contract-card-header">
                       <span className="contract-type-label">
-                        {contract.service_type === 'pacchetto' 
+                        {contract.service_type === 'pacchetto'
                           ? t('services.package').toUpperCase() || 'PACCHETTO'
                           : t('services.subscription').toUpperCase() || 'ABBONAMENTO'
                         }
                       </span>
                     </div>
-                    
+
                     <div className="contract-card-body">
                       <h3 className="contract-service-name">
-                        {contract.service_name || 
-                        (contract.service_type === 'pacchetto' 
-                          ? 'Nome del pacchetto' 
-                          : 'Nome dell\'abbonamento')}
+                        {contract.service_name ||
+                          (contract.service_type === 'pacchetto'
+                            ? 'Nome del pacchetto'
+                            : 'Nome dell\'abbonamento')}
                       </h3>
-                      
+
                       <div className="contract-status-info">
                         {contract.service_type === 'pacchetto' ? (
                           <>
@@ -1777,15 +1818,15 @@ const renderEnhancedPartnerDashboard = () => {
                             )}
                           </>
                         )}
-                        
+
                         <p className={`contract-expiry ${isExpired ? 'expired' : ''}`}>
-                          {isExpired 
+                          {isExpired
                             ? `${t('dashboard.expiredOn') || 'Scaduto il'} ${formatDate(contract.end_date)}`
                             : `${t('dashboard.expiresOn') || 'Scadenza'} ${formatDate(contract.end_date)}`
                           }
                         </p>
                       </div>
-                      
+
                       {/* Actions */}
                       <div className="contract-card-actions">
                         {contract.service_type === 'pacchetto' ? (
@@ -1793,14 +1834,14 @@ const renderEnhancedPartnerDashboard = () => {
                             {/* Package Actions */}
                             {remainingEntries > 0 && !isExpired ? (
                               <>
-                                <button 
+                                <button
                                   className="btn-contract-primary"
                                   onClick={() => handleBookPackage(contract)}
                                 >
                                   <Calendar size={16} />
                                   {t('dashboard.bookEntry') || 'PRENOTA INGRESSO'}
                                 </button>
-                                <button 
+                                <button
                                   className="btn-contract-outline"
                                   onClick={() => handlePurchaseMore(contract)}
                                 >
@@ -1809,7 +1850,7 @@ const renderEnhancedPartnerDashboard = () => {
                                 </button>
                               </>
                             ) : (
-                              <button 
+                              <button
                                 className="btn-contract-primary full-width"
                                 onClick={() => handlePurchaseMore(contract)}
                               >
@@ -1856,12 +1897,12 @@ const renderEnhancedPartnerDashboard = () => {
             )}
           </div>
         </div>
-        
+
         {/* Quick Actions section */}
         <div className="dashboard-section">
           <h2 className="section-title">{t('dashboard.quickActions') || 'Azioni Rapide'}</h2>
           <div className="quick-actions">
-            <button 
+            <button
               className="action-card"
               onClick={() => handlePurchaseMore()}
             >
@@ -1892,7 +1933,7 @@ const renderEnhancedPartnerDashboard = () => {
           <h1 className="dashboard-title">
             {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
           </h1>
-          
+
           <div className="dashboard-stats">
             <div className="stat-card">
               <div className="stat-card-content">
@@ -1978,56 +2019,56 @@ const renderEnhancedPartnerDashboard = () => {
               ) : (
                 <div className="chart-container">
                   <ResponsiveContainer width="100%" height={400}>
-                    <BarChart 
-                      data={partnersUsersData} 
+                    <BarChart
+                      data={partnersUsersData}
                       margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
                       layout="horizontal"
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis 
-                        dataKey="partnerName" 
-                        tick={{ fontSize: 11 }} 
+                      <XAxis
+                        dataKey="partnerName"
+                        tick={{ fontSize: 11 }}
                         interval={0}
                         angle={-45}
                         textAnchor="end"
                         height={100}
                       />
                       <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip 
+                      <Tooltip
                         formatter={(value, name) => [
-                          value, 
+                          value,
                           name === 'activeUsers' ? 'Utenti Attivi' : 'Limite Piano'
                         ]}
                         labelFormatter={(label) => `Partner: ${label}`}
                       />
-                      <Legend 
-                        formatter={(value) => 
+                      <Legend
+                        formatter={(value) =>
                           value === 'activeUsers' ? 'Utenti Attivi' : 'Limite Piano'
                         }
                         wrapperStyle={{ paddingTop: '20px' }}
                       />
-                      <Bar 
-                        dataKey="activeUsers" 
-                        fill="#3b82f6" 
+                      <Bar
+                        dataKey="activeUsers"
+                        fill="#3b82f6"
                         name="activeUsers"
                         radius={[4, 4, 0, 0]}
                       >
                         {partnersUsersData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={entry.isOverLimit ? '#ef4444' : '#3b82f6'} 
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.isOverLimit ? '#ef4444' : '#3b82f6'}
                           />
                         ))}
                       </Bar>
-                      <Bar 
-                        dataKey="planLimit" 
-                        fill="#10b981" 
+                      <Bar
+                        dataKey="planLimit"
+                        fill="#10b981"
                         name="planLimit"
                         radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>
-                  
+
                   {/* Over-Limit Partners Summary */}
                   {partnersUsersData.some(p => p.isOverLimit) && (
                     <div className="partners-overlimit-alert">
@@ -2066,11 +2107,11 @@ const renderEnhancedPartnerDashboard = () => {
                     <div className="loading-spinner"></div>
                     <span>Caricamento dati...</span>
                   </div>
-                  ) : !chartsReady ? (
-                    <div className="chart-loading">
-                      <div className="loading-spinner"></div>
-                    </div>
-                  ) : (
+                ) : !chartsReady ? (
+                  <div className="chart-loading">
+                    <div className="loading-spinner"></div>
+                  </div>
+                ) : (
                   <div className="chart-container">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={contractsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -2103,7 +2144,7 @@ const renderEnhancedPartnerDashboard = () => {
   return (
     <div className="dashboard-page">
       {renderDashboard()}
-      
+
       {/* Modal Components for Customer Dashboard */}
       {isCustomer && (
         <>

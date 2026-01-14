@@ -1,6 +1,6 @@
 // src/components/forms/PaymentForm.jsx
 
-import { DollarSign, Info, Upload, X } from 'lucide-react';
+import { Banknote, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -12,13 +12,13 @@ import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
 
-const PaymentForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  contract, 
-  editMode = false, 
-  paymentToEdit = null 
+const PaymentForm = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  contract,
+  editMode = false,
+  paymentToEdit = null
 }) => {
   const [formData, setFormData] = useState({
     amount: '',
@@ -68,7 +68,7 @@ const PaymentForm = ({
       const initializeForm = async () => {
         // Fetch fresh location data to ensure we have vat_percentage
         let vatPercentage = 0;
-        
+
         if (contract.location_id) {
           try {
             const { data: locationData, error: locationError } = await supabase
@@ -76,7 +76,7 @@ const PaymentForm = ({
               .select('vat_percentage')
               .eq('id', contract.location_id)
               .single();
-            
+
             if (!locationError && locationData) {
               vatPercentage = parseFloat(locationData.vat_percentage) || 0;
             } else {
@@ -86,7 +86,7 @@ const PaymentForm = ({
             logger.error('Error fetching location data:', error);
           }
         }
-        
+
         // Calculate VAT info with fetched data
         const baseAmount = parseFloat(contract.service_cost) || 0;
         const vatAmount = baseAmount * (vatPercentage / 100);
@@ -101,14 +101,14 @@ const PaymentForm = ({
 
         // Load existing payments
         const { data, error } = await PaymentService.getContractPayments(contract.id);
-        
+
         if (error) {
           logger.error('Error loading payments:', error);
           setExistingPayments([]);
         } else {
           setExistingPayments(data || []);
         }
-        
+
         // Now initialize form with loaded payments
         if (editMode && paymentToEdit) {
           populateEditForm();
@@ -117,8 +117,8 @@ const PaymentForm = ({
           const totalPaidGross = (data || [])
             .filter(p => p.payment_status === 'completed')
             .reduce((sum, p) => {
-              const paymentAmount = p.amount_gross !== null && p.amount_gross !== undefined 
-                ? parseFloat(p.amount_gross) 
+              const paymentAmount = p.amount_gross !== null && p.amount_gross !== undefined
+                ? parseFloat(p.amount_gross)
                 : parseFloat(p.amount);
               return sum + (paymentAmount || 0);
             }, 0);
@@ -127,7 +127,7 @@ const PaymentForm = ({
           const remainingAmount = Math.max(0, contractGross - totalPaidGross);
           const defaultAmount = remainingAmount > 0 ? remainingAmount : contractGross;
 
-          const dueDate = contract?.payment_terms 
+          const dueDate = contract?.payment_terms
             ? PaymentService.calculateDueDate(contract.start_date, contract.payment_terms)
             : null;
 
@@ -141,17 +141,17 @@ const PaymentForm = ({
             payment_type: 'full',
             payment_status: 'completed'
           };
-          
+
           setFormData(newFormData);
           setReceiptFile(null);
-          
+
           // Trigger validation immediately after setting amount
           if (defaultAmount > 0) {
             validateAmountValue(defaultAmount, contractGross, totalPaidGross);
           }
         }
       };
-      
+
       initializeForm();
     }
   }, [isOpen, contract, editMode, paymentToEdit]);
@@ -166,18 +166,18 @@ const PaymentForm = ({
     if (!paymentToEdit) return;
 
     // Check if payment has VAT breakdown
-    const hasVATBreakdown = paymentToEdit.amount_gross !== null && 
-                           paymentToEdit.amount_gross !== undefined;
+    const hasVATBreakdown = paymentToEdit.amount_gross !== null &&
+      paymentToEdit.amount_gross !== undefined;
 
     setFormData({
-      amount: hasVATBreakdown 
-        ? paymentToEdit.amount_gross?.toString() 
+      amount: hasVATBreakdown
+        ? paymentToEdit.amount_gross?.toString()
         : paymentToEdit.amount?.toString() || '',
       payment_method: paymentToEdit.payment_method || 'bank_transfer',
-      payment_date: paymentToEdit.payment_date 
+      payment_date: paymentToEdit.payment_date
         ? new Date(paymentToEdit.payment_date).toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0],
-      due_date: paymentToEdit.due_date 
+      due_date: paymentToEdit.due_date
         ? new Date(paymentToEdit.due_date).toISOString().split('T')[0]
         : '',
       transaction_reference: paymentToEdit.transaction_reference || '',
@@ -241,15 +241,15 @@ const PaymentForm = ({
       .filter(p => p.payment_status === 'completed')
       .reduce((sum, p) => {
         // Use amount_gross if available, otherwise fall back to amount
-        const paymentAmount = p.amount_gross !== null && p.amount_gross !== undefined 
-          ? parseFloat(p.amount_gross) 
+        const paymentAmount = p.amount_gross !== null && p.amount_gross !== undefined
+          ? parseFloat(p.amount_gross)
           : parseFloat(p.amount);
         return sum + (paymentAmount || 0);
       }, 0);
 
     // Total contract amount (gross)
     const contractGross = includeVAT ? vatInfo.totalAmount : vatInfo.baseAmount;
-    
+
     validateAmountValue(amount, contractGross, totalPaidGross);
 
     // Auto-adjust payment type based on amount
@@ -276,8 +276,8 @@ const PaymentForm = ({
       const totalPaidGross = existingPayments
         .filter(p => p.payment_status === 'completed')
         .reduce((sum, p) => {
-          const paymentAmount = p.amount_gross !== null && p.amount_gross !== undefined 
-            ? parseFloat(p.amount_gross) 
+          const paymentAmount = p.amount_gross !== null && p.amount_gross !== undefined
+            ? parseFloat(p.amount_gross)
             : parseFloat(p.amount);
           return sum + (paymentAmount || 0);
         }, 0);
@@ -285,7 +285,7 @@ const PaymentForm = ({
       const contractGross = newIncludeVAT ? vatInfo.totalAmount : vatInfo.baseAmount;
       const remainingAmount = Math.max(0, contractGross - totalPaidGross);
       const defaultAmount = remainingAmount > 0 ? remainingAmount : contractGross;
-      
+
       setFormData(prev => ({
         ...prev,
         amount: defaultAmount > 0 ? defaultAmount.toFixed(2) : ''
@@ -330,7 +330,7 @@ const PaymentForm = ({
       }
 
       if (!validation?.isValid && !editMode) {
-        toast.error(validation?.wouldOverpay 
+        toast.error(validation?.wouldOverpay
           ? 'Payment amount exceeds remaining balance'
           : 'Invalid payment amount');
         return;
@@ -368,10 +368,10 @@ const PaymentForm = ({
       if (receiptFile && result.data?.id) {
         setUploadingReceipt(true);
         const uploadResult = await PaymentService.uploadPaymentReceipt(
-          result.data.id, 
+          result.data.id,
           receiptFile
         );
-        
+
         if (uploadResult.error) {
           logger.warn('Receipt upload failed:', uploadResult.error);
           toast.warn('Payment saved but receipt upload failed');
@@ -379,16 +379,16 @@ const PaymentForm = ({
         setUploadingReceipt(false);
       }
 
-      toast.success(editMode 
-        ? t('payments.paymentUpdated') 
+      toast.success(editMode
+        ? t('payments.paymentUpdated')
         : t('payments.paymentRecorded'));
-      
+
       onSuccess(result.data);
       onClose();
     } catch (error) {
       logger.error('Error saving payment:', error);
-      toast.error(editMode 
-        ? t('payments.errorUpdatingPayment') 
+      toast.error(editMode
+        ? t('payments.errorUpdatingPayment')
         : t('payments.errorRecordingPayment'));
     } finally {
       setLoading(false);
@@ -405,7 +405,7 @@ const PaymentForm = ({
 
   if (!isOpen) return null;
 
-  const currentPaymentBreakdown = formData.amount 
+  const currentPaymentBreakdown = formData.amount
     ? calculatePaymentBreakdown(parseFloat(formData.amount))
     : null;
 
@@ -414,8 +414,8 @@ const PaymentForm = ({
       <div className="modal-container" style={{ maxWidth: '42rem' }}>
         <div className="modal-header">
           <h2 className="modal-title">
-            <DollarSign size={20} className="mr-2" />
-            {editMode 
+            <Banknote size={20} className="mr-2" />
+            {editMode
               ? t('payments.editPayment')
               : t('payments.recordPaymentFor')} {contract?.contract_number}
           </h2>
@@ -425,79 +425,18 @@ const PaymentForm = ({
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {/* Contract Info Section */}
-          <div className="form-section">
-            <h3 className="form-section-title">{t('contracts.contractDetails')}</h3>
-            <div className="contract-summary">
-              <div className="summary-item">
-                <span className="summary-label">{t('contracts.contract')}</span>
-                <span className="summary-value">{contract?.contract_number}</span>
-              </div>
-              <div className="summary-item">
-                <span className="summary-label">{t('contracts.service')}</span>
-                <span className="summary-value">{contract?.service_name}</span>
-              </div>
-              <div className="summary-item">
-                <span className="summary-label">{t('contracts.customer')}</span>
-                <span className="summary-value">
-                  {contract?.customers?.company_name || 
-                   `${contract?.customers?.first_name} ${contract?.customers?.second_name}`}
-                </span>
-              </div>
-            </div>
+          {/* Contract Info Section Removed */}
 
-            {/* Contract Amount Breakdown with VAT */}
-            <div className="vat-breakdown-info" style={{
-              marginTop: '1rem',
-              padding: '1rem',
-              backgroundColor: '#f9fafb',
-              borderRadius: '0.5rem',
-              border: '1px solid #e5e7eb'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                marginBottom: '0.75rem',
-                color: '#6b7280',
-                fontSize: '0.875rem',
-                fontWeight: '500'
-              }}>
-                <Info size={16} style={{ marginRight: '0.5rem' }} />
-                {t('contracts.contractAmountBreakdown') || 'Contract Amount Breakdown'}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                  <span>{t('contracts.baseAmount') || 'Net Amount'}</span>
-                  <span>{formatCurrency(vatInfo.baseAmount)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                  <span>{t('contracts.vat') || 'VAT'} ({vatInfo.percentage}%)</span>
-                  <span>{formatCurrency(vatInfo.vatAmount)}</span>
-                </div>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  paddingTop: '0.5rem',
-                  borderTop: '1px solid #d1d5db',
-                  fontWeight: '600',
-                  color: '#16a34a'
-                }}>
-                  <span>{t('contracts.total') || 'Total'}</span>
-                  <span>{formatCurrency(vatInfo.totalAmount)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Payment Details Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('payments.paymentDetails')}</h3>
-            
+
             {/* VAT Inclusion Toggle */}
             <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
                 cursor: 'pointer',
                 fontSize: '0.9rem'
               }}>
@@ -505,7 +444,7 @@ const PaymentForm = ({
                   type="checkbox"
                   checked={includeVAT}
                   onChange={handleVATToggle}
-                  style={{ 
+                  style={{
                     marginRight: '0.5rem',
                     width: '1.125rem',
                     height: '1.125rem',
@@ -514,14 +453,14 @@ const PaymentForm = ({
                 />
                 <span>{t('payments.includeVAT') || 'Include VAT in payment'} ({vatInfo.percentage}%)</span>
               </label>
-              <small style={{ 
-                display: 'block', 
-                marginTop: '0.25rem', 
+              <small style={{
+                display: 'block',
+                marginTop: '0.25rem',
                 color: '#6b7280',
                 fontSize: '0.8rem',
                 marginLeft: '1.625rem'
               }}>
-                {includeVAT 
+                {includeVAT
                   ? (t('payments.paymentWithVAT') || 'Payment amount includes VAT')
                   : (t('payments.paymentWithoutVAT') || 'Payment amount is net (without VAT)')
                 }
@@ -534,20 +473,25 @@ const PaymentForm = ({
                   {t('payments.amount')} *
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   id="amount"
-                  step="0.01"
-                  min="0"
                   value={formData.amount}
-                  onChange={(e) => handleInputChange('amount', e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Allow only numbers and one decimal point
+                    if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                      handleInputChange('amount', val);
+                    }
+                  }}
                   className="form-input"
                   placeholder="0.00"
                   required
                 />
                 {currentPaymentBreakdown && (
-                  <div style={{ 
-                    marginTop: '0.5rem', 
-                    fontSize: '0.75rem', 
+                  <div style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.75rem',
                     color: '#6b7280',
                     padding: '0.5rem',
                     backgroundColor: '#f3f4f6',
@@ -561,11 +505,11 @@ const PaymentForm = ({
                       <span>{t('contracts.vat') || 'VAT'} ({currentPaymentBreakdown.vatPercentage}%):</span>
                       <span>{formatCurrency(currentPaymentBreakdown.vat)}</span>
                     </div>
-                    <div style={{ 
-                      display: 'flex', 
+                    <div style={{
+                      display: 'flex',
                       justifyContent: 'space-between',
                       paddingTop: '0.25rem',
-                      borderTop: '1px solid #d1d5db',
+                      // borderTop: '1px solid #d1d5db', // REMOVE
                       fontWeight: '600'
                     }}>
                       <span>{t('contracts.total') || 'Total'}:</span>
@@ -580,9 +524,9 @@ const PaymentForm = ({
                         Amount exceeds remaining balance of {formatCurrency(validation.remainingAmount)}
                       </span>
                     ) : validation.isValid ? (
-                    <span className="validation-success">
-                      ✓ {t('payments.validAmountRemaining')} {formatCurrency(validation.remainingAmount - parseFloat(formData.amount || 0))}
-                    </span>
+                      <span className="validation-success">
+                        ✓ {t('payments.validAmountRemaining')} {formatCurrency(validation.remainingAmount - parseFloat(formData.amount || 0))}
+                      </span>
                     ) : (
                       <span className="validation-error">
                         Please enter a valid amount
@@ -664,7 +608,7 @@ const PaymentForm = ({
           {/* Receipt Upload Section */}
           <div className="form-section">
             <h3 className="form-section-title">{t('payments.receiptUpload')}</h3>
-            
+
             <div className="file-upload-area">
               <input
                 type="file"
@@ -676,7 +620,7 @@ const PaymentForm = ({
               <label htmlFor="receipt" className="file-upload-label">
                 <Upload size={20} />
                 <span>
-                  {receiptFile 
+                  {receiptFile
                     ? receiptFile.name
                     : (t('payments.uploadProofOfPayment') || 'Upload proof of payment')}
                 </span>
@@ -729,14 +673,14 @@ const PaymentForm = ({
             </button>
             <button
               type="submit"
-              className="btn-primary"
+              className="btn-primary-purple"
               disabled={loading || uploadingReceipt || (!validation?.isValid && !editMode)}
             >
               {loading || uploadingReceipt ? (
                 <>
                   <div className="loading-spinner-small"></div>
-                  {uploadingReceipt 
-                    ? 'Uploading...' 
+                  {uploadingReceipt
+                    ? 'Uploading...'
                     : (editMode ? t('common.updating') : t('common.creating'))
                   }
                 </>

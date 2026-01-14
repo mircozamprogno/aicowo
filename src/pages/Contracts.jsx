@@ -1,14 +1,16 @@
 // src/pages/Contracts.jsx
-import { AlertTriangle, Archive, Clock, Download, FileText, Plus, RefreshCw, Upload, X } from 'lucide-react';
+import { AlertTriangle, Archive, Calendar, Clock, Download, Edit2, FileText, Filter, Plus, RefreshCw, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Pagination from '../components/common/Pagination';
 import { toast } from '../components/common/ToastContainer';
 import ContractActionsCell from '../components/ContractActionsCell';
-import ContractForm from '../components/forms/ContractForm';
+// ContractForm import removed
 import PackageBookingForm from '../components/forms/PackageBookingForm';
 import PaymentForm from '../components/forms/PaymentForm';
 import PaymentHistoryModal from '../components/modals/PaymentHistoryModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { generateAndUploadICS } from '../services/calendarService';
 import { ContractArchiveService } from '../services/contractArchiveService';
 import { CSVExportService } from '../services/csvExportService';
 import oneSignalEmailService from '../services/oneSignalEmailService';
@@ -28,19 +30,17 @@ const Contracts = () => {
   const [contracts, setContracts] = useState([]);
   const [filteredContracts, setFilteredContracts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editingContract, setEditingContract] = useState(null);
+  // Modal states removed
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [contractToArchive, setContractToArchive] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
-  
+
   const [showPackageBooking, setShowPackageBooking] = useState(false);
   const [selectedPackageContract, setSelectedPackageContract] = useState(null);
-  
+
   const [generatingPDF, setGeneratingPDF] = useState(null);
-  
+
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
@@ -66,6 +66,11 @@ const Contracts = () => {
   const [activeFilters, setActiveFilters] = useState({});
 
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const loadPartnerSettings = async () => {
     try {
@@ -102,6 +107,7 @@ const Contracts = () => {
   const handleFilterChange = (filtered, filters) => {
     setFilteredContracts(filtered);
     setActiveFilters(filters);
+    setCurrentPage(1);
   };
 
   const getPaymentStatusForFilter = (contract) => {
@@ -142,10 +148,15 @@ const Contracts = () => {
     }
   }, [contracts, partnerSettings]);
 
+  // Reset page when items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+
   const fetchContracts = async () => {
     try {
       logger.log('Fetching contracts for user:', profile);
-      
+
       let query = supabase
         .from('contracts')
         .select(`
@@ -177,7 +188,7 @@ const Contracts = () => {
           .select('id')
           .eq('user_id', profile.id)
           .single();
-        
+
         if (customerData) {
           query = query.eq('customer_id', customerData.id);
         }
@@ -189,7 +200,7 @@ const Contracts = () => {
 
       if (error) {
         logger.error('Error fetching contracts:', error);
-        
+
         const mockContracts = [
           {
             id: 1,
@@ -224,7 +235,7 @@ const Contracts = () => {
           },
           {
             id: 2,
-            contract_uuid: 'mock-contract-2', 
+            contract_uuid: 'mock-contract-2',
             contract_number: 'TECH-MIL-20250105-0001',
             start_date: '2025-01-05',
             end_date: '2025-04-05',
@@ -254,9 +265,9 @@ const Contracts = () => {
             }
           }
         ];
-        
+
         setContracts(mockContracts);
-        
+
         if (canManagePayments) {
           loadPaymentStatuses(mockContracts.map(c => c.id));
         }
@@ -267,7 +278,7 @@ const Contracts = () => {
           service_max_entries: contract.service_max_entries ? parseFloat(contract.service_max_entries) : null,
           service_cost: parseFloat(contract.service_cost) || 0
         }));
-        
+
         setContracts(processedContracts);
 
         if (canManagePayments) {
@@ -313,39 +324,11 @@ const Contracts = () => {
   };
 
   const handleCreateContract = () => {
-    setShowForm(true);
-  };
-
-  const handleFormClose = () => {
-    setShowForm(false);
+    window.location.hash = '/contracts/new';
   };
 
   const handleEditContract = (contract) => {
-    setEditingContract(contract);
-    setShowEditForm(true);
-  };
-
-  const handleEditFormClose = () => {
-    setShowEditForm(false);
-    setEditingContract(null);
-  };
-
-  const handleFormSuccess = (savedContract) => {
-    setContracts(prev => [savedContract, ...prev]);
-    if (canManagePayments) {
-      loadPaymentStatuses([savedContract.id]);
-    }
-  };
-
-  const handleEditFormSuccess = (updatedContract) => {
-    setContracts(prev => 
-      prev.map(contract => 
-        contract.id === updatedContract.id ? updatedContract : contract
-      )
-    );
-    if (canManagePayments) {
-      loadPaymentStatuses([updatedContract.id]);
-    }
+    window.location.hash = `/contracts/edit/${contract.id}`;
   };
 
   const handlePackageBooking = (contract) => {
@@ -361,11 +344,11 @@ const Contracts = () => {
 
   const handlePackageBookingSuccess = async (reservation) => {
     logger.log('Package booking successful:', reservation);
-    
+
     try {
       if (selectedPackageContract) {
         logger.log('Sending booking confirmation emails...');
-        
+
         let partnerData = null;
         if (profile?.partner_uuid) {
           try {
@@ -374,7 +357,7 @@ const Contracts = () => {
               .select('company_name, email')
               .eq('partner_uuid', profile.partner_uuid)
               .single();
-            
+
             if (!partnerError && partner) {
               partnerData = partner;
             }
@@ -383,11 +366,21 @@ const Contracts = () => {
           }
         }
 
+        // Generate ICS file content and upload to Supabase Storage
+        let calendarLink = null;
+        try {
+          // Note: reservation is the booking data here
+          calendarLink = await generateAndUploadICS(reservation, 'package', profile.partner_uuid);
+        } catch (icsError) {
+          logger.error('Error generating ICS:', icsError);
+        }
+
         const emailSent = await oneSignalEmailService.sendBookingConfirmation(
           reservation,
           selectedPackageContract,
           t,
-          partnerData
+          partnerData,
+          calendarLink
         );
 
         if (emailSent) {
@@ -408,21 +401,21 @@ const Contracts = () => {
 
   const handleGeneratePDF = async (contract) => {
     setGeneratingPDF(contract.id);
-    
+
     try {
       logger.log('Generating PDF for contract:', contract);
-      
+
       let fullCustomerData = contract.customers;
-      
+
       if (contract.customer_id) {
         logger.log('Fetching customer data for ID:', contract.customer_id);
-        
+
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
           .select('*')
           .eq('id', contract.customer_id)
           .single();
-        
+
         if (customerError) {
           logger.error('Error fetching customer data:', customerError);
         } else if (customerData) {
@@ -434,17 +427,17 @@ const Contracts = () => {
       } else {
         logger.warn('No customer_id found in contract:', contract);
       }
-      
+
       let locationData = null;
       if (contract.location_id) {
         logger.log('Fetching location data for ID:', contract.location_id);
-        
+
         const { data: locationInfo, error: locationError } = await supabase
           .from('locations')
           .select('*')
           .eq('id', contract.location_id)
           .single();
-        
+
         if (locationError) {
           logger.error('Error fetching location data:', locationError);
         } else if (locationInfo) {
@@ -456,29 +449,29 @@ const Contracts = () => {
       } else {
         logger.warn('No location_id found in contract:', contract);
       }
-      
+
       const enhancedContract = {
         ...contract,
         customers: fullCustomerData,
         location_data: locationData
       };
-      
+
       logger.log('Enhanced contract with customer and location data:', enhancedContract);
-      
+
       let partnerData = null;
       let logoUrl = null;
-      
+
       if (profile?.partner_uuid) {
         const { data: partner, error: partnerError } = await supabase
           .from('partners')
           .select('*')
           .eq('partner_uuid', profile.partner_uuid)
           .single();
-        
+
         if (!partnerError && partner) {
           partnerData = partner;
         }
-        
+
         try {
           const { data: files } = await supabase.storage
             .from('partners')
@@ -487,12 +480,12 @@ const Contracts = () => {
             });
 
           const logoFile = files?.find(file => file.name.startsWith('logo.'));
-          
+
           if (logoFile) {
             const { data } = supabase.storage
               .from('partners')
               .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
-            
+
             logoUrl = data.publicUrl;
           }
         } catch (logoError) {
@@ -501,9 +494,9 @@ const Contracts = () => {
       }
 
       await generateContractPDF(enhancedContract, partnerData, logoUrl, t);
-      
+
       toast.success(t('contracts.pdfGeneratedSuccessfully') || 'PDF generated successfully!');
-      
+
     } catch (error) {
       logger.error('Error generating PDF:', error);
       toast.error(t('contracts.errorGeneratingPDF') || 'Error generating PDF. Please try again.');
@@ -548,7 +541,7 @@ const Contracts = () => {
         setContracts(prev => prev.filter(c => c.id !== contractToArchive.id));
         setShowArchiveConfirm(false);
         setContractToArchive(null);
-        
+
         toast.success(t('contracts.contractArchivedSuccessfully') || 'Contract archived successfully');
       } else {
         toast.error(result.error || t('contracts.errorArchivingContract') || 'Error archiving contract');
@@ -567,7 +560,7 @@ const Contracts = () => {
   const loadPaymentStatuses = async (contractIds) => {
     try {
       const { data, error } = await PaymentService.getContractPaymentStatus(contractIds);
-      
+
       if (error) {
         logger.error('Error loading payment statuses:', error);
         return;
@@ -577,7 +570,7 @@ const Contracts = () => {
       (data || []).forEach(status => {
         statusMap[status.contract_id] = status;
       });
-      
+
       setContractPayments(statusMap);
     } catch (error) {
       logger.error('Error loading payment statuses:', error);
@@ -609,15 +602,15 @@ const Contracts = () => {
 
   const handlePaymentSuccess = async (payment) => {
     setShowPaymentForm(false);
-    
+
     setTimeout(async () => {
       await fetchContracts();
-      
+
       if (canManagePayments && contracts.length > 0) {
         loadPaymentStatuses(contracts.map(c => c.id));
       }
     }, 500);
-    
+
     if (paymentToEdit) {
       setShowPaymentHistory(true);
     }
@@ -677,20 +670,18 @@ const Contracts = () => {
     return types[type] || type;
   };
 
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🖥️' : '🏢';
-  };
+
 
   const getResourceDisplayName = (contract) => {
     if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
       return contract.resource_name;
     }
-    
+
     const resourceTypeNames = {
       'scrivania': t('locations.scrivania'),
       'sala_riunioni': t('locations.salaRiunioni')
     };
-    
+
     return resourceTypeNames[contract.resource_type] || t('services.resource');
   };
 
@@ -719,7 +710,7 @@ const Contracts = () => {
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
     end.setHours(0, 0, 0, 0);
-    
+
     return today >= start && today <= end;
   };
 
@@ -727,7 +718,7 @@ const Contracts = () => {
     if (contract.service_type !== 'pacchetto') return false;
     if (contract.contract_status !== 'active') return false;
     if (!isDateInContractRange(contract.start_date, contract.end_date)) return false;
-    
+
     const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
     return remainingEntries >= 0.5;
   };
@@ -735,7 +726,7 @@ const Contracts = () => {
   const getBookButtonText = (contract) => {
     const remainingEntries = (contract.service_max_entries || 0) - (contract.entries_used || 0);
     const canBook = canBookPackage(contract);
-    
+
     if (canBook) {
       return t('reservations.bookReservation');
     } else if (remainingEntries < 0.5) {
@@ -795,14 +786,14 @@ const Contracts = () => {
     }
 
     setExportingCSV(true);
-    
+
     try {
       const csvContent = await CSVExportService.exportContractsToCSV(contractsToExport, t);
       const filename = CSVExportService.generateFilename();
       CSVExportService.downloadCSV(csvContent, filename);
-      
+
       toast.success(t('contracts.csvExportedSuccessfully') || 'Export CSV completato con successo');
-      
+
     } catch (error) {
       logger.error('Error exporting CSV:', error);
       toast.error(t('contracts.errorExportingCSV') || 'Errore durante l\'export CSV. Riprova.');
@@ -815,10 +806,17 @@ const Contracts = () => {
     return <div className="contracts-loading">{t('common.loading')}</div>;
   }
 
-  const contractsToDisplay = filteredContracts.length >= 0 ? filteredContracts : contracts;
+  // Pagination logic
+  const totalContractsCount = filteredContracts.length >= 0 ? filteredContracts.length : contracts.length;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const contractsToDisplayTotal = filteredContracts.length >= 0 ? filteredContracts : contracts;
+  const contractsToDisplay = contractsToDisplayTotal.slice(startIndex, endIndex);
+
+
 
   return (
-    <div className="contracts-page">
+    <div className={`contracts-page ${isCustomer ? 'contracts-page-customer' : ''}`}>
 
       <div className="contracts-header">
         <div className="contracts-header-top">
@@ -828,13 +826,13 @@ const Contracts = () => {
               {t('contracts.title')}
             </h1>
             <p className="contracts-description">
-              {isCustomer 
+              {isCustomer
                 ? t('contracts.manageYourContracts')
                 : t('contracts.managePartnerContracts')
               }
             </p>
           </div>
-          
+
           {canCreateContracts && (
             <div className="contracts-header-actions">
               <button className="add-contract-btn" onClick={handleCreateContract}>
@@ -843,21 +841,21 @@ const Contracts = () => {
               </button>
 
               {(isPartnerAdmin || isSuperAdmin) && (
-                <button 
+                <button
                   className="export-csv-btn"
                   onClick={handleExportCSV}
                   disabled={exportingCSV || contractsToDisplay.length === 0}
                   title={t('contracts.exportToCSV') || 'Esporta in CSV'}
                 >
                   <Download size={16} className="mr-2" />
-                  {exportingCSV 
-                    ? (t('contracts.exporting') || 'Esportazione...') 
+                  {exportingCSV
+                    ? (t('contracts.exporting') || 'Esportazione...')
                     : (t('contracts.exportCSV') || 'Esporta CSV')
                   }
                 </button>
               )}
 
-              <button 
+              <button
                 className="archived-contracts-btn"
                 onClick={() => window.location.hash = '/archived-contracts'}
                 title={t('contracts.viewArchivedContracts') || 'View Archived Contracts'}
@@ -866,8 +864,19 @@ const Contracts = () => {
                 {t('contracts.archivedContracts') || 'Archived Contracts'}
               </button>
 
+              {isCustomer && (
+                <button
+                  className="archived-contracts-btn"
+                  onClick={() => setShowFilters(!showFilters)}
+                  title={showFilters ? (t('filters.hideFilters') || 'Hide Filters') : (t('filters.showFilters') || 'Show Filters')}
+                >
+                  <Filter size={16} className="mr-2" />
+                  {showFilters ? (t('filters.hideFilters') || 'Nascondi Filtri') : (t('filters.showFilters') || 'Mostra Filtri')}
+                </button>
+              )}
+
               {partnerSettings?.fattureincloud_enabled && (isPartnerAdmin || isSuperAdmin) && (
-                <button 
+                <button
                   className="bulk-upload-btn"
                   onClick={handleBulkUpload}
                   disabled={contractsToDisplay.length === 0}
@@ -879,7 +888,7 @@ const Contracts = () => {
               )}
 
               {(isPartnerAdmin || isSuperAdmin) && (
-                <button 
+                <button
                   className="renewal-logs-btn"
                   onClick={() => window.location.hash = '/renewal-logs'}
                   title={t('renewalLogs.viewRenewalLogs') || 'View Renewal Logs'}
@@ -929,30 +938,157 @@ const Contracts = () => {
             )}
           </div>
         )}
-        </div>
+      </div>
 
 
-      <ContractsFilter
-        contracts={contracts}
-        customers={customers}
-        locations={locations}
-        onFilterChange={handleFilterChange}
-        isCustomerMode={isCustomer}
-        canManagePayments={canManagePayments}
-        contractPayments={contractPayments}
-        getPaymentStatus={getPaymentStatus}
-      />
+      {showFilters && (
+        <ContractsFilter
+          contracts={contracts}
+          customers={customers}
+          locations={locations}
+          onFilterChange={handleFilterChange}
+          isCustomerMode={isCustomer}
+          canManagePayments={canManagePayments}
+          contractPayments={contractPayments}
+          getPaymentStatus={getPaymentStatus}
+        />
+      )}
 
       {Object.values(activeFilters).some(value => value !== '') && (
         <div className="filter-results-info">
           <span className="filter-results-count">
-            {t('filters.showingResults', { 
-              count: contractsToDisplay.length, 
-              total: contracts.length 
+            {t('filters.showingResults', {
+              count: contractsToDisplay.length,
+              total: contracts.length
             }) || `Showing ${contractsToDisplay.length} of ${contracts.length} contracts`}
           </span>
         </div>
       )}
+
+      <Pagination
+        totalItems={totalContractsCount}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
+
+      <div className="contracts-mobile-list">
+        {contractsToDisplay.map((contract) => {
+          const service = contract.services;
+          const customer = contract.customers;
+          const location = contract.locations;
+          const paymentStatus = getPaymentStatus(contract);
+          const activeS = contract.contract_status === 'active';
+
+          return (
+            <div key={contract.id} className="contract-card">
+              <div className="contract-card-header">
+                <div className="contract-card-title">
+                  <span className="contract-number">{contract.contract_number}</span>
+                  <span className={`status-badge status-${contract.contract_status}`}>
+                    {t(`contracts.${contract.contract_status}`) || contract.contract_status}
+                  </span>
+                </div>
+                {canManagePayments && (
+                  <span className={`payment-status-badge payment-status-${paymentStatus}`}>
+                    {t(`payments.status.${paymentStatus}`) || paymentStatus}
+                  </span>
+                )}
+              </div>
+
+              <div className="contract-card-body">
+                <div className="contract-card-row">
+                  <span className="card-label">{t('contracts.customer')}:</span>
+                  <div className="customer-info" style={{ alignItems: 'flex-end' }}>
+                    <span className="customer-name">{customer?.first_name} {customer?.last_name}</span>
+                    {customer?.email && <span className="customer-email">{customer.email}</span>}
+                  </div>
+                </div>
+
+                <div className="contract-card-row">
+                  <span className="card-label">{t('contracts.service')}:</span>
+                  <div className="service-info" style={{ alignItems: 'flex-end' }}>
+                    <div className="service-header" style={{ justifyContent: 'flex-end' }}>
+                      <span className="service-name">{service?.service_name}</span>
+                      <span className={`service-type-badge service-type-${service?.service_type}`}>
+                        {service?.service_type}
+                      </span>
+                    </div>
+                    {/* Simplified service details for mobile */}
+                    {service?.service_type === 'pacchetto' && (
+                      <span className="remaining-entries">
+                        {contract.remaining_entries}/{service.max_entries} {t('contracts.entries')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="contract-card-row">
+                  <span className="card-label">{t('contracts.period')}:</span>
+                  <div className="period-info" style={{ alignItems: 'flex-end', textAlign: 'right' }}>
+                    <span className="period-dates">
+                      {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
+                    </span>
+                    <span className={`days-remaining ${calculateDaysRemaining(contract.end_date) < 7 && activeS ? 'warning' : ''}`}>
+                      {calculateDaysRemaining(contract.end_date)} {t('contracts.daysRemaining')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="contract-card-row">
+                  <span className="card-label">{t('contracts.cost')}:</span>
+                  <div className="cost-status-info" style={{ alignItems: 'flex-end' }}>
+                    <span className="cost-info">
+                      {formatCurrency(contract.service_cost, contract.service_currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="contract-card-actions">
+                {/* Booking Action - Only for Packages in Range */}
+                {canBookPackage(contract) && (
+                  <button
+                    className="action-btn package-booking-btn"
+                    onClick={() => handlePackageBooking(contract)}
+                    title={t('reservations.bookReservation')}
+                  >
+                    <Calendar size={18} />
+                    <span>{t('reservations.bookReservation') || 'Prenota'}</span>
+                  </button>
+                )}
+
+                {/* PDF Action - Always available */}
+                <button
+                  className="action-btn pdf-btn"
+                  onClick={() => handleGeneratePDF(contract)}
+                  disabled={generatingPDF === contract.id}
+                  title={t('contracts.downloadPDF')}
+                >
+                  {generatingPDF === contract.id ? (
+                    <div className="loading-spinner-small"></div>
+                  ) : (
+                    <Download size={18} />
+                  )}
+                  <span>{t('contracts.actions.downloadPDF') || 'Scarica PDF'}</span>
+                </button>
+
+                {/* Admin Actions (Edit/View) - Hidden for User */}
+                {isPartnerAdmin && (
+                  <button
+                    className="action-btn edit-btn"
+                    onClick={() => handleEditContract(contract)}
+                    title={t('common.edit')}
+                  >
+                    <Edit2 size={20} />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="contracts-table-container">
         <div className="contracts-table-wrapper">
@@ -962,16 +1098,8 @@ const Contracts = () => {
                 <th className="contracts-table-header">
                   {t('contracts.contract')}
                 </th>
-                {!isCustomer && (
-                  <th className="contracts-table-header">
-                    {t('contracts.customer')}
-                  </th>
-                )}
                 <th className="contracts-table-header">
                   {t('contracts.service')}
-                </th>
-                <th className="contracts-table-header">
-                  {t('contracts.location')}
                 </th>
                 <th className="contracts-table-header">
                   {t('contracts.period')}
@@ -983,7 +1111,7 @@ const Contracts = () => {
                   <th className="contracts-table-header">
                     {t('payments.paymentStatus')}
                   </th>
-                )}                                              
+                )}
                 <th className="contracts-table-header">
                   {t('contracts.actionsColumn')}
                 </th>
@@ -997,28 +1125,17 @@ const Contracts = () => {
                 const paymentStatus = getPaymentStatus(contract);
                 const isOverdue = isPaymentOverdue(contract);
                 const nextDue = getNextDueDate(contract);
-                
+
                 return (
                   <tr key={contract.id} className="contracts-table-row">
                     <td className="contracts-table-cell">
                       <div className="contract-info">
                         <div className="contract-number">{contract.contract_number}</div>
-                        <div className="contract-created">
-                          {t('common.createdAt')}: {formatDate(contract.created_at)}
-                        </div>
+                        <span className={`status-badge ${getStatusBadgeClass(contract.contract_status)}`}>
+                          {t(`contracts.${contract.contract_status}`)}
+                        </span>
                       </div>
                     </td>
-                    {!isCustomer && (
-                      <td className="contracts-table-cell">
-                        <div className="customer-info">
-                          <div className="customer-name">
-                            {contract.customers?.company_name || 
-                             `${contract.customers?.first_name} ${contract.customers?.second_name}`}
-                          </div>
-                          <div className="customer-email">{contract.customers?.email}</div>
-                        </div>
-                      </td>
-                    )}
                     <td className="contracts-table-cell">
                       <div className="service-info">
                         <div className="service-header">
@@ -1035,21 +1152,12 @@ const Contracts = () => {
                               <span className="entries-total">{contract.service_max_entries}</span>
                               <span className="entries-label"> {t('contracts.entriesUsed')}</span>
                             </div>
-                            <div className={`remaining-entries ${
-                              (contract.service_max_entries - (contract.entries_used || 0)) <= 2 ? 'warning' : ''
-                            }`}>
+                            <div className={`remaining-entries ${(contract.service_max_entries - (contract.entries_used || 0)) <= 2 ? 'warning' : ''
+                              }`}>
                               {(contract.service_max_entries - (contract.entries_used || 0))} {t('reservations.entriesRemaining')}
                             </div>
                           </div>
                         )}
-                      </div>
-                    </td>
-                    <td className="contracts-table-cell">
-                      <div className="location-info">
-                        <div className="location-name">{contract.location_name}</div>
-                        <div className="resource-info">
-                          {getResourceDisplayName(contract)}
-                        </div>
                       </div>
                     </td>
                     <td className="contracts-table-cell">
@@ -1062,7 +1170,7 @@ const Contracts = () => {
                         </div>
                         {contract.contract_status === 'active' && isInRange && (
                           <div className={`days-remaining ${daysRemaining <= 7 ? 'warning' : ''}`}>
-                            {daysRemaining > 0 
+                            {daysRemaining > 0
                               ? `${daysRemaining} ${t('contracts.daysRemaining')}`
                               : t('contracts.expired')
                             }
@@ -1071,13 +1179,8 @@ const Contracts = () => {
                       </div>
                     </td>
                     <td className="contracts-table-cell">
-                      <div className="cost-status-info">
-                        <div className="cost-info">
-                          {formatCurrency(contract.service_cost, contract.service_currency)}
-                        </div>
-                        <span className={`status-badge ${getStatusBadgeClass(contract.contract_status)}`}>
-                          {t(`contracts.${contract.contract_status}`)}
-                        </span>
+                      <div className="cost-info">
+                        {formatCurrency(contract.service_cost, contract.service_currency)}
                       </div>
                     </td>
                     {canManagePayments && (
@@ -1125,13 +1228,13 @@ const Contracts = () => {
             <div className="contracts-empty">
               <FileText size={48} className="empty-icon" />
               <p>
-                {Object.values(activeFilters).some(value => value !== '') 
+                {Object.values(activeFilters).some(value => value !== '')
                   ? t('filters.noResultsFound') || 'No contracts found matching your filters'
                   : t('contracts.noContractsFound')
                 }
               </p>
               {canCreateContracts && !Object.values(activeFilters).some(value => value !== '') && (
-                <button 
+                <button
                   onClick={handleCreateContract}
                   className="btn-primary mt-4"
                 >
@@ -1139,7 +1242,7 @@ const Contracts = () => {
                 </button>
               )}
               {Object.values(activeFilters).some(value => value !== '') && (
-                <button 
+                <button
                   onClick={() => {
                     setActiveFilters({});
                     setFilteredContracts(contracts);
@@ -1154,27 +1257,7 @@ const Contracts = () => {
         </div>
       </div>
 
-      <ContractForm
-        isOpen={showForm}
-        onClose={handleFormClose}
-        onSuccess={handleFormSuccess}
-        partnerUuid={profile?.partner_uuid}
-        isCustomerMode={isCustomer}
-        customers={customers}
-        locations={locations}
-      />
-
-      <ContractForm
-        isOpen={showEditForm}
-        onClose={handleEditFormClose}
-        onSuccess={handleEditFormSuccess}
-        partnerUuid={profile?.partner_uuid}
-        isCustomerMode={false}
-        customers={customers}
-        locations={locations}
-        editMode={true}
-        contractToEdit={editingContract}
-      />
+      {/* ContractForm modals removed */}
 
       <PackageBookingForm
         isOpen={showPackageBooking}
@@ -1209,7 +1292,7 @@ const Contracts = () => {
                   <strong>{t('contracts.contract')}:</strong> {contractToArchive.contract_number}
                 </div>
                 <div className="contract-detail">
-                  <strong>{t('contracts.customer')}:</strong> {contractToArchive.customers?.company_name || 
+                  <strong>{t('contracts.customer')}:</strong> {contractToArchive.customers?.company_name ||
                     `${contractToArchive.customers?.first_name} ${contractToArchive.customers?.second_name}`}
                 </div>
                 <div className="contract-detail">
@@ -1230,10 +1313,10 @@ const Contracts = () => {
                 </ul>
               </div>
 
-              <div className="archive-modal-actions" style={{ 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
-                gap: '0.75rem', 
+              <div className="archive-modal-actions" style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
                 marginTop: '1.5rem',
                 paddingTop: '1.5rem',
                 borderTop: '1px solid #e5e7eb'
@@ -1249,8 +1332,8 @@ const Contracts = () => {
                   type="button"
                   onClick={handleArchiveConfirm}
                   className="btn-archive"
-                  style={{ 
-                    backgroundColor: '#f59e0b',
+                  style={{
+                    backgroundColor: '#4f46e5',
                     color: 'white',
                     border: 'none',
                     padding: '0.5rem 1rem',

@@ -30,7 +30,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
         partnerSettings.fattureincloud_api_token,
         partnerUuid
       );
-      
+
       if (result.success) {
         logger.log('✅ Fetched clients:', result.clients.map(c => ({ id: c.id, name: c.name })));
         setClients(result.clients);
@@ -69,7 +69,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
 
   const handleImport = async () => {
     const selectedArray = Array.from(selectedClients);
-    
+
     if (selectedArray.length === 0) {
       toast.error('Please select at least one client to import');
       return;
@@ -94,7 +94,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
       const successfulClientIds = results
         .filter(r => r.success)
         .map(r => r.clientId);
-      
+
       logger.log('✅ Successfully imported client IDs:', successfulClientIds);
 
       // Remove successfully imported clients from the list
@@ -170,7 +170,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
                 {clients.map((client) => {
                   const result = importResults.find(r => r.clientId === client.id);
                   const isSelected = selectedClients.has(client.id);
-                  
+
                   return (
                     <div key={client.id} className="contract-selection-item">
                       <div className="contract-checkbox">
@@ -182,7 +182,7 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
                           disabled={importing || result?.success}
                         />
                       </div>
-                      
+
                       <div className="contract-info">
                         <div className="contract-number">{client.name}</div>
                         <div className="contract-details">
@@ -224,12 +224,12 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
           >
             Close
           </button>
-          
+
           {clients.length > 0 && (
             <button
               type="button"
               onClick={handleImport}
-              className="btn-primary"
+              className="btn-fc-import"
               disabled={importing || selectedClients.size === 0}
             >
               {importing ? (

@@ -1,4 +1,4 @@
-import { Activity, BellRing, Building, Calendar, Camera, Cog, CreditCard, DollarSign, File, FileText, Home, Layers, LogOut, Mail, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
+import { Activity, BellRing, Building, Calendar, Cog, CreditCard, DollarSign, File, FileText, Home, Layers, LogOut, Mail, Send, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -16,7 +16,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   const currentPath = window.location.hash.slice(1) || '/dashboard';
   const { profile, signOut } = useAuth();
   const { t } = useTranslation();
-  
+
   // State for partner branding
   const [partnerBranding, setPartnerBranding] = useState({
     logo: null,
@@ -26,15 +26,15 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
   // State for version info
   const [versionInfo, setVersionInfo] = useState(null);
-  
+
   // Check if running on localhost
   const isLocalhost = () => {
-    return window.location.hostname === 'localhost' || 
-           window.location.hostname === '127.0.0.1' ||
-           window.location.hostname === '' ||
-           window.location.hostname.startsWith('192.168.') ||
-           window.location.hostname.startsWith('10.') ||
-           window.location.hostname.startsWith('172.');
+    return window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '' ||
+      window.location.hostname.startsWith('192.168.') ||
+      window.location.hostname.startsWith('10.') ||
+      window.location.hostname.startsWith('172.');
   };
 
   // Alternative: Check if in development mode
@@ -53,7 +53,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       toast.error(t('messages.errorSigningOut'));
     }
   };
-  
+
   // Define navigation items based on user role
   const getNavigationItems = () => {
     const baseItems = [
@@ -64,7 +64,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
     const roleSpecificItems = [
       // Superadmin can see everything EXCEPT contracts
       { name: t('navigation.partners'), href: '/partners', icon: Building, roles: ['superadmin'] },
-      { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['superadmin'] },
+      { name: t('navigation.invitations'), href: '/invitations', icon: Send, roles: ['superadmin'] },
       { name: t('navigation.planFeatures'), href: '/plan-features', icon: Layers, roles: ['superadmin'] },
       { name: t('navigation.pricingPlans'), href: '/pricing-plans', icon: CreditCard, roles: ['superadmin'] },
       { name: t('navigation.partnerContracts'), href: '/partner-contracts', icon: File, roles: ['superadmin'] },
@@ -73,9 +73,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.partner-billing'), href: '/partner-billing', icon: Calendar, roles: ['superadmin'] },
       { name: t('navigation.partners-billing'), href: '/partners-billing', icon: DollarSign, roles: ['superadmin'] },
       { name: t('navigation.billing-statistics'), href: '/billing-statistics', icon: TrendingUp, roles: ['superadmin'] },
-      
+
       // Partner admin navigation - NEW ORDER
-      { name: t('navigation.invitations'), href: '/invitations', icon: Mail, roles: ['admin'] },
+      { name: t('navigation.invitations'), href: '/invitations', icon: Send, roles: ['admin'] },
       { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
@@ -86,10 +86,10 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
 
 
-      
-      
+
+
       // Regular users see limited options and settings
-      { name: t('navigation.photoGallery'), href: '/photo-gallery', icon: Camera, roles: ['user'] },
+
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
@@ -97,7 +97,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
     // Filter items based on user role
     const userRole = profile?.role || 'user';
-    const filteredItems = [...baseItems, ...roleSpecificItems].filter(item => 
+    const filteredItems = [...baseItems, ...roleSpecificItems].filter(item =>
       item.roles.includes(userRole)
     );
 
@@ -126,14 +126,14 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   const fetchVersionInfo = async () => {
     try {
       logger.log('Fetching version info from /version.json...');
-      
+
       // Fetch version info from the JSON file created during build
       const response = await fetch('/version.json?t=' + Date.now()); // Cache busting
-      
+
       if (response.ok) {
         const data = await response.json();
         logger.log('✅ Version data loaded:', data);
-        
+
         setVersionInfo({
           commit: data.commit,
           message: data.message,
@@ -141,7 +141,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
         });
       } else {
         logger.log('❌ Failed to load version.json, status:', response.status);
-        
+
         // Fallback for debugging
         setVersionInfo({
           commit: 'no-file',
@@ -150,7 +150,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       }
     } catch (error) {
       logger.error('❌ Error fetching version info:', error);
-      
+
       // Show error state for debugging
       setVersionInfo({
         commit: 'error',
@@ -175,11 +175,11 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
     try {
       logger.log('Fetching partner branding for:', profile.partner_uuid);
-      
+
       // Fetch partner data (both company_name and structure_name)
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
-        .select('company_name, structure_name')
+        .select('company_name, structure_name, logo_url')
         .eq('partner_uuid', profile.partner_uuid)
         .single();
 
@@ -202,29 +202,34 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
       logger.log('Display name:', displayName);
 
-      // Fetch partner logo
-      let logoUrl = null;
-      try {
-        const { data: files, error: storageError } = await supabase.storage
-          .from('partners')
-          .list(`${profile.partner_uuid}`, {
-            search: 'logo'
-          });
+      // Fetch partner logo - prioritize DB URL, fallback to storage search
+      let logoUrl = partnerData?.logo_url;
 
-        if (!storageError && files) {
-          const logoFile = files.find(file => file.name.startsWith('logo.'));
-          
-          if (logoFile) {
-            const { data } = supabase.storage
-              .from('partners')
-              .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
-            
-            logoUrl = data.publicUrl;
-            logger.log('Logo URL found:', logoUrl);
+      if (!logoUrl) {
+        try {
+          const { data: files, error: storageError } = await supabase.storage
+            .from('partners')
+            .list(`${profile.partner_uuid}`, {
+              search: 'logo'
+            });
+
+          if (!storageError && files) {
+            const logoFile = files.find(file => file.name.startsWith('logo.'));
+
+            if (logoFile) {
+              const { data } = supabase.storage
+                .from('partners')
+                .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
+
+              logoUrl = data.publicUrl;
+              logger.log('Fallback logo URL found via storage search:', logoUrl);
+            }
           }
+        } catch (logoError) {
+          logger.log('No logo found or error loading logo:', logoError);
         }
-      } catch (logoError) {
-        logger.log('No logo found or error loading logo:', logoError);
+      } else {
+        logger.log('Logo URL found in DB:', logoUrl);
       }
 
       setPartnerBranding({
@@ -254,7 +259,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
           </button>
         </div>
       )}
-      
+
       <div className="sidebar-header">
         <div className="sidebar-logo">
           {partnerBranding.loading ? (
@@ -266,8 +271,8 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
           ) : partnerBranding.logo ? (
             // Custom partner logo
             <div className="partner-branding">
-              <img 
-                src={partnerBranding.logo} 
+              <img
+                src={partnerBranding.logo}
                 alt={`${partnerBranding.companyName} logo`}
                 className="partner-logo"
                 onError={(e) => {
@@ -276,9 +281,9 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
                   e.target.nextElementSibling.style.display = 'block';
                 }}
               />
-              <Building 
-                size={32} 
-                color="#4f46e5" 
+              <Building
+                size={32}
+                color="#4f46e5"
                 className="partner-logo-fallback"
                 style={{ display: 'none' }}
               />
@@ -293,7 +298,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
           )}
         </div>
       </div>
-      
+
       <nav className="sidebar-nav">
         {navigationItems.map((item) => {
           const isOnboardingItem = item.href === '/services';
@@ -339,8 +344,8 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
             {/* <span className="version-commit">{versionInfo.commit}</span> */}
             {versionInfo.message && (
               <span className="version-message" title={versionInfo.message}>
-                {versionInfo.message.length > 30 
-                  ? `${versionInfo.message.substring(0, 30)}...` 
+                {versionInfo.message.length > 30
+                  ? `${versionInfo.message.substring(0, 30)}...`
                   : versionInfo.message
                 }
               </span>

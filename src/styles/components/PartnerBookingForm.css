@@ -67,7 +67,7 @@
 }
 
 /* Summary Items Grid */
-.summary-section > div:not(.summary-section h5) {
+.summary-section>div:not(.summary-section h5) {
   padding: 1.25rem;
 }
 
@@ -117,7 +117,7 @@
   min-width: 120px;
 }
 
-.confirmation-actions .btn-primary {
+.confirmation-actions .btn-booking-primary {
   min-width: 180px;
 }
 
@@ -131,7 +131,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: #f9fafb;
+  background: white;
+  /* Changed from #f9fafb for cleaner look */
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -145,12 +146,12 @@
 }
 
 .availability-status.available {
-  background: #f0fdf4;
+  background: white;
   border-color: #86efac;
 }
 
 .availability-status.unavailable {
-  background: #fef2f2;
+  background: white;
   border-color: #fca5a5;
 }
 
@@ -159,6 +160,8 @@
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
+  background: transparent !important;
+  border: none !important;
 }
 
 .availability-success svg {
@@ -215,15 +218,62 @@
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
+  /* Changed to match generic spinner */
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
   margin-right: 0.5rem;
 }
 
+/* Ensure spinner is visible on white background if color was implied for dark bg */
+.availability-loading .loading-spinner-small {
+  border-color: #e5e7eb;
+  border-top-color: #6b7280;
+}
+
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Unified Width Rules */
+.modal-form .form-group,
+.modal-form .form-row,
+.modal-form .availability-check,
+.modal-form .availability-loading,
+.modal-form .availability-status,
+.partner-selection-info {
+  width: 100%;
+  box-sizing: border-box;
+  /* Ensure padding doesn't increase width */
+}
+
+/* Hard reset for form groups to prevent external css interference */
+.modal-form .form-group {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.partner-selection-info {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-form input[type="text"],
+.modal-form input[type="date"],
+.modal-form select,
+.modal-form .searchable-select-container {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Responsive Design */
@@ -251,7 +301,7 @@
     font-size: 0.75rem;
   }
 
-  .summary-section > div:not(.summary-section h5) {
+  .summary-section>div:not(.summary-section h5) {
     padding: 1rem;
   }
 

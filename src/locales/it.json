@@ -9,7 +9,7 @@
     "settings": "Impostazioni",
     "partnerInfo": "Info Partner",
     "teamMembers": "Membri del Team",
-    "myBookings": "Calendario Prenotazioni",
+    "myBookings": "Prenotazioni",
     "partnerMember": "Membro Partner",
     "systemAdmin": "Amministratore di Sistema",
     "partnerAdmin": "Amministratore Partner",
@@ -25,7 +25,7 @@
     "customersDiscountCodes": "Codici Sconto",
     "logview": "Logs",
     "superadminemail": "Partner Email",
-    "notifications": "Gestione Notifiche",
+    "notifications": "Notifiche",
     "partner-billing": "Gestione Fatturazione",
     "partners-billing": "All Partners Billing",
     "billing-history": "Pagamenti e fatture",
@@ -116,8 +116,8 @@
     "delete": "Elimina",
     "cannotDeleteWithConstraints": "Impossibile eliminare il cliente a causa di vincoli attivi",
     "structureName": "Nome Struttura",
-    "importFromFC": "Importa Clienti da FC",
-    "importClientsTitle": "Importa Clienti da FattureInCloud",
+    "importFromFC": "Importa da Fattureincloud",
+    "importClientsTitle": "Importa da Fattureincloud",
     "loadingClients": "Caricamento clienti...",
     "noClientsAvailable": "Nessun cliente disponibile per l'importazione.",
     "selectAllClients": "Seleziona Tutti ({count} clienti)",
@@ -140,7 +140,17 @@
       "activeReservations": "{{count}} prenotazione/i attiva/e",
       "relatedPayments": "{{count}} pagamento/i correlato/i"
     },
-    "confirmDelete": "Conferma Cancellazione"
+    "confirmDelete": "Conferma Cancellazione",
+    "activeContracts": "Contratti Attivi",
+    "documentId": "Documento d'Identità",
+    "uploadDocument": "Carica Documento",
+    "replaceDocument": "Sostituisci Documento",
+    "removeDocument": "Rimuovi Documento",
+    "viewDocument": "Visualizza Documento",
+    "documentUploading": "Caricamento documento...",
+    "documentSizeError": "Il file deve essere inferiore a 10MB",
+    "documentTypeError": "Solo PDF o PNG sono accettati",
+    "saveCustomerFirst": "Salva prima il cliente per caricare il documento"
   },
   "settings": {
     "title": "Impostazioni",
@@ -150,7 +160,7 @@
     "billingInfoDescription": "Lascia vuote le informazioni di fatturazione per utilizzare le stesse informazioni personali.",
     "uploadLogo": "Carica Logo",
     "changeLogo": "Cambia Logo",
-    "removeLogo": "Rimuovi Logo", 
+    "removeLogo": "Rimuovi Logo",
     "currentLogo": "Logo Attuale:",
     "logoPreview": "Anteprima Logo:",
     "uploadingLogo": "Caricamento Logo...",
@@ -201,8 +211,7 @@
     "resourceExamples": "Esempi di Risorse",
     "scrivaniaSexamples": "Scrivanie Condivise, Scrivanie Dedicate, Uffici Privati",
     "salaRiunioniExamples": "Sala Riunioni Piccola, Sala Conferenze, Cabina Telefonica",
-    
-    "manageWorkspacesAndMeetingRooms": "Gestisci spazi di lavoro e sale riunioni nelle varie sedi",
+    "manageWorkspacesAndMeetingRooms": "Gestisci spazi di lavoro nelle varie sedi",
     "quickStats": "Statistiche Rapide",
     "totalLocations": "Totale Sedi",
     "locations": "Sedi",
@@ -262,7 +271,7 @@
     "contactDetails": "Dettagli Contatto",
     "phoneNumber": "Numero Telefono",
     "emailAddress": "Indirizzo Email",
-    "addressInformation": "Informazioni Indirizzo",
+    "addressInformation": "Indirizzo Sede",
     "streetAddress": "Indirizzo",
     "postalCode": "CAP",
     "city": "Città",
@@ -270,7 +279,7 @@
     "timezone": "Fuso Orario",
     "coordinates": "Coordinate",
     "latitude": "Latitudine",
-    "longitude": "Longitudine", 
+    "longitude": "Longitudine",
     "findOnMap": "Trova su Mappa",
     "geocoding": "Geocodifica",
     "addressTips": "Suggerimenti Indirizzo",
@@ -296,11 +305,11 @@
     "geocodingError": "Errore durante la geocodifica dell'indirizzo",
     "mapError": "Errore caricamento mappa",
     "vatPercentage": "Percentuale IVA",
-    "vatRate": "Aliquota IVA", 
+    "vatRate": "Aliquota IVA",
     "vatInformation": "Informazioni IVA",
     "vatFor": "IVA per",
     "vatCountryDefaults": "Aliquote IVA per Paese",
-    "vatHelpText": "Inserisci la percentuale IVA applicata ai servizi in questa sede. Sarà utilizzata per fatturare i clienti che utilizzano servizi in questa sede.",
+    "vatHelpText": "Inserisci la percentuale IVA applicata di default ai servizi in questa sede. Potrai modificarla in fase di gestione dei contratti.",
     "confirmDeleteLocation": "Conferma Eliminazione Sede",
     "cannotDeleteLocation": "Impossibile Eliminare la Sede",
     "checkingDependencies": "Controllo dipendenze in corso...",
@@ -394,7 +403,7 @@
   "dashboard": {
     "welcomeBack": "Bentornato",
     "totalPartners": "Partner Totali",
-    "activeLocations": "Sedi Attive", 
+    "activeLocations": "Sedi Attive",
     "totalUsers": "Utenti Totali",
     "totalCustomers": "Clienti Totali",
     "totalContracts": "Contratti Totali",
@@ -426,19 +435,19 @@
     "bookEntry": "PRENOTA INGRESSO",
     "buyMoreEntries": "ACQUISTA ALTRI INGRESSI",
     "buyNewPackage": "ACQUISTA NUOVO PACCHETTO",
-    "autoRenewActive": "Rinnovo automatico attivato",
+    "autoRenewActive": "Rinnovo automatico",
     "renewNow": "RINNOVA ADESSO",
     "noActiveContracts": "Non hai contratti attivi",
     "getStarted": "Inizia",
     "freeTrialActive": "Prova gratuita attiva - non rinnovabile",
     "totalContractValue": "Valore Contratti Totale",
-    "subscriptions": "Abbonamenti", 
+    "subscriptions": "Abbonamenti",
     "packages": "Pacchetti",
     "noContractsYet": "Nessun contratto ancora",
-    "createFirstContract": "Crea il tuo primo contratto", 
+    "createFirstContract": "Crea il tuo primo contratto",
     "loadingContracts": "Caricamento contratti...",
     "contractsManagement": "Gestione Contratti",
-    "newContract": "Nuovo Contratto", 
+    "newContract": "Nuovo Contratto",
     "newContractDesc": "Acquista un nuovo pacchetto o abbonamento",
     "checkingProfile": "Controllo profilo...",
     "welcomeMessage": "Benvenuto!",
@@ -448,7 +457,7 @@
     "contractsNeedingAttention": "Contratti che richiedono attenzione per il rinnovo",
     "next7Days": "Prossimi 7 Giorni",
     "next15Days": "Prossimi 15 Giorni",
-    "next30Days": "Prossimi 30 Giorni", 
+    "next30Days": "Prossimi 30 Giorni",
     "revenueAtRisk": "Fatturato a Rischio",
     "paymentStatus": "Stato Pagamenti",
     "paymentHealthCheck": "Pagamenti in sospeso e scaduti",
@@ -523,16 +532,10 @@
     "manageAllInvitations": "Gestisci tutti gli inviti nel sistema",
     "managePartnerInvitations": "Gestisci gli inviti dei tuoi ospiti",
     "invitePartnerAdmin": "Invita Amministratore Partner",
-    "inviteUser": "Invita Utente",
-    "invitingAdminFor": "Invitando Amministratore per",
-    "invitingUserFor": "Invitando Utente per",
+    "inviteUser": "Invita Cliente",
     "customMessage": "Messaggio Personalizzato",
-    "emailPreview": "Anteprima Email",
-    "subject": "Oggetto",
-    "recipient": "Destinatario",
     "sendInvitation": "Invia Invito",
     "sending": "Invio",
-    "emailSubject": "Invito a unirti a {{partnerName}}",
     "invitee": "Invitato",
     "status": "Stato",
     "sentAt": "Inviato Il",
@@ -578,6 +581,7 @@
     "delete": "Elimina",
     "edit": "Modifica",
     "close": "Chiudi",
+    "closeWindow": "Chiudi Finestra",
     "search": "Cerca",
     "filter": "Filtra",
     "export": "Esporta",
@@ -603,6 +607,8 @@
     "page": "Per pagina",
     "noResultsFound": "Nessun risultato",
     "showing": "Visualizzati",
+    "startDate": "Data Inizio",
+    "endDate": "Data Fine",
     "rowsPerPage": "Righe per pagina",
     "refresh": "Aggiorna",
     "previous": "Precedenti",
@@ -656,7 +662,7 @@
     "confirmCancelInvitation": "Sei sicuro di voler annullare questo invito?",
     "serviceCreatedSuccessfully": "Servizio creato con successo",
     "serviceUpdatedSuccessfully": "Servizio aggiornato con successo",
-    "errorSavingService": "Errore nel salvataggio del servizio", 
+    "errorSavingService": "Errore nel salvataggio del servizio",
     "errorLoadingServices": "Errore nel caricamento dei servizi",
     "serviceNameRequired": "Il nome del servizio è obbligatorio",
     "locationRequired": "Seleziona una sede",
@@ -712,6 +718,10 @@
     "errorUpdatingPricingPlan": "Errore nell'aggiornamento del piano tariffario",
     "errorDeletingPricingPlan": "Errore nell'eliminazione del piano tariffario",
     "planNameRequired": "Il nome del piano è obbligatorio",
+    "documentUploadedSuccessfully": "Documento caricato con successo",
+    "errorUploadingDocument": "Errore nel caricamento del documento",
+    "documentRemovedSuccessfully": "Documento rimosso con successo",
+    "errorRemovingDocument": "Errore nella rimozione del documento",
     "planNameExists": "Un piano con questo nome esiste già",
     "validTrialDurationRequired": "È richiesta una durata di prova valida",
     "validMonthlyPriceRequired": "È richiesto un prezzo mensile valido",
@@ -749,7 +759,7 @@
     "title": "Servizi",
     "manageServices": "Gestisci i servizi offerti ai tuoi clienti",
     "addService": "Aggiungi Servizio",
-    "editService": "Modifica Servizio", 
+    "editService": "Modifica Servizio",
     "addFirstService": "Aggiungi Primo Servizio",
     "service": "Servizio",
     "serviceName": "Nome Servizio",
@@ -779,14 +789,14 @@
     "selectLocation": "Seleziona una sede",
     "accessDenied": "Accesso Negato",
     "accessDeniedMessage": "Solo gli amministratori partner possono gestire i servizi.",
-    
     "subscription": "Abbonamento",
     "package": "Pacchetto",
     "freeTrial": "Prova Gratuita",
     "active": "Attivo",
-    "inactive": "Inattivo", 
+    "inactive": "Inattivo",
     "draft": "Bozza",
-    
+    "daily": "Giornaliero",
+    "trial": "Prova Gratuita",
     "basicInformation": "Informazioni Base",
     "pricingAndDuration": "Prezzo e Durata",
     "quantityAndAvailability": "Quantità e Disponibilità",
@@ -804,15 +814,13 @@
     "gracePeriodHelp": "Numero di giorni in cui i clienti possono continuare a usare il servizio dopo la scadenza",
     "isRenewable": "Il servizio è rinnovabile",
     "renewableHelp": "Permetti ai clienti di rinnovare questo servizio quando scade",
-    "autoRenew": "Rinnovo automatico di default",
+    "autoRenew": "Rinnovo automatico",
     "autoRenewHelp": "Rinnova automaticamente questo servizio a meno che il cliente non rinunci",
-    
     "freeTrialNote": "Prova Gratuita",
     "freeTrialDescription": "I servizi di prova gratuita non hanno costi e sono tipicamente usati per attirare nuovi clienti",
-
     "locationAndResource": "Sede e Risorsa",
     "resource": "Risorsa",
-    "selectLocationFirst": "Seleziona prima una sede", 
+    "selectLocationFirst": "Seleziona prima una sede",
     "selectResource": "Seleziona una risorsa",
     "noResourcesAvailable": "Nessuna risorsa disponibile per questa sede",
     "availableQuantity": "Quantità disponibile",
@@ -886,7 +894,7 @@
     "cannotBook": "Non Disponibile",
     "someEmailsSent": "Partner mail inviata",
     "confirmationEmailsSent": "Email di conferma inviata",
-    "confirmationMessage": "Una volta confermata non potra' essere modificata.",
+    "confirmationMessage": "le prenotazioni confermate non potranno essere annullate.",
     "capacityAvailable": "Capacità: {{available}} di {{total}} disponibili",
     "resourceFullyBooked": "Risorsa completamente prenotata per questa data",
     "resourceBookedFullDay": "Risorsa prenotata per l'intera giornata in questa data",
@@ -906,14 +914,14 @@
     "resourceClosedOnDate": "Risorsa chiusa in questa data: {{reason}}",
     "resourceClosedOnDay": "Risorsa chiusa di {{day}}",
     "locationClosedOnDay": "Sede chiusa di {{day}}",
-    
     "closureType": {
       "holiday": "Festività",
       "maintenance": "Manutenzione",
       "special_event": "Evento Speciale",
       "emergency": "Emergenza",
       "custom": "Chiusura"
-    }
+    },
+    "confirmBookingWarning": "Questa prenotazione utilizzerà {{count}} ingressi del tuo pacchetto. Le prenotazioni confermate non potranno essere modificate."
   },
   "contracts": {
     "title": "Contratti",
@@ -930,7 +938,7 @@
     "location": "Sede",
     "resource": "Risorsa",
     "period": "Periodo",
-    "cost": "Costo",
+    "cost": "Prezzo",
     "status": "Stato",
     "startDate": "Data Inizio",
     "endDate": "Data Fine",
@@ -943,7 +951,6 @@
     "activeContracts": "Contratti Attivi",
     "expiredContracts": "Contratti Scaduti",
     "noContractsFound": "Nessun contratto trovato. Crea il tuo primo contratto per iniziare.",
-    
     "selectCustomer": "Seleziona Cliente",
     "selectLocation": "Seleziona Sede",
     "selectLocationFirst": "Seleziona prima una sede",
@@ -953,14 +960,12 @@
     "description": "Descrizione",
     "endDateCalculated": "La data di fine viene calcolata automaticamente in base alla durata del servizio",
     "reviewContract": "Rivedi Contratto",
-    
     "confirmContract": "Conferma Contratto",
-    "importantNotice": "Avviso Importante",
+    "importantNotice": "Avviso",
     "contractImmutableWarning": "Una volta creati, i contratti non possono essere modificati. Ti preghiamo di rivedere attentamente tutti i dettagli prima di confermare.",
     "contractSummary": "Riepilogo Contratto",
     "confirmAndCreate": "Conferma e Crea Contratto",
     "creating": "Creazione",
-    
     "active": "Attivo",
     "expired": "Scaduto",
     "cancelled": "Annullato",
@@ -1019,7 +1024,7 @@
     "vat": "IVA",
     "total": "Totale",
     "paymentStatus": "Stato Pagamento",
-    "paymentInfo": "Info Pagamento", 
+    "paymentInfo": "Info Pagamento",
     "paymentHistory": "Storico Pagamenti",
     "recordPayment": "Registra Pagamento",
     "paymentRequired": "Pagamento Richiesto",
@@ -1028,7 +1033,7 @@
     "lastPayment": "Ultimo Pagamento",
     "paymentOverdue": "Pagamento Scaduto",
     "fullyPaid": "Completamente Pagato",
-    "partiallyPaid": "Pagato Parzialmente", 
+    "partiallyPaid": "Pagato Parzialmente",
     "awaitingPayment": "In Attesa di Pagamento",
     "managementPayments": "Gestisci Pagamenti",
     "deleteContract": "Elimina Contratto",
@@ -1036,13 +1041,14 @@
     "exportCSV": "Esporta CSV",
     "exportToCSV": "Esporta in CSV",
     "exporting": "Esportazione...",
-    "csvExportedSuccessfully": "Export CSV completato con successo", 
+    "csvExportedSuccessfully": "Export CSV completato con successo",
     "errorExportingCSV": "Errore durante l'export CSV. Riprova.",
     "exportNotAllowed": "Export non consentito",
     "noContractsToExport": "Nessun contratto da esportare",
-    "vatPercentage": "IVA %", 
+    "vatPercentage": "IVA %",
     "vatAmount": "Importo IVA",
     "maxEntries": "Ingressi Massimi",
+    "entries": "ingressi",
     "resourceType": "Tipo Risorsa",
     "confirmArchive": "Conferma Archiviazione",
     "archiveContract": "Archivia Contratto",
@@ -1050,7 +1056,7 @@
     "archiveNoteTitle": "Cosa succede quando archivi:",
     "archiveNote1": "Il contratto verrà spostato nei contratti archiviati",
     "archiveNote2": "Le prenotazioni e le riservazioni correlate verranno preservate",
-    "archiveNote3": "Il contratto può essere ripristinato in qualsiasi momento", 
+    "archiveNote3": "Il contratto può essere ripristinato in qualsiasi momento",
     "archiveNote4": "Nessun dato verrà perso definitivamente",
     "freeTrialAlreadyUsed": "Hai già utilizzato la tua prova gratuita",
     "freeTrialOncePerCustomer": "I servizi di prova gratuita possono essere utilizzati una sola volta per cliente, anche se eliminati o archiviati.",
@@ -1066,7 +1072,7 @@
     "tooltips": {
       "generatePDF": "Scarica ricevuta PDF",
       "editContract": "Modifica dettagli contratto",
-      "bookReservation": "Prenota una nuova prenotazione con questo pacchetto", 
+      "bookReservation": "Prenota una nuova prenotazione con questo pacchetto",
       "cannotBook": "Impossibile prenotare",
       "deleteContract": "Archivia questo contratto definitivamente",
       "recordPayment": "Registra un nuovo pagamento",
@@ -1077,7 +1083,7 @@
     "actions": {
       "moreActions": "Altre azioni",
       "downloadPDF": "Scarica PDF",
-      "recordPayment": "Registra Pagamento", 
+      "recordPayment": "Registra Pagamento",
       "paymentHistory": "Storico Pagamenti",
       "editContract": "Modifica Contratto",
       "archiveContract": "Archivia Contratto"
@@ -1123,6 +1129,7 @@
     "billingZipPlaceholder": "CAP fatturazione",
     "billingCityPlaceholder": "Città fatturazione",
     "billingCountryPlaceholder": "Paese fatturazione",
+    "confirmPasswordPlaceholder": "Conferma password",
     "notesPlaceholder": "Note aggiuntive o commenti",
     "serviceNamePlaceholder": "Inserisci nome servizio",
     "serviceDescriptionPlaceholder": "Descrivi cosa include questo servizio...",
@@ -1137,6 +1144,10 @@
     "structureNamePlaceholder": "Inserisci il nome della struttura"
   },
   "bookings": {
+    "bookingCreatedSuccessfully": "Prenotazione creata con successo per il cliente",
+    "reservationCreatedSuccessfully": "Prenotazione creata con successo",
+    "addToCalendar": "Aggiungi al calendario",
+    "downloadCalendar": "Scarica Calendario",
     "title": "Prenotazioni",
     "viewYourBookings": "Visualizza e gestisci le tue prenotazioni",
     "manageAllBookings": "Gestisci tutte le prenotazioni dei clienti",
@@ -1154,6 +1165,11 @@
     "allResources": "Tutte le Risorse",
     "location": "Sede",
     "allLocations": "Tutte le Sedi",
+    "selectCustomer": "Seleziona Cliente",
+    "selectResourceType": "Seleziona Tipo Risorsa",
+    "selectLocation": "Seleziona Sede",
+    "selectServiceType": "Seleziona Tipo Servizio",
+    "allServices": "Tutti i Servizi",
     "clearFilters": "Cancella Filtri",
     "noBookingsFound": "Nessuna prenotazione trovata",
     "noBookingsForDay": "Nessuna prenotazione per questo giorno",
@@ -1204,7 +1220,7 @@
     "startDate": "Data Inizio",
     "endDate": "Data Fine",
     "pricing": "Prezzi",
-    "serviceCost": "Costo Servizio",
+    "serviceCost": "Prezzo",
     "deleteBooking": "Elimina Prenotazione",
     "deleteBookingTitle": "Elimina Prenotazione",
     "confirmDelete": "Elimina",
@@ -1244,6 +1260,7 @@
     "usesLocationSchedule": "Usa orario della sede",
     "addCustomSchedule": "Aggiungi Orario Personalizzato",
     "confirmDeleteResourceSchedule": "Sei sicuro di voler eliminare questo orario personalizzato? La risorsa tornerà ad usare l'orario della sede.",
+    "deleteResourceSchedule": "Elimina Orario Personalizzato",
     "resourceScheduleDeleted": "Orario risorsa eliminato con successo",
     "noResourcesInLocation": "Nessuna risorsa trovata in questa sede",
     "resourceOverridesIntro": "Le risorse elencate sotto useranno l'orario della sede a meno che non aggiungi un orario personalizzato.",
@@ -1260,6 +1277,7 @@
     "closure": "Chiusura",
     "recurring": "Ricorrente",
     "confirmDeleteClosure": "Sei sicuro di voler eliminare questa chiusura?",
+    "deleteClosure": "Elimina Chiusura",
     "closureDeleted": "Chiusura eliminata con successo",
     "addNewClosure": "Nuova Chiusura",
     "editClosure": "Modifica Chiusura",
@@ -1356,11 +1374,10 @@
       "credit_card": "Carta di Credito",
       "other": "Altro"
     },
-    
     "status": {
       "paid": "Pagato",
       "unpaid": "Non Pagato",
-      "partial": "Pagato Parzialmente", 
+      "partial": "Pagato Parzialmente",
       "overdue": "Scaduto",
       "pending": "In Attesa",
       "completed": "Completato",
@@ -1369,36 +1386,31 @@
       "cancelled": "Annullato",
       "not_required": "Pagamento Non Richiesto"
     },
-    
     "types": {
       "full": "Pagamento Completo",
       "partial": "Pagamento Parziale",
       "installment": "Rata",
       "deposit": "Acconto"
     },
-    
     "terms": {
       "immediate": "Pagamento Immediato",
       "net_7": "7 Giorni",
       "net_15": "15 Giorni",
       "net_30": "30 Giorni",
-      "net_45": "45 Giorni", 
+      "net_45": "45 Giorni",
       "net_60": "60 Giorni"
     },
-    
     "planTypes": {
       "single": "Pagamento Unico",
       "installments": "Piano Rate",
       "recurring": "Pagamento Ricorrente"
     },
-    
     "frequency": {
       "monthly": "Mensile",
       "quarterly": "Trimestrale",
-      "semi_annually": "Semestrale", 
+      "semi_annually": "Semestrale",
       "annually": "Annuale"
     },
-    
     "confirmPayment": "Conferma Pagamento",
     "recordPaymentFor": "Registra Pagamento per",
     "paymentRecorded": "Pagamento registrato con successo",
@@ -1414,7 +1426,6 @@
     "selectPaymentDate": "Seleziona data pagamento",
     "uploadProofOfPayment": "Carica prova di pagamento (opzionale)",
     "paymentNotes": "Note pagamento (opzionali)",
-    
     "bulkActions": {
       "title": "Azioni Pagamenti Multiple",
       "markMultipleAsPaid": "Segna Multipli come Pagati",
@@ -1424,17 +1435,15 @@
       "confirmBulkPaid": "Segnare {{count}} pagamenti come pagati?",
       "bulkPaymentSuccess": "{{count}} pagamenti aggiornati con successo"
     },
-    
     "reminders": {
       "title": "Promemoria Pagamenti",
-      "sendReminder": "Invia Promemoria", 
+      "sendReminder": "Invia Promemoria",
       "reminderSent": "Promemoria pagamento inviato",
       "autoReminders": "Promemoria Automatici",
       "reminderSchedule": "Pianificazione Promemoria",
       "daysBefore": "giorni prima della scadenza",
       "daysAfter": "giorni dopo la scadenza"
     },
-    
     "reports": {
       "title": "Report Pagamenti",
       "monthlyRevenue": "Ricavi Mensili",
@@ -1443,11 +1452,10 @@
       "paymentsByMethod": "Pagamenti per Metodo",
       "customerPaymentHistory": "Storico Pagamenti Cliente"
     },
-    
     "tooltips": {
       "recordPayment": "Registra un nuovo pagamento per questo contratto",
       "viewHistory": "Visualizza storico completo pagamenti",
-      "generateInvoice": "Genera fattura per questo pagamento", 
+      "generateInvoice": "Genera fattura per questo pagamento",
       "sendReminder": "Invia promemoria pagamento al cliente",
       "markPaid": "Segna questo pagamento come completato",
       "editPayment": "Modifica questo record di pagamento",
@@ -1556,7 +1564,7 @@
     "orderHelp": "Ordine in cui le funzionalità appaiono nelle liste (numeri più bassi prima)",
     "examples": {
       "boolean": "wifi_management, door_automation, analytics_enabled",
-      "numeric": "max_locations, max_users, storage_gb_limit", 
+      "numeric": "max_locations, max_users, storage_gb_limit",
       "text": "support_level, backup_frequency, integration_tier"
     }
   },
@@ -1777,7 +1785,7 @@
     "confirmDeletePaymentRecord": "Sei sicuro di voler eliminare questo record di pagamento?",
     "actionCannotBeUndone": "Questa azione non può essere annullata.",
     "partnerContract": "Contratto Partner",
-    "partnerInfo": "Informazioni", 
+    "partnerInfo": "Informazioni",
     "pricingDetails": "Dettaglio prezzi",
     "planType": "Piano Tipo",
     "paymentTerms": "Termini di pagamento",
@@ -1785,7 +1793,7 @@
     "contractFooter": "Questo documento rappresenta il contratto di partnership. Per modifiche contattare l'amministrazione.",
     "generatedOn": "Generato il",
     "statusActive": "Attivo",
-    "statusInactive": "Inattivo", 
+    "statusInactive": "Inattivo",
     "statusPending": "Pendente",
     "statusExpired": "Scaduto",
     "statusCancelled": "Cancellato",
@@ -1886,7 +1894,7 @@
   "filters": {
     "filters": "Filtri",
     "customer": "Cliente",
-    "location": "Sede", 
+    "location": "Sede",
     "dateFrom": "Data Da",
     "dateTo": "Data A",
     "status": "Stato",
@@ -1896,10 +1904,12 @@
     "allStatuses": "Tutti gli Stati",
     "allPaymentStatuses": "Tutti gli Stati di Pagamento",
     "activeFilters": "Filtri Attivi",
-    "clearAll": "Cancella Tutto",
+    "clearAll": "Cancella Filtri",
     "clearFilters": "Cancella Filtri",
     "noResultsFound": "Nessun contratto trovato con i filtri selezionati",
-    "showingResults": "Visualizzando {{count}} di {{total}} contratti"
+    "showingResults": "Visualizzando {{count}} di {{total}} contratti",
+    "showFilters": "Mostra Filtri",
+    "hideFilters": "Nascondi Filtri"
   },
   "renewalLogs": {
     "title": "Registro Rinnovi Contratti",
@@ -1911,14 +1921,12 @@
     "errorLoading": "Errore nel caricamento del registro rinnovi",
     "noLogs": "Nessun Registro di Rinnovo",
     "noLogsDescription": "Non ci sono ancora tentativi di rinnovo registrati. I rinnovi automatici appariranno qui.",
-    
     "stats": {
       "total": "Tentativi Totali",
       "successful": "Riusciti",
       "failed": "Falliti",
       "noAvailability": "Non Disponibili"
     },
-    
     "statusLabels": {
       "success": "Successo",
       "failedNoAvailability": "Non Disponibile",
@@ -1926,7 +1934,6 @@
       "failedPayment": "Errore Pagamento",
       "failedError": "Errore Sistema"
     },
-    
     "filters": {
       "status": "Stato",
       "period": "Periodo",
@@ -1938,7 +1945,6 @@
       "last90Days": "Ultimi 90 Giorni",
       "allTime": "Tutto il Periodo"
     },
-    
     "originalContract": "Contratto Originale",
     "newContract": "Nuovo Contratto",
     "attemptDate": "Data Tentativo",
@@ -1951,12 +1957,15 @@
   },
   "emailTemplates": {
     "manageTemplates": "Gestisci Template Email",
+    "enterButtonLabel": "Inserisci etichetta pulsante",
     "manageTemplatesDescription": "Personalizza il contenuto dei tuoi template email automatizzati. Clicca su un template per modificare l'oggetto e il corpo del messaggio.",
     "customerInvitation": "Invito Cliente",
+    "customerInvitationDescription": "Email inviata quando si invitano nuovi clienti ad unirsi al tuo workspace",
     "customerInvitationDesc": "Email inviata quando si invitano nuovi clienti ad unirsi al tuo workspace",
     "partnerAdminInvitation": "Invito Amministratore Partner",
     "partnerAdminInvitationDesc": "Email inviata quando si invita un nuovo amministratore",
     "customerBookingConfirmation": "Conferma Prenotazione Cliente",
+    "customerBookingConfirmationDescription": "Email inviata ai clienti quando completano una prenotazione",
     "customerBookingConfirmationDesc": "Email inviata ai clienti quando completano una prenotazione",
     "partnerBookingNotification": "Notifica Prenotazione Partner",
     "partnerBookingNotificationDesc": "Email inviata a te quando un cliente effettua una prenotazione",
@@ -1992,10 +2001,14 @@
     "invalidEmailFormat": "Please enter a valid email address",
     "testEmailSentSuccessfully": "Test email sent successfully!",
     "confirmationEmail": "Email di conferma utente",
-    "confirmationEmailDescription": "Inviata quando gli utenti si registrano per confermare il loro indirizzo email"
+    "confirmationEmailDescription": "Inviata quando gli utenti si registrano per confermare il loro indirizzo email",
+    "expiryReminder": "Promemoria Scadenza",
+    "expiryReminderDescription": "Inviata per ricordare ai clienti le scadenze imminenti (contratti, pagamenti, ecc.)",
+    "contractCreation": "Creazione Nuovo Contratto",
+    "contractCreationDescription": "Inviata ai clienti quando viene creato un nuovo contratto"
   },
   "customersDiscountCodes": {
-    "title": "Codici Sconto Clienti",
+    "title": "Codici Sconto",
     "subtitle": "Crea e gestisci i codici sconto per i tuoi clienti",
     "accessDeniedMessage": "Solo i partner possono gestire i codici sconto per i clienti."
   },
@@ -2133,19 +2146,17 @@
   "notifications": {
     "title": "Notifiche",
     "subtitle": "Gestisci e visualizza le tue notifiche",
-    "myNotifications": "Le Mie Notifiche",
+    "myNotifications": "Notifiche Ricevute",
     "createNotification": "Crea Notifica",
     "sentNotifications": "Notifiche Inviate",
     "templates": "Modelli",
     "partnerNotifications": "Notifiche Partner",
-    
     "all": "Tutte",
     "unread": "Non Lette",
     "allTypes": "Tutti i Tipi",
     "searchPlaceholder": "Cerca notifiche...",
     "noNotifications": "Nessuna notifica trovata",
     "errorLoading": "Errore nel caricamento delle notifiche",
-    
     "types": {
       "promotion": "Promozione",
       "announcement": "Annuncio",
@@ -2155,7 +2166,6 @@
       "newLocation": "Nuova Sede",
       "new_location": "Nuova Sede"
     },
-    
     "createNewNotification": "Crea Nuova Notifica",
     "editNotification": "Modifica Notifica",
     "createDescription": "Crea e invia notifiche ai tuoi partner o clienti",
@@ -2178,14 +2188,12 @@
     "saveAsDraft": "Salva come Bozza",
     "publish": "Pubblica",
     "gotIt": "Ho capito",
-    
     "bold": "Grassetto",
     "italic": "Corsivo",
     "heading": "Intestazione",
     "insertLink": "Inserisci Link",
     "enterLinkUrl": "Inserisci URL:",
     "enterLinkText": "Inserisci testo del link:",
-    
     "searchRecipients": "Cerca destinatari...",
     "allCustomers": "Tutti i Clienti",
     "activeContracts": "Contratti Attivi",
@@ -2196,7 +2204,6 @@
     "deselectAll": "Deseleziona Tutti",
     "noRecipientsFound": "Nessun destinatario trovato",
     "errorLoadingRecipients": "Errore nel caricamento dei destinatari",
-    
     "draft": "Bozza",
     "published": "Pubblicata",
     "active": "Attiva",
@@ -2217,7 +2224,6 @@
     "notificationSavedAsDraft": "Notifica salvata come bozza",
     "errorSaving": "Errore nel salvataggio della notifica",
     "errorAcknowledging": "Errore nella conferma della notifica",
-    
     "createTemplate": "Crea Modello",
     "editTemplate": "Modifica Modello",
     "noTemplates": "Nessun modello trovato",
@@ -2240,7 +2246,6 @@
     "availableVariables": "Variabili Disponibili",
     "templateSaved": "Modello salvato con successo",
     "errorSavingTemplate": "Errore nel salvataggio del modello",
-    
     "variables": {
       "partnerName": "Nome partner",
       "customerName": "Nome cliente",
@@ -2248,7 +2253,6 @@
       "offerPercentage": "Percentuale offerta",
       "locationName": "Nome sede"
     },
-    
     "partnerNotificationsDescription": "Visualizza le notifiche create dai partner",
     "noPartnerNotifications": "Nessuna notifica partner trovata",
     "allPartners": "Tutti i Partner",
@@ -2369,12 +2373,17 @@
     "avgRevenuePerPartner": "Media per Partner",
     "totalInvoices": "Totale Fatture",
     "overLimitCount": "Partner Oltre Limite"
-  },  
+  },
+  "legal": {
+    "termsOfServiceTitle": "Termini di Servizio",
+    "privacyPolicyTitle": "Informativa sulla Privacy",
+    "lastUpdated": "Ultimo aggiornamento",
+    "termsOfServiceContent": "# Termini di Servizio\n\nBenvenuti in PowerCowo. Utilizzando i nostri servizi, accettate i seguenti termini...\n\n## 1. Accettazione dei Termini\nAccedendo o utilizzando la nostra applicazione, accettate di essere vincolati dai presenti Termini di Servizio.\n\n## 2. Responsabilità dell'Utente\nSiete responsabili del mantenimento della riservatezza del vostro account e della password.\n\n## 3. Privacy\nL'uso dei nostri servizi è regolato anche dalla nostra Informativa sulla Privacy.\n\n## 4. Limitazione di Responsabilità\nPowerCowo non sarà responsabile per eventuali danni indiretti, incidentali o consequenziali.",
+    "privacyPolicyContent": "# Informativa sulla Privacy\n\nIn PowerCowo, rispettiamo la vostra privacy e ci impegniamo a proteggere i vostri dati personali.\n\n## 1. Informazioni che Raccogliamo\nRaccogliamo le informazioni che ci fornite quando create un account o utilizzate i nostri servizi.\n\n## 2. Come Utilizziamo le Vostre Informazioni\nUtilizziamo le vostre informazioni per fornire e migliorare i nostri servizi e per comunicare con voi.\n\n## 3. Protezione dei Dati\nImplementiamo misure di sicurezza per proteggere i vostri dati personali da accessi non autorizzati.\n\n## 4. I Vostri Diritti\nAvete il diritto di accedere, correggere o eliminare i vostri dati personali."
+  },
   "app": {
     "appName": " ",
     "appShortName": "PowerCowo",
     "locale": "it"
   }
 }
-
-

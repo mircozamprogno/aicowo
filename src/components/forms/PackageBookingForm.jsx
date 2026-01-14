@@ -9,21 +9,21 @@ import { toast } from '../common/ToastContainer';
 import { logActivity } from '../../utils/activityLogger';
 import logger from '../../utils/logger';
 
-const PackageBookingForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  contract 
+const PackageBookingForm = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  contract
 }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
-  
+
   const [formData, setFormData] = useState({
     reservation_date: '',
     duration_type: 'full_day', // 'full_day' or 'half_day'
     time_slot: 'morning' // 'morning' or 'afternoon'
   });
-  
+
   const [availabilityStatus, setAvailabilityStatus] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,9 +53,9 @@ const PackageBookingForm = ({
 
   const checkAvailability = async () => {
     if (!contract || !formData.reservation_date) return;
-    
+
     setCheckingAvailability(true);
-    
+
     try {
       // Get the location resource for this contract's service
       const { data: serviceData, error: serviceError } = await supabase
@@ -110,7 +110,7 @@ const PackageBookingForm = ({
           usedSlots = existingReservations.reduce((total, res) => {
             return total + (res.duration_type === 'full_day' ? 1 : 0.5);
           }, 0);
-          
+
           if (usedSlots >= totalQuantity) {
             hasConflict = true;
             conflictReason = 'Resource fully booked for this date';
@@ -118,10 +118,10 @@ const PackageBookingForm = ({
         } else {
           // For half day, check specific time slot conflicts
           const hasFullDayConflict = existingReservations.some(res => res.duration_type === 'full_day');
-          const sameTimeSlotReservations = existingReservations.filter(res => 
+          const sameTimeSlotReservations = existingReservations.filter(res =>
             res.duration_type === 'half_day' && res.time_slot === formData.time_slot
           );
-          
+
           if (hasFullDayConflict) {
             hasConflict = true;
             conflictReason = 'Resource booked for full day on this date';
@@ -152,7 +152,7 @@ const PackageBookingForm = ({
   const validateReservation = () => {
     const entriesNeeded = formData.duration_type === 'full_day' ? 1 : 0.5;
     const remainingEntries = contract.service_max_entries - (contract.entries_used || 0);
-    
+
     // Check if enough entries remain
     if (remainingEntries < entriesNeeded) {
       toast.error('Insufficient entries remaining in your package');
@@ -163,7 +163,7 @@ const PackageBookingForm = ({
     const reservationDate = new Date(formData.reservation_date);
     const contractStart = new Date(contract.start_date);
     const contractEnd = new Date(contract.end_date);
-    
+
     if (reservationDate < contractStart || reservationDate > contractEnd) {
       toast.error('Reservation date must be within contract period');
       return false;
@@ -180,7 +180,7 @@ const PackageBookingForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateReservation()) {
       return;
     }
@@ -258,13 +258,13 @@ const PackageBookingForm = ({
 
       // Log activity
       try {
-        const customerName = data.customers?.company_name || 
+        const customerName = data.customers?.company_name ||
           `${data.customers?.first_name} ${data.customers?.second_name}`;
-        
+
         const resourceInfo = `${data.location_resources?.resource_name} (${data.location_resources?.resource_type})`;
         const locationName = data.location_resources?.locations?.location_name;
-        const durationText = data.duration_type === 'full_day' 
-          ? 'Full Day' 
+        const durationText = data.duration_type === 'full_day'
+          ? 'Full Day'
           : `Half Day (${data.time_slot})`;
 
         await logActivity({
@@ -304,7 +304,7 @@ const PackageBookingForm = ({
       toast.success(t('reservations.bookingConfirmed'));
       onSuccess(data);
       onClose();
-      
+
     } catch (error) {
       logger.error('Error creating reservation:', error);
       toast.error('Error creating reservation: ' + error.message);
@@ -326,18 +326,15 @@ const PackageBookingForm = ({
     }).format(amount);
   };
 
-  // Updated icon function with desk icon for scrivania
-  const getResourceTypeIcon = (type) => {
-    return type === 'scrivania' ? '🖥️' : '🏢';
-  };
+
 
   // Helper function to get the minimum selectable date
   const getMinSelectableDate = () => {
     const today = new Date();
     const contractStart = new Date(contract.start_date);
-    
+
     // Return the later of today or contract start date
-    return today > contractStart 
+    return today > contractStart
       ? today.toISOString().split('T')[0]
       : contract.start_date;
   };
@@ -366,34 +363,13 @@ const PackageBookingForm = ({
               <AlertTriangle size={24} className="warning-icon" />
               <div className="warning-text">
                 <h3>{t('contracts.importantNotice')}</h3>
-                <p>This reservation will use {entriesNeeded} entries from your package. Once confirmed, the reservation cannot be modified.</p>
+                <p>{t('reservations.confirmBookingWarning', { count: entriesNeeded })}</p>
               </div>
             </div>
 
             <div className="contract-summary">
               <h4>{t('reservations.bookingSummary')}</h4>
-              
-              <div className="summary-section">
-                <h5>{t('reservations.contractDetails')}</h5>
-                <div className="summary-item">
-                  <span className="summary-label">Contract:</span>
-                  <span className="summary-value">{contract.contract_number}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Service:</span>
-                  <span className="summary-value">{contract.service_name}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Resource:</span>
-                  <span className="summary-value">
-                    {getResourceTypeIcon(contract.resource_type)} {contract.resource_name}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Location:</span>
-                  <span className="summary-value">{contract.location_name}</span>
-                </div>
-              </div>
+
 
               <div className="summary-section">
                 <h5>{t('reservations.reservationDetails')}</h5>
@@ -433,7 +409,7 @@ const PackageBookingForm = ({
               <button
                 type="button"
                 onClick={handleConfirmReservation}
-                className="btn-primary-green"
+                className="btn-booking-primary"
                 disabled={loading}
               >
                 {loading ? (
@@ -468,7 +444,7 @@ const PackageBookingForm = ({
           {/* Reservation Form - Contract Details Section REMOVED */}
           <div className="form-section-clean">
             {/* Section Title REMOVED */}
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="reservation_date" className="form-label">
@@ -488,7 +464,7 @@ const PackageBookingForm = ({
                   Available period: {formatDate(contract.start_date)} to {formatDate(contract.end_date)}
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="duration_type" className="form-label">
                   {t('reservations.duration')} *
@@ -510,13 +486,13 @@ const PackageBookingForm = ({
               <div className="form-group">
                 <label className="form-label">{t('reservations.timeSlot')} *</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  <label style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.75rem', 
-                    padding: '0.75rem', 
-                    border: '1px solid #d1d5db', 
-                    borderRadius: '0.375rem', 
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
                     cursor: 'pointer',
                     backgroundColor: formData.time_slot === 'morning' ? '#eff6ff' : 'white',
                     borderColor: formData.time_slot === 'morning' ? '#3b82f6' : '#d1d5db'
@@ -533,13 +509,13 @@ const PackageBookingForm = ({
                       <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>9:00 - 13:00</div>
                     </div>
                   </label>
-                  <label style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.75rem', 
-                    padding: '0.75rem', 
-                    border: '1px solid #d1d5db', 
-                    borderRadius: '0.375rem', 
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
                     cursor: 'pointer',
                     backgroundColor: formData.time_slot === 'afternoon' ? '#eff6ff' : 'white',
                     borderColor: formData.time_slot === 'afternoon' ? '#3b82f6' : '#d1d5db'
@@ -570,24 +546,36 @@ const PackageBookingForm = ({
                   <span>{t('reservations.checkingAvailability')}...</span>
                 </div>
               ) : availabilityStatus ? (
-                <div className={`availability-status ${availabilityStatus.available ? 'available' : 'unavailable'}`}>
+                <div style={availabilityStatus.available ? {
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '0.375rem',
+                  padding: '1rem',
+                  borderLeft: '4px solid #22c55e'
+                } : {
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '0.375rem',
+                  padding: '1rem',
+                  borderLeft: '4px solid #ef4444'
+                }}>
                   {availabilityStatus.available ? (
-                    <div className="availability-success">
-                      <CheckCircle size={20} />
-                      <div className="availability-details">
-                        <p><strong>{t('reservations.resourceAvailable')}</strong></p>
-                        <p>{availabilityStatus.resourceName} is available for your selected time</p>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                      <CheckCircle size={20} color="#16a34a" style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div style={{ color: '#166534', fontSize: '0.875rem' }}>
+                        <p style={{ margin: '0 0 0.25rem 0', fontWeight: '600' }}>{t('reservations.resourceAvailable')}</p>
+                        <p style={{ margin: '0 0 0.25rem 0' }}>{availabilityStatus.resourceName} is available for your selected time</p>
                         {availabilityStatus.totalQuantity > 1 && (
-                          <p>Capacity: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} of {availabilityStatus.totalQuantity} available</p>
+                          <p style={{ margin: 0 }}>Capacity: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} of {availabilityStatus.totalQuantity} available</p>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <div className="availability-error">
-                      <AlertTriangle size={20} />
-                      <div className="availability-details">
-                        <p><strong>{t('reservations.resourceNotAvailable')}</strong></p>
-                        <p>{availabilityStatus.conflictReason || availabilityStatus.error}</p>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                      <AlertTriangle size={20} color="#dc2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div style={{ color: '#991b1b', fontSize: '0.875rem' }}>
+                        <p style={{ margin: '0 0 0.25rem 0', fontWeight: '600' }}>{t('reservations.resourceNotAvailable')}</p>
+                        <p style={{ margin: 0 }}>{availabilityStatus.conflictReason || availabilityStatus.error}</p>
                       </div>
                     </div>
                   )}
@@ -598,10 +586,10 @@ const PackageBookingForm = ({
 
           {/* Booking Summary */}
           {formData.reservation_date && availabilityStatus?.available && (
-            <div style={{ 
-              background: '#eff6ff', 
-              border: '1px solid #bfdbfe', 
-              borderRadius: '0.375rem', 
+            <div style={{
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '0.375rem',
               padding: '1rem',
               borderLeft: '4px solid #3b82f6'
             }}>
@@ -631,7 +619,7 @@ const PackageBookingForm = ({
             </button>
             <button
               type="submit"
-              className="btn-primary-green"
+              className="btn-booking-primary"
               disabled={loading || !availabilityStatus?.available || remainingEntries < entriesNeeded}
             >
               {t('reservations.confirmReservation')}

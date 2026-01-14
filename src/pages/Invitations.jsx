@@ -2,6 +2,7 @@
 import { Search, Send, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import ConfirmModal from '../components/common/ConfirmModal';
+import Pagination from '../components/common/Pagination';
 import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import SendInvitationModal from '../components/invitations/SendInvitationModal';
@@ -24,7 +25,7 @@ const Invitations = () => {
   const [showInvitation, setShowInvitation] = useState(false);
   const [currentPartner, setCurrentPartner] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, invitation: null, isBulk: false });
-  
+
   const { profile } = useAuth();
   const { t } = useTranslation();
 
@@ -109,7 +110,7 @@ const Invitations = () => {
       if (error) {
         logger.error('Error fetching invitations:', error);
         toast.error(t('messages.errorLoadingInvitations'));
-        
+
         // Provide mock data for development
         const mockInvitations = [
           {
@@ -170,7 +171,7 @@ const Invitations = () => {
 
         // Filter mock data based on user role for development
         if (profile.role === 'admin') {
-          setAllInvitations(mockInvitations.filter(inv => 
+          setAllInvitations(mockInvitations.filter(inv =>
             inv.partners?.first_name === 'TechHub' && inv.partners?.second_name === 'Milano'
           ));
         } else {
@@ -205,15 +206,15 @@ const Invitations = () => {
         const email = inv.invited_email?.toLowerCase() || '';
         const firstName = inv.invited_first_name?.toLowerCase() || '';
         const lastName = inv.invited_last_name?.toLowerCase() || '';
-        const partnerName = inv.partners?.company_name?.toLowerCase() || 
-                           `${inv.partners?.first_name || ''} ${inv.partners?.second_name || ''}`.toLowerCase();
+        const partnerName = inv.partners?.company_name?.toLowerCase() ||
+          `${inv.partners?.first_name || ''} ${inv.partners?.second_name || ''}`.toLowerCase();
         const partnerEmail = inv.partners?.email?.toLowerCase() || '';
-        
-        return email.includes(searchLower) || 
-               firstName.includes(searchLower) || 
-               lastName.includes(searchLower) ||
-               partnerName.includes(searchLower) ||
-               partnerEmail.includes(searchLower);
+
+        return email.includes(searchLower) ||
+          firstName.includes(searchLower) ||
+          lastName.includes(searchLower) ||
+          partnerName.includes(searchLower) ||
+          partnerEmail.includes(searchLower);
       });
     }
 
@@ -241,7 +242,7 @@ const Invitations = () => {
     try {
       const { error } = await supabase
         .from('invitations')
-        .update({ 
+        .update({
           status: 'cancelled',
           cancelled_at: new Date().toISOString()
         })
@@ -250,9 +251,9 @@ const Invitations = () => {
       if (error) throw error;
 
       // Update local state
-      setAllInvitations(prev => 
-        prev.map(inv => 
-          inv.invitation_uuid === invitation.invitation_uuid 
+      setAllInvitations(prev =>
+        prev.map(inv =>
+          inv.invitation_uuid === invitation.invitation_uuid
             ? { ...inv, status: 'cancelled', cancelled_at: new Date().toISOString() }
             : inv
         )
@@ -270,7 +271,7 @@ const Invitations = () => {
 
     try {
       const invitationUuids = Array.from(selectedInvitations);
-      
+
       const { error } = await supabase
         .from('invitations')
         .delete()
@@ -279,7 +280,7 @@ const Invitations = () => {
       if (error) throw error;
 
       // Update local state
-      setAllInvitations(prev => 
+      setAllInvitations(prev =>
         prev.filter(inv => !selectedInvitations.has(inv.invitation_uuid))
       );
 
@@ -368,7 +369,7 @@ const Invitations = () => {
     return <div className="invitations-loading">{t('common.loading')}</div>;
   }
 
-  const isAllSelected = currentInvitations.length > 0 && 
+  const isAllSelected = currentInvitations.length > 0 &&
     currentInvitations.every(inv => selectedInvitations.has(inv.invitation_uuid));
   const isIndeterminate = currentInvitations.some(inv => selectedInvitations.has(inv.invitation_uuid)) && !isAllSelected;
 
@@ -378,20 +379,16 @@ const Invitations = () => {
         <div className="invitations-header-content">
           <h1 className="invitations-title">{t('invitations.title')}</h1>
           <p className="invitations-description">
-            {profile?.role === 'superadmin' 
+            {profile?.role === 'superadmin'
               ? t('invitations.manageAllInvitations')
               : t('invitations.managePartnerInvitations')
             }
           </p>
         </div>
-        
+
         {/* Stats and Actions Container */}
         <div className="invitations-stats-and-actions">
           <div className="invitations-stats">
-            <div className="stat-item">
-              <span className="stat-label">{t('invitations.totalInvitations')}</span>
-              <span className="stat-value">{allInvitations.length}</span>
-            </div>
             <div className="stat-item">
               <span className="stat-label">{t('invitations.pendingInvitations')}</span>
               <span className="stat-value">
@@ -405,11 +402,11 @@ const Invitations = () => {
               </span>
             </div>
           </div>
-          
+
           {/* Send Invitation button only for partner admins */}
           {profile?.role === 'admin' && currentPartner && (
             <div className="invitations-header-actions">
-              <button 
+              <button
                 className="send-invitation-btn"
                 onClick={handleSendInvitation}
               >
@@ -434,7 +431,7 @@ const Invitations = () => {
               className="search-input"
             />
           </div>
-          
+
           <div className="filter-dropdown">
             <Select
               name="statusFilter"
@@ -469,6 +466,14 @@ const Invitations = () => {
         )}
       </div>
 
+      <Pagination
+        totalItems={filteredInvitations.length}
+        itemsPerPage={pageSize}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setPageSize}
+      />
+
       <div className="invitations-table-container">
         <div className="invitations-table-wrapper">
           <table className="invitations-table">
@@ -490,16 +495,14 @@ const Invitations = () => {
                     {t('auth.email')}
                   </th>
                 )}
-                
+
                 {profile?.role === 'superadmin' && (
                   <th className="invitations-table-header hide-on-mobile">
                     {t('partners.partner')}
                   </th>
                 )}
-                <th className="invitations-table-header role-column">
-                  {t('auth.role')}
-                </th>
-                <th className="invitations-table-header">
+
+                <th className="invitations-table-header status-column hide-on-mobile">
                   {t('invitations.status')}
                 </th>
                 <th className="invitations-table-header sent-at-column">
@@ -507,9 +510,6 @@ const Invitations = () => {
                 </th>
                 <th className="invitations-table-header used-at-column">
                   {t('invitations.usedAt')}
-                </th>
-                <th className="invitations-table-header">
-                  {t('partners.actions')}
                 </th>
               </tr>
             </thead>
@@ -525,16 +525,23 @@ const Invitations = () => {
                     />
                   </td>
                   {profile?.role === 'admin' && (
-                    <td className="invitations-table-cell">
-                      {invitation.invited_email}
+                    <td className="invitations-table-cell email-column">
+                      <div className="invitee-email-container">
+                        {invitation.invited_email}
+                      </div>
+                      <div className="status-mobile-only">
+                        <span className={`status-badge ${getStatusBadgeClass(invitation.status)}`}>
+                          {t(`invitations.${invitation.status}`)}
+                        </span>
+                      </div>
                     </td>
                   )}
-                  
+
                   {profile?.role === 'superadmin' && (
                     <td className="invitations-table-cell hide-on-mobile">
                       <div className="partner-info">
                         <div className="partner-name">
-                          {invitation.partners?.first_name && invitation.partners?.second_name 
+                          {invitation.partners?.first_name && invitation.partners?.second_name
                             ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
                             : invitation.partners?.first_name || invitation.partners?.company_name
                           }
@@ -545,12 +552,8 @@ const Invitations = () => {
                       </div>
                     </td>
                   )}
-                  <td className="invitations-table-cell role-column">
-                    <span className="role-badge">
-                      {t(`roles.${invitation.invited_role}`)}
-                    </span>
-                  </td>
-                  <td className="invitations-table-cell">
+
+                  <td className="invitations-table-cell status-column hide-on-mobile">
                     <div className="status-container">
                       {getStatusIcon(invitation.status)}
                       <span className={`status-badge ${getStatusBadgeClass(invitation.status)}`}>
@@ -564,22 +567,6 @@ const Invitations = () => {
                   <td className="invitations-table-cell used-at-column">
                     {formatDate(invitation.used_at)}
                   </td>
-                  <td className="invitations-table-cell">
-                    <div className="invitation-actions">
-                      {invitation.status === 'pending' && (
-                        <button
-                          onClick={() => setConfirmModal({ isOpen: true, invitation, isBulk: false })}
-                          className="cancel-btn"
-                          title={t('invitations.cancelInvitation')}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                      {invitation.status !== 'pending' && (
-                        <span className="no-actions">-</span>
-                      )}
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -588,7 +575,7 @@ const Invitations = () => {
             <div className="invitations-empty">
               <UserPlus size={48} className="empty-icon" />
               <p>
-                {searchTerm || statusFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all'
                   ? t('invitations.noInvitationsMatchFilter')
                   : t('invitations.noInvitationsFound')
                 }
@@ -598,59 +585,7 @@ const Invitations = () => {
         </div>
       </div>
 
-      {/* Pagination */}
-      {filteredInvitations.length > 0 && (
-        <div className="invitations-pagination">
-          <div className="pagination-info">
-            <span>
-              {t('invitations.showingResults', {
-                start: Math.min(startIndex + 1, totalItems),
-                end: Math.min(endIndex, totalItems),
-                total: totalItems
-              })}
-            </span>
-          </div>
-          
-          <div className="pagination-controls">
-            <div className="page-size-selector">
-              <label htmlFor="pageSize">{t('invitations.itemsPerPage')}:</label>
-              <select
-                id="pageSize"
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="page-size-select"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
-            
-            <div className="page-navigation">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="page-btn"
-              >
-                {t('invitations.previous')}
-              </button>
-              
-              <span className="page-info">
-                {t('invitations.pageOfPages', { current: currentPage, total: totalPages })}
-              </span>
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="page-btn"
-              >
-                {t('invitations.next')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Pagination removed from bottom and moved to top */}
 
       {/* Confirm Modal */}
       <ConfirmModal
@@ -663,11 +598,11 @@ const Invitations = () => {
             handleCancelInvitation(confirmModal.invitation);
           }
         }}
-        title={confirmModal.isBulk 
-          ? t('invitations.confirmDeleteTitle') 
+        title={confirmModal.isBulk
+          ? t('invitations.confirmDeleteTitle')
           : t('invitations.confirmCancelTitle')
         }
-        message={confirmModal.isBulk 
+        message={confirmModal.isBulk
           ? t('invitations.confirmDeleteMessage', { count: selectedInvitations.size })
           : t('invitations.confirmCancelMessage')
         }
@@ -680,6 +615,7 @@ const Invitations = () => {
         <SendInvitationModal
           isOpen={showInvitation}
           onClose={handleCloseInvitation}
+          onSuccess={fetchInvitations}
           partner={currentPartner}
           currentUserRole={profile?.role}
         />

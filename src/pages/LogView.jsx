@@ -1,6 +1,7 @@
 // src/pages/LogView.jsx
-import { Calendar, ChevronLeft, ChevronRight, Eye, FileText, Filter, X } from 'lucide-react';
+import { Calendar, Eye, FileText, Filter, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Pagination from '../components/common/Pagination';
 import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,7 +30,7 @@ const LogView = () => {
   });
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
-  
+
   const { profile } = useAuth();
   const { t } = useTranslation();
 
@@ -114,7 +115,7 @@ const LogView = () => {
 
       if (error) throw error;
       setPartners(data || []);
-      
+
       // Auto-select first partner if available
       if (data && data.length > 0) {
         setSelectedPartner(data[0].partner_uuid);
@@ -127,7 +128,7 @@ const LogView = () => {
 
   const fetchLogs = async () => {
     if (!selectedPartner) return;
-    
+
     setLoading(true);
     try {
       // Build query with filters
@@ -163,7 +164,7 @@ const LogView = () => {
       // Fetch user profiles for the logs
       if (data && data.length > 0) {
         const userIds = [...new Set(data.map(log => log.user_id).filter(Boolean))];
-        
+
         if (userIds.length > 0) {
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
@@ -220,8 +221,8 @@ const LogView = () => {
   };
 
   const handlePageSizeChange = (newPageSize) => {
-    setPagination(prev => ({ 
-      ...prev, 
+    setPagination(prev => ({
+      ...prev,
       pageSize: newPageSize,
       currentPage: 1 // Reset to first page when changing page size
     }));
@@ -356,14 +357,14 @@ const LogView = () => {
                 <Filter size={18} className="mr-2" />
                 {t('logs.filters')}
               </div>
-              <button 
+              <button
                 className="clear-filters-btn"
                 onClick={handleClearFilters}
               >
                 {t('logs.clearFilters')}
               </button>
             </div>
-            
+
             <div className="filters-grid">
               <div className="filter-group">
                 <label className="filter-label">
@@ -422,53 +423,13 @@ const LogView = () => {
           </div>
 
           {/* Pagination Controls */}
-          <div className="logs-pagination-controls">
-            <div className="pagination-left">
-              <div className="rows-per-page">
-                <label className="filter-label">
-                  {t('logs.rowsPerPage')}
-                </label>
-                <select
-                  className="filter-select"
-                  value={pagination.pageSize}
-                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                >
-                  {rowsPerPageOptions.map(option => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="pagination-info">
-                {t('logs.showing')} {logs.length > 0 ? ((pagination.currentPage - 1) * pagination.pageSize) + 1 : 0} - {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalCount)} {t('logs.of')} {pagination.totalCount} {t('logs.logs')}
-              </div>
-            </div>
-            
-            <div className="pagination-right">
-              <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                disabled={pagination.currentPage === 1}
-              >
-                <ChevronLeft size={16} />
-                {t('logs.previous')}
-              </button>
-              
-              <div className="pagination-page-info">
-                {t('logs.page')} {pagination.currentPage} {t('logs.of')} {pagination.totalPages || 1}
-              </div>
-              
-              <button
-                className="pagination-btn"
-                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                disabled={pagination.currentPage >= pagination.totalPages}
-              >
-                {t('logs.next')}
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
+          <Pagination
+            totalItems={pagination.totalCount}
+            itemsPerPage={pagination.pageSize}
+            currentPage={pagination.currentPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handlePageSizeChange}
+          />
 
           {/* Logs Table */}
           {loading ? (
@@ -535,7 +496,7 @@ const LogView = () => {
                     ))}
                   </tbody>
                 </table>
-                
+
                 {logs.length === 0 && (
                   <div className="logs-empty">
                     <FileText size={48} className="empty-icon" />
@@ -556,8 +517,8 @@ const LogView = () => {
               <h2 className="modal-title">
                 {t('logs.logDetails')}
               </h2>
-              <button 
-                onClick={() => setShowDetailModal(false)} 
+              <button
+                onClick={() => setShowDetailModal(false)}
                 className="modal-close-btn"
               >
                 <X size={24} />
@@ -634,7 +595,7 @@ const LogView = () => {
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="btn-primary"
+                className="btn-log-primary"
               >
                 {t('common.close')}
               </button>

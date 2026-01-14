@@ -4,13 +4,14 @@ import { useTranslation } from '../../contexts/LanguageContext';
 
 import logger from '../../utils/logger';
 
-const ImageUpload = ({ 
-  category, 
-  images = [], 
-  onImagesChange, 
-  maxImages = 10, 
+const ImageUpload = ({
+  category,
+  images = [],
+  onImagesChange,
+  maxImages = 10,
   disabled = false,
   showAltText = false,
+  showTips = true,
   onImageDelete = null // Callback for deleting existing images from storage
 }) => {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ const ImageUpload = ({
     e.preventDefault();
     e.stopPropagation();
     if (disabled) return;
-    
+
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
     } else if (e.type === "dragleave") {
@@ -37,7 +38,7 @@ const ImageUpload = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (disabled) return;
 
     const files = Array.from(e.dataTransfer.files);
@@ -103,10 +104,10 @@ const ImageUpload = ({
   // Handle file input change
   const handleFileInput = (e) => {
     if (disabled) return;
-    
+
     const files = Array.from(e.target.files);
     handleFiles(files);
-    
+
     // Reset input
     e.target.value = '';
   };
@@ -114,7 +115,7 @@ const ImageUpload = ({
   // Remove image - now handles both new and existing images
   const removeImage = async (imageId) => {
     const imageToRemove = images.find(img => img.id === imageId);
-    
+
     if (!imageToRemove) return;
 
     // If it's an existing image (not new), call the delete callback
@@ -133,18 +134,18 @@ const ImageUpload = ({
 
     // Remove from UI
     const updatedImages = images.filter(img => img.id !== imageId);
-    
+
     // Clean up preview URLs for new images
     if (imageToRemove.preview && imageToRemove.isNew) {
       URL.revokeObjectURL(imageToRemove.preview);
     }
-    
+
     onImagesChange(updatedImages);
   };
 
   // Update alt text
   const updateAltText = (imageId, altText) => {
-    const updatedImages = images.map(img => 
+    const updatedImages = images.map(img =>
       img.id === imageId ? { ...img, alt_text: altText } : img
     );
     onImagesChange(updatedImages);
@@ -155,12 +156,12 @@ const ImageUpload = ({
     const updatedImages = [...images];
     const [movedImage] = updatedImages.splice(fromIndex, 1);
     updatedImages.splice(toIndex, 0, movedImage);
-    
+
     // Update display order
     updatedImages.forEach((img, index) => {
       img.display_order = index;
     });
-    
+
     onImagesChange(updatedImages);
   };
 
@@ -229,11 +230,11 @@ const ImageUpload = ({
           {images.map((image, index) => (
             <div key={image.id} className="image-item">
               <div className="image-preview">
-                <img 
-                  src={getImageUrl(image)} 
+                <img
+                  src={getImageUrl(image)}
                   alt={image.alt_text || 'Location image'}
                 />
-                
+
                 {/* Image overlay */}
                 <div className="image-overlay">
                   <div className="image-actions">
@@ -248,7 +249,7 @@ const ImageUpload = ({
                         ←
                       </button>
                     )}
-                    
+
                     {index < images.length - 1 && (
                       <button
                         type="button"
@@ -260,7 +261,7 @@ const ImageUpload = ({
                         →
                       </button>
                     )}
-                    
+
                     <button
                       type="button"
                       onClick={() => removeImage(image.id)}
@@ -342,15 +343,17 @@ const ImageUpload = ({
       )}
 
       {/* Upload tips */}
-      <div className="image-upload-tips">
-        <h5>{t('locations.imageUploadTips')}</h5>
-        <ul>
-          <li>• {t('locations.tipSupportedFormats')}</li>
-          <li>• {t('locations.tipMaxSize')}</li>
-          <li>• {t('locations.tipBestQuality')}</li>
-          <li>• {t('locations.tipDescriptiveNames')}</li>
-        </ul>
-      </div>
+      {showTips && (
+        <div className="image-upload-tips">
+          <h5>{t('locations.imageUploadTips')}</h5>
+          <ul>
+            <li>• {t('locations.tipSupportedFormats')}</li>
+            <li>• {t('locations.tipMaxSize')}</li>
+            <li>• {t('locations.tipBestQuality')}</li>
+            <li>• {t('locations.tipDescriptiveNames')}</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

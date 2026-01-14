@@ -1,7 +1,7 @@
 // src/pages/Customers.jsx
-import { ChevronLeft, ChevronRight, Download, Edit2 } from 'lucide-react';
+import { Building, CheckCircle, Download, Edit2, FileText, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import Select from '../components/common/Select';
+import Pagination from '../components/common/Pagination';
 import { toast } from '../components/common/ToastContainer';
 import FattureInCloudImportModal from '../components/fattureincloud/FattureInCloudImportModal';
 import CustomerForm from '../components/forms/CustomerForm';
@@ -19,7 +19,7 @@ const Customers = () => {
   const { t } = useTranslation();
   const [showImportModal, setShowImportModal] = useState(false);
   const [partnerSettings, setPartnerSettings] = useState(null);
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -40,7 +40,10 @@ const Customers = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [itemsPerPage]);
-
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomerContracts, setSelectedCustomerContracts] = useState([]);
+  const [showContractsModal, setShowContractsModal] = useState(false);
+  const [loadingContracts, setLoadingContracts] = useState(false);
   const fetchCustomers = async () => {
     if (!profile?.partner_uuid) {
       logger.warn('No partner_uuid found for user');
@@ -78,7 +81,8 @@ const Customers = () => {
             country: 'Italy',
             piva: '',
             codice_fiscale: 'RSSMRA80A01F205X',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            active_contracts_count: 1
           },
           {
             id: 2,
@@ -94,7 +98,8 @@ const Customers = () => {
             country: 'Italy',
             piva: '12345678901',
             codice_fiscale: '',
-            created_at: new Date(Date.now() - 86400000).toISOString()
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+            active_contracts_count: 2
           },
           {
             id: 3,
@@ -110,12 +115,39 @@ const Customers = () => {
             country: 'Italy',
             piva: '',
             codice_fiscale: 'BNCLCA90B15L219Y',
-            created_at: new Date(Date.now() - 172800000).toISOString()
+            created_at: new Date(Date.now() - 172800000).toISOString(),
+            active_contracts_count: 0
           }
         ]);
       } else {
         logger.log('Setting real customers data:', data);
-        setCustomers(data || []);
+
+        // Fetch active contract counts for these customers
+        const customerIds = (data || []).map(c => c.id);
+        if (customerIds.length > 0) {
+          try {
+            const { data: contractsData, error: contractsError } = await supabase
+              .from('contracts')
+              .select('customer_id')
+              .in('customer_id', customerIds)
+              .eq('contract_status', 'active');
+
+            if (!contractsError) {
+              const customersWithCounts = (data || []).map(customer => {
+                const count = (contractsData || []).filter(c => c.customer_id === customer.id).length;
+                return { ...customer, active_contracts_count: count };
+              });
+              setCustomers(customersWithCounts);
+            } else {
+              setCustomers(data || []);
+            }
+          } catch (err) {
+            logger.error('Error fetching contract counts:', err);
+            setCustomers(data || []);
+          }
+        } else {
+          setCustomers([]);
+        }
       }
     } catch (error) {
       logger.error('Error fetching customers:', error);
@@ -129,17 +161,17 @@ const Customers = () => {
 
   const fetchPartnerSettings = async () => {
     if (!profile?.partner_uuid) return;
-    
+
     logger.log('Fetching partner settings for:', profile.partner_uuid);
-    
+
     const { data, error } = await supabase
       .from('partners')
       .select('fattureincloud_enabled, fattureincloud_company_id, fattureincloud_api_token')
       .eq('partner_uuid', profile.partner_uuid)
       .single();
-    
+
     logger.log('Partner settings result:', { data, error });
-      
+
     if (!error && data) {
       setPartnerSettings(data);
       logger.log('✅ Partner settings loaded:', data);
@@ -165,7 +197,7 @@ const Customers = () => {
         .eq('customer_id', customerId);
 
       logger.log('Bookings result:', { data: bookings, error: bookingsError });
-      
+
       if (!bookingsError && bookings && bookings.length > 0) {
         const activeBookings = bookings.filter(b => b.booking_status === 'active');
         if (activeBookings.length > 0) {
@@ -181,7 +213,7 @@ const Customers = () => {
         .eq('customer_id', customerId);
 
       logger.log('Contracts result:', { data: contracts, error: contractsError });
-      
+
       if (!contractsError && contracts && contracts.length > 0) {
         const activeContracts = contracts.filter(c => c.contract_status === 'active');
         if (activeContracts.length > 0) {
@@ -197,7 +229,7 @@ const Customers = () => {
         .eq('customer_id', customerId);
 
       logger.log('Reservations result:', { data: reservations, error: reservationsError });
-      
+
       if (!reservationsError && reservations && reservations.length > 0) {
         const activeReservations = reservations.filter(r => r.reservation_status === 'confirmed');
         if (activeReservations.length > 0) {
@@ -209,14 +241,14 @@ const Customers = () => {
       if (contracts && contracts.length > 0) {
         logger.log('Checking payments for contracts...');
         const contractIds = contracts.map(c => c.id);
-        
+
         const { data: payments, error: paymentsError } = await supabase
           .from('payments')
           .select('id, payment_status')
           .in('contract_id', contractIds);
 
         logger.log('Payments result:', { data: payments, error: paymentsError });
-        
+
         if (!paymentsError && payments && payments.length > 0) {
           const activePayments = payments.filter(p => ['pending', 'completed'].includes(p.payment_status));
           if (activePayments.length > 0) {
@@ -233,12 +265,33 @@ const Customers = () => {
     logger.log('=== FINAL CONSTRAINTS:', constraints);
     return constraints;
   };
+  const handleViewContracts = async (customer) => {
+    setSelectedCustomer(customer);
+    setLoadingContracts(true);
+    setShowContractsModal(true);
 
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('service_name, start_date, end_date')
+        .eq('customer_id', customer.id)
+        .eq('contract_status', 'active')
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+      setSelectedCustomerContracts(data || []);
+    } catch (err) {
+      logger.error('Error fetching customer contracts:', err);
+      toast.error(t('messages.errorLoadingContracts'));
+    } finally {
+      setLoadingContracts(false);
+    }
+  };
   const handleDeleteCustomer = async (customer) => {
     logger.log('=== STARTING DELETE PROCESS FOR CUSTOMER:', customer);
-    
+
     const constraints = await checkCustomerConstraints(customer.id);
-    
+
     if (constraints.length > 0) {
       logger.log('=== CANNOT DELETE - HAS CONSTRAINTS');
       toast.error(t('customers.cannotDeleteWithConstraints'));
@@ -248,7 +301,7 @@ const Customers = () => {
     try {
       const { error } = await supabase
         .from('customers')
-        .update({ 
+        .update({
           customer_status: 'inactive',
           updated_at: new Date().toISOString()
         })
@@ -263,7 +316,7 @@ const Customers = () => {
 
       setCustomers(prev => prev.filter(c => c.id !== customer.id));
       toast.success(t('customers.customerDeactivatedSuccessfully'));
-      
+
       return { success: true };
 
     } catch (error) {
@@ -285,7 +338,7 @@ const Customers = () => {
 
   const handleFormSuccess = (savedCustomer) => {
     if (editingCustomer) {
-      setCustomers(prev => 
+      setCustomers(prev =>
         prev.map(c => c.id === savedCustomer.id ? savedCustomer : c)
       );
     } else {
@@ -316,16 +369,6 @@ const Customers = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentCustomers = customers.slice(startIndex, endIndex);
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
-  };
-
-  const handleItemsPerPageChange = (e) => {
-    setItemsPerPage(Number(e.target.value));
-  };
-
   const canManageCustomers = profile?.role === 'admin';
 
   if (!canManageCustomers) {
@@ -351,82 +394,61 @@ const Customers = () => {
           <p className="customers-description">
             {t('customers.manageCustomersInvitedOnly')}
           </p>
-          <div className="customers-stats">
-            <div className="stat-item">
-              <span className="stat-label">{t('customers.totalCustomers')}</span>
-              <span className="stat-value">{customers.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('customers.activeCustomers')}</span>
-              <span className="stat-value">
-                {customers.filter(c => c.customer_status === 'active').length}
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">{t('customers.companies')}</span>
-              <span className="stat-value">
-                {customers.filter(c => c.customer_type === 'entrepeneur').length}
-              </span>
-            </div>
-          </div>
         </div>
-        
+
         {partnerSettings?.fattureincloud_enabled && (
           <button
-            className="btn-primary"
+            className="btn-fc-import"
             onClick={() => setShowImportModal(true)}
-            style={{ alignSelf: 'flex-start' }}
           >
-            <Download size={16} style={{ marginRight: '0.5rem' }} />
+            <Download size={16} />
             {t('customers.importFromFC')}
           </button>
         )}
       </div>
 
-      {customers.length > 0 && (
-        <div className="pagination-controls">
-          <div className="pagination-info">
-            <span>
-              {t('common.showing')} {startIndex + 1}-{Math.min(endIndex, customers.length)} {t('common.of')} {customers.length}
-            </span>
+      <div className="customers-stats">
+        <div className="customer-stat-card">
+          <div className="customer-stat-icon total">
+            <Users size={20} />
           </div>
-          
-          <div className="pagination-actions">
-            <div className="items-per-page">
-              <label>{t('common.rowsPerPage')}:</label>
-              <Select
-                value={itemsPerPage}
-                onChange={handleItemsPerPageChange}
-                options={itemsPerPageOptions}
-                name="itemsPerPage"
-                autoSelectSingle={false}
-              />
-            </div>
-
-            <div className="page-navigation">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="page-btn"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              
-              <span className="page-info">
-                {t('common.page')} {currentPage} {t('common.of')} {totalPages}
-              </span>
-              
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="page-btn"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+          <div className="customer-stat-info">
+            <span className="customer-stat-label">{t('customers.totalCustomers')}</span>
+            <span className="customer-stat-value">{customers.length}</span>
           </div>
         </div>
-      )}
+        <div className="customer-stat-card">
+          <div className="customer-stat-icon active">
+            <CheckCircle size={20} />
+          </div>
+          <div className="customer-stat-info">
+            <span className="customer-stat-label">{t('customers.activeCustomers')}</span>
+            <span className="customer-stat-value">
+              {customers.filter(c => c.customer_status === 'active').length}
+            </span>
+          </div>
+        </div>
+        <div className="customer-stat-card">
+          <div className="customer-stat-icon companies">
+            <Building size={20} />
+          </div>
+          <div className="customer-stat-info">
+            <span className="customer-stat-label">{t('customers.companies')}</span>
+            <span className="customer-stat-value">
+              {customers.filter(c => c.customer_type === 'entrepeneur').length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <Pagination
+        totalItems={customers.length}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+        itemsPerPageOptions={itemsPerPageOptions}
+      />
 
       <div className="customers-table-container">
         <div className="customers-table-wrapper">
@@ -437,16 +459,13 @@ const Customers = () => {
                   {t('customers.customer')}
                 </th>
                 <th className="customers-table-header">
-                  {t('auth.email')}
-                </th>
-                <th className="customers-table-header">
-                  {t('customers.phone')}
+                  {t('customers.status')}
                 </th>
                 <th className="customers-table-header">
                   {t('customers.type')}
                 </th>
                 <th className="customers-table-header">
-                  {t('customers.status')}
+                  {t('customers.activeContracts')}
                 </th>
                 <th className="customers-table-header">
                   {t('customers.actions')}
@@ -458,52 +477,15 @@ const Customers = () => {
                 <tr key={customer.id} className="customers-table-row">
                   <td className="customers-table-cell">
                     <div className="customer-info">
-                      <div className="customer-name">
-                        {customer.company_name ? (
-                          <>
-                            <div className="customer-company">{customer.company_name}</div>
-                            <div className="customer-person">
-                              {customer.first_name} {customer.second_name}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="customer-person">
-                            {customer.first_name} {customer.second_name}
-                          </div>
-                        )}
+                      <div className="customer-person">
+                        {customer.first_name} {customer.second_name}
                       </div>
-                      <div className="customer-location">
-                        {customer.city && customer.country && `${customer.city}, ${customer.country}`}
-                      </div>
-                      <div className="customer-created">
-                        {t('common.createdAt')}: {formatDate(customer.created_at)}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="customers-table-cell">
-                    <div className="customer-email">
-                      {customer.email}
-                      {customer.billing_email && customer.billing_email !== customer.email && (
-                        <div className="billing-email">
-                          <small>{t('customers.billing')}: {customer.billing_email}</small>
+                      {customer.company_name && (
+                        <div className="customer-company" style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'normal' }}>
+                          {customer.company_name}
                         </div>
                       )}
                     </div>
-                  </td>
-                  <td className="customers-table-cell">
-                    <div className="customer-phone">
-                      {customer.phone}
-                      {customer.billing_phone && customer.billing_phone !== customer.phone && (
-                        <div className="billing-phone">
-                          <small>{t('customers.billing')}: {customer.billing_phone}</small>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="customers-table-cell">
-                    <span className="type-badge">
-                      {t(`customers.${customer.customer_type}`)}
-                    </span>
                   </td>
                   <td className="customers-table-cell">
                     <span className={`status-badge ${getStatusBadgeClass(customer.customer_status)}`}>
@@ -511,14 +493,34 @@ const Customers = () => {
                     </span>
                   </td>
                   <td className="customers-table-cell">
+                    <span className="type-badge">
+                      {t(`customers.${customer.customer_type}`)}
+                    </span>
+                  </td>
+                  <td className="customers-table-cell">
+                    <div style={{ fontWeight: '600', color: '#1e293b' }}>
+                      {customer.active_contracts_count || 0}
+                    </div>
+                  </td>
+                  <td className="customers-table-cell">
                     <div className="customer-actions">
-                      <button 
+                      <button
                         className="edit-btn"
                         onClick={() => handleEditCustomer(customer)}
-                        title={t('customers.editCustomer')}
+                        title={t('common.edit')}
                       >
                         <Edit2 size={16} />
                       </button>
+
+                      {customer.active_contracts_count > 0 && (
+                        <button
+                          className="edit-btn"
+                          onClick={() => handleViewContracts(customer)}
+                          title={t('navigation.contracts')}
+                        >
+                          <FileText size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -554,13 +556,74 @@ const Customers = () => {
         partnerUuid={profile?.partner_uuid}
       />
 
-      <FattureInCloudImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        partnerSettings={partnerSettings}
-        partnerUuid={profile?.partner_uuid}
-        onImportSuccess={handleImportSuccess}
-      />
+      {showImportModal && (
+        <FattureInCloudImportModal
+          onClose={() => setShowImportModal(false)}
+          onImportSuccess={fetchCustomers}
+        />
+      )}
+
+      {showContractsModal && (
+        <div className="delete-modal-overlay">
+          <div className="customer-contracts-modal">
+            <div className="delete-modal-header">
+              <h2 className="delete-modal-title">
+                {t('navigation.contracts')} - {selectedCustomer?.first_name} {selectedCustomer?.second_name}
+              </h2>
+            </div>
+
+            <div className="delete-modal-content">
+              {loadingContracts ? (
+                <div className="customers-loading">
+                  <div className="loading-spinner-small" style={{ margin: '0 auto 1rem auto', width: '2rem', height: '2rem' }}></div>
+                  {t('common.loading')}
+                </div>
+              ) : selectedCustomerContracts.length > 0 ? (
+                <div className="contracts-list-compact">
+                  <table className="customers-table" style={{ border: 'none', boxShadow: 'none' }}>
+                    <thead className="customers-table-head">
+                      <tr>
+                        <th className="customers-table-header" style={{ padding: '0.75rem 1rem' }}>{t('services.serviceName')}</th>
+                        <th className="customers-table-header" style={{ padding: '0.75rem 1rem' }}>{t('common.startDate')}</th>
+                        <th className="customers-table-header" style={{ padding: '0.75rem 1rem' }}>{t('common.endDate')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="customers-table-body">
+                      {selectedCustomerContracts.map((contract, index) => (
+                        <tr key={index} className="customers-table-row">
+                          <td className="customers-table-cell" style={{ padding: '0.75rem 1rem' }}>
+                            <div style={{ fontWeight: '500' }}>{contract.service_name}</div>
+                          </td>
+                          <td className="customers-table-cell" style={{ padding: '0.75rem 1rem' }}>
+                            {formatDate(contract.start_date)}
+                          </td>
+                          <td className="customers-table-cell" style={{ padding: '0.75rem 1rem' }}>
+                            {formatDate(contract.end_date)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="customers-empty" style={{ padding: '2rem' }}>
+                  <p>{t('customers.noContractsYet')}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="delete-modal-actions" style={{ justifyContent: 'center' }}>
+              <button
+                className="btn-fc-import"
+                onClick={() => setShowContractsModal(false)}
+                style={{ minWidth: '120px' }}
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -8,7 +8,7 @@ import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/
 import logger from '../../utils/logger';
 import { toast } from '../common/ToastContainer';
 
-const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
+const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole, onSuccess }) => {
   const { t, language } = useTranslation();
   const { profile } = useAuth();
   const [formData, setFormData] = useState({
@@ -72,10 +72,10 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       // MODIFIED: For superadmin inviting partner admin, use customizable template
       if (isPartnerAdminInvitation) {
         const { sendPartnerInvitationEmail } = await import('../../services/partnerInvitationEmailService');
-        
+
         const adminName = profile?.first_name || profile?.email?.split('@')[0] || 'PowerCowo Team';
         const partnerName = partner?.company_name || `${partner?.first_name} ${partner?.second_name}`;
-        
+
         const success = await sendPartnerInvitationEmail(
           invitation.invited_email,
           partnerName,
@@ -84,13 +84,13 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
           language,
           formData.customMessage // <-- ADD THIS PARAMETER
         );
-        
+
         return success;
       } else {
         // For customer invitations, use existing OneSignal flow
         const { default: oneSignalEmailService } = await import('../../services/oneSignalEmailService');
         const success = await oneSignalEmailService.sendInvitation(invitationWithPartner, invitationLink);
-        
+
         return success;
       }
     } catch (error) {
@@ -154,7 +154,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
           invitation_uuid: data.invitation_uuid,
           invited_email: formData.email,
           invited_role: targetRole,
-          invited_name: isPartnerAdminInvitation 
+          invited_name: isPartnerAdminInvitation
             ? `${formData.firstName} ${formData.lastName}`
             : null,
           partner_name: partner?.company_name || `${partner?.first_name} ${partner?.second_name}`,
@@ -169,20 +169,21 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       // Show success and close modal
       if (emailSent) {
         toast.success(
-          isPartnerAdminInvitation 
+          isPartnerAdminInvitation
             ? t('messages.partnerAdminInvitationSent')
             : t('messages.userInvitationSent')
         );
       } else {
         // Use toast.error if toast.warning doesn't exist
         toast.error(
-          t('messages.invitationCreatedButEmailFailed') || 
+          t('messages.invitationCreatedButEmailFailed') ||
           'Invitation created but email may not have been sent. Please verify.'
         );
       }
-      
+
       onClose();
-      
+      if (onSuccess) onSuccess();
+
       // Reset form
       setFormData({
         email: '',
@@ -206,8 +207,8 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
       <div className="modal-container">
         <div className="modal-header">
           <h2 className="modal-title">
-            {isPartnerAdminInvitation 
-              ? t('invitations.invitePartnerAdmin') 
+            {isPartnerAdminInvitation
+              ? t('invitations.invitePartnerAdmin')
               : t('invitations.inviteUser')
             }
           </h2>
@@ -217,20 +218,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
         </div>
 
         <div className="invitation-modal-content">
-          {/* Partner Info */}
-          <div className="invitation-partner-info">
-            <div className="partner-info-card">
-              <h3 className="partner-info-title">
-                {isPartnerAdminInvitation 
-                  ? t('invitations.invitingAdminFor')
-                  : t('invitations.invitingUserFor')
-                }
-              </h3>
-              <p className="partner-info-name">
-                {partner?.company_name}
-              </p>
-            </div>
-          </div>
+
 
           {/* Invitation Form */}
           <div className="modal-form">
@@ -241,7 +229,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                 </p>
               </div>
             )}
-            
+
             {/* Only show Name fields for partner admin invitations (superadmin inviting partner) */}
             {isPartnerAdminInvitation && (
               <div className="form-row">
@@ -254,7 +242,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                     name="firstName"
                     type="text"
                     required
-                    className="form-input"
+                    className="invitation-form-input"
                     placeholder={t('placeholders.firstNamePlaceholder')}
                     value={formData.firstName}
                     onChange={handleChange}
@@ -269,7 +257,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                     name="lastName"
                     type="text"
                     required
-                    className="form-input"
+                    className="invitation-form-input"
                     placeholder={t('placeholders.lastNamePlaceholder')}
                     value={formData.lastName}
                     onChange={handleChange}
@@ -288,7 +276,7 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                   name="email"
                   type="email"
                   required
-                  className="form-input"
+                  className="invitation-form-input"
                   placeholder={t('placeholders.emailPlaceholder')}
                   value={formData.email}
                   onChange={handleChange}
@@ -305,46 +293,21 @@ const SendInvitationModal = ({ isOpen, onClose, partner, currentUserRole }) => {
                 id="customMessage"
                 name="customMessage"
                 rows={3}
-                className="form-textarea"
+                className="invitation-form-textarea"
                 placeholder={t('placeholders.customMessagePlaceholder')}
                 value={formData.customMessage}
                 onChange={handleChange}
               />
             </div>
 
-            {/* Preview */}
-            <div className="invitation-preview">
-              <h4 className="preview-title">{t('invitations.emailPreview')}</h4>
-              <div className="preview-content">
-                <p><strong>{t('invitations.subject')}:</strong> {t('invitations.emailSubject', { 
-                  partnerName: partner?.company_name,
-                  role: t(`roles.${targetRole}`)
-                })}</p>
-                <p><strong>{t('invitations.recipient')}:</strong> 
-                  {isPartnerAdminInvitation 
-                    ? `${formData.firstName} ${formData.lastName} (${formData.email})`
-                    : formData.email
-                  }
-                </p>
-                {formData.customMessage && (
-                  <p><strong>{t('invitations.customMessage')}:</strong> {formData.customMessage}</p>
-                )}
-              </div>
-            </div>
+
 
             <div className="modal-actions">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-secondary"
-                disabled={loading}
-              >
-                {t('common.cancel')}
-              </button>
+
               <button
                 type="submit"
                 onClick={handleSubmit}
-                className="btn-primary"
+                className="btn-invitation-primary"
                 disabled={loading || !formData.email || (isPartnerAdminInvitation && (!formData.firstName || !formData.lastName))}
               >
                 {loading ? (

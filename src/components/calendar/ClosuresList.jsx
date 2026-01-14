@@ -6,17 +6,19 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 import ClosureModal from './ClosureModal';
-
+import ConfirmModal from '../common/ConfirmModal';
 import logger from '../../utils/logger';
 
 const ClosuresList = ({ location }) => {
   const { profile } = useAuth();
   const { t } = useTranslation();
-  
+
   const [closures, setClosures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedClosure, setSelectedClosure] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [closureToDelete, setClosureToDelete] = useState(null);
 
   useEffect(() => {
     if (location) {
@@ -32,16 +34,33 @@ const ClosuresList = ({ location }) => {
           *,
           location_resources (
             id,
-            resource_name
+            resource_name,
+            location_id
           )
         `)
         .eq('partner_uuid', profile.partner_uuid)
-        .or(`location_id.eq.${location.id},and(closure_scope.eq.resource_type,location_id.eq.${location.id})`)
         .order('closure_start_date', { ascending: false });
 
       if (error) throw error;
 
-      setClosures(data || []);
+      // Filter closures to only show those related to this location
+      const filteredClosures = (data || []).filter(closure => {
+        // Location-level closures
+        if (closure.closure_scope === 'location' && closure.location_id === location.id) {
+          return true;
+        }
+        // Resource-type closures for this location  
+        if (closure.closure_scope === 'resource_type' && closure.location_id === location.id) {
+          return true;
+        }
+        // Resource-level closures where the resource belongs to this location
+        if (closure.closure_scope === 'resource' && closure.location_resources?.location_id === location.id) {
+          return true;
+        }
+        return false;
+      });
+
+      setClosures(filteredClosures);
     } catch (error) {
       logger.error('Error fetching closures:', error);
       toast.error(t('messages.errorLoadingClosures'));
@@ -61,13 +80,18 @@ const ClosuresList = ({ location }) => {
   };
 
   const handleDeleteClosure = async (closureId) => {
-    if (!confirm(t('calendar.confirmDeleteClosure'))) return;
+    setClosureToDelete(closureId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!closureToDelete) return;
 
     try {
       const { error } = await supabase
         .from('operating_closures')
         .delete()
-        .eq('id', closureId);
+        .eq('id', closureToDelete);
 
       if (error) throw error;
 
@@ -76,6 +100,8 @@ const ClosuresList = ({ location }) => {
     } catch (error) {
       logger.error('Error deleting closure:', error);
       toast.error(t('messages.errorDeletingClosure'));
+    } finally {
+      setClosureToDelete(null);
     }
   };
 
@@ -85,8 +111,8 @@ const ClosuresList = ({ location }) => {
     } else if (closure.closure_scope === 'resource') {
       return closure.location_resources?.resource_name || t('calendar.specificResource');
     } else if (closure.closure_scope === 'resource_type') {
-      return closure.resource_type === 'scrivania' 
-        ? t('locations.allDesks') 
+      return closure.resource_type === 'scrivania'
+        ? t('locations.allDesks')
         : t('locations.allMeetingRooms');
     }
     return '';
@@ -107,15 +133,15 @@ const ClosuresList = ({ location }) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
-    
+
     if (startDate === endDate) {
-      return start.toLocaleDateString(locale, { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      return start.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
     }
-    
+
     return `${start.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })}`;
   };
 
@@ -158,7 +184,7 @@ const ClosuresList = ({ location }) => {
                   {formatDateRange(closure.closure_start_date, closure.closure_end_date)}
                 </div>
               </div>
-              
+
               <div className="closure-actions">
                 <button
                   type="button"
@@ -197,6 +223,19 @@ const ClosuresList = ({ location }) => {
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setClosureToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title={t('calendar.deleteClosure')}
+        message={t('calendar.confirmDeleteClosure')}
+        confirmText={t('common.delete')}
+        isDestructive={true}
+      />
     </div>
   );
 };

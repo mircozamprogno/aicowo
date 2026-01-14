@@ -121,7 +121,7 @@ const NotificationTemplates = () => {
             setEditingTemplate(null);
             setShowEditor(true);
           }}
-          className="btn-primary"
+          className="btn-notification-primary"
         >
           <Plus size={16} />
           {t('notifications.createTemplate')}
@@ -140,14 +140,14 @@ const NotificationTemplates = () => {
               <div className="template-card-header">
                 <h3>{template.name}</h3>
                 <span className={`template-badge ${template.created_by_role}`}>
-                  {template.created_by_role === 'superadmin' 
-                    ? t('notifications.systemTemplate') 
+                  {template.created_by_role === 'superadmin'
+                    ? t('notifications.systemTemplate')
                     : t('notifications.myTemplate')}
                 </span>
               </div>
-              
+
               <p className="template-description">{template.description}</p>
-              
+
               <div className="template-meta">
                 <span className="template-type">
                   {t(`notifications.types.${template.notification_type}`)}
@@ -377,7 +377,7 @@ const TemplateEditor = ({ template, onSaved, onCancel }) => {
           <button onClick={onCancel} className="btn-secondary">
             {t('common.cancel')}
           </button>
-          <button onClick={handleSave} className="btn-primary" disabled={saving}>
+          <button onClick={handleSave} className="btn-notification-primary" disabled={saving}>
             {saving ? (
               <>
                 <div className="loading-spinner-small"></div>

@@ -93,7 +93,7 @@
 }
 
 .calendar-section-title svg {
-  color: #16a34a;
+  color: #4f46e5;
 }
 
 .calendar-section-description {
@@ -185,11 +185,11 @@
   display: none;
 }
 
-.schedule-toggle input:checked + .toggle-slider {
-  background: #16a34a;
+.schedule-toggle input:checked+.toggle-slider {
+  background: #4f46e5;
 }
 
-.schedule-toggle input:checked + .toggle-slider::before {
+.schedule-toggle input:checked+.toggle-slider::before {
   left: 23px;
 }
 
@@ -258,9 +258,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #16a34a;
-  color: white;
-  border: none;
+  background: #4f46e5 !important;
+  color: white !important;
+  border: none !important;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-weight: 600;
@@ -269,7 +269,7 @@
 }
 
 .save-schedule-btn:hover:not(:disabled) {
-  background: #15803d;
+  background: #4338ca !important;
 }
 
 .save-schedule-btn:disabled {
@@ -340,9 +340,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #16a34a;
-  color: white;
-  border: none;
+  background: #4f46e5 !important;
+  color: white !important;
+  border: none !important;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -352,7 +352,7 @@
 }
 
 .btn-primary-sm:hover {
-  background: #15803d;
+  background: #4338ca !important;
 }
 
 .btn-secondary-sm {
@@ -430,9 +430,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #16a34a;
-  color: white;
-  border: none;
+  background: #4f46e5 !important;
+  color: white !important;
+  border: none !important;
   padding: 0.75rem 1.25rem;
   border-radius: 8px;
   font-weight: 600;
@@ -441,7 +441,7 @@
 }
 
 .add-closure-btn:hover {
-  background: #15803d;
+  background: #4338ca !important;
 }
 
 .closures-list {
@@ -503,8 +503,8 @@
 }
 
 .recurring-badge {
-  background: #dcfce7;
-  color: #166534;
+  background: #f3e8ff;
+  color: #4338ca;
 }
 
 .closure-dates {
@@ -733,8 +733,8 @@
 .closure-form-select:focus,
 .closure-form-textarea:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 .closure-form-textarea {
@@ -801,8 +801,8 @@
 }
 
 .closure-scope-option.selected {
-  border-color: #16a34a;
-  background: #f0fdf4;
+  border-color: #4f46e5;
+  background: #f3e8ff;
 }
 
 .closure-scope-label {
@@ -824,19 +824,19 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: #16a34a;
-  color: white;
-  border: none;
+  background: #4f46e5 !important;
+  color: white !important;
+  border: none !important;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #15803d;
+  background: #4338ca !important;
 }
 
 .btn-primary:disabled {
@@ -893,6 +893,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+
   .schedule-table-header,
   .schedule-row {
     grid-template-columns: 1fr;
@@ -938,20 +939,20 @@
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .calendar-tab-content {
     padding: 1rem;
   }
-  
+
   .modal-overlay {
     padding: 0.5rem;
   }
-  
+
   .modal-content {
     max-width: 100%;
     max-height: 95vh;
   }
-  
+
   .resource-schedule-modal,
   .closure-modal {
     max-width: 100%;

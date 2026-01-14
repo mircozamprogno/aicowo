@@ -81,8 +81,8 @@
 }
 
 .stat-icon.paid {
-  background: #d1fae5;
-  color: #065f46;
+  background: #f3e8ff;
+  color: #4f46e5;
 }
 
 .stat-icon.overdue {
@@ -284,8 +284,8 @@
 }
 
 .status-paid {
-  background: #d1fae5;
-  color: #065f46;
+  background: #f3e8ff;
+  color: #4f46e5;
 }
 
 .status-pending {
@@ -333,7 +333,7 @@
 }
 
 .action-btn.download-btn:hover {
-  color: #10b981;
+  color: #4f46e5;
 }
 
 .action-btn:disabled {
@@ -350,6 +350,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

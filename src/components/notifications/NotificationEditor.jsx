@@ -18,7 +18,7 @@ const NotificationEditor = ({ value, onChange, showPreview = false, onTogglePrev
   const execCommand = (command, value = null) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
-    
+
     if (editorRef.current) {
       isTypingRef.current = true;
       onChange(editorRef.current.innerHTML);
@@ -31,7 +31,7 @@ const NotificationEditor = ({ value, onChange, showPreview = false, onTogglePrev
 
     const selection = window.getSelection();
     let linkText = prompt(t('notifications.enterLinkText') || 'Enter link text:');
-    
+
     if (!linkText) {
       linkText = url;
     }
@@ -42,8 +42,8 @@ const NotificationEditor = ({ value, onChange, showPreview = false, onTogglePrev
     editor.focus();
 
     // Create the link HTML
-    const linkHtml = `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #16a34a; text-decoration: underline;">${linkText}</a>`;
-    
+    const linkHtml = `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #4f46e5; text-decoration: underline;">${linkText}</a>`;
+
     if (selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       range.deleteContents();
@@ -72,11 +72,11 @@ const NotificationEditor = ({ value, onChange, showPreview = false, onTogglePrev
 
   const renderPreview = () => {
     let previewHtml = value;
-    
+
     // Replace sample data variables
     Object.entries(sampleData).forEach(([variable, replaceValue]) => {
       previewHtml = previewHtml.replace(
-        new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), 
+        new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'),
         `<strong>${replaceValue}</strong>`
       );
     });
@@ -139,7 +139,7 @@ const NotificationEditor = ({ value, onChange, showPreview = false, onTogglePrev
           suppressContentEditableWarning={true}
         />
       ) : (
-        <div 
+        <div
           className="notification-preview"
           dangerouslySetInnerHTML={{ __html: renderPreview() }}
         />

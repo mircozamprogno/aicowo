@@ -1,5 +1,5 @@
 // src/components/notifications/SentNotifications.jsx
-import { Calendar, Edit, Eye, FileText, Search, Trash2 } from 'lucide-react';
+import { Calendar, Edit, Eye, FileText, Search, Send, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -274,7 +274,7 @@ const SentNotifications = () => {
                           className="action-btn publish"
                           title={t('notifications.publish')}
                         >
-                          {t('notifications.publish')}
+                          <Send size={16} />
                         </button>
                       </>
                     )}
