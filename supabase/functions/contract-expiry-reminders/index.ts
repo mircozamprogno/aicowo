@@ -1,5 +1,4 @@
-// Contract Expiry Reminder Edge Function
-// Runs daily at 01:00 CET to send expiry reminder emails
+// supabase/functions/contract-expiry-reminders/index.ts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
@@ -17,6 +16,7 @@ interface EmailResult {
     days_difference: number;
     success: boolean;
     error?: string;
+    skipped?: string;
 }
 
 serve(async (req) => {
@@ -27,7 +27,6 @@ serve(async (req) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Calculate target dates
         const threeDaysBefore = new Date(today);
         threeDaysBefore.setDate(today.getDate() + 3);
 
@@ -47,24 +46,29 @@ serve(async (req) => {
             oneDayAfter: oneDayAfter.toISOString().split('T')[0]
         });
 
-        // Fetch contracts that match our criteria
+        // **IMPROVEMENT: Add contract_status and auto_renew filters**
         const { data: contracts, error: contractsError } = await supabase
             .from("contracts")
             .select(`
-        id,
-        contract_number,
-        end_date,
-        service_name,
-        service_type,
-        partner_uuid,
-        customers (
-          first_name,
-          second_name,
-          email,
-          company_name
-        )
-      `)
-            .or(`end_date.eq.${threeDaysBefore.toISOString().split('T')[0]},end_date.eq.${twoDaysBefore.toISOString().split('T')[0]},end_date.eq.${oneDayBefore.toISOString().split('T')[0]},end_date.eq.${oneDayAfter.toISOString().split('T')[0]}`);
+                id,
+                contract_number,
+                end_date,
+                service_name,
+                service_type,
+                service_cost,
+                service_currency,
+                partner_uuid,
+                auto_renew,
+                customers (
+                    first_name,
+                    second_name,
+                    email,
+                    company_name
+                )
+            `)
+            .or(`end_date.eq.${threeDaysBefore.toISOString().split('T')[0]},end_date.eq.${twoDaysBefore.toISOString().split('T')[0]},end_date.eq.${oneDayBefore.toISOString().split('T')[0]},end_date.eq.${oneDayAfter.toISOString().split('T')[0]}`)
+            .eq("contract_status", "active")
+            .eq("is_archived", false);
 
         if (contractsError) {
             throw contractsError;
@@ -85,7 +89,6 @@ serve(async (req) => {
 
         const results: EmailResult[] = [];
 
-        // Process each contract
         for (const contract of contracts) {
             try {
                 const endDate = new Date(contract.end_date);
@@ -94,6 +97,42 @@ serve(async (req) => {
                 const daysDifference = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
                 console.log(`\n📧 Processing contract ${contract.contract_number}, days diff: ${daysDifference}`);
+
+                // **IMPROVEMENT 1: Skip auto-renewing contracts**
+                if (contract.auto_renew) {
+                    console.log(`⏭️ Skipping auto-renewing contract ${contract.contract_number}`);
+                    results.push({
+                        contract_id: contract.id,
+                        contract_number: contract.contract_number,
+                        customer_email: contract.customers?.email || "unknown",
+                        days_difference: daysDifference,
+                        success: true,
+                        skipped: "auto_renew_enabled"
+                    });
+                    continue;
+                }
+
+                // **IMPROVEMENT 2: Check if reminder already sent today**
+                const { data: existingReminder } = await supabase
+                    .from("activity_log")
+                    .select("id")
+                    .eq("entity_id", contract.id)
+                    .eq("action_type", "expiry_reminder_sent")
+                    .gte("created_at", today.toISOString())
+                    .maybeSingle();
+
+                if (existingReminder) {
+                    console.log(`⏭️ Reminder already sent today for ${contract.contract_number}`);
+                    results.push({
+                        contract_id: contract.id,
+                        contract_number: contract.contract_number,
+                        customer_email: contract.customers?.email || "unknown",
+                        days_difference: daysDifference,
+                        success: true,
+                        skipped: "already_sent_today"
+                    });
+                    continue;
+                }
 
                 // Fetch partner data
                 const { data: partnerData, error: partnerError } = await supabase
@@ -150,26 +189,39 @@ serve(async (req) => {
                     expiryStatus = `scaduto da ${Math.abs(daysDifference)} ${Math.abs(daysDifference) === 1 ? 'giorno' : 'giorni'}`;
                 }
 
-                // Replace variables in subject and body
+                // Replace variables
                 emailSubject = emailSubject
                     .replace(/\{\{customer_name\}\}/g, customerName)
                     .replace(/\{\{contract_number\}\}/g, contract.contract_number)
                     .replace(/\{\{service_name\}\}/g, contract.service_name)
                     .replace(/\{\{end_date\}\}/g, formattedEndDate)
+                    .replace(/\{\{expiry_date\}\}/g, formattedEndDate)
                     .replace(/\{\{days_until_expiry\}\}/g, daysDifference.toString())
                     .replace(/\{\{expiry_status\}\}/g, expiryStatus)
-                    .replace(/\{\{partner_name\}\}/g, partnerName);
+                    .replace(/\{\{partner_name\}\}/g, partnerName)
+                    .replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || "")
+                    .replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || "");
+
+                const formattedAmount = new Intl.NumberFormat('it-IT', {
+                    style: 'currency',
+                    currency: contract.service_currency || 'EUR'
+                }).format(contract.service_cost || 0);
 
                 bodyHtml = bodyHtml
                     .replace(/\{\{customer_name\}\}/g, customerName)
                     .replace(/\{\{contract_number\}\}/g, contract.contract_number)
                     .replace(/\{\{service_name\}\}/g, contract.service_name)
                     .replace(/\{\{contract_type\}\}/g, contract.service_type)
+                    .replace(/\{\{expiry_type\}\}/g, contract.service_type)
                     .replace(/\{\{end_date\}\}/g, formattedEndDate)
+                    .replace(/\{\{expiry_date\}\}/g, formattedEndDate)
                     .replace(/\{\{days_until_expiry\}\}/g, daysDifference.toString())
                     .replace(/\{\{expiry_status\}\}/g, expiryStatus)
                     .replace(/\{\{partner_name\}\}/g, partnerName)
-                    .replace(/\{\{structure_name\}\}/g, partnerData.structure_name || "");
+                    .replace(/\{\{structure_name\}\}/g, partnerData.structure_name || "")
+                    .replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || "")
+                    .replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || "")
+                    .replace(/\{\{amount\}\}/g, formattedAmount);
 
                 // Fetch banner URL
                 const { data: bannerFiles } = await supabase.storage
@@ -269,8 +321,9 @@ serve(async (req) => {
 
         const successCount = results.filter(r => r.success).length;
         const failureCount = results.filter(r => !r.success).length;
+        const skippedCount = results.filter(r => r.skipped).length;
 
-        console.log(`\n✅ Completed: ${successCount} succeeded, ${failureCount} failed`);
+        console.log(`\n✅ Completed: ${successCount} succeeded, ${failureCount} failed, ${skippedCount} skipped`);
 
         return new Response(
             JSON.stringify({
@@ -278,6 +331,7 @@ serve(async (req) => {
                 processed: results.length,
                 succeeded: successCount,
                 failed: failureCount,
+                skipped: skippedCount,
                 results: results
             }),
             { headers: { "Content-Type": "application/json" } }

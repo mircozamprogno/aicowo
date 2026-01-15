@@ -251,11 +251,42 @@ const ContractFormPage = () => {
         .order('service_name');
 
       if (!servicesError && servicesData) {
+        let finalServices = servicesData;
+
+        // Check if the contract's service is in the list (it might be inactive/archived)
+        const currentServiceInList = servicesData.find(s => s.id === contractToEdit.service_id);
+
+        if (!currentServiceInList && contractToEdit.service_id) {
+          // Fetch the specific service regardless of status
+          const { data: missingService, error: missingServiceError } = await supabase
+            .from('services')
+            .select(`
+              *,
+              location_resources!fk_services_location_resource (
+                id,
+                resource_name,
+                resource_type,
+                locations (
+                  id,
+                  location_name
+                )
+              )
+            `)
+            .eq('id', contractToEdit.service_id)
+            .single();
+
+          if (!missingServiceError && missingService) {
+            finalServices = [...finalServices, missingService];
+          } else if (missingServiceError) {
+            logger.error('Error fetching missing service for contract:', missingServiceError);
+          }
+        }
+
         // Set available services first
-        setAvailableServices(servicesData);
+        setAvailableServices(finalServices);
 
         // Find and set the selected service
-        const selectedSvc = servicesData.find(s => s.id === contractToEdit.service_id);
+        const selectedSvc = finalServices.find(s => s.id === contractToEdit.service_id);
         if (selectedSvc) {
           setSelectedService(selectedSvc);
 
