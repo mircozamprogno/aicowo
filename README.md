@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.01.15 V 0.935 Zero entries residuali
 2026.01.15 V 0.930 Renewable Contracts
 2026.01.14 V 0.920 Massive update 
 2025.12.07 V 0.915 Codice Sconto bug fix 
