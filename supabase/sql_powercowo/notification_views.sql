@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict skNe3GTaUJ7WmPzAg1CKSxLCBrsmPpXKf7pnJLCEOeAWSRIGfyLWGzgpWTxDe3H
+\restrict X6jicM2OuvSJKiwbuRsG2XV5GGqQ8fa1H278C7oEnV9pcDLjA4C1OtGRMubsaco
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -109,17 +109,21 @@ ALTER TABLE ONLY public.notification_views
 
 
 --
--- Name: notification_views Allow users to manage notification views; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notification_views Admins view partner notification views; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow users to manage notification views" ON public.notification_views TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Admins view partner notification views" ON public.notification_views FOR SELECT TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) AND (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text])))))));
 
 
 --
--- Name: notification_views Allow users to view notification views; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notification_views Users manage own views; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow users to view notification views" ON public.notification_views FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Users manage own views" ON public.notification_views TO authenticated USING ((user_uuid = auth.uid()));
 
 
 --
@@ -141,5 +145,5 @@ GRANT ALL ON TABLE public.notification_views TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict skNe3GTaUJ7WmPzAg1CKSxLCBrsmPpXKf7pnJLCEOeAWSRIGfyLWGzgpWTxDe3H
+\unrestrict X6jicM2OuvSJKiwbuRsG2XV5GGqQ8fa1H278C7oEnV9pcDLjA4C1OtGRMubsaco
 

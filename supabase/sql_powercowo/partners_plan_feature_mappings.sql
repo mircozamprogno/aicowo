@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uFId1NKRaXbvi4kZBzsUb8DfxgwL24uSoCm9yU6MNGl5ksYxX2ZCE3P4KnQmRD9
+\restrict hn8pOStjGqGVc4qOgC0v7K3lFcSM6S1ibhlyNzQMN7MLRbmu4TwPqOOno8CQWBw
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -121,10 +121,19 @@ ALTER TABLE ONLY public.partners_plan_feature_mappings
 
 
 --
--- Name: partners_plan_feature_mappings All ; Type: POLICY; Schema: public; Owner: postgres
+-- Name: partners_plan_feature_mappings Authenticated users view feature mappings; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All " ON public.partners_plan_feature_mappings TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users view feature mappings" ON public.partners_plan_feature_mappings FOR SELECT TO authenticated USING (true);
+
+
+--
+-- Name: partners_plan_feature_mappings Superadmins manage feature mappings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins manage feature mappings" ON public.partners_plan_feature_mappings TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -155,5 +164,5 @@ GRANT ALL ON SEQUENCE public.partners_plan_feature_mappings_id_seq TO service_ro
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uFId1NKRaXbvi4kZBzsUb8DfxgwL24uSoCm9yU6MNGl5ksYxX2ZCE3P4KnQmRD9
+\unrestrict hn8pOStjGqGVc4qOgC0v7K3lFcSM6S1ibhlyNzQMN7MLRbmu4TwPqOOno8CQWBw
 

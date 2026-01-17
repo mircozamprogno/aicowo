@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict wTONZhSF0bqALzdjNljOm7dXEDhXcdaID23Rvt6fVDWODisOHi7nPSume21XMKG
+\restrict xJEkqVvbOdHNduip6f8f0ih64nzughVwtuKv7iLK3GUHCTPbOnPiS7RHVoZbrHj
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -96,10 +96,38 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- Name: profiles All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: profiles Admins view partner profiles; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.profiles TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Admins view partner profiles" ON public.profiles FOR SELECT TO authenticated USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
+
+
+--
+-- Name: profiles Superadmins manage profiles; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins manage profiles" ON public.profiles TO authenticated USING (public.is_superadmin());
+
+
+--
+-- Name: profiles Superadmins view all profiles; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins view all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.is_superadmin());
+
+
+--
+-- Name: profiles Users update own profile; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users update own profile" ON public.profiles FOR UPDATE TO authenticated USING ((id = auth.uid())) WITH CHECK ((id = auth.uid()));
+
+
+--
+-- Name: profiles Users view own profile; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users view own profile" ON public.profiles FOR SELECT TO authenticated USING ((id = auth.uid()));
 
 
 --
@@ -121,5 +149,5 @@ GRANT ALL ON TABLE public.profiles TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict wTONZhSF0bqALzdjNljOm7dXEDhXcdaID23Rvt6fVDWODisOHi7nPSume21XMKG
+\unrestrict xJEkqVvbOdHNduip6f8f0ih64nzughVwtuKv7iLK3GUHCTPbOnPiS7RHVoZbrHj
 

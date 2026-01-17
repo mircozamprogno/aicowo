@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6LqcnvHy8aND2WL7HCfzVRduSThfIwbKZe2vXALmWgJOQPqTT9JzytXoTBxkjrf
+\restrict gKbGvr8U2VcKwKR6cmeVWFzCb2cgYvmdCM83Mh2cFkn9gY8LdrmD7fsLaDiSE3P
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -190,36 +190,28 @@ ALTER TABLE ONLY public.customers
 -- Name: customers Superadmins can view all customers; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Superadmins can view all customers" ON public.customers USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
+CREATE POLICY "Superadmins can view all customers" ON public.customers USING (public.is_superadmin());
 
 
 --
 -- Name: customers Users can insert customers for their partner; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Users can insert customers for their partner" ON public.customers FOR INSERT WITH CHECK ((partner_uuid = ( SELECT profiles.partner_uuid
-   FROM public.profiles
-  WHERE (profiles.id = auth.uid()))));
+CREATE POLICY "Users can insert customers for their partner" ON public.customers FOR INSERT WITH CHECK ((partner_uuid = public.get_my_partner_uuid()));
 
 
 --
 -- Name: customers Users can update customers from their partner; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Users can update customers from their partner" ON public.customers FOR UPDATE USING ((partner_uuid = ( SELECT profiles.partner_uuid
-   FROM public.profiles
-  WHERE (profiles.id = auth.uid()))));
+CREATE POLICY "Users can update customers from their partner" ON public.customers FOR UPDATE USING ((partner_uuid = public.get_my_partner_uuid()));
 
 
 --
 -- Name: customers Users can view customers from their partner; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Users can view customers from their partner" ON public.customers FOR SELECT USING ((partner_uuid = ( SELECT profiles.partner_uuid
-   FROM public.profiles
-  WHERE (profiles.id = auth.uid()))));
+CREATE POLICY "Users can view customers from their partner" ON public.customers FOR SELECT USING ((partner_uuid = public.get_my_partner_uuid()));
 
 
 --
@@ -250,5 +242,5 @@ GRANT ALL ON SEQUENCE public.customers_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6LqcnvHy8aND2WL7HCfzVRduSThfIwbKZe2vXALmWgJOQPqTT9JzytXoTBxkjrf
+\unrestrict gKbGvr8U2VcKwKR6cmeVWFzCb2cgYvmdCM83Mh2cFkn9gY8LdrmD7fsLaDiSE3P
 

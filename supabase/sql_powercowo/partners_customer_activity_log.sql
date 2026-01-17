@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict v7Jc8kRRHEoKMS3yIb68pLzgt7YZT0AaBqc5KxrcBrPfmNxqa8ICo5yvlCMT6w3
+\restrict ssDB7rUDB1UK8byi33FurGGogOjg9u1thhiahYvaBj0nexn5Cfzfr79uKo5kM0s
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -124,10 +124,25 @@ ALTER TABLE ONLY public.partners_customer_activity_log
 
 
 --
--- Name: partners_customer_activity_log All Policies; Type: POLICY; Schema: public; Owner: postgres
+-- Name: partners_customer_activity_log Insert own partner activity log; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policies" ON public.partners_customer_activity_log TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Insert own partner activity log" ON public.partners_customer_activity_log FOR INSERT TO authenticated WITH CHECK (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text))))));
+
+
+--
+-- Name: partners_customer_activity_log Partners view own activity log; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partners view own activity log" ON public.partners_customer_activity_log FOR SELECT TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text))))));
 
 
 --
@@ -158,5 +173,5 @@ GRANT ALL ON SEQUENCE public.partners_customer_activity_log_id_seq TO service_ro
 -- PostgreSQL database dump complete
 --
 
-\unrestrict v7Jc8kRRHEoKMS3yIb68pLzgt7YZT0AaBqc5KxrcBrPfmNxqa8ICo5yvlCMT6w3
+\unrestrict ssDB7rUDB1UK8byi33FurGGogOjg9u1thhiahYvaBj0nexn5Cfzfr79uKo5kM0s
 

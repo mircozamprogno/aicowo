@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict CbvelvZ4Y5TDaEx21te9AwgY9zp4ybn4Y0lYqpqSrrzeL7BkBTNrv1FomciaaUs
+\restrict stFFvfyW2mvxPETEgydRMZwhp7eP9F6wxIJ2PW7kzqNmcAAZCc9WRzOejc4hkP3
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -208,5 +208,5 @@ GRANT ALL ON SEQUENCE public.location_operating_schedules_id_seq TO service_role
 -- PostgreSQL database dump complete
 --
 
-\unrestrict CbvelvZ4Y5TDaEx21te9AwgY9zp4ybn4Y0lYqpqSrrzeL7BkBTNrv1FomciaaUs
+\unrestrict stFFvfyW2mvxPETEgydRMZwhp7eP9F6wxIJ2PW7kzqNmcAAZCc9WRzOejc4hkP3
 

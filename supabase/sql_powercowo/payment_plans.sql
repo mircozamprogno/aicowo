@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict flu6G6I1c98UhvPIAsMdDpUsr6hNuTSBLLgwGYqua5YLwzTcxZacyBIqdKPP0z0
+\restrict N271HVuxb1ILAnV9SIaDDfc02ZnhoteE4mPAyWNkRzFvDcVtUnmr5mOtRcORx3d
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -119,10 +119,31 @@ ALTER TABLE ONLY public.payment_plans
 
 
 --
--- Name: payment_plans All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: payment_plans Manage via partner ownership; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.payment_plans TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Manage via partner ownership" ON public.payment_plans TO authenticated USING (((contract_id IN ( SELECT c.id
+   FROM public.contracts c
+  WHERE (c.partner_uuid = ( SELECT profiles.partner_uuid
+           FROM public.profiles
+          WHERE (profiles.id = auth.uid()))))) AND (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text])))))));
+
+
+--
+-- Name: payment_plans View via contract access; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "View via contract access" ON public.payment_plans FOR SELECT TO authenticated USING (((contract_id IN ( SELECT c.id
+   FROM public.contracts c
+  WHERE ((c.partner_uuid = ( SELECT profiles.partner_uuid
+           FROM public.profiles
+          WHERE (profiles.id = auth.uid()))) OR (c.customer_id IN ( SELECT customers.id
+           FROM public.customers
+          WHERE (customers.user_id = auth.uid())))))) OR (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text))))));
 
 
 --
@@ -153,5 +174,5 @@ GRANT ALL ON SEQUENCE public.payment_plans_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict flu6G6I1c98UhvPIAsMdDpUsr6hNuTSBLLgwGYqua5YLwzTcxZacyBIqdKPP0z0
+\unrestrict N271HVuxb1ILAnV9SIaDDfc02ZnhoteE4mPAyWNkRzFvDcVtUnmr5mOtRcORx3d
 

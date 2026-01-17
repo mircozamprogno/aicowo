@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Xazvln5WHRLXnUWLYeHyGo3iKYTvLlgdD5DT0weCK0IZwmKja3GH5cRyds7DTxk
+\restrict QJbYVSSzeTxGgNy3qeSMSVbHmXvtz40nMtqpLwffRaLgYKld1uUhANNpWAZgOZq
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -85,17 +85,32 @@ ALTER TABLE ONLY public.notification_templates
 
 
 --
--- Name: notification_templates Allow authenticated users to manage templates; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notification_templates Partner admins manage own templates; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to manage templates" ON public.notification_templates TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Partner admins manage own templates" ON public.notification_templates TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) AND (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))));
 
 
 --
--- Name: notification_templates Allow authenticated users to view templates; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notification_templates Superadmins manage all templates; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to view templates" ON public.notification_templates FOR SELECT TO authenticated USING ((is_active = true));
+CREATE POLICY "Superadmins manage all templates" ON public.notification_templates TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
+
+
+--
+-- Name: notification_templates Users view relevant templates; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users view relevant templates" ON public.notification_templates FOR SELECT TO authenticated USING (((is_active = true) AND ((partner_uuid IS NULL) OR (partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))))));
 
 
 --
@@ -117,5 +132,5 @@ GRANT ALL ON TABLE public.notification_templates TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Xazvln5WHRLXnUWLYeHyGo3iKYTvLlgdD5DT0weCK0IZwmKja3GH5cRyds7DTxk
+\unrestrict QJbYVSSzeTxGgNy3qeSMSVbHmXvtz40nMtqpLwffRaLgYKld1uUhANNpWAZgOZq
 

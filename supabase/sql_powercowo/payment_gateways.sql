@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ttg3ysgXrmEoatCNTfyfAEtsthgMv5gmkvdp1iSf2vCegEIxodzk5yU2c37cnzk
+\restrict OGEVkNW9UKc9L3TRPXohufzwfZOZpfYm5K0aGy43hLqHCc4nFQXgfUP2S80J3yE
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -94,10 +94,23 @@ CREATE INDEX idx_payment_gateways_type ON public.payment_gateways USING btree (g
 
 
 --
--- Name: payment_gateways All policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: payment_gateways Partner admins manage own gateways; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All policy" ON public.payment_gateways TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Partner admins manage own gateways" ON public.payment_gateways TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) AND (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))));
+
+
+--
+-- Name: payment_gateways Superadmins manage all gateways; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins manage all gateways" ON public.payment_gateways TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -128,5 +141,5 @@ GRANT ALL ON SEQUENCE public.payment_gateways_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ttg3ysgXrmEoatCNTfyfAEtsthgMv5gmkvdp1iSf2vCegEIxodzk5yU2c37cnzk
+\unrestrict OGEVkNW9UKc9L3TRPXohufzwfZOZpfYm5K0aGy43hLqHCc4nFQXgfUP2S80J3yE
 

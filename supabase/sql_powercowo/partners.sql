@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Sh4mRWWySuFZi1aafzJ8bKN42WYE6WSWsceXr9BVhwemBW5yBlZR7k15SFcT6q5
+\restrict AdzWjwkjRNoxFp1kLFFAyN6xew20SRJKiXo99eLxNngQUVfjjdvaTQjA08IZ84h
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -167,10 +167,31 @@ CREATE TRIGGER update_partners_updated_at BEFORE UPDATE ON public.partners FOR E
 
 
 --
--- Name: partners All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: partners Admins update own partner; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.partners TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Admins update own partner" ON public.partners FOR UPDATE TO authenticated USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
+
+
+--
+-- Name: partners Admins view own partner; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Admins view own partner" ON public.partners FOR SELECT TO authenticated USING ((partner_uuid = public.get_my_partner_uuid()));
+
+
+--
+-- Name: partners Superadmins manage partners; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins manage partners" ON public.partners TO authenticated USING (public.is_superadmin());
+
+
+--
+-- Name: partners Superadmins view all partners; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins view all partners" ON public.partners FOR SELECT TO authenticated USING (public.is_superadmin());
 
 
 --
@@ -201,5 +222,5 @@ GRANT ALL ON SEQUENCE public.partners_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Sh4mRWWySuFZi1aafzJ8bKN42WYE6WSWsceXr9BVhwemBW5yBlZR7k15SFcT6q5
+\unrestrict AdzWjwkjRNoxFp1kLFFAyN6xew20SRJKiXo99eLxNngQUVfjjdvaTQjA08IZ84h
 

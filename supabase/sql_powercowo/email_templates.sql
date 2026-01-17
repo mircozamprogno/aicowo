@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict KjcDUL75QnosfI7cHmWY0ouZfl5YRXkRDEWSpdJUviEiICobcJeuTNqAyMYorS7
+\restrict YLi4adzXuuBe5NMHy0oEZNiCnxd3ONm7Pa8cl1zaMU79JqwiHCOk3lxnRHL8n9o
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -143,10 +143,32 @@ ALTER TABLE ONLY public.email_templates
 
 
 --
--- Name: email_templates All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: email_templates Partner admins manage own templates; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.email_templates TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Partner admins manage own templates" ON public.email_templates TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) AND (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text))))));
+
+
+--
+-- Name: email_templates Partner admins view own templates; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins view own templates" ON public.email_templates FOR SELECT TO authenticated USING ((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))));
+
+
+--
+-- Name: email_templates Superadmins manage all templates; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins manage all templates" ON public.email_templates TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -177,5 +199,5 @@ GRANT ALL ON SEQUENCE public.email_templates_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict KjcDUL75QnosfI7cHmWY0ouZfl5YRXkRDEWSpdJUviEiICobcJeuTNqAyMYorS7
+\unrestrict YLi4adzXuuBe5NMHy0oEZNiCnxd3ONm7Pa8cl1zaMU79JqwiHCOk3lxnRHL8n9o
 

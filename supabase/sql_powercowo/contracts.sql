@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uuEY3gLm9QGer8pp1wbEt2ngc2e5yfh2ACgIkGf5YDkSZZL2SZKBP1HLpU5pSiC
+\restrict VFHva6PvAFmxcjheDNmQ9aoJ5ccfKXQHTS4yNXOvTCS7z6z8K7LASKCyZ4koYnk
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -320,30 +320,29 @@ ALTER TABLE ONLY public.contracts
 ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: contracts customer_own_contracts; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contracts Customers view own contracts; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY customer_own_contracts ON public.contracts TO authenticated USING ((EXISTS ( SELECT 1
-   FROM public.customers
-  WHERE ((customers.user_id = auth.uid()) AND (customers.id = contracts.customer_id)))));
-
+CREATE POLICY "Customers view own contracts" ON public.contracts FOR SELECT TO authenticated USING (
+  EXISTS (
+    SELECT 1 FROM public.customers
+    WHERE customers.id = contracts.customer_id
+    AND customers.user_id = auth.uid()
+  )
+);
 
 --
 -- Name: contracts partner_admin_own_contracts; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY partner_admin_own_contracts ON public.contracts TO authenticated USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text) AND (profiles.partner_uuid = contracts.partner_uuid)))));
+CREATE POLICY partner_admin_own_contracts ON public.contracts TO authenticated USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
 -- Name: contracts superadmin_all_contracts; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY superadmin_all_contracts ON public.contracts TO authenticated USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
+CREATE POLICY superadmin_all_contracts ON public.contracts TO authenticated USING (public.is_superadmin());
 
 
 --
@@ -368,5 +367,5 @@ GRANT ALL ON SEQUENCE public.contracts_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uuEY3gLm9QGer8pp1wbEt2ngc2e5yfh2ACgIkGf5YDkSZZL2SZKBP1HLpU5pSiC
+\unrestrict VFHva6PvAFmxcjheDNmQ9aoJ5ccfKXQHTS4yNXOvTCS7z6z8K7LASKCyZ4koYnk
 

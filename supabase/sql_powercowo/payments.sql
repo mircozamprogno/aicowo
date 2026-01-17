@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict BcFI9HWiPGoDVyic6Kd0t8JnMs9r2gOky9arhmbtFNnbqP44ltu8FxFGM85hg6W
+\restrict I0aFDle0i8h6XWTrK5Ic3Tz9AeJKMXREvWHlimTQ3ZhEXzJ9xgAMeb2eBTFoD67
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -203,10 +203,24 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: payments All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: payments Partner admins manage own payments; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.payments USING (true) WITH CHECK (true);
+CREATE POLICY "Partner admins manage own payments" ON public.payments TO authenticated USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
+
+
+--
+-- Name: payments Partner admins view own payments; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins view own payments" ON public.payments FOR SELECT TO authenticated USING ((partner_uuid = public.get_my_partner_uuid()));
+
+
+--
+-- Name: payments Superadmins view all payments; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins view all payments" ON public.payments FOR SELECT TO authenticated USING (public.is_superadmin());
 
 
 --
@@ -237,5 +251,5 @@ GRANT ALL ON SEQUENCE public.payments_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict BcFI9HWiPGoDVyic6Kd0t8JnMs9r2gOky9arhmbtFNnbqP44ltu8FxFGM85hg6W
+\unrestrict I0aFDle0i8h6XWTrK5Ic3Tz9AeJKMXREvWHlimTQ3ZhEXzJ9xgAMeb2eBTFoD67
 

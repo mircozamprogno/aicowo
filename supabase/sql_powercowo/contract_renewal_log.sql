@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict AxbgcOMzeQkZienpmyObZOPR8zMpnueroZdeQ5D8huE8zggbynpdUoa5Mxagbqd
+\restrict xEwZ9uIxPU2JyQ1VF7DpJSdnuiIgMrTyi7oD6ms9Yk5d0cVbQwnATH4ULM1yQR3
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -141,10 +141,14 @@ ALTER TABLE ONLY public.contract_renewal_log
 
 
 --
--- Name: contract_renewal_log All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contract_renewal_log View own partner renewals; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.contract_renewal_log TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "View own partner renewals" ON public.contract_renewal_log FOR SELECT TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text))))));
 
 
 --
@@ -175,5 +179,5 @@ GRANT ALL ON SEQUENCE public.contract_renewal_log_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict AxbgcOMzeQkZienpmyObZOPR8zMpnueroZdeQ5D8huE8zggbynpdUoa5Mxagbqd
+\unrestrict xEwZ9uIxPU2JyQ1VF7DpJSdnuiIgMrTyi7oD6ms9Yk5d0cVbQwnATH4ULM1yQR3
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ynbLgInZbhIMlSpZgVhxbLY3eCFU48XF0mBR2zRudbmtb66iq1cg1Gy220qxZ9L
+\restrict 00cxDaaQ2p1pVe0oxxZiF20GqGxmAJMHzz6e1zSIyRHaS58BbqG3yiEVw7uJWjn
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -216,10 +216,33 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: bookings All policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: bookings Customers view own bookings; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All policy" ON public.bookings TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Customers view own bookings" ON public.bookings FOR SELECT TO authenticated USING ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
+
+--
+-- Name: bookings Partner admins manage own bookings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins manage own bookings" ON public.bookings TO authenticated USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
+
+
+--
+-- Name: bookings Partner admins view own bookings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins view own bookings" ON public.bookings FOR SELECT TO authenticated USING ((partner_uuid = public.get_my_partner_uuid()));
+
+
+--
+-- Name: bookings Superadmins view all bookings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins view all bookings" ON public.bookings FOR SELECT TO authenticated USING (public.is_superadmin());
 
 
 --
@@ -250,5 +273,5 @@ GRANT ALL ON SEQUENCE public.bookings_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ynbLgInZbhIMlSpZgVhxbLY3eCFU48XF0mBR2zRudbmtb66iq1cg1Gy220qxZ9L
+\unrestrict 00cxDaaQ2p1pVe0oxxZiF20GqGxmAJMHzz6e1zSIyRHaS58BbqG3yiEVw7uJWjn
 

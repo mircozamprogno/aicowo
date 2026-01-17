@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict UIUXK02gQhtQks6lhvN6gjdAuS5Uq0eYwQvSvy2qWKNIkgwnWveIfGoraXCSn3a
+\restrict NjNTSjIZ64peErUVcychqkRp31VxNzAVQxRQdSWR1YZKb79omjNUKD1vlgFbsXR
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -89,10 +89,12 @@ CREATE INDEX idx_contract_status_log_execution_time ON public.contract_status_up
 
 
 --
--- Name: contract_status_update_log All Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contract_status_update_log Superadmins view status logs; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policy" ON public.contract_status_update_log TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Superadmins view status logs" ON public.contract_status_update_log FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -123,5 +125,5 @@ GRANT ALL ON SEQUENCE public.contract_status_update_log_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UIUXK02gQhtQks6lhvN6gjdAuS5Uq0eYwQvSvy2qWKNIkgwnWveIfGoraXCSn3a
+\unrestrict NjNTSjIZ64peErUVcychqkRp31VxNzAVQxRQdSWR1YZKb79omjNUKD1vlgFbsXR
 

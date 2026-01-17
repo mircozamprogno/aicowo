@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 0FiKiYdnFjJDntpbZAK2p8XJL44IjGiW82dPGlrbmtfzC3gIO4i9bOVZLhQ8G61
+\restrict T4G9ujamCxC5CpoDJp3XEBM0oqBMoQcwYeWTb6eKFsvK6QygupD4PCdrq1a2Gib
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -142,10 +142,19 @@ ALTER TABLE ONLY public.partners_plan_features
 
 
 --
--- Name: partners_plan_features All; Type: POLICY; Schema: public; Owner: postgres
+-- Name: partners_plan_features Everyone views active features; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All" ON public.partners_plan_features TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Everyone views active features" ON public.partners_plan_features FOR SELECT TO authenticated USING ((is_active = true));
+
+
+--
+-- Name: partners_plan_features Superadmins manage features; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins manage features" ON public.partners_plan_features TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -176,5 +185,5 @@ GRANT ALL ON SEQUENCE public.partners_plan_features_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 0FiKiYdnFjJDntpbZAK2p8XJL44IjGiW82dPGlrbmtfzC3gIO4i9bOVZLhQ8G61
+\unrestrict T4G9ujamCxC5CpoDJp3XEBM0oqBMoQcwYeWTb6eKFsvK6QygupD4PCdrq1a2Gib
 

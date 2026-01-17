@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict M4PeOFCHHDAvU72Rwux95a1b0aJkegI7fuBeQhPRpOa7eK3MEJBINf2M22I1iw5
+\restrict E0zVaNC0SnKWAzAV1PalnbPmKbitudzKQBTQoVg5aYMcKhvCJLqwPaXEtQwm1An
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -199,10 +199,41 @@ ALTER TABLE ONLY public.package_reservations
 
 
 --
--- Name: package_reservations All policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: package_reservations Customers view own reservations; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All policy" ON public.package_reservations TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Customers view own reservations" ON public.package_reservations FOR SELECT TO authenticated USING ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
+
+--
+-- Name: package_reservations Partner admins manage own reservations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins manage own reservations" ON public.package_reservations TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) AND (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text])))))));
+
+
+--
+-- Name: package_reservations Partner admins view own reservations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins view own reservations" ON public.package_reservations FOR SELECT TO authenticated USING ((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))));
+
+
+--
+-- Name: package_reservations Superadmins view all reservations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Superadmins view all reservations" ON public.package_reservations FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -233,5 +264,5 @@ GRANT ALL ON SEQUENCE public.package_reservations_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict M4PeOFCHHDAvU72Rwux95a1b0aJkegI7fuBeQhPRpOa7eK3MEJBINf2M22I1iw5
+\unrestrict E0zVaNC0SnKWAzAV1PalnbPmKbitudzKQBTQoVg5aYMcKhvCJLqwPaXEtQwm1An
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict MJrb1QqSkV9aKcA8HdDHiU7DW5Tuk9vTA6ByQX9ip9p3NvcZAo7CtToduuoojk5
+\restrict OVyImL35HC8H0uHWdMUqZDO4j0KDgoSxvrxPetkkZFrmKsaA8fhQb3ZITclQKZk
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -212,31 +212,24 @@ ALTER TABLE ONLY public.locations
 
 
 --
--- Name: locations Authenticated users can delete locations; Type: POLICY; Schema: public; Owner: postgres
+-- Name: locations Partner admins manage own locations; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Authenticated users can delete locations" ON public.locations FOR DELETE USING ((auth.role() = 'authenticated'::text));
-
-
---
--- Name: locations Authenticated users can insert locations; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Authenticated users can insert locations" ON public.locations FOR INSERT WITH CHECK ((auth.role() = 'authenticated'::text));
+CREATE POLICY "Partner admins manage own locations" ON public.locations TO authenticated USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
--- Name: locations Authenticated users can update locations; Type: POLICY; Schema: public; Owner: postgres
+-- Name: locations Superadmins manage all locations; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Authenticated users can update locations" ON public.locations FOR UPDATE USING ((auth.role() = 'authenticated'::text));
+CREATE POLICY "Superadmins manage all locations" ON public.locations TO authenticated USING (public.is_superadmin());
 
 
 --
--- Name: locations Users can view locations; Type: POLICY; Schema: public; Owner: postgres
+-- Name: locations Users view partner locations; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Users can view locations" ON public.locations FOR SELECT USING (true);
+CREATE POLICY "Users view partner locations" ON public.locations FOR SELECT TO authenticated USING (((partner_uuid = public.get_my_partner_uuid()) OR public.is_superadmin()));
 
 
 --
@@ -267,5 +260,5 @@ GRANT ALL ON SEQUENCE public.locations_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict MJrb1QqSkV9aKcA8HdDHiU7DW5Tuk9vTA6ByQX9ip9p3NvcZAo7CtToduuoojk5
+\unrestrict OVyImL35HC8H0uHWdMUqZDO4j0KDgoSxvrxPetkkZFrmKsaA8fhQb3ZITclQKZk
 

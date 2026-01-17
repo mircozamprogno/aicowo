@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict DvEDRDeI7oS001KoDGxGMbYWjr1xa0cuJlDNcE62l9WKfTqyv6mzWTGvmIRo1Z9
+\restrict TWnVXRYOBAwvxmcL5U3c0ecbPHOmQDE1KkkpLRkYG1aEog9pUy3EtpFJGcLzoD2
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -186,10 +186,14 @@ CREATE POLICY "Partners can update their own discount codes" ON public.customers
 
 
 --
--- Name: customers_discount_codes Select Policy; Type: POLICY; Schema: public; Owner: postgres
+-- Name: customers_discount_codes Users view partner discount codes; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Select Policy" ON public.customers_discount_codes FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Users view partner discount codes" ON public.customers_discount_codes FOR SELECT TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text))))));
 
 
 --
@@ -220,5 +224,5 @@ GRANT ALL ON SEQUENCE public.customers_discount_codes_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DvEDRDeI7oS001KoDGxGMbYWjr1xa0cuJlDNcE62l9WKfTqyv6mzWTGvmIRo1Z9
+\unrestrict TWnVXRYOBAwvxmcL5U3c0ecbPHOmQDE1KkkpLRkYG1aEog9pUy3EtpFJGcLzoD2
 

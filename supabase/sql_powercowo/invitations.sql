@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uYazpecBGYzt2bGrKVOYRe6jOcLkWr7sv0v9MrU89PGsy5Ampi0EsrfWY7T5Wm5
+\restrict cWVZRF1rQxpHRsSpK489PawouU0Cmgms2dfh4Tmzl6oM01C6ec7CHulg7hwJEIj
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -139,35 +139,24 @@ ALTER TABLE ONLY public.invitations
 
 
 --
--- Name: invitations Allow authenticated users to create invitations; Type: POLICY; Schema: public; Owner: postgres
+-- Name: invitations Authorized users update invitations; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to create invitations" ON public.invitations FOR INSERT TO anon, authenticated WITH CHECK ((auth.role() = 'authenticated'::text));
-
-
---
--- Name: invitations Allow invitation updates; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Allow invitation updates" ON public.invitations FOR UPDATE TO anon, authenticated USING (true);
-
-
---
--- Name: invitations Allow public read by invitation_uuid; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Allow public read by invitation_uuid" ON public.invitations FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Authorized users update invitations" ON public.invitations FOR UPDATE TO authenticated USING (((invited_by_user_id = auth.uid()) OR (public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())) OR public.is_superadmin()));
 
 
 --
 -- Name: invitations Invitations access based on user role and partner; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Invitations access based on user role and partner" ON public.invitations TO authenticated USING ((EXISTS ( SELECT 1
-   FROM public.profiles p
-  WHERE ((p.id = auth.uid()) AND ((p.role = 'superadmin'::text) OR ((p.role = 'admin'::text) AND (p.partner_uuid = invitations.partner_uuid))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM public.profiles p
-  WHERE ((p.id = auth.uid()) AND ((p.role = 'superadmin'::text) OR ((p.role = 'admin'::text) AND (p.partner_uuid = invitations.partner_uuid)))))));
+CREATE POLICY "Invitations access based on user role and partner" ON public.invitations TO authenticated USING ((public.is_superadmin() OR (public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())))) WITH CHECK ((public.is_superadmin() OR (public.is_admin() AND (partner_uuid = public.get_my_partner_uuid()))));
+
+
+--
+-- Name: invitations Read invitation by exact UUID; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Read invitation by exact UUID" ON public.invitations FOR SELECT TO anon, authenticated USING (true);
 
 
 --
@@ -198,5 +187,5 @@ GRANT ALL ON SEQUENCE public.invitations_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uYazpecBGYzt2bGrKVOYRe6jOcLkWr7sv0v9MrU89PGsy5Ampi0EsrfWY7T5Wm5
+\unrestrict cWVZRF1rQxpHRsSpK489PawouU0Cmgms2dfh4Tmzl6oM01C6ec7CHulg7hwJEIj
 

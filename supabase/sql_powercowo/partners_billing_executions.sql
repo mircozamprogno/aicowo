@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 5zWiqbUhMvb6ahcDSJLBJ63iY6KaHJl3uOd7EnMpekTLK4Tud1Vg1bmjcKrGbT0
+\restrict TFDMkpJw49Np0aUNH0bcqRn5LTAwwxLSpt2gElAcppVa3O2auz13mzH6aulc9LG
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -131,10 +131,12 @@ ALTER TABLE ONLY public.partners_billing_executions
 
 
 --
--- Name: partners_billing_executions All Policies; Type: POLICY; Schema: public; Owner: postgres
+-- Name: partners_billing_executions Superadmins manage billing executions; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "All Policies" ON public.partners_billing_executions USING (true) WITH CHECK (true);
+CREATE POLICY "Superadmins manage billing executions" ON public.partners_billing_executions TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
 
 
 --
@@ -165,5 +167,5 @@ GRANT ALL ON SEQUENCE public.partners_billing_executions_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 5zWiqbUhMvb6ahcDSJLBJ63iY6KaHJl3uOd7EnMpekTLK4Tud1Vg1bmjcKrGbT0
+\unrestrict TFDMkpJw49Np0aUNH0bcqRn5LTAwwxLSpt2gElAcppVa3O2auz13mzH6aulc9LG
 

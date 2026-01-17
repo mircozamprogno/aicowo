@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict JuEqbolSAkikRIGCqRBmE85YWQRR5fgwoJyRE0GnyB8fmygxgce7rF5rMKs5Oqn
+\restrict 6XkCE569KSpMzrm6wfshXmRBmovtFkZ25o7IAKbNuJe0I7DtbUgsV8qRmwOhlKY
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -219,63 +219,49 @@ ALTER TABLE ONLY public.services
 -- Name: services Partner admins can create services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Partner admins can create services" ON public.services FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text) AND (profiles.partner_uuid = services.partner_uuid)))));
+CREATE POLICY "Partner admins can create services" ON public.services FOR INSERT WITH CHECK ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
 -- Name: services Partner admins can delete their services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Partner admins can delete their services" ON public.services FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text) AND (profiles.partner_uuid = services.partner_uuid)))));
+CREATE POLICY "Partner admins can delete their services" ON public.services FOR DELETE USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
 -- Name: services Partner admins can update their services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Partner admins can update their services" ON public.services FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text) AND (profiles.partner_uuid = services.partner_uuid)))));
+CREATE POLICY "Partner admins can update their services" ON public.services FOR UPDATE USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
 -- Name: services Partner admins can view their services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Partner admins can view their services" ON public.services FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text) AND (profiles.partner_uuid = services.partner_uuid)))));
+CREATE POLICY "Partner admins can view their services" ON public.services FOR SELECT USING ((public.is_admin() AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
 -- Name: services Superadmins can manage all services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Superadmins can manage all services" ON public.services USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
+CREATE POLICY "Superadmins can manage all services" ON public.services USING (public.is_superadmin());
 
 
 --
 -- Name: services Superadmins can view all services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Superadmins can view all services" ON public.services FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
+CREATE POLICY "Superadmins can view all services" ON public.services FOR SELECT USING (public.is_superadmin());
 
 
 --
 -- Name: services Users can view their partner services; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Users can view their partner services" ON public.services FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.partner_uuid = services.partner_uuid)))));
+CREATE POLICY "Users can view their partner services" ON public.services FOR SELECT USING ((partner_uuid = public.get_my_partner_uuid()));
 
 
 --
@@ -306,5 +292,5 @@ GRANT ALL ON SEQUENCE public.services_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict JuEqbolSAkikRIGCqRBmE85YWQRR5fgwoJyRE0GnyB8fmygxgce7rF5rMKs5Oqn
+\unrestrict 6XkCE569KSpMzrm6wfshXmRBmovtFkZ25o7IAKbNuJe0I7DtbUgsV8qRmwOhlKY
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict meVnLMWt9z0GjmGmw2OFkTrr0u2beqjPI9HTPKIygllgmuviqpamj6jbYupQivv
+\restrict lIrJGocaaOfkG9lIOqaIULxYsMg4wpDSdgGV1SzWfZAdTecl1vXQbZWnQx2ckK0
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -126,17 +126,24 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: notifications Allow authenticated users to manage notifications; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notifications Partner admins manage own notifications; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to manage notifications" ON public.notifications TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Partner admins manage own notifications" ON public.notifications TO authenticated USING (((created_by_uuid = auth.uid()) AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
--- Name: notifications Allow authenticated users to view notifications; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notifications Superadmins manage all notifications; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to view notifications" ON public.notifications FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Superadmins manage all notifications" ON public.notifications TO authenticated USING (((created_by_uuid = auth.uid()) AND public.is_superadmin()));
+
+
+--
+-- Name: notifications Users view relevant notifications; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Users view relevant notifications" ON public.notifications FOR SELECT TO authenticated USING ((((status)::text = 'published'::text) AND (is_active = true) AND ((CURRENT_TIMESTAMP >= valid_from) AND (CURRENT_TIMESTAMP <= valid_until)) AND ((partner_uuid IS NULL) OR (partner_uuid = public.get_my_partner_uuid()))));
 
 
 --
@@ -158,5 +165,5 @@ GRANT ALL ON TABLE public.notifications TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict meVnLMWt9z0GjmGmw2OFkTrr0u2beqjPI9HTPKIygllgmuviqpamj6jbYupQivv
+\unrestrict lIrJGocaaOfkG9lIOqaIULxYsMg4wpDSdgGV1SzWfZAdTecl1vXQbZWnQx2ckK0
 

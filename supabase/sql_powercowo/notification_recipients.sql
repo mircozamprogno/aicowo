@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ypjOVsN28a0FLhCN7Eaxq0GsZ1MbSEofJSlR3864SuTqMnID40HtBX5UW2KShCN
+\restrict hn5J8gQHhd32wogpiE3fe1HAyZUyuEn4QJgOqovPrRtkNVelxzxWD8PcPbm8TPX
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -101,17 +101,27 @@ ALTER TABLE ONLY public.notification_recipients
 
 
 --
--- Name: notification_recipients Allow authenticated users to manage recipients; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notification_recipients Manage own notification recipients; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to manage recipients" ON public.notification_recipients TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Manage own notification recipients" ON public.notification_recipients TO authenticated USING ((notification_id IN ( SELECT n.id
+   FROM public.notifications n
+  WHERE ((n.created_by_uuid = auth.uid()) AND ((n.partner_uuid = ( SELECT profiles.partner_uuid
+           FROM public.profiles
+          WHERE (profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1
+           FROM public.profiles
+          WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))))))));
 
 
 --
--- Name: notification_recipients Allow authenticated users to view recipients; Type: POLICY; Schema: public; Owner: postgres
+-- Name: notification_recipients View via notification access; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Allow authenticated users to view recipients" ON public.notification_recipients FOR SELECT TO authenticated USING (true);
+CREATE POLICY "View via notification access" ON public.notification_recipients FOR SELECT TO authenticated USING (((partner_uuid = ( SELECT profiles.partner_uuid
+   FROM public.profiles
+  WHERE (profiles.id = auth.uid()))) OR (EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text))))));
 
 
 --
@@ -133,5 +143,5 @@ GRANT ALL ON TABLE public.notification_recipients TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ypjOVsN28a0FLhCN7Eaxq0GsZ1MbSEofJSlR3864SuTqMnID40HtBX5UW2KShCN
+\unrestrict hn5J8gQHhd32wogpiE3fe1HAyZUyuEn4QJgOqovPrRtkNVelxzxWD8PcPbm8TPX
 

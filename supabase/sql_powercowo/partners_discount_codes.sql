@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict e9ux3h4J0pe6B9puhYeR4rmGj7qR1WH0oKaNZhsjZNU8zqtyndRy0Udm9X2tdlr
+\restrict MUHUtr9JcgBT6W2e7iPV8TjOUQErLbsfaNTywKh4w4CzyjI6QTyeFYhtNwVPYoO
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -140,10 +140,19 @@ ALTER TABLE ONLY public.partners_discount_codes
 
 
 --
--- Name: partners_discount_codes all; Type: POLICY; Schema: public; Owner: postgres
+-- Name: partners_discount_codes Superadmins manage all discount codes; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "all" ON public.partners_discount_codes TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Superadmins manage all discount codes" ON public.partners_discount_codes TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.profiles
+  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'superadmin'::text)))));
+
+
+--
+-- Name: partners_discount_codes View active discount codes; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "View active discount codes" ON public.partners_discount_codes FOR SELECT TO authenticated USING ((is_active = true));
 
 
 --
@@ -174,5 +183,5 @@ GRANT ALL ON SEQUENCE public.partners_discount_codes_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict e9ux3h4J0pe6B9puhYeR4rmGj7qR1WH0oKaNZhsjZNU8zqtyndRy0Udm9X2tdlr
+\unrestrict MUHUtr9JcgBT6W2e7iPV8TjOUQErLbsfaNTywKh4w4CzyjI6QTyeFYhtNwVPYoO
 
