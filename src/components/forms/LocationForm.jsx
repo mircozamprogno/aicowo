@@ -12,7 +12,7 @@ import MapSelector from '../maps/MapSelector';
 
 import logger from '../../utils/logger';
 
-const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null }) => {
+const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null, embedded = false }) => {
   const { t } = useTranslation();
   const isEditing = !!location;
 
@@ -59,6 +59,32 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const [resourcesToDelete, setResourcesToDelete] = useState([]);
   const [initialResources, setInitialResources] = useState([]);
 
+  // Add state for resource types
+  const [resourceTypologyOptions, setResourceTypologyOptions] = useState([]);
+
+  // Fetch resource types on mount
+  useEffect(() => {
+    if (partnerUuid) {
+      fetchResourceTypes();
+    }
+  }, [partnerUuid]);
+
+  const fetchResourceTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('partner_resource_types')
+        .select('*')
+        .eq('partner_uuid', partnerUuid)
+        .order('type_name');
+
+      if (error) throw error;
+      setResourceTypologyOptions(data || []);
+    } catch (error) {
+      logger.error('Error fetching resource types:', error);
+      // Fallback to defaults if fetch fails, or handle gracefully
+    }
+  };
+
   const [activeTab, setActiveTab] = useState('basic');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -98,7 +124,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
           resource_name: resource.resource_name,
           quantity: resource.quantity.toString(),
           description: resource.description || ''
-        }));
+        })).sort((a, b) => b.id - a.id); // Sort by ID descending (newest first)
         setResources(formattedResources);
         setInitialResources(formattedResources);
       } else {
@@ -202,12 +228,12 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   };
 
   const addResource = () => {
-    setResources(prev => [...prev, {
+    setResources(prev => [{
       resource_type: 'scrivania',
       resource_name: '',
-      quantity: '1',
+      quantity: 1,
       description: ''
-    }]);
+    }, ...prev]);
   };
 
   const handleResourceDelete = async (index) => {
@@ -219,14 +245,16 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     }
 
     try {
+      const today = new Date().toISOString().split('T')[0];
       const { data: bookings, error: bookingCheckError } = await supabase
         .from('package_reservations')
         .select('id')
-        .eq('location_resource_id', resource.id);
+        .eq('location_resource_id', resource.id)
+        .gte('reservation_date', today);
 
       if (bookingCheckError) {
         logger.error('Error checking bookings:', bookingCheckError);
-        toast.error('Error checking resource usage. Please try again.');
+        toast.error(t('locations.errorCheckingResourceUsage'));
         return;
       }
 
@@ -242,7 +270,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
     } catch (error) {
       logger.error('Error checking resource bookings:', error);
-      toast.error('Error checking resource usage. Please try again.');
+      toast.error(t('locations.errorCheckingResourceUsage'));
     }
   };
 
@@ -561,7 +589,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
           if (deleteResourcesError) {
             logger.error('Error deleting resources:', deleteResourcesError);
-            throw new Error('Cannot delete resources with active bookings. Please cancel bookings first.');
+            throw new Error(t('locations.cannotDeleteResourceDBError'));
           }
 
           if (resourcesToLog && resourcesToLog.length > 0) {
@@ -595,7 +623,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             partner_uuid: partnerUuid,
             resource_type: resource.resource_type,
             resource_name: resource.resource_name.trim(),
-            quantity: parseInt(resource.quantity),
+            quantity: 1, // Enforce 1 as per user request
             description: resource.description.trim() || null
           }));
 
@@ -770,11 +798,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     return Object.values(images).reduce((total, categoryImages) => total + categoryImages.length, 0);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !embedded) return null;
 
-  return (
-    <div className="locations-modal-backdrop location-form-modal-backdrop">
-      <div className="location-form-modal-container">
+  const formContent = (
+    <>
+      <div className={embedded ? "location-form-container-embedded" : "location-form-modal-container"}>
         <div className="location-form-header">
           <div className="location-form-header-content">
             <MapPin />
@@ -782,9 +810,11 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
               {isEditing ? `${t('locations.editLocation')} - ${formData.location_name}` : t('locations.addLocation')}
             </h2>
           </div>
-          <button onClick={onClose} className="location-form-close">
-            <X />
-          </button>
+          {!embedded && (
+            <button onClick={onClose} className="location-form-close">
+              <X />
+            </button>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="location-form-layout">
@@ -1152,19 +1182,25 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                   <label className="resource-form-label">
                                     {t('locations.resourceType')} *
                                   </label>
+
+
                                   <select
                                     className="resource-form-select"
                                     value={resource.resource_type}
                                     onChange={(e) => handleResourceChange(index, 'resource_type', e.target.value)}
                                     required
                                   >
-                                    <option value="scrivania">{t('locations.scrivania')}</option>
-                                    <option value="sala_riunioni">{t('locations.salaRiunioni')}</option>
+                                    <option value="" disabled>{t('common.select') || 'Select...'}</option>
+                                    {resourceTypologyOptions.map(type => (
+                                      <option key={type.id} value={type.type_code}>
+                                        {type.type_name}
+                                      </option>
+                                    ))}
                                   </select>
                                 </div>
                               </div>
 
-                              <div className="resource-form-col-5">
+                              <div className="resource-form-col-7">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
                                     {t('locations.resourceName')} *
@@ -1183,30 +1219,15 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                               <div className="resource-form-col-2">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
-                                    {t('locations.quantity')} *
+                                    {t('locations.quantity')}
                                   </label>
                                   <input
                                     type="number"
-                                    min="1"
-                                    max="999"
-                                    className="resource-form-input"
-                                    value={resource.quantity}
-                                    onChange={(e) => handleResourceChange(index, 'quantity', e.target.value)}
-                                    required
+                                    className="resource-form-input resource-form-input-readonly"
+                                    value="1"
+                                    readOnly
+                                    disabled
                                   />
-                                </div>
-                              </div>
-
-                              <div className="resource-form-col-2">
-                                <div className="resource-form-group">
-                                  <label className="resource-form-label">
-                                    {t('locations.status')}
-                                  </label>
-                                  <div className="resource-status-container">
-                                    <span className="resource-status-badge">
-                                      {t('locations.available')}
-                                    </span>
-                                  </div>
                                 </div>
                               </div>
 
@@ -1327,65 +1348,80 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
             </div>
           </div>
         </form>
-      </div >
+      </div>
 
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="delete-confirmation-modal">
-            <div className="delete-modal-header">
-              <h3 className="delete-modal-title">
-                {deleteModalInfo.hasBookings ? '⚠️ Cannot Delete Resource' : '🗑️ Confirm Delete'}
-              </h3>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="delete-modal-close"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="delete-modal-content">
-              {deleteModalInfo.hasBookings ? (
-                <>
-                  <p className="delete-modal-message">
-                    The resource <strong>"{deleteModalInfo.resourceName}"</strong> cannot be deleted because it has <strong>{deleteModalInfo.bookingCount}</strong> active booking{deleteModalInfo.bookingCount !== 1 ? 's' : ''} or reservation{deleteModalInfo.bookingCount !== 1 ? 's' : ''}.
-                  </p>
-                  <p className="delete-modal-explanation">
-                    To delete this resource, you must first cancel or complete all associated bookings.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="delete-modal-message">
-                    Are you sure you want to delete the resource <strong>"{deleteModalInfo.resourceName}"</strong>?
-                  </p>
-                  <p className="delete-modal-explanation">
-                    This action cannot be undone.
-                  </p>
-                </>
-              )}
-            </div>
-
-            <div className="delete-modal-actions">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="delete-modal-button delete-modal-cancel"
-              >
-                {deleteModalInfo.hasBookings ? 'OK' : 'Cancel'}
-              </button>
-              {!deleteModalInfo.hasBookings && (
+      {
+        showDeleteModal && (
+          <div className="modal-overlay">
+            <div className="delete-confirmation-modal">
+              <div className="delete-modal-header">
+                <h3 className="delete-modal-title">
+                  {deleteModalInfo.hasBookings ? t('locations.cannotDeleteResourceTitle') : t('common.confirmDelete')}
+                </h3>
                 <button
-                  onClick={confirmResourceDelete}
-                  className="delete-modal-button delete-modal-confirm"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="delete-modal-close"
                 >
-                  Delete Resource
+                  <X size={20} />
                 </button>
-              )}
+              </div>
+
+              <div className="delete-modal-content">
+                {deleteModalInfo.hasBookings ? (
+                  <>
+                    <p className="delete-modal-message">
+                      {t('locations.resourceHasBookingsMessage', {
+                        resourceName: deleteModalInfo.resourceName,
+                        count: deleteModalInfo.bookingCount
+                      })}
+                    </p>
+                    <p className="delete-modal-explanation">
+                      {t('locations.resourceHasBookingsAction')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="delete-modal-message">
+                      {t('locations.deleteResourceConfirmMessage', { resourceName: deleteModalInfo.resourceName })}
+                    </p>
+                    <p className="delete-modal-explanation">
+                      {t('locations.deleteResourceUndoWarning')}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="delete-modal-actions">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="delete-modal-button delete-modal-cancel"
+                >
+                  {deleteModalInfo.hasBookings ? t('common.understood') : t('common.cancel')}
+                </button>
+                {!deleteModalInfo.hasBookings && (
+                  <button
+                    onClick={confirmResourceDelete}
+                    className="delete-modal-button delete-modal-confirm"
+                  >
+                    {t('locations.deleteResourceBtn')}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div >
+        )
+      }
+    </>
+  );
+
+  if (embedded) {
+    return formContent;
+  }
+
+  return (
+    <div className="locations-modal-backdrop location-form-modal-backdrop">
+      {formContent}
+    </div>
   );
 };
 

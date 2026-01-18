@@ -35,6 +35,7 @@ CREATE TABLE public.services (
     service_name character varying(255) NOT NULL,
     service_description text,
     service_type character varying(50) NOT NULL,
+    target_resource_type character varying(50), -- New column for Category Booking
     cost numeric(10,2) DEFAULT 0.00 NOT NULL,
     currency character varying(3) DEFAULT 'EUR'::character varying,
     duration_days numeric(10,2) DEFAULT 30.0 NOT NULL,
@@ -48,7 +49,10 @@ CREATE TABLE public.services (
     location_resource_id bigint,
     private boolean DEFAULT false NOT NULL,
     CONSTRAINT services_service_status_check CHECK (((service_status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text, ('draft'::character varying)::text]))),
-    CONSTRAINT services_service_type_check CHECK (((service_type)::text = ANY (ARRAY[('abbonamento'::character varying)::text, ('pacchetto'::character varying)::text, ('free_trial'::character varying)::text, ('giornaliero'::character varying)::text])))
+    CONSTRAINT services_service_type_check CHECK (((service_type)::text = ANY (ARRAY[('abbonamento'::character varying)::text, ('pacchetto'::character varying)::text, ('free_trial'::character varying)::text, ('giornaliero'::character varying)::text]))),
+    CONSTRAINT services_linking_check CHECK (
+        (location_resource_id IS NOT NULL) OR (location_id IS NOT NULL AND target_resource_type IS NOT NULL)
+    )
 );
 
 

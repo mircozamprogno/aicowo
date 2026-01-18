@@ -1,11 +1,13 @@
 // src/pages/Settings.jsx
-import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, Download, FileText, Filter, Globe, Image, Mail, MapPin, Save, Upload, User, X } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, Download, FileText, Filter, Globe, Image, Mail, MapPin, Save, Settings as SettingsIcon, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import OperatingScheduleManager from '../components/calendar/OperatingScheduleManager';
 import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import EmailTemplateList from '../components/email/EmailTemplateList';
 import LocationsList from '../components/partners/LocationsList';
+import ResourcesManager from '../components/partners/ResourcesManager';
+import ResourceTypesManager from '../components/partners/ResourceTypesManager';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { generateInvoicePDF } from '../services/pdfGenerator';
@@ -32,6 +34,7 @@ const Settings = () => {
 
   // Location management states
   const [showLocations, setShowLocations] = useState(false);
+  const [showLocationsModal, setShowLocationsModal] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
   // Email banner upload states
@@ -965,6 +968,16 @@ const Settings = () => {
               <MapPin size={20} />
               {t('locations.locations') || 'Locations'}
             </button>
+
+            {/* Resources managed in Locations page now, Types kept here */}
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'resource-types' ? 'active' : ''}`}
+              onClick={() => setActiveTab('resource-types')}
+            >
+              <SettingsIcon size={20} />
+              {t('settings.resourceTypes') || 'Resource Types'}
+            </button>
             <button
               type="button"
               className={`settings-tab ${activeTab === 'email-templates' ? 'active' : ''}`}
@@ -1615,6 +1628,18 @@ const Settings = () => {
           </div>
         )}
 
+        {activeTab === 'resources' && isAdminPartner && (
+          <div className="resources-tab-content">
+            <ResourcesManager partnerUuid={profile.partner_uuid} />
+          </div>
+        )}
+
+        {activeTab === 'resource-types' && isAdminPartner && (
+          <div className="resources-tab-content">
+            <ResourceTypesManager partnerUuid={profile.partner_uuid} />
+          </div>
+        )}
+
         {activeTab === 'email-templates' && (isAdminPartner || isSuperAdmin) && (
           <div className="email-templates-tab-content">
             <div className="email-templates-tab-header">
@@ -1975,6 +2000,17 @@ const Settings = () => {
           </div>
         )}
 
+
+
+        {activeTab === 'locations' && isAdminPartner && (
+          <div className="locations-tab-content">
+            <LocationsList
+              partner={partnerData}
+              isOpen={showLocationsModal}
+              onClose={() => setShowLocationsModal(false)}
+            />
+          </div>
+        )}
 
       </div>
     </div>

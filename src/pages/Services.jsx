@@ -1,9 +1,9 @@
 // src/pages/Services.jsx
 import { Edit2, HelpCircle, Plus, Settings, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+// Removed useNavigate import if it was there (it wasn't imported in Step 1139 view)
 import Pagination from '../components/common/Pagination';
 import { toast } from '../components/common/ToastContainer';
-import ServiceForm from '../components/forms/ServiceForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
@@ -13,6 +13,7 @@ import logger from '../utils/logger';
 const Services = () => {
   const [services, setServices] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [resourceTypes, setResourceTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
@@ -54,6 +55,18 @@ const Services = () => {
         setLocations(locationsData || []);
       }
 
+      // Fetch Resource Types
+      const { data: resourceTypesData, error: resourceTypesError } = await supabase
+        .from('partner_resource_types')
+        .select('*')
+        .eq('partner_uuid', profile.partner_uuid);
+
+      if (resourceTypesError) {
+        logger.error('Error fetching resource types:', resourceTypesError);
+      } else {
+        setResourceTypes(resourceTypesData || []);
+      }
+
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
         .select(`
@@ -91,13 +104,11 @@ const Services = () => {
   };
 
   const handleAddService = () => {
-    setEditingService(null);
-    setShowForm(true);
+    window.location.hash = '/services/new';
   };
 
   const handleEditService = (service) => {
-    setEditingService(service);
-    setShowForm(true);
+    window.location.hash = `/services/edit?id=${service.id}`;
   };
 
   const handleFormClose = () => {
@@ -161,8 +172,15 @@ const Services = () => {
     }
   };
 
-  const getResourceTypeLabel = (type) => {
-    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+  const getResourceTypeLabel = (typeCode) => {
+    // Try to find in custom types first
+    const customType = resourceTypes.find(t => t.type_code === typeCode);
+    if (customType) return customType.type_name;
+
+    // Fallback to translations for standard types if needed, or return code
+    return typeCode === 'scrivania' ? t('locations.scrivania') :
+      typeCode === 'sala_riunioni' ? t('locations.salaRiunioni') :
+        typeCode === 'ufficio_privato' ? t('locations.ufficioPrivato') : typeCode;
   };
 
   const formatDate = (dateString) => {
@@ -298,6 +316,19 @@ const Services = () => {
                             {service.location_resources.quantity} {t('services.available')}
                           </div>
                         </div>
+                      ) : service.resource_type ? (
+                        <div className="resource-info">
+                          <div className="resource-header">
+                            <span className="resource-name">
+                              {getResourceTypeLabel(service.resource_type)}
+                            </span>
+                          </div>
+                          <div className="resource-location">
+                            {locations.find(l => l.id === service.location_id)?.location_name && (
+                              <>📍 {locations.find(l => l.id === service.location_id)?.location_name}</>
+                            )}
+                          </div>
+                        </div>
                       ) : (
                         <span className="no-resource">{t('services.noResource')}</span>
                       )}
@@ -348,14 +379,7 @@ const Services = () => {
         </div>
       </div>
 
-      <ServiceForm
-        isOpen={showForm}
-        onClose={handleFormClose}
-        onSuccess={handleFormSuccess}
-        service={editingService}
-        partnerUuid={profile?.partner_uuid}
-        locations={locations}
-      />
+
 
       {showServiceInfo && (
         <div className="modal-overlay">

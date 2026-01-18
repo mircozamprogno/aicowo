@@ -219,6 +219,15 @@ CREATE POLICY "Partner admins manage own reservations" ON public.package_reserva
 
 
 --
+-- Name: package_reservations Customers create own reservations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Customers create own reservations" ON public.package_reservations FOR INSERT TO authenticated WITH CHECK ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
+
+--
 -- Name: package_reservations Partner admins view own reservations; Type: POLICY; Schema: public; Owner: postgres
 --
 

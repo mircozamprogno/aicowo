@@ -918,6 +918,10 @@
   grid-column: span 5;
 }
 
+.resource-form-col-7 {
+  grid-column: span 7;
+}
+
 .resource-form-col-2 {
   grid-column: span 2;
 }
@@ -1135,6 +1139,7 @@
 
   .resource-form-col-3,
   .resource-form-col-5,
+  .resource-form-col-7,
   .resource-form-col-2,
   .resource-description-group {
     grid-column: span 12;
@@ -3044,6 +3049,10 @@ textarea:focus {
 
 .resource-form-col-5 {
   grid-column: span 5;
+}
+
+.resource-form-col-7 {
+  grid-column: span 7;
 }
 
 .resource-form-col-2 {

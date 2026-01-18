@@ -31,11 +31,34 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     warnings: []
   });
 
+  const [resourceTypes, setResourceTypes] = useState([]);
+
   useEffect(() => {
     if ((isOpen || embedded) && partner) {
       fetchLocations();
+      fetchResourceTypes();
     }
   }, [isOpen, embedded, partner]);
+
+  const fetchResourceTypes = async () => {
+    if (!partner?.partner_uuid) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('partner_resource_types')
+        .select('type_code, type_name')
+        .eq('partner_uuid', partner.partner_uuid);
+
+      if (error) {
+        logger.error('Error fetching resource types:', error);
+        return;
+      }
+
+      setResourceTypes(data || []);
+    } catch (error) {
+      logger.error('Error fetching resource types:', error);
+    }
+  };
 
   const fetchLocations = async () => {
     if (!partner?.partner_uuid) {
@@ -346,15 +369,30 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     }
 
     const groupedResources = resources.reduce((acc, resource) => {
-      if (!acc[resource.resource_type]) {
-        acc[resource.resource_type] = 0;
+      // Find the type name from the fetched resourceTypes
+      const typeObj = resourceTypes.find(rt => rt.type_code === resource.resource_type);
+
+      // Determine label: use custom type name if found, otherwise fallback to basic translations or code
+      let label;
+      if (typeObj) {
+        label = typeObj.type_name;
+      } else if (resource.resource_type === 'scrivania') {
+        label = t('locations.scrivania');
+      } else if (resource.resource_type === 'sala_riunioni' || resource.resource_type === 'salaRiunioni') {
+        label = t('locations.salaRiunioni');
+      } else {
+        // Fallback to capitalize first letter of code if no match
+        label = resource.resource_type.charAt(0).toUpperCase() + resource.resource_type.slice(1);
       }
-      acc[resource.resource_type] += resource.quantity;
+
+      if (!acc[label]) {
+        acc[label] = 0;
+      }
+      acc[label] += resource.quantity;
       return acc;
     }, {});
 
-    const summary = Object.entries(groupedResources).map(([type, count]) => {
-      const label = type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+    const summary = Object.entries(groupedResources).map(([label, count]) => {
       return `${count} ${label}`;
     });
 

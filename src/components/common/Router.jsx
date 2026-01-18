@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ArchivedContracts from '../../pages/ArchivedContracts';
 import BillingStatisticsDashboard from '../../pages/BillingStatisticsDashboard';
 import Bookings from '../../pages/Bookings';
+import BookingsNew from '../../pages/BookingsNew';
 import Contracts from '../../pages/Contracts';
 import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
@@ -39,6 +40,7 @@ import ProtectedRoute from './ProtectedRoute';
 import ContractFormPage from '../../pages/ContractFormPage';
 import CustomersDiscountCodes from '../../pages/CustomersDiscountCodes';
 import PartnerDiscountCodes from '../../pages/PartnerDiscountCodes';
+import ServiceFormPage from '../../pages/ServiceFormPage';
 
 const Router = () => {
   const [currentPath, setCurrentPath] = useState(() => {
@@ -159,6 +161,15 @@ const Router = () => {
     return <ResetPassword />;
   }
 
+  // Handle Service Edit Route (with query params)
+  if (currentPath.startsWith('/services/edit')) {
+    return user ? (
+      <ProtectedRoute requiredRoles={['admin']}>
+        <ServiceFormPage />
+      </ProtectedRoute>
+    ) : <Login />;
+  }
+
   // Render the appropriate component based on current path
   switch (currentPath) {
     case '/login':
@@ -179,6 +190,23 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['admin']}>
           <Services />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/services/new':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <ServiceFormPage />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/services/edit':
+      // Note: React Router doesn't handle param parsing in the hash router implementation used here exactly like standard router
+      // But based on existing pattern (contracts/edit/), we need to handle dynamic segments or query params.
+      // The custom router seems to rely on exact string matching or startsWith.
+      // Let's check how /contracts/edit/ works.
+      // It handles startsWith('/contracts/edit/')
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <ServiceFormPage />
         </ProtectedRoute>
       ) : <Login />;
     case '/customers':
@@ -209,6 +237,12 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
           <Bookings />
+        </ProtectedRoute>
+      ) : <Login />;
+    case '/bookings-new':
+      return user ? (
+        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+          <BookingsNew />
         </ProtectedRoute>
       ) : <Login />;
     case '/invitations':
@@ -273,6 +307,9 @@ const Router = () => {
           <ContractRenewalLogs />
         </ProtectedRoute>
       ) : <Login />;
+
+
+
     case '/logview':
       return user ? (
         <ProtectedRoute requiredRoles={['admin', 'superadmin']}>
@@ -321,6 +358,8 @@ const Router = () => {
           <BillingStatisticsDashboard />
         </ProtectedRoute>
       ) : <Login />;
+
+
 
 
 

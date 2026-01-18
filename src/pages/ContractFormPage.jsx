@@ -39,10 +39,12 @@ const ContractFormPage = () => {
     customer_id: '',
     location_id: '',
     service_id: '',
-    start_date: ''
+    start_date: '',
+    location_resource_id: ''
   });
 
   const [availableServices, setAvailableServices] = useState([]);
+  const [resourceTypes, setResourceTypes] = useState([]); // Partner resource types for name lookup
   const [selectedService, setSelectedService] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [calculatedEndDate, setCalculatedEndDate] = useState('');
@@ -96,6 +98,14 @@ const ContractFormPage = () => {
           .eq('partner_uuid', profile.partner_uuid);
 
         if (locationsData) setLocations(locationsData);
+
+        // Fetch resource types for name lookup
+        const { data: resourceTypesData } = await supabase
+          .from('partner_resource_types')
+          .select('*')
+          .eq('partner_uuid', profile.partner_uuid);
+
+        if (resourceTypesData) setResourceTypes(resourceTypesData);
       } catch (err) {
         logger.error('Error fetching admin data', err);
       }
@@ -159,14 +169,42 @@ const ContractFormPage = () => {
   // Set service_id AFTER availableServices is populated in edit mode
   useEffect(() => {
     if (loadingEditContract && availableServices.length > 0 && pendingServiceId) {
-      setFormData(prev => ({
-        ...prev,
-        service_id: pendingServiceId
-      }));
+      console.log('[EDIT MODE] Setting service:', {
+        pendingServiceId,
+        availableServicesCount: availableServices.length,
+        serviceIds: availableServices.map(s => ({ id: s.id, name: s.service_name }))
+      });
+
+      const service = availableServices.find(s => s.id.toString() === pendingServiceId);
+      console.log('[EDIT MODE] Found service:', service ? service.service_name : 'NOT FOUND');
+
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          service_id: pendingServiceId.toString() // Ensure it's a string to match options
+        };
+        console.log('[EDIT MODE] Updated formData.service_id to:', newData.service_id, typeof newData.service_id);
+        return newData;
+      });
+
+      // Also set selectedService so the form displays correctly
+      if (service) {
+        setSelectedService(service);
+        console.log('[EDIT MODE] Set selectedService to:', service.service_name);
+      } else {
+        console.error('[EDIT MODE] Service NOT FOUND in availableServices!');
+      }
+
       setLoadingEditContract(false);
       setPendingServiceId(null);
     }
   }, [availableServices, loadingEditContract, pendingServiceId]);
+
+  // DEBUG: Log whenever formData.service_id changes
+  useEffect(() => {
+    console.log('[DEBUG] formData.service_id changed to:', formData.service_id, 'Type:', typeof formData.service_id);
+  }, [formData.service_id]);
+
 
   // Fetch services when location changes
   useEffect(() => {
@@ -306,22 +344,24 @@ const ContractFormPage = () => {
           }
         }
 
-        // Store the service_id to be set after services are loaded
-        setPendingServiceId(contractToEdit.service_id?.toString() || '');
+        // Load discount code if present
+        if (contractToEdit.discount_code) {
+          setDiscountCode(contractToEdit.discount_code);
+        }
+
+        // Set form data - include service_id if we have it
+        setFormData({
+          customer_id: contractToEdit.customer_id?.toString() || '',
+          location_id: contractToEdit.location_id?.toString() || '',
+          service_id: contractToEdit.service_id?.toString() || '', // Set it directly
+          start_date: contractToEdit.start_date || '',
+          location_resource_id: '' // Will be set after resources load
+        });
+
+        // No need for pendingServiceId anymore - we set it directly above
       }
 
-      // Load discount code if present
-      if (contractToEdit.discount_code) {
-        setDiscountCode(contractToEdit.discount_code);
-      }
-
-      // Set form data WITHOUT service_id (will be set by useEffect)
-      setFormData({
-        customer_id: contractToEdit.customer_id?.toString() || '',
-        location_id: contractToEdit.location_id?.toString() || '',
-        service_id: '', // Will be set by useEffect after services load
-        start_date: contractToEdit.start_date || ''
-      });
+      // Service will be set by useEffect after services load
 
       // Set calculated end date from existing contract
       setCalculatedEndDate(contractToEdit.end_date || '');
@@ -337,7 +377,8 @@ const ContractFormPage = () => {
       customer_id: '',
       location_id: '',
       service_id: '',
-      start_date: ''
+      start_date: '',
+      location_resource_id: ''
     });
     setAvailableServices([]);
     setSelectedService(null);
@@ -648,37 +689,22 @@ const ContractFormPage = () => {
     setCheckingAvailability(true);
 
     try {
-      // Get the location resource for this service
-      const { data: serviceData, error: serviceError } = await supabase
-        .from('services')
-        .select(`
-          location_resources!fk_services_location_resource (
-            id,
-            resource_name,
-            quantity,
-            resource_type
-          )
-        `)
-        .eq('id', selectedService.id)
-        .single();
+      // Use the specifically selected resource
+      const resourceIdToCheck = formData.location_resource_id;
 
-      if (serviceError) {
-        logger.error('Error fetching service resource:', serviceError);
-        setAvailabilityStatus({ available: false, error: 'Error checking availability' });
+      if (!resourceIdToCheck) {
+        setAvailabilityStatus({ available: false, error: 'Select a specific resource' });
         return;
       }
 
-      const locationResource = serviceData.location_resources;
-      if (!locationResource) {
-        setAvailabilityStatus({ available: false, error: 'No resource found for this service' });
-        return;
-      }
+      const resourceName = physicalResources.find(r => r.id.toString() === resourceIdToCheck)?.resource_name || 'Resource';
+      const resourceType = selectedService.resource_type || 'generic';
 
-      // Check existing bookings that overlap with the requested period
+      // Check existing bookings that overlap with the requested period for THIS specific resource
       const { data: existingBookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('id')
-        .eq('location_resource_id', locationResource.id)
+        .eq('location_resource_id', resourceIdToCheck)
         .eq('booking_status', 'active')
         .or(`and(start_date.lte.${endDate},end_date.gte.${formData.start_date})`);
 
@@ -688,8 +714,13 @@ const ContractFormPage = () => {
         return;
       }
 
-      // Calculate available quantity
-      const totalQuantity = locationResource.quantity;
+      // For specific resource checking:
+      // Capacity is usually 1 for desks/offices, but could be more for meeting rooms?
+      // Let's assume quantity is 1 for specific physically selectable resources for now, 
+      // OR fetch the quantity of that specific resource row.
+      const resourceObj = physicalResources.find(r => r.id.toString() === resourceIdToCheck);
+      const totalQuantity = resourceObj ? resourceObj.quantity : 1;
+
       const bookedQuantity = existingBookings ? existingBookings.length : 0;
       const availableQuantity = totalQuantity - bookedQuantity;
 
@@ -700,7 +731,7 @@ const ContractFormPage = () => {
           .from('bookings')
           .select('id')
           .eq('contract_id', contractToEdit.id)
-          .eq('location_resource_id', locationResource.id)
+          .eq('location_resource_id', resourceIdToCheck)
           .single();
 
         if (currentBooking) {
@@ -715,9 +746,10 @@ const ContractFormPage = () => {
         totalQuantity,
         bookedQuantity: bookedQuantity - editExclusion,
         availableQuantity: finalAvailableQuantity,
-        resourceName: locationResource.resource_name,
-        resourceType: locationResource.resource_type
+        resourceName: resourceName,
+        resourceType: resourceType
       });
+      return;
 
     } catch (error) {
       logger.error('Error checking availability:', error);
@@ -726,6 +758,8 @@ const ContractFormPage = () => {
       setCheckingAvailability(false);
     }
   };
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -738,6 +772,7 @@ const ContractFormPage = () => {
     if (name === 'service_id') {
       const service = availableServices.find(s => s.id.toString() === value);
       setSelectedService(service);
+
 
       // Reset price override and discount when service changes
       if (!editMode) {
@@ -1227,6 +1262,21 @@ const ContractFormPage = () => {
     return types[type] || type;
   };
 
+  const getResourceTypeName = (typeCode) => {
+    if (!typeCode) return '-';
+
+    // Look up in partner_resource_types
+    const resourceType = resourceTypes.find(rt => rt.type_code === typeCode);
+    if (resourceType) return resourceType.type_name;
+
+    // Fallback to translation keys for standard types
+    if (typeCode === 'scrivania') return t('locations.scrivania');
+    if (typeCode === 'sala_riunioni') return t('locations.salaRiunioni');
+    if (typeCode === 'ufficio_privato') return t('locations.ufficioPrivato');
+
+    return typeCode; // Last resort: show the code
+  };
+
 
 
   const getFinalPrice = () => {
@@ -1538,7 +1588,11 @@ const ContractFormPage = () => {
               <p style={{ display: 'none' }}></p>
             </div>
 
-            {selectedService && (
+
+          </div>
+
+          {selectedService && (
+            <div className="form-section-clean">
               <div className="service-details">
                 <div className="service-info-display">
                   <div className="service-detail-item">
@@ -1550,11 +1604,12 @@ const ContractFormPage = () => {
                     <span className="detail-value">{selectedService.duration_days} {t('contracts.days')}</span>
                   </div>
                   <div className="service-detail-item">
-                    <span className="detail-label">{t('contracts.resource')}:</span>
+                    <span className="detail-label">{t('contracts.resourceType')}:</span>
                     <span className="detail-value">
-                      {selectedService.location_resources?.resource_name}
+                      {getResourceTypeName(selectedService.resource_type)}
                     </span>
                   </div>
+
                   {selectedService.service_type === 'pacchetto' && selectedService.max_entries && (
                     <div className="service-detail-item">
                       <span className="detail-label">{t('contracts.includedEntries')}:</span>
@@ -1591,177 +1646,206 @@ const ContractFormPage = () => {
                   {t('contracts.pricesExcludeVAT')}
                 </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Discount Code Section - Only for abbonamento and pacchetto */}
-          {selectedService && (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'pacchetto') && hasDiscountCodes && (
-            <div className="form-section-clean">
-              <div className="form-group">
-                <label htmlFor="discount_code" className="form-label">
-                  {t('contracts.discountCode')} ({t('common.optional')})
-                </label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
-                    <input
-                      id="discount_code"
-                      type="text"
-                      className="form-input"
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      placeholder={t('contracts.enterDiscountCode') || 'SUMMER2024'}
-                      style={{ textTransform: 'uppercase' }}
-                      disabled={!canOverride && isCustomerMode && editMode}
-                    />
-                    {validatingDiscount && (
-                      <div className="input-spinner" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}></div>
-                    )}
+          {
+            selectedService && (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'pacchetto') && hasDiscountCodes && (
+              <div className="form-section-clean">
+                <div className="form-group">
+                  <label htmlFor="discount_code" className="form-label">
+                    {t('contracts.discountCode')} ({t('common.optional')})
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <input
+                        id="discount_code"
+                        type="text"
+                        className="form-input"
+                        value={discountCode}
+                        onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                        placeholder={t('contracts.enterDiscountCode') || 'SUMMER2024'}
+                        style={{ textTransform: 'uppercase' }}
+                        disabled={!canOverride && isCustomerMode && editMode}
+                      />
+                      {validatingDiscount && (
+                        <div className="input-spinner" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}></div>
+                      )}
+                    </div>
                   </div>
+                  {validatingDiscount && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div className="loading-spinner-small"></div>
+                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                        {t('contracts.validatingCode') || 'Validating code...'}
+                      </span>
+                    </div>
+                  )}
+                  {discountValidation && !validatingDiscount && (
+                    <div style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: discountValidation.valid ? '#d1fae5' : '#fee2e2',
+                      color: discountValidation.valid ? '#065f46' : '#991b1b',
+                      border: `1px solid ${discountValidation.valid ? '#6ee7b7' : '#fca5a5'}`
+                    }}>
+                      {discountValidation.valid ? (
+                        <span>✅ {t('contracts.validDiscountCode') || 'Valid discount code'}</span>
+                      ) : (
+                        <span>❌ {discountValidation.error}</span>
+                      )}
+                    </div>
+                  )}
+                  {discountCalc && (
+                    <div style={{
+                      marginTop: '0.75rem',
+                      padding: '0.75rem',
+                      backgroundColor: '#d1fae5',
+                      border: '1px solid #6ee7b7',
+                      borderRadius: '0.375rem'
+                    }}>
+                      <div style={{ fontSize: '0.875rem', color: '#065f46', marginBottom: '0.5rem', fontWeight: 600 }}>
+                        {t('contracts.discountApplied') || 'Discount Applied'}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.875rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#047857' }}>{t('contracts.originalPrice')}:</span>
+                          <span style={{ color: '#047857', textDecoration: 'line-through' }}>
+                            {formatCurrency(discountCalc.originalPrice, selectedService.currency)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#047857' }}>
+                            {t('contracts.discount')} ({appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.discount_value}%` : t('contracts.fixedAmount')}):
+                          </span>
+                          <span style={{ color: '#047857', fontWeight: 600 }}>
+                            -{formatCurrency(discountCalc.discountAmount, selectedService.currency)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #6ee7b7' }}>
+                          <span style={{ color: '#065f46', fontWeight: 700 }}>{t('contracts.finalPrice')}:</span>
+                          <span style={{ color: '#065f46', fontWeight: 700, fontSize: '1rem' }}>
+                            {formatCurrency(discountCalc.finalPrice, selectedService.currency)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {validatingDiscount && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <div className="loading-spinner-small"></div>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                      {t('contracts.validatingCode') || 'Validating code...'}
-                    </span>
-                  </div>
-                )}
-                {discountValidation && !validatingDiscount && (
-                  <div style={{
-                    marginTop: '0.5rem',
-                    padding: '0.5rem',
-                    borderRadius: '0.375rem',
-                    fontSize: '0.875rem',
-                    backgroundColor: discountValidation.valid ? '#d1fae5' : '#fee2e2',
-                    color: discountValidation.valid ? '#065f46' : '#991b1b',
-                    border: `1px solid ${discountValidation.valid ? '#6ee7b7' : '#fca5a5'}`
-                  }}>
-                    {discountValidation.valid ? (
-                      <span>✅ {t('contracts.validDiscountCode') || 'Valid discount code'}</span>
-                    ) : (
-                      <span>❌ {discountValidation.error}</span>
-                    )}
-                  </div>
-                )}
-                {discountCalc && (
-                  <div style={{
-                    marginTop: '0.75rem',
-                    padding: '0.75rem',
-                    backgroundColor: '#d1fae5',
-                    border: '1px solid #6ee7b7',
-                    borderRadius: '0.375rem'
-                  }}>
-                    <div style={{ fontSize: '0.875rem', color: '#065f46', marginBottom: '0.5rem', fontWeight: 600 }}>
-                      {t('contracts.discountApplied') || 'Discount Applied'}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.875rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#047857' }}>{t('contracts.originalPrice')}:</span>
-                        <span style={{ color: '#047857', textDecoration: 'line-through' }}>
-                          {formatCurrency(discountCalc.originalPrice, selectedService.currency)}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#047857' }}>
-                          {t('contracts.discount')} ({appliedDiscount.discount_type === 'percentage' ? `${appliedDiscount.discount_value}%` : t('contracts.fixedAmount')}):
-                        </span>
-                        <span style={{ color: '#047857', fontWeight: 600 }}>
-                          -{formatCurrency(discountCalc.discountAmount, selectedService.currency)}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #6ee7b7' }}>
-                        <span style={{ color: '#065f46', fontWeight: 700 }}>{t('contracts.finalPrice')}:</span>
-                        <span style={{ color: '#065f46', fontWeight: 700, fontSize: '1rem' }}>
-                          {formatCurrency(discountCalc.finalPrice, selectedService.currency)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Price Override Section - Partner Only */}
-          {canOverride && selectedService && !appliedDiscount && (
-            <div className="form-section-clean">
-              <div className="form-group">
-                <label className="form-label">
-                  {t('contracts.price')}
-                </label>
+          {
+            canOverride && selectedService && !appliedDiscount && (
+              <div className="form-section-clean">
+                <div className="form-group">
+                  <label className="form-label">
+                    {t('contracts.price')}
+                  </label>
 
-                {overridePrice ? (
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    className="form-input"
-                    value={manualPrice}
-                    onChange={(e) => setManualPrice(e.target.value)}
-                    placeholder={t('contracts.enterCustomPrice')}
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formatCurrency(selectedService.cost, selectedService.currency)}
-                    disabled
-                    style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
-                  />
-                )}
+                  {overridePrice ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      className="form-input"
+                      value={manualPrice}
+                      onChange={(e) => setManualPrice(e.target.value)}
+                      placeholder={t('contracts.enterCustomPrice')}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={formatCurrency(selectedService.cost, selectedService.currency)}
+                      disabled
+                      style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                    />
+                  )}
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    checked={overridePrice}
-                    onChange={(e) => {
-                      setOverridePrice(e.target.checked);
-                      if (!e.target.checked) {
-                        setManualPrice('');
-                      } else {
-                        setManualPrice(selectedService.cost.toString());
-                      }
-                    }}
-                    style={{ width: 'auto', margin: 0 }}
-                  />
-                  <span>{t('contracts.overridePrice')}</span>
-                </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+                    <div style={{ position: 'relative', width: '44px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={overridePrice}
+                        onChange={(e) => {
+                          setOverridePrice(e.target.checked);
+                          if (!e.target.checked) {
+                            setManualPrice('');
+                          } else {
+                            setManualPrice(selectedService.cost.toString());
+                          }
+                        }}
+                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                      />
+                      <span style={{
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: overridePrice ? '#10b981' : '#d1d5db',
+                        transition: '0.3s',
+                        borderRadius: '24px'
+                      }}>
+                        <span style={{
+                          position: 'absolute',
+                          content: '',
+                          height: '18px',
+                          width: '18px',
+                          left: overridePrice ? '23px' : '3px',
+                          bottom: '3px',
+                          backgroundColor: 'white',
+                          transition: '0.3s',
+                          borderRadius: '50%'
+                        }}></span>
+                      </span>
+                    </div>
+                    <span>{t('contracts.overridePrice')}</span>
+                  </label>
+                </div>
+
+                {/* VAT Calculation Display */}
+                <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
+                    <span style={{ color: '#6b7280' }}>{t('contracts.baseAmount') || 'Prezzo Netto'}:</span>
+                    <span>{formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                    <span style={{ color: '#6b7280' }}>
+                      {t('contracts.vat') || 'IVA'} ({selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22}%):
+                    </span>
+                    <span>
+                      {formatCurrency(
+                        (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
+                        ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100),
+                        selectedService.currency
+                      )}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', paddingTop: '0.5rem', fontWeight: 600 }}>
+                    <span style={{ color: '#111827' }}>{t('contracts.total') || 'Totale'}:</span>
+                    <span style={{ color: '#4f46e5' }}>
+                      {formatCurrency(
+                        (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
+                        (1 + ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100)),
+                        selectedService.currency
+                      )}
+                    </span>
+                  </div>
+
+                </div>
               </div>
-
-              {/* VAT Calculation Display */}
-              <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
-                  <span style={{ color: '#6b7280' }}>{t('contracts.baseAmount') || 'Prezzo Netto'}:</span>
-                  <span>{formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                  <span style={{ color: '#6b7280' }}>
-                    {t('contracts.vat') || 'IVA'} ({selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22}%):
-                  </span>
-                  <span>
-                    {formatCurrency(
-                      (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
-                      ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100),
-                      selectedService.currency
-                    )}
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', paddingTop: '0.5rem', fontWeight: 600 }}>
-                  <span style={{ color: '#111827' }}>{t('contracts.total') || 'Totale'}:</span>
-                  <span style={{ color: '#4f46e5' }}>
-                    {formatCurrency(
-                      (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
-                      (1 + ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100)),
-                      selectedService.currency
-                    )}
-                  </span>
-                </div>
-
-              </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Start Date Selection */}
           <div className="form-section-clean">
@@ -1807,20 +1891,45 @@ const ContractFormPage = () => {
                 )}
 
                 {canOverride && selectedService?.service_type !== 'giornaliero' && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={overrideEndDate}
-                      onChange={(e) => {
-                        setOverrideEndDate(e.target.checked);
-                        if (!e.target.checked) {
-                          setManualEndDate('');
-                        } else if (calculatedEndDate) {
-                          setManualEndDate(calculatedEndDate);
-                        }
-                      }}
-                      style={{ width: 'auto', margin: 0 }}
-                    />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+                    <div style={{ position: 'relative', width: '44px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={overrideEndDate}
+                        onChange={(e) => {
+                          setOverrideEndDate(e.target.checked);
+                          if (!e.target.checked) {
+                            setManualEndDate('');
+                          } else if (calculatedEndDate) {
+                            setManualEndDate(calculatedEndDate);
+                          }
+                        }}
+                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                      />
+                      <span style={{
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: overrideEndDate ? '#10b981' : '#d1d5db',
+                        transition: '0.3s',
+                        borderRadius: '24px'
+                      }}>
+                        <span style={{
+                          position: 'absolute',
+                          content: '',
+                          height: '18px',
+                          width: '18px',
+                          left: overrideEndDate ? '23px' : '3px',
+                          bottom: '3px',
+                          backgroundColor: 'white',
+                          transition: '0.3s',
+                          borderRadius: '50%'
+                        }}></span>
+                      </span>
+                    </div>
                     <span>{t('contracts.customEndDate')}</span>
                   </label>
                 )}

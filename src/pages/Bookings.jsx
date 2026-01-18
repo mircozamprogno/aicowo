@@ -6,6 +6,7 @@ import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+import '../styles/components/timeline-view.css';
 import '../styles/pages/bookings.css';
 
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -29,6 +30,7 @@ const Bookings = () => {
   });
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [resources, setResources] = useState([]); // New state for resources timeline
 
   // Partner booking modal state
   const [showPartnerBooking, setShowPartnerBooking] = useState(false);
@@ -436,6 +438,23 @@ const Bookings = () => {
 
       setCustomers(customersData || []);
       setLocations(locationsData || []);
+
+      // Also fetch resources for the timeline view
+      const { data: resourcesData } = await supabase
+        .from('location_resources')
+        .select(`
+          *,
+          locations (
+            id,
+            location_name
+          )
+        `)
+        .eq('partner_uuid', profile.partner_uuid)
+        .order('locations(location_name)')
+        .order('resource_type')
+        .order('resource_name');
+
+      setResources(resourcesData || []);
     } catch (error) {
       logger.error('Error fetching filter options:', error);
     }
@@ -1438,126 +1457,117 @@ const Bookings = () => {
     const dayClosures = getClosuresForDate(currentDate);
     const closureInfo = categorizeClosures(dayClosures);
 
+    // Group resources by location for clearer display
+    const resourcesByLocation = resources.reduce((acc, resource) => {
+      const locId = resource.location_id;
+      if (!acc[locId]) {
+        acc[locId] = {
+          locationName: resource.locations?.location_name || t('bookings.unknownLocation'),
+          resources: []
+        };
+      }
+      acc[locId].resources.push(resource);
+      return acc;
+    }, {});
+
     return (
-      <div className="calendar-day-view">
+      <div className="calendar-day-view timeline-view">
         <div className="day-view-header">
           <h2>{formatDisplayDate(currentDate)}</h2>
-          <p>{dayBookings.length} {dayBookings.length === 1 ? t('bookings.booking') : t('bookings.bookings')}</p>
+          <div className="timeline-legend">
+            <span className="legend-item"><span className="dot" style={{ background: '#3b82f6' }}></span>{t('services.subscription')}</span>
+            <span className="legend-item"><span className="dot" style={{ background: '#10b981' }}></span>{t('services.package')}</span>
+          </div>
         </div>
 
-        {/* Closure Alert Banner */}
+        {/* Global Closure Alert */}
         {closureInfo.hasLocationClosure && (
           <div className="closure-alert location-closure-alert">
             <div className="closure-alert-icon">🚫</div>
             <div className="closure-alert-content">
               <h4>{t('bookings.locationClosedToday')}</h4>
               <p>{closureInfo.locationClosure.closure_reason || t(`reservations.closureType.${closureInfo.locationClosure.closure_type}`)}</p>
-              {closureInfo.locationClosure.locations && (
-                <p className="closure-location">📍 {closureInfo.locationClosure.locations.location_name}</p>
-              )}
             </div>
           </div>
         )}
 
-        {!closureInfo.hasLocationClosure && closureInfo.partialClosureCount > 0 && (
-          <div className="closure-alert partial-closure-alert">
-            <div className="closure-alert-icon">⚠️</div>
-            <div className="closure-alert-content">
-              <h4>{t('bookings.partialClosureToday')} - {closureInfo.partialClosureCount} {t('bookings.resourcesAffected')}</h4>
-              <div className="closure-list">
-                {closureInfo.allClosures.map((closure, idx) => (
-                  <div key={idx} className="closure-item">
-                    <span className="closure-scope-badge" style={{ backgroundColor: getClosureColor(closure.closure_type) }}>
-                      {closure.closure_scope === 'resource_type'
-                        ? t(`resources.${closure.resource_type}`)
-                        : closure.location_resources?.resource_name
-                      }
-                    </span>
-                    <span className="closure-reason">
-                      {closure.closure_reason || t(`reservations.closureType.${closure.closure_type}`)}
-                    </span>
-                    <span className="closure-location">
-                      @ {closure.location_resources?.locations?.location_name || closure.locations?.location_name || 'NO LOCATION'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="timeline-container">
+          {Object.entries(resourcesByLocation).map(([locId, group]) => (
+            <div key={locId} className="location-group">
+              <h3 className="location-header">{group.locationName}</h3>
 
-        <div className="day-view-content">
-          {dayBookings.length === 0 ? (
-            <div className="day-no-bookings">
-              <Calendar size={48} className="empty-icon" />
-              <p>{t('bookings.noBookingsForDay')}</p>
-            </div>
-          ) : (
-            <div className="partner-day-bookings-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
-              {dayBookings.map(b => {
-                const contract = getContractForBooking(b);
-                const customerName = getBookingDisplayText(b);
-                const resourceName = b.location_resources?.resource_name || t('bookings.unknownResource');
-                const locationName = b.location_resources?.locations?.location_name || '';
+              {group.resources.map(resource => {
+                // Find booking for this resource
+                const resourceBookings = dayBookings.filter(b =>
+                  b.location_resources?.id === resource.id ||
+                  (b.location_resources?.id === null && b.location_id === resource.location_id) // Handle edge cases
+                );
+
+                // Check specific resource closure
+                const isClosed = closureInfo.allClosures.some(c =>
+                  (c.closure_scope === 'resource' && c.location_resource_id === resource.id) ||
+                  (c.closure_scope === 'resource_type' && c.resource_type === resource.resource_type && c.location_id === resource.location_id)
+                );
 
                 return (
-                  <div
-                    key={b.id}
-                    className="partner-day-booking-card"
-                    style={{
-                      backgroundColor: 'white',
-                      borderLeft: `5px solid ${getResourceColor(b)}`,
-                      padding: '1rem',
-                      borderRadius: '0.5rem',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedBooking(b);
-                      setShowBookingDetails(true);
-                    }}
-                  >
-                    <div className="booking-info">
-                      <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', fontWeight: '600' }}>{customerName}</h3>
-                      <div style={{ color: '#6b7280', fontSize: '0.9rem', display: 'flex', gap: '1rem' }}>
-                        <span>📍 {locationName}</span>
-                        <span>{resourceName}</span>
-                      </div>
+                  <div key={resource.id} className={`timeline-row ${isClosed ? 'closed-resource' : ''}`}>
+                    <div className="timeline-resource-col">
+                      <span className="resource-name">{resource.resource_name}</span>
+                      <span className="resource-type">{resource.resource_type === 'other' ? t('settings.otherCustom') : t(`resources.${resource.resource_type}`) || resource.resource_type}</span>
                     </div>
 
-                    <div className="booking-meta" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <span className={`booking-type-badge ${b.booking_type}`}
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '9999px',
-                          fontSize: '0.8rem',
-                          fontWeight: '500',
-                          backgroundColor: b.booking_type === 'package' ? '#d1fae5' : '#dbeafe',
-                          color: b.booking_type === 'package' ? '#059669' : '#1e40af'
-                        }}
-                      >
-                        {b.booking_type === 'package' ? t('services.package') : t('services.subscription')}
-                      </span>
+                    <div className="timeline-slots-col">
+                      {isClosed ? (
+                        <div className="closed-strip">
+                          {t('bookings.closed')}
+                        </div>
+                      ) : (
+                        <div className="slots-grid">
+                          {/* Morning Slot */}
+                          <div className="slot-half">
+                            {resourceBookings.filter(b => b.duration_type === 'full_day' || b.time_slot === 'morning').map(b => (
+                              <div
+                                key={b.id}
+                                className={`timeline-booking-bar ${b.booking_type}`}
+                                style={{ backgroundColor: getResourceColor(b) }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBooking(b);
+                                  setShowBookingDetails(true);
+                                }}
+                                title={getBookingDisplayText(b)}
+                              >
+                                {getBookingDisplayText(b)}
+                              </div>
+                            ))}
+                          </div>
 
-                      {isCustomer && contract && contract.service_type === 'pacchetto' && (
-                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#6b7280' }}>
-                          {(contract.service_max_entries - contract.entries_used)} {t('bookings.left')}
-                        </span>
+                          {/* Afternoon Slot */}
+                          <div className="slot-half">
+                            {resourceBookings.filter(b => b.duration_type === 'full_day' || b.time_slot === 'afternoon').map(b => (
+                              <div
+                                key={b.id}
+                                className={`timeline-booking-bar ${b.booking_type}`}
+                                style={{ backgroundColor: getResourceColor(b) }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedBooking(b);
+                                  setShowBookingDetails(true);
+                                }}
+                                title={getBookingDisplayText(b)}
+                              >
+                                {getBookingDisplayText(b)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
-
-                      <div style={{ color: '#9ca3af' }}>
-                        <ChevronRight size={20} />
-                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          )}
+          ))}
         </div>
       </div>
     );

@@ -79,6 +79,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.customers'), href: '/customers', icon: Users, roles: ['admin'] },
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['admin'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['admin'] },
+      { name: t('navigation.ganttBookings') || 'Gantt View', href: '/bookings-new', icon: Layers, roles: ['admin'] },
       { name: t('navigation.services'), href: '/services', icon: Cog, roles: ['admin'] },
       { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
       { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
@@ -92,6 +93,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
+      { name: t('navigation.ganttBookings') || 'Gantt View', href: '/bookings-new', icon: Layers, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
     ];
 

@@ -1,0 +1,338 @@
+/* src/styles/pages/bookings-new.css */
+
+.bookings-new {
+    padding: 20px;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+}
+
+.timeline-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-navigation {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.timeline-month-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+    min-width: 200px;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.btn-today {
+    padding: 8px 16px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-today:hover {
+    background: #4338ca;
+}
+
+.timeline-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.filter-input {
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Timeline Grid */
+.timeline-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e5e7eb;
+}
+
+.timeline-header {
+    display: flex;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    z-index: 20;
+    position: sticky;
+    top: 0;
+}
+
+.timeline-header-corner {
+    width: 200px;
+    min-width: 200px;
+    padding: 15px;
+    border-right: 2px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #4b5563;
+    background: #f3f4f6;
+    position: sticky;
+    left: 0;
+    z-index: 30;
+}
+
+.timeline-days-header {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.timeline-days-header::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+}
+
+.timeline-day-header {
+    width: 80px;
+    min-width: 80px;
+    padding: 10px 5px;
+    text-align: center;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.timeline-day-header.today {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.timeline-day-header.weekend {
+    background: #f9fafb;
+    color: #9ca3af;
+}
+
+.day-name {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.day-number {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.timeline-body {
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+}
+
+.timeline-row {
+    display: flex;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s;
+}
+
+.timeline-row:hover {
+    background-color: #f9fafb;
+}
+
+.timeline-car-cell {
+    width: 200px;
+    min-width: 200px;
+    padding: 15px;
+    border-right: 2px solid #e5e7eb;
+    background: white;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.car-plate-label {
+    font-weight: 700;
+    color: #111827;
+    font-size: 0.95rem;
+}
+
+.car-model-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.timeline-days-row {
+    display: flex;
+    position: relative;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.timeline-days-row::-webkit-scrollbar {
+    display: none;
+}
+
+.timeline-day-cell {
+    width: 80px;
+    min-width: 80px;
+    height: 80px;
+    border-right: 1px solid #f3f4f6;
+}
+
+.timeline-day-cell.weekend {
+    background-color: #fdfdfd;
+}
+
+/* Booking Blocks */
+.timeline-booking-block {
+    position: absolute;
+    top: 15px;
+    height: 50px;
+    background: #4f46e5;
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: white;
+    font-size: 0.8rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 5;
+}
+
+.timeline-booking-block:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 15;
+}
+
+.booking-renter {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.booking-timeslot {
+    font-size: 0.65rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* Status Colors */
+.status-active {
+    background: #3b82f6;
+}
+
+.status-confirmed {
+    background: #10b981;
+}
+
+.status-closed {
+    background: #9ca3af;
+}
+
+.timeline-empty-state {
+    padding: 100px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+/* Modal Adjustments */
+.booking-details-modal {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.detail-item label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.detail-item p {
+    font-weight: 600;
+    color: #111827;
+}
+
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f4f6;
+    border-top: 5px solid #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

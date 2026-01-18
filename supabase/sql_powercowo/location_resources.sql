@@ -40,8 +40,7 @@ CREATE TABLE public.location_resources (
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     created_by uuid,
-    CONSTRAINT location_resources_quantity_positive CHECK ((quantity > 0)),
-    CONSTRAINT location_resources_resource_type_check CHECK (((resource_type)::text = ANY (ARRAY[('scrivania'::character varying)::text, ('sala_riunioni'::character varying)::text])))
+    CONSTRAINT location_resources_quantity_positive CHECK ((quantity > 0))
 );
 
 
@@ -58,7 +57,7 @@ COMMENT ON TABLE public.location_resources IS 'Resources available at each locat
 -- Name: COLUMN location_resources.resource_type; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.location_resources.resource_type IS 'Type of resource: scrivania or sala_riunioni';
+COMMENT ON COLUMN public.location_resources.resource_type IS 'Type of resource: scrivania, sala_riunioni, or custom types';
 
 
 --
