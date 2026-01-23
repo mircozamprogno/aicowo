@@ -209,9 +209,14 @@ export default async function handler(req, res) {
                 location.city
             ].filter(Boolean).join(', ');
 
-            // Parse dates (bookings are date-only, treat as all-day events)
-            const startDate = new Date(booking.start_date + 'T00:00:00');
-            const endDate = new Date(booking.end_date + 'T23:59:59');
+            // Parse dates for all-day events
+            // For iCalendar all-day events, the end date must be EXCLUSIVE (the day after)
+            // So if booking is Jan 23-25, the iCal end should be Jan 26
+            const startDate = new Date(booking.start_date);
+            const endDate = new Date(booking.end_date);
+
+            // Add 1 day to end date to make it exclusive (iCalendar spec for all-day events)
+            endDate.setDate(endDate.getDate() + 1);
 
             return {
                 start: [
