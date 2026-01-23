@@ -63,15 +63,17 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'User profile not found' });
         }
 
-        let bookings = [];
+        let allEvents = [];
 
         // Get today's date for filtering
         const today = new Date().toISOString().split('T')[0];
 
         // Fetch bookings based on user role
         if (profile.role === 'admin' || profile.role === 'superadmin') {
-            // Partner admin: Get all bookings for their partner
-            const query = supabase
+            // ===== PARTNER ADMIN: Get all bookings and reservations for their partner =====
+
+            // 1. Fetch subscription bookings (multi-day)
+            const bookingsQuery = supabase
                 .from('bookings')
                 .select(`
           id,
@@ -111,19 +113,91 @@ export default async function handler(req, res) {
                 .gte('end_date', today);
 
             if (profile.role === 'admin') {
-                query.eq('partner_uuid', profile.partner_uuid);
+                bookingsQuery.eq('partner_uuid', profile.partner_uuid);
             }
 
-            const { data, error } = await query;
+            const { data: bookingsData, error: bookingsError } = await bookingsQuery;
 
-            if (error) {
-                console.error('Error fetching partner bookings:', error);
+            if (bookingsError) {
+                console.error('Error fetching partner bookings:', bookingsError);
                 return res.status(500).json({ error: 'Failed to fetch bookings' });
             }
 
-            bookings = data || [];
+            // 2. Fetch package reservations (single-day)
+            const reservationsQuery = supabase
+                .from('reservations')
+                .select(`
+          id,
+          reservation_uuid,
+          reservation_date,
+          reservation_status,
+          contracts!inner (
+            id,
+            contract_number,
+            service_name,
+            service_type,
+            service_cost,
+            service_currency
+          ),
+          location_resources!inner (
+            id,
+            resource_name,
+            resource_type,
+            locations!inner (
+              id,
+              location_name,
+              address,
+              city
+            )
+          ),
+          customers!inner (
+            id,
+            first_name,
+            second_name,
+            company_name,
+            email
+          )
+        `)
+                .eq('is_archived', false)
+                .in('reservation_status', ['active', 'confirmed'])
+                .gte('reservation_date', today);
+
+            if (profile.role === 'admin') {
+                reservationsQuery.eq('partner_uuid', profile.partner_uuid);
+            }
+
+            const { data: reservationsData, error: reservationsError } = await reservationsQuery;
+
+            if (reservationsError) {
+                console.error('Error fetching partner reservations:', reservationsError);
+                return res.status(500).json({ error: 'Failed to fetch reservations' });
+            }
+
+            // Combine and normalize both types
+            const normalizedBookings = (bookingsData || []).map(b => ({
+                ...b,
+                type: 'booking',
+                start_date: b.start_date,
+                end_date: b.end_date,
+                uid: b.booking_uuid,
+                status: b.booking_status
+            }));
+
+            const normalizedReservations = (reservationsData || []).map(r => ({
+                ...r,
+                type: 'reservation',
+                start_date: r.reservation_date,
+                end_date: r.reservation_date, // Single day
+                uid: r.reservation_uuid,
+                status: r.reservation_status
+            }));
+
+            allEvents = [...normalizedBookings, ...normalizedReservations];
+            console.log(`[Calendar Feed] Partner ${profile.partner_uuid}: Found ${normalizedBookings.length} bookings + ${normalizedReservations.length} reservations = ${allEvents.length} total events`);
+
         } else {
-            // Customer: Get only their own bookings
+            // ===== CUSTOMER: Get only their own bookings and reservations =====
+
             // First, get customer_id from user_id
             const { data: customer, error: customerError } = await supabase
                 .from('customers')
@@ -135,7 +209,8 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: 'Customer profile not found' });
             }
 
-            const { data, error } = await supabase
+            // 1. Fetch subscription bookings (multi-day)
+            const { data: bookingsData, error: bookingsError } = await supabase
                 .from('bookings')
                 .select(`
           id,
@@ -168,41 +243,99 @@ export default async function handler(req, res) {
                 .in('booking_status', ['active', 'confirmed'])
                 .gte('end_date', today);
 
-            if (error) {
-                console.error('Error fetching customer bookings:', error);
+            if (bookingsError) {
+                console.error('Error fetching customer bookings:', bookingsError);
                 return res.status(500).json({ error: 'Failed to fetch bookings' });
             }
 
-            bookings = data || [];
+            // 2. Fetch package reservations (single-day)
+            const { data: reservationsData, error: reservationsError } = await supabase
+                .from('reservations')
+                .select(`
+          id,
+          reservation_uuid,
+          reservation_date,
+          reservation_status,
+          contracts!inner (
+            id,
+            contract_number,
+            service_name,
+            service_type,
+            service_cost,
+            service_currency
+          ),
+          location_resources!inner (
+            id,
+            resource_name,
+            resource_type,
+            locations!inner (
+              id,
+              location_name,
+              address,
+              city
+            )
+          )
+        `)
+                .eq('customer_id', customer.id)
+                .eq('is_archived', false)
+                .in('reservation_status', ['active', 'confirmed'])
+                .gte('reservation_date', today);
+
+            if (reservationsError) {
+                console.error('Error fetching customer reservations:', reservationsError);
+                return res.status(500).json({ error: 'Failed to fetch reservations' });
+            }
+
+            // Combine and normalize both types
+            const normalizedBookings = (bookingsData || []).map(b => ({
+                ...b,
+                type: 'booking',
+                start_date: b.start_date,
+                end_date: b.end_date,
+                uid: b.booking_uuid,
+                status: b.booking_status
+            }));
+
+            const normalizedReservations = (reservationsData || []).map(r => ({
+                ...r,
+                type: 'reservation',
+                start_date: r.reservation_date,
+                end_date: r.reservation_date, // Single day
+                uid: r.reservation_uuid,
+                status: r.reservation_status
+            }));
+
+            allEvents = [...normalizedBookings, ...normalizedReservations];
+            console.log(`[Calendar Feed] Customer ${customer.id}: Found ${normalizedBookings.length} bookings + ${normalizedReservations.length} reservations = ${allEvents.length} total events`);
         }
 
-        // Convert bookings to iCalendar events
-        const events = bookings.map(booking => {
+        // Convert all events to iCalendar format
+        const events = allEvents.map(event => {
             const isPartner = profile.role === 'admin' || profile.role === 'superadmin';
 
             // Build event title
-            let title = booking.location_resources.resource_name;
-            if (isPartner && booking.customers) {
-                const customerName = booking.customers.company_name ||
-                    `${booking.customers.first_name} ${booking.customers.second_name || ''}`.trim();
+            let title = event.location_resources.resource_name;
+            if (isPartner && event.customers) {
+                const customerName = event.customers.company_name ||
+                    `${event.customers.first_name} ${event.customers.second_name || ''}`.trim();
                 title = `${title} - ${customerName}`;
             }
 
             // Build description
-            const contract = booking.contracts;
+            const contract = event.contracts;
             let description = `Service: ${contract.service_name}\n`;
             description += `Type: ${contract.service_type}\n`;
             description += `Contract: ${contract.contract_number}\n`;
             if (contract.service_cost) {
                 description += `Cost: ${contract.service_cost} ${contract.service_currency || 'EUR'}\n`;
             }
-            if (isPartner && booking.customers) {
-                description += `Customer: ${booking.customers.email}\n`;
+            if (isPartner && event.customers) {
+                description += `Customer: ${event.customers.email}\n`;
             }
-            description += `Status: ${booking.booking_status}`;
+            description += `Status: ${event.status}`;
 
             // Build location
-            const location = booking.location_resources.locations;
+            const location = event.location_resources.locations;
             const locationStr = [
                 location.location_name,
                 location.address,
@@ -234,7 +367,7 @@ export default async function handler(req, res) {
                 location: locationStr,
                 status: 'CONFIRMED',
                 busyStatus: 'BUSY',
-                uid: booking.booking_uuid,
+                uid: event.uid,
                 sequence: 0,
                 productId: 'powercowo/calendar-feed'
             };
