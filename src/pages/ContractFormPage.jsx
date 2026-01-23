@@ -44,6 +44,7 @@ const ContractFormPage = () => {
   });
 
   const [availableServices, setAvailableServices] = useState([]);
+  const [physicalResources, setPhysicalResources] = useState([]); // Available resources for selected location
   const [resourceTypes, setResourceTypes] = useState([]); // Partner resource types for name lookup
   const [selectedService, setSelectedService] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -206,14 +207,16 @@ const ContractFormPage = () => {
   }, [formData.service_id]);
 
 
-  // Fetch services when location changes
+  // Fetch services and resources when location changes
   useEffect(() => {
     if (formData.location_id) {
       fetchServicesForLocation(formData.location_id);
+      fetchResourcesForLocation(formData.location_id);
       setSelectedLocation(customerLocations.find(loc => loc.id.toString() === formData.location_id) ||
         locations.find(loc => loc.id.toString() === formData.location_id));
     } else {
       setAvailableServices([]);
+      setPhysicalResources([]);
       setSelectedLocation(null);
     }
   }, [formData.location_id, customerLocations, locations]);
@@ -506,6 +509,28 @@ const ContractFormPage = () => {
     }
   };
 
+  const fetchResourcesForLocation = async (locationId) => {
+    try {
+      const { data, error } = await supabase
+        .from('location_resources')
+        .select('*')
+        .eq('location_id', parseInt(locationId))
+        .eq('partner_uuid', profile?.partner_uuid)
+        .order('resource_name');
+
+      if (error) {
+        logger.error('Error fetching resources:', error);
+        setPhysicalResources([]);
+      } else {
+        setPhysicalResources(data || []);
+        logger.log('[CONTRACT FORM] Loaded', data?.length || 0, 'resources for location', locationId);
+      }
+    } catch (error) {
+      logger.error('Error fetching resources:', error);
+      setPhysicalResources([]);
+    }
+  };
+
   const checkDiscountCodesAvailability = async () => {
     try {
       const { count, error } = await supabase
@@ -674,10 +699,10 @@ const ContractFormPage = () => {
       return;
     }
 
-    // For other service types, add duration days
+    // For other service types, add duration days (subtract 1 to be inclusive of start date)
     const daysToAdd = Math.ceil(selectedService.duration_days);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + daysToAdd);
+    endDate.setDate(startDate.getDate() + daysToAdd - 1);
 
     setCalculatedEndDate(endDate.toISOString().split('T')[0]);
   };
@@ -714,14 +739,27 @@ const ContractFormPage = () => {
         return;
       }
 
-      // For specific resource checking:
-      // Capacity is usually 1 for desks/offices, but could be more for meeting rooms?
-      // Let's assume quantity is 1 for specific physically selectable resources for now, 
-      // OR fetch the quantity of that specific resource row.
+      // Check existing package reservations for THIS specific resource in the period
+      const { data: existingReservations, error: reservationsError } = await supabase
+        .from('package_reservations')
+        .select('id')
+        .eq('location_resource_id', resourceIdToCheck)
+        .eq('reservation_status', 'confirmed')
+        .gte('reservation_date', formData.start_date)
+        .lte('reservation_date', endDate);
+
+      if (reservationsError) {
+        logger.error('Error checking existing reservations:', reservationsError);
+        setAvailabilityStatus({ available: false, error: 'Error checking existing reservations' });
+        return;
+      }
+
       const resourceObj = physicalResources.find(r => r.id.toString() === resourceIdToCheck);
       const totalQuantity = resourceObj ? resourceObj.quantity : 1;
 
-      const bookedQuantity = existingBookings ? existingBookings.length : 0;
+      const bookedQuantity = (existingBookings ? existingBookings.length : 0) +
+        (existingReservations ? existingReservations.length : 0);
+
       const availableQuantity = totalQuantity - bookedQuantity;
 
       // If editing, exclude current contract's booking from the count
@@ -1033,11 +1071,16 @@ const ContractFormPage = () => {
       } else {
         // Create new contract
         const contractNumber = await generateContractNumber();
-        contractData.contract_number = contractNumber;
+        const payload = {
+          ...contractData,
+          contract_number: contractNumber,
+          created_by_user_id: user.id,
+          created_by_role: profile?.role || 'user'
+        };
 
         const { data, error } = await supabase
           .from('contracts')
-          .insert([contractData])
+          .insert([payload])
           .select(`
             *,
             customers (

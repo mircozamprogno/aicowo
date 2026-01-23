@@ -104,31 +104,61 @@ const PackageBookingForm = ({
       const totalQuantity = locationResource.quantity || 1;
 
       // Calculate how many slots are currently used
-      if (existingReservations && existingReservations.length > 0) {
-        if (formData.duration_type === 'full_day') {
-          // For full day, count all existing reservations (both full and half day)
-          usedSlots = existingReservations.reduce((total, res) => {
+      // 1. Check for overlapping long-term subscription bookings
+      const { data: existingBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('location_resource_id', locationResource.id)
+        .eq('booking_status', 'active')
+        .lte('start_date', formData.reservation_date)
+        .gte('end_date', formData.reservation_date);
+
+      if (bookingsError) {
+        logger.error('Bookings error:', bookingsError);
+        setAvailabilityStatus({ available: false, error: 'Error checking existing bookings' });
+        return;
+      }
+
+      const activeSubscriptionsCount = existingBookings ? existingBookings.length : 0;
+      usedSlots = activeSubscriptionsCount;
+
+      // 2. Check existing package reservations (single-day)
+      const reservationsFound = existingReservations && existingReservations.length > 0;
+
+      if (formData.duration_type === 'full_day') {
+        // For full day, count all existing package reservations (both full and half day)
+        if (reservationsFound) {
+          usedSlots += existingReservations.reduce((total, res) => {
             return total + (res.duration_type === 'full_day' ? 1 : 0.5);
           }, 0);
+        }
 
-          if (usedSlots >= totalQuantity) {
-            hasConflict = true;
-            conflictReason = 'Resource fully booked for this date';
-          }
-        } else {
-          // For half day, check specific time slot conflicts
-          const hasFullDayConflict = existingReservations.some(res => res.duration_type === 'full_day');
-          const sameTimeSlotReservations = existingReservations.filter(res =>
-            res.duration_type === 'half_day' && res.time_slot === formData.time_slot
-          );
+        if (usedSlots >= totalQuantity) {
+          hasConflict = true;
+          conflictReason = usedSlots > activeSubscriptionsCount
+            ? t('reservations.fullyBooked') || 'Resource fully booked for this date'
+            : t('reservations.occupiedBySubscription') || 'Resource occupied by active subscription';
+        }
+      } else {
+        // For half day, check specific time slot conflicts
+        // A full-day subscription ALWAYS blocks any half-day reservation
+        const hasFullDayReservation = reservationsFound && existingReservations.some(res => res.duration_type === 'full_day');
 
-          if (hasFullDayConflict) {
-            hasConflict = true;
-            conflictReason = 'Resource booked for full day on this date';
-          } else if (sameTimeSlotReservations.length >= totalQuantity) {
-            hasConflict = true;
-            conflictReason = `${formData.time_slot === 'morning' ? 'Morning' : 'Afternoon'} slot fully booked`;
-          }
+        const sameTimeSlotReservations = reservationsFound ? existingReservations.filter(res =>
+          res.duration_type === 'half_day' && res.time_slot === formData.time_slot
+        ) : [];
+
+        if (activeSubscriptionsCount >= totalQuantity) {
+          hasConflict = true;
+          conflictReason = t('reservations.occupiedBySubscription') || 'Resource occupied by active subscription';
+        } else if (hasFullDayReservation && (activeSubscriptionsCount + 1) >= totalQuantity) {
+          hasConflict = true;
+          conflictReason = t('reservations.occupiedForFullDay') || 'Resource booked for full day on this date';
+        } else if ((activeSubscriptionsCount + sameTimeSlotReservations.length + 0.5) > totalQuantity) {
+          // Note: using 0.5 here because a half-day reservation takes half a slot
+          hasConflict = true;
+          conflictReason = t('reservations.slotFullyBooked', { slot: formData.time_slot === 'morning' ? 'Morning' : 'Afternoon' }) ||
+            `${formData.time_slot === 'morning' ? 'Morning' : 'Afternoon'} slot fully booked`;
         }
       }
 
