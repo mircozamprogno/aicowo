@@ -125,7 +125,7 @@ export default async function handler(req, res) {
 
             // 2. Fetch package reservations (single-day)
             const reservationsQuery = supabase
-                .from('reservations')
+                .from('package_reservations')
                 .select(`
           id,
           reservation_uuid,
@@ -250,7 +250,7 @@ export default async function handler(req, res) {
 
             // 2. Fetch package reservations (single-day)
             const { data: reservationsData, error: reservationsError } = await supabase
-                .from('reservations')
+                .from('package_reservations')
                 .select(`
           id,
           reservation_uuid,
@@ -345,8 +345,8 @@ export default async function handler(req, res) {
             // Parse dates for all-day events
             // For iCalendar all-day events, the end date must be EXCLUSIVE (the day after)
             // So if booking is Jan 23-25, the iCal end should be Jan 26
-            const startDate = new Date(booking.start_date);
-            const endDate = new Date(booking.end_date);
+            const startDate = new Date(event.start_date);
+            const endDate = new Date(event.end_date);
 
             // Add 1 day to end date to make it exclusive (iCalendar spec for all-day events)
             endDate.setDate(endDate.getDate() + 1);
