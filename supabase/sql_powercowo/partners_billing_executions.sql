@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict TFDMkpJw49Np0aUNH0bcqRn5LTAwwxLSpt2gElAcppVa3O2auz13mzH6aulc9LG
+\restrict cs70Webig2DxWXUO6rAZEkfPZt6JOLgZ2q1AaGahfK09IF0QwE5iNfGSNKnP4Oq
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -167,5 +167,5 @@ GRANT ALL ON SEQUENCE public.partners_billing_executions_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict TFDMkpJw49Np0aUNH0bcqRn5LTAwwxLSpt2gElAcppVa3O2auz13mzH6aulc9LG
+\unrestrict cs70Webig2DxWXUO6rAZEkfPZt6JOLgZ2q1AaGahfK09IF0QwE5iNfGSNKnP4Oq
 

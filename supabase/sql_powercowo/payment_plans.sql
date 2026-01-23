@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict N271HVuxb1ILAnV9SIaDDfc02ZnhoteE4mPAyWNkRzFvDcVtUnmr5mOtRcORx3d
+\restrict wgjWLqOqonPiJnuNIuPODM5dziWfKQx8g5Fj8O3UovmOGythhSeGmz642k4GUlN
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -174,5 +174,5 @@ GRANT ALL ON SEQUENCE public.payment_plans_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict N271HVuxb1ILAnV9SIaDDfc02ZnhoteE4mPAyWNkRzFvDcVtUnmr5mOtRcORx3d
+\unrestrict wgjWLqOqonPiJnuNIuPODM5dziWfKQx8g5Fj8O3UovmOGythhSeGmz642k4GUlN
 

@@ -188,6 +188,7 @@
     "invoices": "Invoices Powercowo"
   },
   "locations": {
+    "resource": "Resource",
     "addLocation": "Add Location",
     "editLocation": "Edit Location",
     "locationName": "Location Name",
@@ -480,7 +481,6 @@
     "managePartners": "Manage all partners in the system",
     "viewPartnerInfo": "View your partner information and locations",
     "addToCalendar": "Add to Calendar",
-    "downloadCalendar": "Download Calendar",
     "downloadCalendar": "Download Calendar",
     "editPartner": "Edit Partner",
     "partner": "Partner",
@@ -934,6 +934,7 @@
     "service": "Service",
     "location": "Location",
     "resource": "Resource",
+    "noResourcesFoundForCategory": "No resources available for this category",
     "period": "Period",
     "cost": "Cost",
     "status": "Status",
@@ -1221,7 +1222,8 @@
     "confirmDeleteSubscriptionBooking": "Are you sure you want to delete this subscription booking?",
     "packageReservationDeleted": "Package reservation deleted successfully",
     "subscriptionBookingDeleted": "Subscription booking deleted successfully",
-    "errorDeletingBooking": "Error deleting booking. Please try again."
+    "errorDeletingBooking": "Error deleting booking. Please try again.",
+    "cannotDeleteBooking": "The booking cannot be deleted by a user, but only by the partner. Contact the partner for deletion."
   },
   "calendar": {
     "sunday": "Sun",

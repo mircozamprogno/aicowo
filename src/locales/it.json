@@ -251,6 +251,7 @@
     "errorCopyingUrl": "Errore nella copia dell'URL. Copia manualmente."
   },
   "locations": {
+    "resource": "Risorsa",
     "deleteResourceConfirmMessage": "Sei sicuro di voler eliminare la risorsa \"{{resourceName}}\"?",
     "deleteResourceUndoWarning": "Questa azione non può essere annullata.",
     "cannotDeleteResourceTitle": "Impossibile Eliminare Risorsa",
@@ -1015,7 +1016,11 @@
       "emergency": "Emergenza",
       "custom": "Chiusura"
     },
-    "confirmBookingWarning": "Questa prenotazione utilizzerà {{count}} ingressi del tuo pacchetto. Le prenotazioni confermate non potranno essere modificate."
+    "confirmBookingWarning": "Questa prenotazione utilizzerà {{count}} ingressi del tuo pacchetto. Le prenotazioni confermate non potranno essere modificate.",
+    "noResourcesFound": "Nessuna risorsa trovata per questa categoria",
+    "allResourcesBooked": "Tutte le risorse della categoria sono occupate",
+    "pleaseSelectResource": "Per favore seleziona una risorsa",
+    "noBookingsFound": "Nessuna prenotazione trovata"
   },
   "contracts": {
     "title": "Contratti",
@@ -1031,6 +1036,7 @@
     "service": "Servizio",
     "location": "Sede",
     "resource": "Risorsa",
+    "noResourcesFoundForCategory": "Nessuna risorsa disponibile per questa categoria",
     "period": "Periodo",
     "cost": "Prezzo",
     "status": "Stato",
@@ -1243,7 +1249,7 @@
     "bookingCreatedSuccessfully": "Prenotazione creata con successo per il cliente",
     "reservationCreatedSuccessfully": "Prenotazione creata con successo",
     "addToCalendar": "Aggiungi al calendario",
-    "downloadCalendar": "Scarica Calendario",
+    "downloadCalendar": "Scarica Evento ( .ics )",
     "title": "Prenotazioni",
     "viewYourBookings": "Visualizza e gestisci le tue prenotazioni",
     "manageAllBookings": "Gestisci tutte le prenotazioni dei clienti",
@@ -1324,7 +1330,9 @@
     "confirmDeleteSubscriptionBooking": "Sei sicuro di voler eliminare questa prenotazione abbonamento?",
     "packageReservationDeleted": "Prenotazione pacchetto eliminata con successo",
     "subscriptionBookingDeleted": "Prenotazione abbonamento eliminata con successo",
-    "errorDeletingBooking": "Errore durante l'eliminazione della prenotazione. Riprova."
+    "errorDeletingBooking": "Errore durante l'eliminazione della prenotazione. Riprova.",
+    "cannotDeleteBooking": "La prenotazione non può essere eliminata dall'utente, ma solo dal partner. Contatta il partner per la cancellazione.",
+    "bookAnother": "Prenota Ancora"
   },
   "calendar": {
     "sunday": "Dom",

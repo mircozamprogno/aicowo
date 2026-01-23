@@ -249,7 +249,7 @@ const BookingsNew = () => {
 
     const fetchFilterOptions = async () => {
         try {
-            const { data } = await supabase.from('customers').select('id, first_name, second_name, company_name').eq('partner_uuid', profile.partner_uuid).order('first_name');
+            const { data } = await supabase.from('customers').select('id, first_name, second_name, company_name').eq('partner_uuid', profile.partner_uuid).eq('customer_status', 'active').order('first_name');
             setCustomers(data || []);
         } catch (e) { logger.error(e); }
     };

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict K1aOlEeBEdHC6PnbbkCkxq6CVCuLu19xEpkf2VUqazM7moaj0a7GJ7e8sktjnpW
+\restrict LyGbU1yB4pJ8RdeYNEiQSi6fwbdjDvy04YUkOMYqAasCU9qqRO7lfnPJNUsp29y
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -147,5 +147,5 @@ GRANT ALL ON TABLE public.activity_logs TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict K1aOlEeBEdHC6PnbbkCkxq6CVCuLu19xEpkf2VUqazM7moaj0a7GJ7e8sktjnpW
+\unrestrict LyGbU1yB4pJ8RdeYNEiQSi6fwbdjDvy04YUkOMYqAasCU9qqRO7lfnPJNUsp29y
 

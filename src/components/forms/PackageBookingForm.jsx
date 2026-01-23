@@ -21,13 +21,16 @@ const PackageBookingForm = ({
   const [formData, setFormData] = useState({
     reservation_date: '',
     duration_type: 'full_day', // 'full_day' or 'half_day'
-    time_slot: 'morning' // 'morning' or 'afternoon'
+    time_slot: 'morning', // 'morning' or 'afternoon'
+    location_resource_id: ''
   });
 
   const [availabilityStatus, setAvailabilityStatus] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [availableResources, setAvailableResources] = useState([]);
+  const [loadingResources, setLoadingResources] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -35,24 +38,74 @@ const PackageBookingForm = ({
       setFormData({
         reservation_date: '',
         duration_type: 'full_day',
-        time_slot: 'morning'
+        time_slot: 'morning',
+        location_resource_id: ''
       });
       setAvailabilityStatus(null);
       setShowConfirmation(false);
+      setAvailableResources([]);
     }
   }, [isOpen]);
 
   // Check availability when form data changes
   useEffect(() => {
     if (formData.reservation_date && contract) {
-      checkAvailability();
+      if (!formData.location_resource_id && availableResources.length === 1) {
+        // wait for auto-selection
+      } else {
+        checkAvailability();
+      }
     } else {
       setAvailabilityStatus(null);
     }
-  }, [formData.reservation_date, formData.duration_type, formData.time_slot, contract]);
+  }, [formData.reservation_date, formData.duration_type, formData.time_slot, formData.location_resource_id, contract]);
+
+  // Fetch candidate resources if it's a category booking
+  useEffect(() => {
+    if (formData.reservation_date && contract?.location_id) {
+      fetchAvailableResources();
+    }
+  }, [formData.reservation_date, contract?.service_id]);
+
+  const fetchAvailableResources = async () => {
+    setLoadingResources(true);
+    try {
+      // Get service type info
+      const { data: service } = await supabase
+        .from('services')
+        .select('resource_type, location_resource_id')
+        .eq('id', contract.service_id)
+        .single();
+
+      const resType = service?.resource_type;
+      const specificResId = service?.location_resource_id;
+
+      if (!resType && !specificResId) return;
+
+      let query = supabase.from('location_resources').select('*').eq('location_id', contract.location_id);
+
+      if (resType) {
+        query = query.ilike('resource_type', resType); // Use ilike for case-insensitive match
+      } else {
+        query = query.eq('id', specificResId);
+      }
+
+      const { data } = await query.eq('is_available', true);
+      setAvailableResources(data || []);
+
+      // Auto-select if only one
+      if (data?.length === 1) {
+        setFormData(prev => ({ ...prev, location_resource_id: data[0].id.toString() }));
+      }
+    } catch (e) {
+      logger.error('Error fetching resources:', e);
+    } finally {
+      setLoadingResources(false);
+    }
+  };
 
   const checkAvailability = async () => {
-    if (!contract || !formData.reservation_date) return;
+    if (!contract || !formData.reservation_date || (!formData.location_resource_id && availableResources.length > 1)) return;
 
     setCheckingAvailability(true);
 
@@ -61,6 +114,7 @@ const PackageBookingForm = ({
       const { data: serviceData, error: serviceError } = await supabase
         .from('services')
         .select(`
+          resource_type,
           location_resources!fk_services_location_resource (
             id,
             resource_name,
@@ -77,17 +131,29 @@ const PackageBookingForm = ({
         return;
       }
 
-      const locationResource = serviceData.location_resources;
-      if (!locationResource) {
-        setAvailabilityStatus({ available: false, error: 'No resource found for this service' });
+      const resourceIdForQuery = formData.location_resource_id || serviceData.location_resources?.id;
+
+      if (!resourceIdForQuery) {
+        setAvailabilityStatus({ available: false, error: 'Seleziona una risorsa specifica' });
         return;
       }
 
-      // Check existing package reservations for this date and resource
+      // Find the resource object from the service's linked resource or the availableResources list
+      const locationResource = serviceData.location_resources?.id?.toString() === resourceIdForQuery
+        ? serviceData.location_resources
+        : availableResources.find(r => r.id.toString() === resourceIdForQuery);
+
+      if (!locationResource) {
+        setAvailabilityStatus({ available: false, error: 'Risorsa non trovata' });
+        return;
+      }
+
+      const totalQuantity = locationResource.quantity || 1;
+
       const { data: existingReservations, error: reservationsError } = await supabase
         .from('package_reservations')
         .select('duration_type, time_slot, entries_used')
-        .eq('location_resource_id', locationResource.id)
+        .eq('location_resource_id', resourceIdForQuery)
         .eq('reservation_date', formData.reservation_date)
         .eq('reservation_status', 'confirmed');
 
@@ -101,14 +167,18 @@ const PackageBookingForm = ({
       let hasConflict = false;
       let conflictReason = '';
       let usedSlots = 0;
-      const totalQuantity = locationResource.quantity || 1;
+      const resourceId = formData.location_resource_id || serviceData.location_resources?.id;
 
-      // Calculate how many slots are currently used
+      if (!resourceId) {
+        setAvailabilityStatus({ available: false, error: 'Seleziona una risorsa specifica' });
+        return;
+      }
+
       // 1. Check for overlapping long-term subscription bookings
       const { data: existingBookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('id')
-        .eq('location_resource_id', locationResource.id)
+        .eq('location_resource_id', resourceId)
         .eq('booking_status', 'active')
         .lte('start_date', formData.reservation_date)
         .gte('end_date', formData.reservation_date);
@@ -162,11 +232,13 @@ const PackageBookingForm = ({
         }
       }
 
+      const resourceType = serviceData.resource_type || locationResource?.resource_type;
+
       setAvailabilityStatus({
         available: !hasConflict,
         conflictReason,
-        resourceName: locationResource.resource_name,
-        resourceType: locationResource.resource_type,
+        resourceName: locationResource?.resource_name || `Spazio ${resourceType}`,
+        resourceType: resourceType,
         totalQuantity,
         usedSlots
       });
@@ -241,7 +313,7 @@ const PackageBookingForm = ({
 
       const reservationData = {
         contract_id: contract.id,
-        location_resource_id: serviceData.location_resources.id,
+        location_resource_id: parseInt(formData.location_resource_id) || serviceData.location_resources?.id,
         partner_uuid: contract.partner_uuid,
         customer_id: contract.customer_id,
         reservation_date: formData.reservation_date,
@@ -510,6 +582,24 @@ const PackageBookingForm = ({
                 </select>
               </div>
             </div>
+
+            {/* Resource Selection for flexible packages */}
+            {formData.reservation_date && (availableResources.length > 1 || (availableResources.length === 1 && !formData.location_resource_id)) && (
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="form-label">{t('contracts.resource')} *</label>
+                <select
+                  value={formData.location_resource_id}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location_resource_id: e.target.value }))}
+                  className="form-select"
+                  required
+                >
+                  <option value="">{t('contracts.selectResource')}</option>
+                  {availableResources.map(r => (
+                    <option key={r.id} value={r.id}>{r.resource_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Time Slot for Half Day */}
             {formData.duration_type === 'half_day' && (

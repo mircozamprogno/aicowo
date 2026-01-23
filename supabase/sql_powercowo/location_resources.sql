@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fcttr8YGDLTkQvv7YxAKQ9azu7fgCvy2u8Zw3cFEwpD03Gywx0esXlYFFMTvjPm
+\restrict ht3PCPgJaAOlk3l3QZ6Xhdpgym9tVDc3qkzYk6p8cV8KGqLcITME3EvVGaHIYOK
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -57,7 +57,7 @@ COMMENT ON TABLE public.location_resources IS 'Resources available at each locat
 -- Name: COLUMN location_resources.resource_type; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.location_resources.resource_type IS 'Type of resource: scrivania, sala_riunioni, or custom types';
+COMMENT ON COLUMN public.location_resources.resource_type IS 'Type of resource: scrivania or sala_riunioni';
 
 
 --
@@ -262,5 +262,5 @@ GRANT ALL ON SEQUENCE public.location_resources_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fcttr8YGDLTkQvv7YxAKQ9azu7fgCvy2u8Zw3cFEwpD03Gywx0esXlYFFMTvjPm
+\unrestrict ht3PCPgJaAOlk3l3QZ6Xhdpgym9tVDc3qkzYk6p8cV8KGqLcITME3EvVGaHIYOK
 

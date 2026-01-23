@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6XkCE569KSpMzrm6wfshXmRBmovtFkZ25o7IAKbNuJe0I7DtbUgsV8qRmwOhlKY
+\restrict RZpXxFp29oCO2TdmRNChRT9SHFohhnyCX7ryB8Ztp69EsQeblda468RBinrk3Me
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -35,7 +35,6 @@ CREATE TABLE public.services (
     service_name character varying(255) NOT NULL,
     service_description text,
     service_type character varying(50) NOT NULL,
-    target_resource_type character varying(50), -- New column for Category Booking
     cost numeric(10,2) DEFAULT 0.00 NOT NULL,
     currency character varying(3) DEFAULT 'EUR'::character varying,
     duration_days numeric(10,2) DEFAULT 30.0 NOT NULL,
@@ -48,11 +47,11 @@ CREATE TABLE public.services (
     created_by uuid,
     location_resource_id bigint,
     private boolean DEFAULT false NOT NULL,
+    target_resource_type character varying(50),
+    resource_type text,
+    CONSTRAINT services_linking_check CHECK (((location_resource_id IS NOT NULL) OR ((location_id IS NOT NULL) AND (resource_type IS NOT NULL)))),
     CONSTRAINT services_service_status_check CHECK (((service_status)::text = ANY (ARRAY[('active'::character varying)::text, ('inactive'::character varying)::text, ('draft'::character varying)::text]))),
-    CONSTRAINT services_service_type_check CHECK (((service_type)::text = ANY (ARRAY[('abbonamento'::character varying)::text, ('pacchetto'::character varying)::text, ('free_trial'::character varying)::text, ('giornaliero'::character varying)::text]))),
-    CONSTRAINT services_linking_check CHECK (
-        (location_resource_id IS NOT NULL) OR (location_id IS NOT NULL AND target_resource_type IS NOT NULL)
-    )
+    CONSTRAINT services_service_type_check CHECK (((service_type)::text = ANY (ARRAY[('abbonamento'::character varying)::text, ('pacchetto'::character varying)::text, ('free_trial'::character varying)::text, ('giornaliero'::character varying)::text])))
 );
 
 
@@ -76,7 +75,7 @@ COMMENT ON COLUMN public.services.location_id IS 'Kept for backward compatibilit
 -- Name: COLUMN services.location_resource_id; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.services.location_resource_id IS 'Links service to a specific resource at a location (required)';
+COMMENT ON COLUMN public.services.location_resource_id IS 'Specific resource link. If null, use target_resource_type';
 
 
 --
@@ -296,5 +295,5 @@ GRANT ALL ON SEQUENCE public.services_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6XkCE569KSpMzrm6wfshXmRBmovtFkZ25o7IAKbNuJe0I7DtbUgsV8qRmwOhlKY
+\unrestrict RZpXxFp29oCO2TdmRNChRT9SHFohhnyCX7ryB8Ztp69EsQeblda468RBinrk3Me
 

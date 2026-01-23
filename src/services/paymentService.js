@@ -37,7 +37,7 @@ export class PaymentService {
   static async getContractPaymentStatus(contractIds = []) {
     try {
       let query = supabase.from('contract_payment_status').select('*');
-      
+
       if (contractIds.length > 0) {
         query = query.in('contract_id', contractIds);
       }
@@ -61,7 +61,7 @@ export class PaymentService {
       if (!paymentData.payment_number) {
         const { data: numberData, error: numberError } = await supabase
           .rpc('generate_payment_number');
-        
+
         if (numberError) throw numberError;
         paymentData.payment_number = numberData;
       }
@@ -96,11 +96,28 @@ export class PaymentService {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If we get a duplicate key error for payment_number (code 23505), retry once with a randomized number
+        if (error.code === '23505' && error.message?.includes('payment_number')) {
+          const now = new Date();
+          const timestamp = now.toISOString().slice(0, 10).replace(/-/g, '');
+          const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
+          const fallbackNumber = `PAY-${timestamp}-${randomSuffix}`;
+
+          logger.warn(`Duplicate payment number detected. Retrying with fallback: ${fallbackNumber}`);
+
+          return this.createPayment({
+            ...paymentData,
+            payment_number: fallbackNumber
+          });
+        }
+        throw error;
+      }
+
       return { data, error: null };
     } catch (error) {
       logger.error('Error creating payment:', error);
-      return { data: null, error: error.message };
+      return { data: null, error: error.message || error };
     }
   }
 
@@ -226,7 +243,7 @@ export class PaymentService {
     try {
       const now = new Date();
       let startDate;
-      
+
       switch (period) {
         case 'week':
           startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -478,7 +495,7 @@ export class PaymentService {
       const reportData = data.map(payment => ({
         payment_number: payment.payment_number,
         contract_number: payment.contracts.contract_number,
-        customer_name: payment.contracts.customers.company_name || 
+        customer_name: payment.contracts.customers.company_name ||
           `${payment.contracts.customers.first_name} ${payment.contracts.customers.second_name}`,
         customer_email: payment.contracts.customers.email,
         service_name: payment.contracts.service_name,
@@ -542,9 +559,9 @@ export class PaymentService {
     const totalPaid = existingPayments
       .filter(p => p.payment_status === 'completed')
       .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-    
+
     const remainingAmount = contractCost - totalPaid;
-    
+
     return {
       isValid: amount <= remainingAmount && amount > 0,
       remainingAmount,

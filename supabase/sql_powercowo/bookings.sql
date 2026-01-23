@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 00cxDaaQ2p1pVe0oxxZiF20GqGxmAJMHzz6e1zSIyRHaS58BbqG3yiEVw7uJWjn
+\restrict mLWQx50POVZEtstWeX6iLh7MKL0sboIfycdqTWwzyt5PZJVT3CBaWUKcffYxNAH
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -216,12 +216,39 @@ ALTER TABLE ONLY public.bookings
 
 
 --
+-- Name: bookings Customers can insert own bookings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Customers can insert own bookings" ON public.bookings FOR INSERT TO authenticated WITH CHECK ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
+
+--
+-- Name: bookings Customers can update own bookings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Customers can update own bookings" ON public.bookings FOR UPDATE TO authenticated USING ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid())))) WITH CHECK ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
+
+--
 -- Name: bookings Customers view own bookings; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Customers view own bookings" ON public.bookings FOR SELECT TO authenticated USING ((customer_id IN ( SELECT customers.id
    FROM public.customers
   WHERE (customers.user_id = auth.uid()))));
+
+
+--
+-- Name: bookings Partner admins can insert bookings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins can insert bookings" ON public.bookings FOR INSERT TO authenticated WITH CHECK (((public.is_admin() OR public.is_superadmin()) AND (partner_uuid = public.get_my_partner_uuid())));
 
 
 --
@@ -273,5 +300,5 @@ GRANT ALL ON SEQUENCE public.bookings_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 00cxDaaQ2p1pVe0oxxZiF20GqGxmAJMHzz6e1zSIyRHaS58BbqG3yiEVw7uJWjn
+\unrestrict mLWQx50POVZEtstWeX6iLh7MKL0sboIfycdqTWwzyt5PZJVT3CBaWUKcffYxNAH
 

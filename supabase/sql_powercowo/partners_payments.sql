@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict CPxDT0L1n2VMb04JjNdTfFlKNC4YA7iCAljaiiu3zRnKygS3mtvegw9kRRGx7Kj
+\restrict DdOcw4MNrCdGYQufISYPrIFf5j3YFGjwKJG7jzQfMFdLJt3gTan7QdnGt4qs12m
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -278,5 +278,5 @@ GRANT ALL ON SEQUENCE public.partners_payments_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict CPxDT0L1n2VMb04JjNdTfFlKNC4YA7iCAljaiiu3zRnKygS3mtvegw9kRRGx7Kj
+\unrestrict DdOcw4MNrCdGYQufISYPrIFf5j3YFGjwKJG7jzQfMFdLJt3gTan7QdnGt4qs12m
 

@@ -37,7 +37,7 @@ const ServiceFormPage = () => {
         service_description: '',
         service_type: 'abbonamento',
         location_id: '',
-        resource_type: '', // Changed from location_resource_id
+        resource_type: '', // Matches DB column
         cost: '',
         currency: 'EUR',
         duration_days: '30',
@@ -101,7 +101,7 @@ const ServiceFormPage = () => {
                         service_description: service.service_description || '',
                         service_type: service.service_type || 'abbonamento',
                         location_id: service.location_id?.toString() || '',
-                        resource_type: service.resource_type || '', // Load resource_type
+                        resource_type: service.resource_type || '', // Use correct DB column
                         cost: service.cost?.toString() || '',
                         currency: service.currency || 'EUR',
                         duration_days: service.duration_days?.toString() || '30',
@@ -193,7 +193,7 @@ const ServiceFormPage = () => {
                 service_description: formData.service_description.trim(),
                 service_type: formData.service_type,
                 location_id: parseInt(formData.location_id),
-                resource_type: formData.resource_type, // Save resource_type
+                resource_type: formData.resource_type?.toLowerCase(), // Save as lowercase slug
                 location_resource_id: null, // Clear explicit resource link
                 cost: parseFloat(formData.cost),
                 currency: formData.currency,

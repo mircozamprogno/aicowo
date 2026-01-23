@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 17STnDsFeMlj0gg3Zf3JxeWFI5nvIfpjJvk4Cm9aRYnruUSFEEYeXVrXh8P9bob
+\restrict sVb8fxHENlN9WjsW27iX3v8kxHsHV3AfinPLM5VNidUMJuSXtzSNueQMtHKvmYU
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -181,5 +181,5 @@ GRANT ALL ON SEQUENCE public.partners_pricing_plans_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 17STnDsFeMlj0gg3Zf3JxeWFI5nvIfpjJvk4Cm9aRYnruUSFEEYeXVrXh8P9bob
+\unrestrict sVb8fxHENlN9WjsW27iX3v8kxHsHV3AfinPLM5VNidUMJuSXtzSNueQMtHKvmYU
 

@@ -299,6 +299,7 @@ const Contracts = () => {
         .from('customers')
         .select('id, first_name, second_name, email, company_name')
         .eq('partner_uuid', profile.partner_uuid)
+        .eq('customer_status', 'active')
         .order('first_name');
 
       if (customersError) {

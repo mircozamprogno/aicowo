@@ -2,6 +2,7 @@
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import SearchableSelect from '../components/common/SearchableSelect';
+import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -44,6 +45,7 @@ const ContractFormPage = () => {
   });
 
   const [availableServices, setAvailableServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [physicalResources, setPhysicalResources] = useState([]); // Available resources for selected location
   const [resourceTypes, setResourceTypes] = useState([]); // Partner resource types for name lookup
   const [selectedService, setSelectedService] = useState(null);
@@ -89,7 +91,8 @@ const ContractFormPage = () => {
         const { data: customersData } = await supabase
           .from('customers')
           .select('*')
-          .eq('partner_uuid', profile.partner_uuid);
+          .eq('partner_uuid', profile.partner_uuid)
+          .eq('customer_status', 'active');
 
         if (customersData) setCustomers(customersData);
 
@@ -240,7 +243,7 @@ const ContractFormPage = () => {
     } else {
       setAvailabilityStatus(null);
     }
-  }, [selectedService, formData.start_date, calculatedEndDate, overrideEndDate, manualEndDate]);
+  }, [selectedService, formData.start_date, calculatedEndDate, overrideEndDate, manualEndDate, formData.location_resource_id]);
 
   useEffect(() => {
     if (isCustomerMode && formData.customer_id) {
@@ -446,6 +449,11 @@ const ContractFormPage = () => {
   };
 
   const fetchServicesForLocation = async (locationId) => {
+    if (!locationId) {
+      setAvailableServices([]);
+      return;
+    }
+    setLoadingServices(true);
     try {
       let query = supabase
         .from('services')
@@ -506,10 +514,16 @@ const ContractFormPage = () => {
     } catch (error) {
       logger.error('Error fetching services:', error);
       setAvailableServices([]);
+    } finally {
+      setLoadingServices(false);
     }
   };
 
   const fetchResourcesForLocation = async (locationId) => {
+    if (!locationId) {
+      setPhysicalResources([]);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('location_resources')
@@ -819,6 +833,24 @@ const ContractFormPage = () => {
           location_resource_id: service.location_resources.id.toString()
         }));
         logger.log('[CONTRACT FORM] Auto-set location_resource_id:', service.location_resources.id, 'from service:', service.service_name);
+      } else if (service?.resource_type) {
+        // For category services, try to find matching resources and auto-select if only one
+        const matchingResources = physicalResources.filter(r => r.resource_type === service.resource_type && r.is_available);
+        if (matchingResources.length === 1) {
+          setFormData(prev => ({
+            ...prev,
+            service_id: value,
+            location_resource_id: matchingResources[0].id.toString()
+          }));
+          logger.log('[CONTRACT FORM] Auto-set category resource:', matchingResources[0].id, 'for type:', service.resource_type);
+        } else {
+          // Clear it so user MUST select
+          setFormData(prev => ({
+            ...prev,
+            service_id: value,
+            location_resource_id: ''
+          }));
+        }
       }
 
       // Reset price override and discount when service changes
@@ -961,10 +993,12 @@ const ContractFormPage = () => {
         service_duration_days: selectedService.duration_days,
         service_max_entries: selectedService.max_entries,
 
-        // Location snapshot
+        // Resource snapshot - handle both specific resource and category
         location_name: selectedLocation?.location_name || 'Unknown Location',
-        resource_name: selectedService.location_resources?.resource_name || 'Unknown Resource',
-        resource_type: selectedService.location_resources?.resource_type || 'scrivania',
+        resource_name: formData.location_resource_id
+          ? physicalResources.find(r => r.id.toString() === formData.location_resource_id.toString())?.resource_name || 'Resource'
+          : (selectedService.location_resources?.resource_name || 'Unknown Resource'),
+        resource_type: selectedService.resource_type || selectedService.location_resources?.resource_type || 'scrivania',
 
         // Discount fields
         discount_code: appliedDiscount ? discountCode.trim().toUpperCase() : null,
@@ -1213,23 +1247,15 @@ const ContractFormPage = () => {
 
   const createBookingForContract = async (contractId, startDate, endDate) => {
     try {
-      const { data: serviceData } = await supabase
-        .from('services')
-        .select(`
-          location_resources!fk_services_location_resource (
-            id
-          )
-        `)
-        .eq('id', selectedService.id)
-        .single();
+      const resourceId = formData.location_resource_id;
 
-      if (!serviceData?.location_resources) {
-        throw new Error('Location resource not found for service');
+      if (!resourceId) {
+        throw new Error('Location resource not selected');
       }
 
       const bookingData = {
         contract_id: contractId,
-        location_resource_id: serviceData.location_resources.id,
+        location_resource_id: parseInt(resourceId),
         partner_uuid: profile?.partner_uuid,
         customer_id: parseInt(formData.customer_id),
         start_date: startDate,
@@ -1254,24 +1280,16 @@ const ContractFormPage = () => {
 
   const updateBookingForContract = async (contractId, startDate, endDate) => {
     try {
-      const { data: serviceData } = await supabase
-        .from('services')
-        .select(`
-          location_resources!fk_services_location_resource (
-            id
-          )
-        `)
-        .eq('id', selectedService.id)
-        .single();
+      const resourceId = formData.location_resource_id;
 
-      if (!serviceData?.location_resources) {
-        throw new Error('Location resource not found for service');
+      if (!resourceId) {
+        throw new Error('Location resource not selected');
       }
 
       const { error } = await supabase
         .from('bookings')
         .update({
-          location_resource_id: serviceData.location_resources.id,
+          location_resource_id: parseInt(resourceId),
           start_date: startDate,
           end_date: endDate,
           updated_by: user.id
@@ -1318,7 +1336,7 @@ const ContractFormPage = () => {
     if (!typeCode) return '-';
 
     // Look up in partner_resource_types
-    const resourceType = resourceTypes.find(rt => rt.type_code === typeCode);
+    const resourceType = resourceTypes.find(rt => rt.type_code?.toLowerCase() === typeCode?.toLowerCase());
     if (resourceType) return resourceType.type_name;
 
     // Fallback to translation keys for standard types
@@ -1642,6 +1660,8 @@ const ContractFormPage = () => {
 
 
           </div>
+
+
 
           {selectedService && (
             <div className="form-section-clean">
@@ -2001,58 +2021,77 @@ const ContractFormPage = () => {
 
 
             </div>
-
-            {!overrideEndDate && calculatedEndDate && (
-              <div className="date-calculation">
-                <p style={{
-                  fontSize: '0.75rem',
-                  color: '#6b7280',
-                  fontStyle: 'italic',
-                  marginTop: '-0.25rem',
-                  marginBottom: '0.5rem',
-                  textAlign: 'right'
-                }}>
-                  {t('contracts.endDateCalculated')}
-                </p>
-              </div>
-            )}
-
-            {/* Availability Check for Abbonamento */}
-            {selectedService?.service_type === 'abbonamento' && getFinalEndDate() && (
-              <div className="availability-check">
-                {checkingAvailability ? (
-                  <div className="availability-loading">
-                    <div className="loading-spinner-small"></div>
-                    <span>{t('contracts.checkingAvailability')}...</span>
-                  </div>
-                ) : availabilityStatus ? (
-                  <div className={`availability-status ${availabilityStatus.available ? 'available' : 'unavailable'}`}>
-                    {availabilityStatus.available ? (
-                      <div className="availability-success">
-                        <span className="availability-icon">✅</span>
-                        <div className="availability-details">
-                          <p><strong>{t('contracts.resourceAvailable')}</strong></p>
-                          <p>{availabilityStatus.availableQuantity} di {availabilityStatus.totalQuantity} {availabilityStatus.resourceName} disponibili per questo periodo</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="availability-error">
-                        <span className="availability-icon">❌</span>
-                        <div className="availability-details">
-                          <p><strong>{t('contracts.resourceNotAvailable')}</strong></p>
-                          {availabilityStatus.error ? (
-                            <p>{availabilityStatus.error}</p>
-                          ) : (
-                            <p>Tutti i {availabilityStatus.totalQuantity} {availabilityStatus.resourceName} sono prenotati per questo periodo</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            )}
           </div>
+
+          {/* Resource Selection - Moved after dates */}
+          {selectedService && (
+            <div className="form-section-clean">
+              <div className="form-group">
+                <label htmlFor="location_resource_id" className="form-label">
+                  {t('locations.resource') || 'Risorsa'} *
+                </label>
+                <Select
+                  name="location_resource_id"
+                  value={formData.location_resource_id}
+                  onChange={handleChange}
+                  options={physicalResources
+                    .filter(r => !selectedService.resource_type || r.resource_type?.toLowerCase() === selectedService.resource_type?.toLowerCase())
+                    .map(resource => ({
+                      value: resource.id.toString(),
+                      label: `${resource.resource_name} (${getResourceTypeName(resource.resource_type)})`
+                    }))
+                  }
+                  placeholder={t('contracts.selectResource') || 'Seleziona risorsa'}
+                />
+                {selectedService.location_resources && (
+                  <p className="form-help-text" style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.375rem', fontStyle: 'italic' }}>
+                    ℹ️ {t('contracts.serviceLinkedToResource') || 'Questo servizio è collegato a una risorsa specifica.'}
+                  </p>
+                )}
+                {(!selectedService.location_resources && physicalResources.length > 0 && !physicalResources.some(r => !selectedService.resource_type || r.resource_type?.toLowerCase() === selectedService.resource_type?.toLowerCase())) && (
+                  <p className="form-help-text" style={{ fontSize: '0.8125rem', color: '#dc2626', marginTop: '0.375rem', fontWeight: 500 }}>
+                    ❌ {t('contracts.noResourcesFoundForCategory') || 'Nessuna risorsa disponibile per questa categoria'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Availability Check for Abbonamento */}
+          {selectedService?.service_type === 'abbonamento' && formData.location_resource_id && getFinalEndDate() && (
+            <div className="availability-check">
+              {checkingAvailability ? (
+                <div className="availability-loading">
+                  <div className="loading-spinner-small"></div>
+                  <span>{t('contracts.checkingAvailability')}...</span>
+                </div>
+              ) : availabilityStatus ? (
+                <div className={`availability-status ${availabilityStatus.available ? 'available' : 'unavailable'}`}>
+                  {availabilityStatus.available ? (
+                    <div className="availability-success">
+                      <span className="availability-icon">✅</span>
+                      <div className="availability-details">
+                        <p><strong>{t('contracts.resourceAvailable')}</strong></p>
+                        <p>{availabilityStatus.availableQuantity} di {availabilityStatus.totalQuantity} {availabilityStatus.resourceName} disponibili per questo periodo</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="availability-error">
+                      <span className="availability-icon">❌</span>
+                      <div className="availability-details">
+                        <p><strong>{t('contracts.resourceNotAvailable')}</strong></p>
+                        {availabilityStatus.error ? (
+                          <p>{availabilityStatus.error}</p>
+                        ) : (
+                          <p>Tutti i {availabilityStatus.totalQuantity} {availabilityStatus.resourceName} sono prenotati per questo periodo</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
 
           <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
             <button

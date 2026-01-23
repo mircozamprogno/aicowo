@@ -1908,13 +1908,30 @@ const Bookings = () => {
                 </button>
               )}
 
-              <button
-                className="btn-danger"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={loading}
-              >
-                {t('bookings.deleteBooking')}
-              </button>
+              {isCustomer ? (
+                <div style={{
+                  backgroundColor: '#fee2e2',
+                  color: '#b91c1c',
+                  padding: '0.75rem',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  textAlign: 'left',
+                  flex: 1,
+                  marginRight: '1rem',
+                  border: '1px solid #fecaca'
+                }}>
+                  <AlertTriangle size={16} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'text-bottom' }} />
+                  {t('bookings.cannotDeleteBooking')}
+                </div>
+              ) : (
+                <button
+                  className="btn-danger"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={loading}
+                >
+                  {t('bookings.deleteBooking')}
+                </button>
+              )}
               <button
                 className="btn-secondary"
                 onClick={() => setShowBookingDetails(false)}

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict VFHva6PvAFmxcjheDNmQ9aoJ5ccfKXQHTS4yNXOvTCS7z6z8K7LASKCyZ4koYnk
+\restrict lI40eRKsQrZWi3HHeq26kdG2OJoATMYjUC4bmxP66HOrr1YzuTkK9ylvrgUZg93
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -75,7 +75,6 @@ CREATE TABLE public.contracts (
     CONSTRAINT chk_contract_dates CHECK ((end_date >= start_date)),
     CONSTRAINT chk_contract_status CHECK (((contract_status)::text = ANY (ARRAY[('active'::character varying)::text, ('expired'::character varying)::text, ('cancelled'::character varying)::text, ('suspended'::character varying)::text]))),
     CONSTRAINT chk_entries_used CHECK ((entries_used >= (0)::numeric)),
-    CONSTRAINT chk_resource_type CHECK (((resource_type)::text = ANY (ARRAY[('scrivania'::character varying)::text, ('sala_riunioni'::character varying)::text]))),
     CONSTRAINT chk_service_type CHECK (((service_type)::text = ANY (ARRAY[('abbonamento'::character varying)::text, ('pacchetto'::character varying)::text, ('free_trial'::character varying)::text, ('giornaliero'::character varying)::text])))
 );
 
@@ -314,22 +313,46 @@ ALTER TABLE ONLY public.contracts
 
 
 --
--- Name: contracts; Type: ROW SECURITY; Schema: public; Owner: postgres
+-- Name: contracts Customers can insert own contracts; Type: POLICY; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Customers can insert own contracts" ON public.contracts FOR INSERT TO authenticated WITH CHECK ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
+
+--
+-- Name: contracts Customers can update own contracts; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Customers can update own contracts" ON public.contracts FOR UPDATE TO authenticated USING ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid())))) WITH CHECK ((customer_id IN ( SELECT customers.id
+   FROM public.customers
+  WHERE (customers.user_id = auth.uid()))));
+
 
 --
 -- Name: contracts Customers view own contracts; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Customers view own contracts" ON public.contracts FOR SELECT TO authenticated USING (
-  EXISTS (
-    SELECT 1 FROM public.customers
-    WHERE customers.id = contracts.customer_id
-    AND customers.user_id = auth.uid()
-  )
-);
+CREATE POLICY "Customers view own contracts" ON public.contracts FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.customers
+  WHERE ((customers.id = contracts.customer_id) AND (customers.user_id = auth.uid())))));
+
+
+--
+-- Name: contracts Partner admins can insert contracts; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Partner admins can insert contracts" ON public.contracts FOR INSERT TO authenticated WITH CHECK (((public.is_admin() OR public.is_superadmin()) AND (partner_uuid = public.get_my_partner_uuid())));
+
+
+--
+-- Name: contracts; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: contracts partner_admin_own_contracts; Type: POLICY; Schema: public; Owner: postgres
@@ -367,5 +390,5 @@ GRANT ALL ON SEQUENCE public.contracts_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict VFHva6PvAFmxcjheDNmQ9aoJ5ccfKXQHTS4yNXOvTCS7z6z8K7LASKCyZ4koYnk
+\unrestrict lI40eRKsQrZWi3HHeq26kdG2OJoATMYjUC4bmxP66HOrr1YzuTkK9ylvrgUZg93
 

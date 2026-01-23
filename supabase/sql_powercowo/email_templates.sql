@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict YLi4adzXuuBe5NMHy0oEZNiCnxd3ONm7Pa8cl1zaMU79JqwiHCOk3lxnRHL8n9o
+\restrict C6IlnhNH2dH1j2tPVxEpE8umI2ARL2JIHx9sM65NCpyrLOCNL7uMZ8YcrobHwFe
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -199,5 +199,5 @@ GRANT ALL ON SEQUENCE public.email_templates_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict YLi4adzXuuBe5NMHy0oEZNiCnxd3ONm7Pa8cl1zaMU79JqwiHCOk3lxnRHL8n9o
+\unrestrict C6IlnhNH2dH1j2tPVxEpE8umI2ARL2JIHx9sM65NCpyrLOCNL7uMZ8YcrobHwFe
 

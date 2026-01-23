@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.01.23 V 0.965 Bug fixes and improvements
 2026.01.23 V 0.961 Calendar improvements for partners
 2026.01.23 V 0.960 Booking contracts bug fixes
 2026.01.23 V 0.950 Calendar feed bug fixes

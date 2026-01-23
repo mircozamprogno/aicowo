@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict cWVZRF1rQxpHRsSpK489PawouU0Cmgms2dfh4Tmzl6oM01C6ec7CHulg7hwJEIj
+\restrict t4YCUk332nHNOglWPUGVVmcbGjTQ7IsNAecorabGTGaGk29nq1r8hUiFJI308PT
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -187,5 +187,5 @@ GRANT ALL ON SEQUENCE public.invitations_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict cWVZRF1rQxpHRsSpK489PawouU0Cmgms2dfh4Tmzl6oM01C6ec7CHulg7hwJEIj
+\unrestrict t4YCUk332nHNOglWPUGVVmcbGjTQ7IsNAecorabGTGaGk29nq1r8hUiFJI308PT
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict mlaXx4baOnDUxliJfLbawpVLQyOjbp92wOdh5DSv02xcHf0YaRdXBbLyogG3Lb7
+\restrict 1xptFbzAKczzcKlLdf07QBUpwV1jdjBdBJEhcoM89y5bbtdwoGCm5pQ5aN2t1u7
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -245,5 +245,5 @@ GRANT ALL ON SEQUENCE public.operating_closures_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict mlaXx4baOnDUxliJfLbawpVLQyOjbp92wOdh5DSv02xcHf0YaRdXBbLyogG3Lb7
+\unrestrict 1xptFbzAKczzcKlLdf07QBUpwV1jdjBdBJEhcoM89y5bbtdwoGCm5pQ5aN2t1u7
 

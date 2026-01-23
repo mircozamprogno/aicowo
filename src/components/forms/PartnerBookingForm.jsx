@@ -140,6 +140,7 @@ const PartnerBookingForm = ({
         .from('customers')
         .select('id, first_name, second_name, email, company_name')
         .eq('partner_uuid', profile.partner_uuid)
+        .eq('customer_status', 'active')
         .order('first_name');
 
       if (customersError) throw customersError;
@@ -188,6 +189,12 @@ const PartnerBookingForm = ({
           services (
             id,
             service_name,
+            resource_type,
+            location_id,
+            locations (
+              id,
+              location_name
+            ),
             location_resources!fk_services_location_resource (
               id,
               resource_name,
@@ -215,10 +222,12 @@ const PartnerBookingForm = ({
         return remaining >= 0.5;
       }).map(pkg => ({
         ...pkg,
-        resource_name: pkg.services?.location_resources?.resource_name,
-        resource_type: pkg.services?.location_resources?.resource_type,
-        location_name: pkg.services?.location_resources?.locations?.location_name,
-        location_id: pkg.services?.location_resources?.locations?.id,
+        resource_name: pkg.services?.resource_type
+          ? `Tutte le ${pkg.services.resource_type}`
+          : pkg.services?.location_resources?.resource_name,
+        resource_type: pkg.services?.resource_type || pkg.services?.location_resources?.resource_type,
+        location_name: pkg.services?.location_resources?.locations?.location_name || pkg.services?.locations?.location_name,
+        location_id: pkg.location_id || pkg.services?.location_resources?.locations?.id || pkg.services?.location_id,
         location_resource_id: pkg.services?.location_resources?.id
       }));
 
@@ -365,8 +374,16 @@ const PartnerBookingForm = ({
 
       // Use the resource selected by the user from the dropdown
       const locationResourceId = formData.location_resource_id ? parseInt(formData.location_resource_id) : null;
+      // PRIORITIZE the service's current resource_type over the potentially stale snapshot in the contract
+      const resourceType = selectedPackage.services?.resource_type || selectedPackage.resource_type;
       const locationId = selectedPackage.location_id;
-      const resourceType = selectedPackage.resource_type || selectedPackage.target_resource_type || selectedPackage.services?.target_resource_type;
+
+      if (!locationId) {
+        logger.error('Missing location_id for selected package:', selectedPackage);
+        setAvailabilityStatus({ available: false, error: 'Informazioni sulla sede mancanti. Per favore ricontatta il supporto.' });
+        setCheckingAvailability(false);
+        return;
+      }
 
       // Get day of week (0 = Sunday, 6 = Saturday)
       const reservationDate = new Date(formData.reservation_date);
@@ -448,8 +465,8 @@ const PartnerBookingForm = ({
         const { data: candidates } = await supabase
           .from('location_resources')
           .select('id, resource_name, quantity')
-          .eq('location_id', locationId)
-          .eq('resource_type', resourceType || 'scrivania') // Default if missing
+          .eq('location_id', parseInt(locationId))
+          .ilike('resource_type', resourceType || 'scrivania') // Case-insensitive match
           .eq('is_available', true);
 
         if (!candidates || candidates.length === 0) {
