@@ -309,16 +309,18 @@ export default async function handler(req, res) {
             console.log(`[Calendar Feed] Customer ${customer.id}: Found ${normalizedBookings.length} bookings + ${normalizedReservations.length} reservations = ${allEvents.length} total events`);
         }
 
+        // Determine calendar name based on role
+        const isPartner = profile.role === 'admin' || profile.role === 'superadmin';
+        const calName = isPartner ? 'PowerCowo - Partner Bookings' : 'PowerCowo - My Bookings';
+
         // Convert all events to iCalendar format
         const events = allEvents.map(event => {
-            const isPartner = profile.role === 'admin' || profile.role === 'superadmin';
-
             // Build event title
             let title = event.location_resources.resource_name;
             if (isPartner && event.customers) {
                 const customerName = event.customers.company_name ||
                     `${event.customers.first_name} ${event.customers.second_name || ''}`.trim();
-                title = `${title} - ${customerName}`;
+                title = `${title} (${customerName})`;
             }
 
             // Build description
@@ -326,11 +328,15 @@ export default async function handler(req, res) {
             let description = `Service: ${contract.service_name}\n`;
             description += `Type: ${contract.service_type}\n`;
             description += `Contract: ${contract.contract_number}\n`;
+
+            if (isPartner && event.customers) {
+                description += `Customer: ${event.customers.first_name} ${event.customers.second_name || ''}\n`;
+                if (event.customers.company_name) description += `Company: ${event.customers.company_name}\n`;
+                description += `Email: ${event.customers.email}\n`;
+            }
+
             if (contract.service_cost) {
                 description += `Cost: ${contract.service_cost} ${contract.service_currency || 'EUR'}\n`;
-            }
-            if (isPartner && event.customers) {
-                description += `Customer: ${event.customers.email}\n`;
             }
             description += `Status: ${event.status}`;
 
@@ -343,8 +349,6 @@ export default async function handler(req, res) {
             ].filter(Boolean).join(', ');
 
             // Parse dates for all-day events
-            // For iCalendar all-day events, the end date must be EXCLUSIVE (the day after)
-            // So if booking is Jan 23-25, the iCal end should be Jan 26
             const startDate = new Date(event.start_date);
             const endDate = new Date(event.end_date);
 
@@ -363,13 +367,14 @@ export default async function handler(req, res) {
                     endDate.getDate()
                 ],
                 title,
-                description,
+                description: description.trim(),
                 location: locationStr,
                 status: 'CONFIRMED',
                 busyStatus: 'BUSY',
                 uid: event.uid,
                 sequence: 0,
-                productId: 'powercowo/calendar-feed'
+                productId: 'powercowo/calendar-feed',
+                categories: [event.type.toUpperCase()]
             };
         });
 
@@ -381,14 +386,21 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Failed to generate calendar feed' });
         }
 
+        // Add X-WR-CALNAME and timezone manually to the ICS content
+        // This is a common extension supported by many calendar apps
+        let enhancedIcs = icsContent.replace(
+            /PRODID:(.*)/,
+            `PRODID:$1\r\nX-WR-CALNAME:${calName}\r\nX-WR-TIMEZONE:Europe/Rome`
+        );
+
         // Return iCalendar file
         res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-        res.setHeader('Content-Disposition', 'inline; filename="calendar.ics"');
+        res.setHeader('Content-Disposition', `inline; filename="calendar.ics"`);
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
 
-        return res.status(200).send(icsContent);
+        return res.status(200).send(enhancedIcs);
 
     } catch (error) {
         console.error('Calendar feed error:', error);
