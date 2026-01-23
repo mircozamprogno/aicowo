@@ -108,3 +108,57 @@
     justify-content: space-between;
     gap: 1rem;
 }
+
+/* Button Styles - Matching standard PURPLE design */
+.resources-manager .btn-primary,
+.resources-manager button.btn-primary,
+.modal-container .btn-primary,
+.modal-container button.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #4f46e5 !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.resources-manager .btn-primary:hover,
+.resources-manager button.btn-primary:hover,
+.modal-container .btn-primary:hover,
+.modal-container button.btn-primary:hover {
+    background-color: #4338ca !important;
+}
+
+.resources-manager .btn-secondary,
+.resources-manager button.btn-secondary,
+.modal-container .btn-secondary,
+.modal-container button.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.resources-manager .btn-secondary:hover,
+.resources-manager button.btn-secondary:hover,
+.modal-container .btn-secondary:hover,
+.modal-container button.btn-secondary:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}

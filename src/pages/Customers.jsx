@@ -558,8 +558,11 @@ const Customers = () => {
 
       {showImportModal && (
         <FattureInCloudImportModal
+          isOpen={showImportModal}
           onClose={() => setShowImportModal(false)}
           onImportSuccess={fetchCustomers}
+          partnerSettings={partnerSettings}
+          partnerUuid={profile?.partner_uuid}
         />
       )}
 

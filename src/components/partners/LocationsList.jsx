@@ -5,7 +5,6 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
 import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/activityLogger';
 import { toast } from '../common/ToastContainer';
-import LocationForm from '../forms/LocationForm';
 
 import logger from '../../utils/logger';
 
@@ -13,8 +12,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
   const { t } = useTranslation();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showLocationForm, setShowLocationForm] = useState(false);
-  const [editingLocation, setEditingLocation] = useState(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [locationToDelete, setLocationToDelete] = useState(null);
@@ -118,13 +115,11 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
   };
 
   const handleAddLocation = () => {
-    setEditingLocation(null);
-    setShowLocationForm(true);
+    window.location.hash = '/locations/new';
   };
 
   const handleEditLocation = (location) => {
-    setEditingLocation(location);
-    setShowLocationForm(true);
+    window.location.hash = `/locations/edit?locationId=${location.id}`;
   };
 
   const handleDeleteLocation = async (location) => {
@@ -344,15 +339,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
     }
   };
 
-  const handleLocationFormClose = () => {
-    setShowLocationForm(false);
-    setEditingLocation(null);
-  };
-
-  const handleLocationFormSuccess = (savedLocation) => {
-    fetchLocations();
-  };
-
   const formatLocationAddress = (location) => {
     const parts = [
       location.address,
@@ -512,15 +498,6 @@ const LocationsList = ({ partner, isOpen, onClose, embedded = false }) => {
           </button>
         </div>
       )}
-
-      <LocationForm
-        isOpen={showLocationForm}
-        onClose={handleLocationFormClose}
-        onSuccess={handleLocationFormSuccess}
-        location={editingLocation}
-        partnerUuid={partner?.partner_uuid}
-        partnerData={partner}
-      />
 
       {showDeleteConfirm && locationToDelete && (
         <div className="modal-overlay">

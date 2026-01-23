@@ -12,7 +12,7 @@ import MapSelector from '../maps/MapSelector';
 
 import logger from '../../utils/logger';
 
-const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null, embedded = false }) => {
+const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid, partnerData = null, embedded = false, hideHeader = false }) => {
   const { t } = useTranslation();
   const isEditing = !!location;
 
@@ -803,19 +803,21 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
   const formContent = (
     <>
       <div className={embedded ? "location-form-container-embedded" : "location-form-modal-container"}>
-        <div className="location-form-header">
-          <div className="location-form-header-content">
-            <MapPin />
-            <h2 className="location-form-title">
-              {isEditing ? `${t('locations.editLocation')} - ${formData.location_name}` : t('locations.addLocation')}
-            </h2>
+        {!hideHeader && (
+          <div className="location-form-header">
+            <div className="location-form-header-content">
+              <MapPin />
+              <h2 className="location-form-title">
+                {isEditing ? `${t('locations.editLocation')} - ${formData.location_name}` : t('locations.addLocation')}
+              </h2>
+            </div>
+            {!embedded && (
+              <button onClick={onClose} className="location-form-close">
+                <X />
+              </button>
+            )}
           </div>
-          {!embedded && (
-            <button onClick={onClose} className="location-form-close">
-              <X />
-            </button>
-          )}
-        </div>
+        )}
 
         <form onSubmit={handleSubmit} className="location-form-layout">
           {/* Sidebar removed as per request */}
@@ -1200,7 +1202,7 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                 </div>
                               </div>
 
-                              <div className="resource-form-col-7">
+                              <div className="resource-description-group">
                                 <div className="resource-form-group">
                                   <label className="resource-form-label">
                                     {t('locations.resourceName')} *
@@ -1212,21 +1214,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                                     value={resource.resource_name}
                                     onChange={(e) => handleResourceChange(index, 'resource_name', e.target.value)}
                                     required
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="resource-form-col-2">
-                                <div className="resource-form-group">
-                                  <label className="resource-form-label">
-                                    {t('locations.quantity')}
-                                  </label>
-                                  <input
-                                    type="number"
-                                    className="resource-form-input resource-form-input-readonly"
-                                    value="1"
-                                    readOnly
-                                    disabled
                                   />
                                 </div>
                               </div>
@@ -1251,7 +1238,16 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
                       ))}
                     </div>
 
+
                     <div className="examples-section">
+                      <p style={{
+                        fontWeight: 'bold',
+                        marginBottom: '1rem',
+                        fontSize: '0.95rem'
+                      }}>
+                        ℹ️ {t('locations.resourceDefinitionNote')}
+                      </p>
+
                       <h4 className="examples-title">📋 {t('locations.resourceExamples')}</h4>
                       <div className="examples-grid">
                         <div className="example-category">

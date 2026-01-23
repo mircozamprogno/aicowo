@@ -1,6 +1,7 @@
 // src/pages/Settings.jsx
 import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, Download, FileText, Filter, Globe, Image, Mail, MapPin, Save, Settings as SettingsIcon, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import CalendarSubscription from '../components/calendar/CalendarSubscription';
 import OperatingScheduleManager from '../components/calendar/OperatingScheduleManager';
 import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
@@ -10,6 +11,7 @@ import ResourcesManager from '../components/partners/ResourcesManager';
 import ResourceTypesManager from '../components/partners/ResourceTypesManager';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import { availableLanguages } from '../locales/index';
 import { generateInvoicePDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 import '../styles/components/operating-calendar.css';
@@ -32,9 +34,6 @@ const Settings = () => {
   const [logoUploading, setLogoUploading] = useState(false);
   const [currentLogoUrl, setCurrentLogoUrl] = useState(null);
 
-  // Location management states
-  const [showLocations, setShowLocations] = useState(false);
-  const [showLocationsModal, setShowLocationsModal] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
   // Email banner upload states
@@ -919,14 +918,11 @@ const Settings = () => {
     }
   };
 
-  const handleLocationsModalClose = () => {
-    setShowLocations(false);
-  };
-
-  const languageOptions = [
-    { value: 'it', label: 'Italiano' },
-    { value: 'en', label: 'English' }
-  ];
+  // Generate language options dynamically from availableLanguages
+  const languageOptions = availableLanguages.map(lang => ({
+    value: lang.code,
+    label: `${lang.flag} ${lang.name}`
+  }));
 
   if (loading) {
     return <div className="settings-loading">{t('common.loading')}</div>;
@@ -1004,6 +1000,38 @@ const Settings = () => {
               <FileText size={20} />
               {t('settings.invoices') || 'Fatture'}
             </button>
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'calendar-subscription' ? 'active' : ''}`}
+              onClick={() => setActiveTab('calendar-subscription')}
+            >
+              <Calendar size={20} />
+              {t('settings.calendarSubscription') || 'Calendar Subscription'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Subscription Tab for Customers (non-admin) */}
+      {!isAdminPartner && !isSuperAdmin && (
+        <div className="settings-tabs">
+          <div className="settings-tabs-nav">
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <User size={20} />
+              {t('settings.profileSettings') || 'Profile Settings'}
+            </button>
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'calendar-subscription' ? 'active' : ''}`}
+              onClick={() => setActiveTab('calendar-subscription')}
+            >
+              <Calendar size={20} />
+              {t('settings.calendarSubscription') || 'Calendar Subscription'}
+            </button>
           </div>
         </div>
       )}
@@ -1011,6 +1039,22 @@ const Settings = () => {
       <div className="settings-content">
         {activeTab === 'profile' && (
           <form onSubmit={handleSubmit} className="settings-form">
+            {/* Language Selector - Moved to top */}
+            <div className="form-section">
+              <h3 className="form-section-title">
+                <Globe size={20} style={{ marginRight: '0.5rem', display: 'inline' }} />
+                {t('settings.language') || 'Language'}
+              </h3>
+              <div className="form-group">
+                <Select
+                  name="preferred_language"
+                  value={formData.preferred_language}
+                  onChange={handleLanguageChange}
+                  options={languageOptions}
+                  placeholder={t('settings.selectLanguage') || 'Select language'}
+                />
+              </div>
+            </div>
 
             {(isAdminPartner || isSuperAdmin) && (
               <div className="form-section">
@@ -1214,19 +1258,6 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="preferred_language" className="form-label">
-                  <Globe size={16} style={{ marginRight: '0.25rem', display: 'inline', verticalAlign: 'middle' }} />
-                  {t('settings.language') || 'Language'}
-                </label>
-                <Select
-                  name="preferred_language"
-                  value={formData.preferred_language}
-                  onChange={handleLanguageChange}
-                  options={languageOptions}
-                  placeholder={t('settings.selectLanguage') || 'Select language'}
-                />
-              </div>
 
               {!(isAdminPartner || isSuperAdmin) && (
                 <div className="form-group">
@@ -1622,7 +1653,7 @@ const Settings = () => {
             <LocationsList
               partner={partnerData}
               isOpen={true}
-              onClose={handleLocationsModalClose}
+              onClose={() => { }}
               embedded={true}
             />
           </div>
@@ -1800,6 +1831,12 @@ const Settings = () => {
               </p>
             </div>
             <OperatingScheduleManager />
+          </div>
+        )}
+
+        {activeTab === 'calendar-subscription' && (
+          <div className="settings-tab-content">
+            <CalendarSubscription />
           </div>
         )}
 
@@ -2000,17 +2037,6 @@ const Settings = () => {
           </div>
         )}
 
-
-
-        {activeTab === 'locations' && isAdminPartner && (
-          <div className="locations-tab-content">
-            <LocationsList
-              partner={partnerData}
-              isOpen={showLocationsModal}
-              onClose={() => setShowLocationsModal(false)}
-            />
-          </div>
-        )}
 
       </div>
     </div>

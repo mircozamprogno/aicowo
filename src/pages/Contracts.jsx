@@ -864,7 +864,7 @@ const Contracts = () => {
                 {t('contracts.archivedContracts') || 'Archived Contracts'}
               </button>
 
-              {isCustomer && (
+              {(isCustomer || isPartnerAdmin || isSuperAdmin) && (
                 <button
                   className="archived-contracts-btn"
                   onClick={() => setShowFilters(!showFilters)}
@@ -1001,7 +1001,7 @@ const Contracts = () => {
                 <div className="contract-card-row">
                   <span className="card-label">{t('contracts.customer')}:</span>
                   <div className="customer-info" style={{ alignItems: 'flex-end' }}>
-                    <span className="customer-name">{customer?.first_name} {customer?.last_name}</span>
+                    <span className="customer-name">{customer?.first_name} {customer?.second_name}</span>
                     {customer?.email && <span className="customer-email">{customer.email}</span>}
                   </div>
                 </div>
@@ -1095,6 +1095,9 @@ const Contracts = () => {
           <table className="contracts-table">
             <thead className="contracts-table-head">
               <tr>
+                <th className="contracts-table-header cliente-column">
+                  {t('contracts.customer').toUpperCase()}
+                </th>
                 <th className="contracts-table-header">
                   {t('contracts.contract')}
                 </th>
@@ -1128,6 +1131,29 @@ const Contracts = () => {
 
                 return (
                   <tr key={contract.id} className="contracts-table-row">
+                    <td className="contracts-table-cell cliente-column">
+                      <div className="customer-info" style={{ minWidth: '210px' }}>
+                        <div className="customer-name" style={{
+                          fontWeight: '600',
+                          color: '#1e293b',
+                          marginBottom: '2px',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {contract.customers?.first_name} {contract.customers?.second_name}
+                        </div>
+                        {contract.customers?.company_name && (
+                          <div className="customer-company" style={{
+                            fontSize: '0.75rem',
+                            color: '#64748b',
+                            fontWeight: 'normal',
+                            lineHeight: '1.2',
+                            wordBreak: 'break-word'
+                          }}>
+                            {contract.customers.company_name}
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="contracts-table-cell">
                       <div className="contract-info">
                         <div className="contract-number">{contract.contract_number}</div>

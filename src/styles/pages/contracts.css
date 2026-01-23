@@ -573,6 +573,10 @@ button.btn-primary:hover:not(:disabled) {
   align-items: flex-start;
 }
 
+.cliente-column {
+  min-width: 210px;
+}
+
 .contract-info {
   min-width: 180px;
   max-width: 220px;

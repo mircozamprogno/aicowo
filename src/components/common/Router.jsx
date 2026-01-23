@@ -9,6 +9,7 @@ import Contracts from '../../pages/Contracts';
 import Customers from '../../pages/Customers';
 import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
+import LocationFormPage from '../../pages/LocationFormPage';
 import LogView from '../../pages/LogView';
 import Notifications from '../../pages/Notifications';
 import PartnerBillingManagement from '../../pages/PartnerBillingManagement';
@@ -166,6 +167,15 @@ const Router = () => {
     return user ? (
       <ProtectedRoute requiredRoles={['admin']}>
         <ServiceFormPage />
+      </ProtectedRoute>
+    ) : <Login />;
+  }
+
+  // Handle Location Form Routes (new and edit with query params)
+  if (currentPath.startsWith('/locations/new') || currentPath.startsWith('/locations/edit')) {
+    return user ? (
+      <ProtectedRoute requiredRoles={['admin', 'superadmin']}>
+        <LocationFormPage />
       </ProtectedRoute>
     ) : <Login />;
   }

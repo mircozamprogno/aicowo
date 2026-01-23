@@ -5,7 +5,7 @@ const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState(() => {
-    return localStorage.getItem('preferred-language') || 'en';
+    return localStorage.getItem('preferred-language') || 'it';
   });
 
   const changeLanguage = (languageCode) => {
@@ -21,9 +21,9 @@ export const LanguageProvider = ({ children }) => {
       value = value?.[key];
     }
 
-    // Fallback to English if translation not found
+    // Fallback to Italian if translation not found
     if (!value) {
-      value = translations.en;
+      value = translations.it;
       for (const key of keys) {
         value = value?.[key];
       }

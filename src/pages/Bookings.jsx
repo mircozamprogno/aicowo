@@ -31,6 +31,7 @@ const Bookings = () => {
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
   const [resources, setResources] = useState([]); // New state for resources timeline
+  const [resourceTypes, setResourceTypes] = useState([]); // Dynamic resource types for filter
 
   // Partner booking modal state
   const [showPartnerBooking, setShowPartnerBooking] = useState(false);
@@ -455,6 +456,15 @@ const Bookings = () => {
         .order('resource_name');
 
       setResources(resourcesData || []);
+
+      // Fetch dynamic resource types
+      const { data: resourceTypesData } = await supabase
+        .from('partner_resource_types')
+        .select('id, type_name, type_code')
+        .eq('partner_uuid', profile.partner_uuid)
+        .order('type_name');
+
+      setResourceTypes(resourceTypesData || []);
     } catch (error) {
       logger.error('Error fetching filter options:', error);
     }
@@ -1651,8 +1661,10 @@ const Bookings = () => {
                 onChange={(e) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}
                 options={[
                   { value: "", label: t('bookings.allResources') },
-                  { value: "scrivania", label: t('locations.scrivania') },
-                  { value: "sala_riunioni", label: t('locations.salaRiunioni') }
+                  ...resourceTypes.map(type => ({
+                    value: type.type_code,
+                    label: type.type_name
+                  }))
                 ]}
                 placeholder={t('bookings.selectResourceType')}
               />
