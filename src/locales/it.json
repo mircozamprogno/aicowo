@@ -769,6 +769,7 @@
     "availabilityCheckInProgress": "Attendere il completamento del controllo disponibilità",
     "pleaseWaitForAvailabilityCheck": "Attendere il controllo disponibilità",
     "resourceNotAvailable": "La risorsa selezionata non è disponibile per il periodo scelto",
+    "selectSpecificResource": "Seleziona una risorsa specifica",
     "errorLoadingBookings": "Errore nel caricamento delle prenotazioni",
     "errorLoadingLocationData": "Errore nel caricamento dei dati della sede",
     "imagesUploadedSuccessfully": "{count} immagini caricate con successo",

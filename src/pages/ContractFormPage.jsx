@@ -693,7 +693,7 @@ const ContractFormPage = () => {
       const resourceIdToCheck = formData.location_resource_id;
 
       if (!resourceIdToCheck) {
-        setAvailabilityStatus({ available: false, error: 'Select a specific resource' });
+        setAvailabilityStatus({ available: false, error: t('messages.selectSpecificResource') });
         return;
       }
 
@@ -773,6 +773,15 @@ const ContractFormPage = () => {
       const service = availableServices.find(s => s.id.toString() === value);
       setSelectedService(service);
 
+      // Automatically set location_resource_id from the service
+      if (service?.location_resources?.id) {
+        setFormData(prev => ({
+          ...prev,
+          service_id: value,
+          location_resource_id: service.location_resources.id.toString()
+        }));
+        logger.log('[CONTRACT FORM] Auto-set location_resource_id:', service.location_resources.id, 'from service:', service.service_name);
+      }
 
       // Reset price override and discount when service changes
       if (!editMode) {
