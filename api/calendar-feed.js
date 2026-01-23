@@ -65,6 +65,9 @@ export default async function handler(req, res) {
 
         let bookings = [];
 
+        // Get today's date for filtering
+        const today = new Date().toISOString().split('T')[0];
+
         // Fetch bookings based on user role
         if (profile.role === 'admin' || profile.role === 'superadmin') {
             // Partner admin: Get all bookings for their partner
@@ -104,7 +107,8 @@ export default async function handler(req, res) {
           )
         `)
                 .eq('is_archived', false)
-                .in('booking_status', ['active', 'confirmed']);
+                .in('booking_status', ['active', 'confirmed'])
+                .gte('end_date', today);
 
             if (profile.role === 'admin') {
                 query.eq('partner_uuid', profile.partner_uuid);
@@ -161,7 +165,8 @@ export default async function handler(req, res) {
         `)
                 .eq('customer_id', customer.id)
                 .eq('is_archived', false)
-                .in('booking_status', ['active', 'confirmed']);
+                .in('booking_status', ['active', 'confirmed'])
+                .gte('end_date', today);
 
             if (error) {
                 console.error('Error fetching customer bookings:', error);
