@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict mLWQx50POVZEtstWeX6iLh7MKL0sboIfycdqTWwzyt5PZJVT3CBaWUKcffYxNAH
+\restrict kvIgam6Zf94DLsGAXyATq81Sm6ehhvOlRa7st5KpkGOgtgdodw6VIHBpOpS1Xz3
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -300,5 +300,5 @@ GRANT ALL ON SEQUENCE public.bookings_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict mLWQx50POVZEtstWeX6iLh7MKL0sboIfycdqTWwzyt5PZJVT3CBaWUKcffYxNAH
+\unrestrict kvIgam6Zf94DLsGAXyATq81Sm6ehhvOlRa7st5KpkGOgtgdodw6VIHBpOpS1Xz3
 

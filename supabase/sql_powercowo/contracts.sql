@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict lI40eRKsQrZWi3HHeq26kdG2OJoATMYjUC4bmxP66HOrr1YzuTkK9ylvrgUZg93
+\restrict HXtfLFBFuELF9fzRsyabIENCcno0DJyBzTGMjGKq616PaBwsbjCQ2Qtu30wc90y
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -390,5 +390,5 @@ GRANT ALL ON SEQUENCE public.contracts_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lI40eRKsQrZWi3HHeq26kdG2OJoATMYjUC4bmxP66HOrr1YzuTkK9ylvrgUZg93
+\unrestrict HXtfLFBFuELF9fzRsyabIENCcno0DJyBzTGMjGKq616PaBwsbjCQ2Qtu30wc90y
 

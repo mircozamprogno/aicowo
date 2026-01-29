@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict lFMNn4v8db1Wxcs4LxTnbYY5eYsmTltu77EsDtiT1vCiYAhzHgbD8pEfs3fdSZY
+\restrict cikhb0d42otu7bUhtj8QdijJeGtegCx3sLRgYxD629oZkQ09NKek7cJKqRaxUMk
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -183,5 +183,5 @@ GRANT ALL ON SEQUENCE public.partners_discount_codes_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lFMNn4v8db1Wxcs4LxTnbYY5eYsmTltu77EsDtiT1vCiYAhzHgbD8pEfs3fdSZY
+\unrestrict cikhb0d42otu7bUhtj8QdijJeGtegCx3sLRgYxD629oZkQ09NKek7cJKqRaxUMk
 

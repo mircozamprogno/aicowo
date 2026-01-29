@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict cftkIUe6JFthQDne2C6ALSfDHS564iJNiEPu4d4uN0daaFcoSYS6csoL3b5DUaX
+\restrict Z9WISxKcKYVdhcyET6Rg1iZYhSavoJBBE8TwqJzjpbVSLfEqGGq3AKgsWhua4xj
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -127,5 +127,5 @@ GRANT ALL ON SEQUENCE public.partner_resource_types_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict cftkIUe6JFthQDne2C6ALSfDHS564iJNiEPu4d4uN0daaFcoSYS6csoL3b5DUaX
+\unrestrict Z9WISxKcKYVdhcyET6Rg1iZYhSavoJBBE8TwqJzjpbVSLfEqGGq3AKgsWhua4xj
 

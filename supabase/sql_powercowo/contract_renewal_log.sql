@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict hjP1mIyKEQ8seV7bGCgULkaHEWNPrRQ86kQhuHUJ1UmVIigyvETIdO3SSlxzyTi
+\restrict 3wo9QgEPHwaFTvRHI5ENffWoe5hspKIzc4E7lK4R9ezgeKN0pO2ZycAOQTudIa6
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -179,5 +179,5 @@ GRANT ALL ON SEQUENCE public.contract_renewal_log_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hjP1mIyKEQ8seV7bGCgULkaHEWNPrRQ86kQhuHUJ1UmVIigyvETIdO3SSlxzyTi
+\unrestrict 3wo9QgEPHwaFTvRHI5ENffWoe5hspKIzc4E7lK4R9ezgeKN0pO2ZycAOQTudIa6
 

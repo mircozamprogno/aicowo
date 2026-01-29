@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ht3PCPgJaAOlk3l3QZ6Xhdpgym9tVDc3qkzYk6p8cV8KGqLcITME3EvVGaHIYOK
+\restrict SvK2aasdNpSFRRx91ZEnOM6Q1cbBFGgFsRRlc3f3epeZUewDhP1ON1kaMmPOlGP
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -262,5 +262,5 @@ GRANT ALL ON SEQUENCE public.location_resources_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ht3PCPgJaAOlk3l3QZ6Xhdpgym9tVDc3qkzYk6p8cV8KGqLcITME3EvVGaHIYOK
+\unrestrict SvK2aasdNpSFRRx91ZEnOM6Q1cbBFGgFsRRlc3f3epeZUewDhP1ON1kaMmPOlGP
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict KSS9cr2MKWpwSEnmNeJDMPCJdcVHDLPXXCUpAePhw7kdIBkJfUrT3vcSsN8Vejb
+\restrict 7nkVZ4hyjYn2fTD6JgYgU7iEVRioX5ES2ozyZwq80GfROboW7bjno4SKhGmgvgy
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -153,5 +153,5 @@ GRANT ALL ON SEQUENCE public.calendar_tokens_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict KSS9cr2MKWpwSEnmNeJDMPCJdcVHDLPXXCUpAePhw7kdIBkJfUrT3vcSsN8Vejb
+\unrestrict 7nkVZ4hyjYn2fTD6JgYgU7iEVRioX5ES2ozyZwq80GfROboW7bjno4SKhGmgvgy
 

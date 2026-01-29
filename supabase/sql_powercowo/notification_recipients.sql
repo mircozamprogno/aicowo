@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ewHgClJQii18YXhlRbD1m9VubIwgRHmLgtaIOgLKc9qtqSru9ZzplHYx65DVdkB
+\restrict J0SencOyN3Gzyo0qwoQx8hmiMHa8dqqW1sGLPdmbRI9tPh7NXCglLyfycVGqShy
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -143,5 +143,5 @@ GRANT ALL ON TABLE public.notification_recipients TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ewHgClJQii18YXhlRbD1m9VubIwgRHmLgtaIOgLKc9qtqSru9ZzplHYx65DVdkB
+\unrestrict J0SencOyN3Gzyo0qwoQx8hmiMHa8dqqW1sGLPdmbRI9tPh7NXCglLyfycVGqShy
 

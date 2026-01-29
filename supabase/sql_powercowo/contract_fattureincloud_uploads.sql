@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 83pG3jnKeTiOOGkwWS6ABiuqn5a3vzbJ97yFm6KD8LCWQYgiR0wSVmyGn6w09g1
+\restrict 2QQZjnUDRqikDqo9hfVOyfZ585NI6iO5U8sCmbBNiMYlzUnnisp0yXVuz4lFOXc
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -150,5 +150,5 @@ GRANT ALL ON SEQUENCE public.contract_fattureincloud_uploads_id_seq TO service_r
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 83pG3jnKeTiOOGkwWS6ABiuqn5a3vzbJ97yFm6KD8LCWQYgiR0wSVmyGn6w09g1
+\unrestrict 2QQZjnUDRqikDqo9hfVOyfZ585NI6iO5U8sCmbBNiMYlzUnnisp0yXVuz4lFOXc
 

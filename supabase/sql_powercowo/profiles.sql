@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict pVYda1mCqmhGfJg097eLq2SRWyLsS5SKyqtV2iE45CFuiTTvJx2DDiV4e47Hpfc
+\restrict UPhpCAtg9zIVZFv1RBcPSXfbEYtTZAyRuCJfJ4SbcaOrhQwmfTvcfrap9tuvRbv
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -149,5 +149,5 @@ GRANT ALL ON TABLE public.profiles TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict pVYda1mCqmhGfJg097eLq2SRWyLsS5SKyqtV2iE45CFuiTTvJx2DDiV4e47Hpfc
+\unrestrict UPhpCAtg9zIVZFv1RBcPSXfbEYtTZAyRuCJfJ4SbcaOrhQwmfTvcfrap9tuvRbv
 

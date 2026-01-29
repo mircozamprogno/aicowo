@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict sYz67ik63mYr3fnkR7WP7o8huGIMmzlad4QXeePQ9cexYEiC8rm6oaXeHnTqNll
+\restrict SchXPGS3IeAQ45Ra64F0LUdJhuRn74dRnU6jZCL23SwJOa1CW569TFh64Nzu4Da
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -242,5 +242,5 @@ GRANT ALL ON SEQUENCE public.customers_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict sYz67ik63mYr3fnkR7WP7o8huGIMmzlad4QXeePQ9cexYEiC8rm6oaXeHnTqNll
+\unrestrict SchXPGS3IeAQ45Ra64F0LUdJhuRn74dRnU6jZCL23SwJOa1CW569TFh64Nzu4Da
 

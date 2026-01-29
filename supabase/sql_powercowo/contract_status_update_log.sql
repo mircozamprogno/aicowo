@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict VTzVZwZnscMRLSKwLyb4vmiEcDOguJuZkDrsILG2E4mrQStSGJIe66j1QDGmyj0
+\restrict OBakBdkNGezNsGcwcTDhEXTbYQu501beNWl6DfNdwUB6cWnEMznQejHagwhZT34
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -125,5 +125,5 @@ GRANT ALL ON SEQUENCE public.contract_status_update_log_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict VTzVZwZnscMRLSKwLyb4vmiEcDOguJuZkDrsILG2E4mrQStSGJIe66j1QDGmyj0
+\unrestrict OBakBdkNGezNsGcwcTDhEXTbYQu501beNWl6DfNdwUB6cWnEMznQejHagwhZT34
 

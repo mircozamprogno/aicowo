@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict R50bStsodS1YS9XIwwgV3t1aFlbxHgDhLUvayAVOq2MOxbgdqKACyo7JzlGD0gd
+\restrict Xfck7uyXXcoJqMsuJsiU1igZFx2MHt92rgO0zwaDGLiNwtOrAWSJpXyNpUMUgXW
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -173,5 +173,5 @@ GRANT ALL ON SEQUENCE public.partners_customer_activity_log_id_seq TO service_ro
 -- PostgreSQL database dump complete
 --
 
-\unrestrict R50bStsodS1YS9XIwwgV3t1aFlbxHgDhLUvayAVOq2MOxbgdqKACyo7JzlGD0gd
+\unrestrict Xfck7uyXXcoJqMsuJsiU1igZFx2MHt92rgO0zwaDGLiNwtOrAWSJpXyNpUMUgXW
 

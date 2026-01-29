@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict q3FHyhfgwbAtQvEO1JcymRY6lE1PJDvO5v1Tlfa5VjYI99fHe7QiwNrfg5FyHxq
+\restrict 6ndbkqRxOPjYzGhrqpeJrBxBC2dPWDBJcDzMCqbSrGjOfOgKVblneInbJnRcUbI
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -185,5 +185,5 @@ GRANT ALL ON SEQUENCE public.partners_plan_features_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict q3FHyhfgwbAtQvEO1JcymRY6lE1PJDvO5v1Tlfa5VjYI99fHe7QiwNrfg5FyHxq
+\unrestrict 6ndbkqRxOPjYzGhrqpeJrBxBC2dPWDBJcDzMCqbSrGjOfOgKVblneInbJnRcUbI
 

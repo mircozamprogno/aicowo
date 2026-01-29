@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict nH0WlNz5CgnjP4tNM0r5h9cdQup8p0Eh9E7VXqGNbs7AEKdbCHked2KcPa7iFap
+\restrict ZuaeHwy5aweLuOlX7GXfqc47VjH61CdzKUbVTqc517YS6dRabcuV97Ob0fLZfni
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -132,5 +132,5 @@ GRANT ALL ON TABLE public.notification_templates TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict nH0WlNz5CgnjP4tNM0r5h9cdQup8p0Eh9E7VXqGNbs7AEKdbCHked2KcPa7iFap
+\unrestrict ZuaeHwy5aweLuOlX7GXfqc47VjH61CdzKUbVTqc517YS6dRabcuV97Ob0fLZfni
 

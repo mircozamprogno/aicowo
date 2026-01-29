@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict t4YCUk332nHNOglWPUGVVmcbGjTQ7IsNAecorabGTGaGk29nq1r8hUiFJI308PT
+\restrict dCMaa786OeI8OGAJ6RsRCKfzlaPecVGlgqyoaoTOwNFhaeZ9V0zCEZvfHKGLdot
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -43,6 +43,7 @@ CREATE TABLE public.invitations (
     used_at timestamp with time zone,
     invited_by_user_id uuid,
     cancelled_at timestamp with time zone,
+    partner_structure_name text,
     CONSTRAINT invitations_email_valid CHECK ((invited_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)),
     CONSTRAINT invitations_role_check CHECK ((invited_role = ANY (ARRAY['admin'::text, 'user'::text]))),
     CONSTRAINT invitations_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'used'::text, 'expired'::text, 'cancelled'::text])))
@@ -124,6 +125,13 @@ CREATE INDEX idx_invitations_uuid ON public.invitations USING btree (invitation_
 
 
 --
+-- Name: invitations trigger_set_invitation_partner_name; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trigger_set_invitation_partner_name BEFORE INSERT OR UPDATE OF partner_uuid ON public.invitations FOR EACH ROW EXECUTE FUNCTION public.set_invitation_partner_name();
+
+
+--
 -- Name: invitations update_invitations_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -187,5 +195,5 @@ GRANT ALL ON SEQUENCE public.invitations_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict t4YCUk332nHNOglWPUGVVmcbGjTQ7IsNAecorabGTGaGk29nq1r8hUiFJI308PT
+\unrestrict dCMaa786OeI8OGAJ6RsRCKfzlaPecVGlgqyoaoTOwNFhaeZ9V0zCEZvfHKGLdot
 

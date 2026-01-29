@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict jZIwumj6kQGgCXpNHGk5JgWBErQDMpIj0UttR7KrOwMV0eEGaaCZwSKGgQvDE8c
+\restrict AdvVuPkWPuNVe1jpc9OIpsnDHK9lRSM75sc3qGJ1R1hokyMownBYZ5hbCs4u92q
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -65,6 +65,7 @@ CREATE TABLE public.partners (
     fattureincloud_default_vat integer DEFAULT 22,
     fattureincloud_document_type text DEFAULT 'proforma'::text,
     structure_name text,
+    email_banner_url text,
     CONSTRAINT partners_email_valid CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)),
     CONSTRAINT partners_partner_status_check CHECK ((partner_status = ANY (ARRAY['active'::text, 'inactive'::text, 'suspended'::text, 'pending'::text])))
 );
@@ -222,5 +223,5 @@ GRANT ALL ON SEQUENCE public.partners_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict jZIwumj6kQGgCXpNHGk5JgWBErQDMpIj0UttR7KrOwMV0eEGaaCZwSKGgQvDE8c
+\unrestrict AdvVuPkWPuNVe1jpc9OIpsnDHK9lRSM75sc3qGJ1R1hokyMownBYZ5hbCs4u92q
 

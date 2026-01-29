@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7gFeysKRljf3F24PJN7a7eB0XecPRnb2ea0dD8fuK1is4vrxOdrAMdNag4ZbxUX
+\restrict Sr5RKN44gdJJ9Qoz9XhHuHETFtncgDLfrcoVgDLY1xCnYCS6oDbSKD9Oke9wNoI
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -251,5 +251,5 @@ GRANT ALL ON SEQUENCE public.payments_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7gFeysKRljf3F24PJN7a7eB0XecPRnb2ea0dD8fuK1is4vrxOdrAMdNag4ZbxUX
+\unrestrict Sr5RKN44gdJJ9Qoz9XhHuHETFtncgDLfrcoVgDLY1xCnYCS6oDbSKD9Oke9wNoI
 
