@@ -12,6 +12,7 @@ import logger from '../utils/logger';
 // Import the specific CSS provided by the user
 import '../styles/pages/bookings.css';
 import '../styles/pages/exampleBookingNew.css';
+import { logActivity } from '../utils/activityLogger';
 
 const BookingsNew = () => {
     const [loading, setLoading] = useState(true);
@@ -286,14 +287,135 @@ const BookingsNew = () => {
         if (!selectedBooking) return;
         const isPkg = selectedBooking.booking_type === 'package';
         const id = isPkg ? selectedBooking.id.replace('pkg-', '') : selectedBooking.id;
+
         try {
+            setLoading(true);
             const table = isPkg ? 'package_reservations' : 'bookings';
             const statusField = isPkg ? 'reservation_status' : 'booking_status';
-            const { error } = await supabase.from(table).update({ is_archived: true, [statusField]: 'cancelled' }).eq('id', id);
-            if (error) throw error;
-            toast.success(t('common.deletedSuccessfully'));
-            setShowDeleteConfirm(false); setShowBookingDetails(false); fetchInitialData();
-        } catch (e) { toast.error(t('messages.errorDeletingBooking')); }
+
+            if (isPkg) {
+                // Handle package reservation deletion
+                const { data: packageData, error: fetchError } = await supabase
+                    .from('package_reservations')
+                    .select(`
+                        *,
+                        contracts(id, entries_used, customer_id, contract_number, service_name),
+                        location_resources(
+                            resource_name,
+                            resource_type,
+                            locations(id, location_name)
+                        ),
+                        customers(first_name, second_name, email, company_name)
+                    `)
+                    .eq('id', id)
+                    .maybeSingle();
+
+                if (fetchError) throw fetchError;
+
+                // Soft delete the package reservation
+                const { error: deleteError } = await supabase
+                    .from('package_reservations')
+                    .update({
+                        is_archived: true,
+                        reservation_status: 'cancelled'
+                    })
+                    .eq('id', id);
+
+                if (deleteError) throw deleteError;
+
+                // Restore the entry count in the contract
+                if (packageData?.contracts) {
+                    const { error: contractError } = await supabase
+                        .from('contracts')
+                        .update({
+                            entries_used: Math.max(0, (packageData.contracts.entries_used || 0) - 1)
+                        })
+                        .eq('id', packageData.contracts.id);
+
+                    if (contractError) throw contractError;
+                }
+
+                // Log activity
+                const customerName = packageData?.customers?.company_name ||
+                    `${packageData?.customers?.first_name} ${packageData?.customers?.second_name}`;
+
+                try {
+                    await logActivity({
+                        action_category: 'booking',
+                        action_type: 'deleted',
+                        entity_type: 'package_reservations',
+                        entity_id: id,
+                        description: `Deleted package reservation for ${customerName} at ${packageData?.location_resources?.resource_name}`,
+                        metadata: {
+                            reservation_id: id,
+                            contract_id: packageData?.contracts?.id,
+                            customer_name: customerName,
+                            deleted_by: 'partner'
+                        }
+                    });
+                } catch (logError) {
+                    logger.error('Error logging package deletion activity:', logError);
+                }
+
+                toast.success(t('bookings.packageReservationDeleted') || t('common.deletedSuccessfully'));
+            } else {
+                // Handle subscription booking deletion
+                const { data: bookingData, error: fetchError } = await supabase
+                    .from('bookings')
+                    .select(`
+                        *,
+                        location_resources(resource_name),
+                        customers(first_name, second_name, company_name)
+                    `)
+                    .eq('id', id)
+                    .maybeSingle();
+
+                if (fetchError) throw fetchError;
+
+                // Soft delete the booking
+                const { error: deleteError } = await supabase
+                    .from('bookings')
+                    .update({
+                        is_archived: true,
+                        booking_status: 'cancelled'
+                    })
+                    .eq('id', id);
+
+                if (deleteError) throw deleteError;
+
+                // Log activity
+                const customerName = bookingData?.customers?.company_name ||
+                    `${bookingData?.customers?.first_name} ${bookingData?.customers?.second_name}`;
+
+                try {
+                    await logActivity({
+                        action_category: 'booking',
+                        action_type: 'deleted',
+                        entity_type: 'bookings',
+                        entity_id: id,
+                        description: `Deleted booking for ${customerName} at ${bookingData?.location_resources?.resource_name}`,
+                        metadata: {
+                            booking_id: id,
+                            customer_name: customerName,
+                            deleted_by: 'partner'
+                        }
+                    });
+                } catch (logError) {
+                    logger.error('Error logging booking deletion activity:', logError);
+                }
+
+                toast.success(t('common.deletedSuccessfully'));
+            }
+
+            setShowDeleteConfirm(false);
+            setShowBookingDetails(false);
+            fetchInitialData();
+        } catch (e) {
+            logger.error('Error in handleDelete:', e);
+            toast.error(t('messages.errorDeletingBooking'));
+        } finally {
+            setLoading(false);
+        }
     };
 
     const formatMonth = () => currentDate.toLocaleDateString(t('locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' });
@@ -489,12 +611,17 @@ const BookingsNew = () => {
             )}
 
             <ConfirmModal
-                show={showDeleteConfirm}
+                isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}
                 onConfirm={handleDelete}
-                title={t('common.confirmDelete')}
-                message={t('reservations.confirmDeleteMessage') || 'Sei sicuro?'}
-                type="danger"
+                title={t('bookings.deleteBookingTitle')}
+                message={
+                    selectedBooking?.booking_type === 'package'
+                        ? t('bookings.confirmDeletePackageReservation')
+                        : t('bookings.confirmDeleteSubscriptionBooking')
+                }
+                confirmText={t('bookings.confirmDelete')}
+                isDestructive={true}
             />
         </div>
     );

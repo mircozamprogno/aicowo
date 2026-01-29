@@ -27,7 +27,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
     service_status: 'active',
     is_renewable: true,
     auto_renew: false,
-    private: false
+    private: false,
+    resource_type: ''
   });
 
   const [locationResources, setLocationResources] = useState([]);
@@ -63,7 +64,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_status: service.service_status || 'active',
         is_renewable: service.is_renewable !== false,
         auto_renew: service.auto_renew || false,
-        private: service.private || false
+        private: service.private || false,
+        resource_type: service.resource_type || ''
       });
 
       if (service.location_id) {
@@ -84,7 +86,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_status: 'active',
         is_renewable: true,
         auto_renew: false,
-        private: false
+        private: false,
+        resource_type: ''
       });
 
       if (locations.length > 0) {
@@ -177,7 +180,22 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
   };
 
   const handleLocationResourceChange = (e) => {
-    setFormData(prev => ({ ...prev, location_resource_id: e.target.value }));
+    const value = e.target.value;
+    if (value.startsWith('type:')) {
+      const type = value.replace('type:', '');
+      setFormData(prev => ({
+        ...prev,
+        location_resource_id: '',
+        resource_type: type
+      }));
+    } else {
+      const resource = locationResources.find(r => r.id.toString() === value);
+      setFormData(prev => ({
+        ...prev,
+        location_resource_id: value,
+        resource_type: resource ? resource.resource_type : prev.resource_type
+      }));
+    }
   };
 
   const validateForm = () => {
@@ -185,7 +203,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
       toast.error(t('messages.serviceNameRequired'));
       return false;
     }
-    if (!formData.location_resource_id) {
+    if (!formData.location_resource_id && !formData.resource_type) {
       toast.error(t('messages.resourceRequired'));
       return false;
     }
@@ -220,7 +238,8 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         service_description: formData.service_description.trim(),
         service_type: formData.service_type,
         location_id: parseInt(formData.location_id),
-        location_resource_id: parseInt(formData.location_resource_id),
+        location_resource_id: formData.location_resource_id ? parseInt(formData.location_resource_id) : null,
+        resource_type: formData.resource_type || null,
         cost: parseFloat(formData.cost),
         currency: formData.currency,
         duration_days: parseFloat(formData.duration_days),
@@ -546,12 +565,16 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                       ? [{ value: '', label: t('services.selectLocationFirst') }]
                       : loadingResources
                         ? [{ value: '', label: t('common.loading') + '...' }]
-                        : locationResources.length === 0
-                          ? [{ value: '', label: t('services.noResourcesAvailable') }]
-                          : locationResources.map(resource => ({
+                        : [
+                          ...Array.from(new Set(locationResources.map(r => r.resource_type))).map(type => ({
+                            value: `type:${type}`,
+                            label: `${t('services.allResourcesOf')} ${getResourceTypeLabel(type)}`
+                          })),
+                          ...locationResources.map(resource => ({
                             value: resource.id.toString(),
                             label: `${resource.resource_name} (${resource.quantity} ${t('services.available')})`
                           }))
+                        ]
                   }
                   placeholder={t('services.selectResource')}
                   emptyMessage={t('services.noResourcesAvailable')}
@@ -560,7 +583,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
               </div>
             </div>
 
-            {formData.location_resource_id && (
+            {formData.location_resource_id ? (
               <div className="resource-info-display">
                 {locationResources
                   .filter(r => r.id.toString() === formData.location_resource_id)
@@ -581,7 +604,22 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                   ))
                 }
               </div>
-            )}
+            ) : formData.resource_type ? (
+              <div className="resource-info-display">
+                <div className="selected-resource-info">
+                  <div className="resource-details">
+                    <strong>{t('services.allResourcesOf')} {getResourceTypeLabel(formData.resource_type)}</strong>
+                  </div>
+                  <div className="resource-quantity">
+                    {t('services.totalCapacity')}: <strong>
+                      {locationResources
+                        .filter(r => r.resource_type === formData.resource_type)
+                        .reduce((sum, r) => sum + (r.quantity || 0), 0)}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="form-section">
@@ -777,7 +815,7 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
                 type="button"
                 onClick={handleSubmit}
                 className="btn-service-primary"
-                disabled={loading || locations.length === 0 || !formData.location_resource_id}
+                disabled={loading || locations.length === 0 || (!formData.location_resource_id && !formData.resource_type)}
               >
                 {loading
                   ? (isEditing ? t('common.saving') + '...' : t('common.creating') + '...')

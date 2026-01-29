@@ -18,6 +18,7 @@ import { PaymentService } from '../services/paymentService';
 import { generateContractPDF } from '../services/pdfGenerator';
 import { supabase } from '../services/supabase';
 
+import MessageModal from '../components/common/MessageModal';
 import ContractsFilter from '../components/ContractsFilter';
 import { BulkUploadModal } from '../components/fattureincloud/FattureInCloudComponents';
 import { FattureInCloudService } from '../services/fattureInCloudService';
@@ -71,6 +72,9 @@ const Contracts = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const [customerStatus, setCustomerStatus] = useState(null);
+  const [showStatusAlert, setShowStatusAlert] = useState(false);
 
   const loadPartnerSettings = async () => {
     try {
@@ -185,12 +189,13 @@ const Contracts = () => {
       if (isCustomer) {
         const { data: customerData } = await supabase
           .from('customers')
-          .select('id')
+          .select('id, customer_status')
           .eq('user_id', profile.id)
           .single();
 
         if (customerData) {
           query = query.eq('customer_id', customerData.id);
+          setCustomerStatus(customerData.customer_status);
         }
       } else if (isPartnerAdmin) {
         query = query.eq('partner_uuid', profile.partner_uuid);
@@ -325,6 +330,10 @@ const Contracts = () => {
   };
 
   const handleCreateContract = () => {
+    if (isCustomer && customerStatus !== 'active') {
+      setShowStatusAlert(true);
+      return;
+    }
     window.location.hash = '/contracts/new';
   };
 
@@ -355,7 +364,7 @@ const Contracts = () => {
           try {
             const { data: partner, error: partnerError } = await supabase
               .from('partners')
-              .select('company_name, email')
+              .select('company_name, structure_name, email, email_banner_url, first_name, second_name')
               .eq('partner_uuid', profile.partner_uuid)
               .single();
 
@@ -707,12 +716,10 @@ const Contracts = () => {
   const isDateInContractRange = (startDate, endDate) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
-    end.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
 
-    return today >= start && today <= end;
+    return today <= end;
   };
 
   const canBookPackage = (contract) => {
@@ -732,10 +739,10 @@ const Contracts = () => {
       return t('reservations.bookReservation');
     } else if (remainingEntries < 0.5) {
       return t('reservations.noEntriesRemaining') || 'No Entries';
-    } else if (!isDateInContractRange(contract.start_date, contract.end_date)) {
-      return t('contracts.contractNotActive') || 'Not Active';
+    } else if (new Date() > new Date(contract.end_date)) {
+      return t('contracts.expired') || 'Expired';
     } else {
-      return t('reservations.notAvailable') || 'Not Available';
+      return t('reservations.cannotBook') || 'Not Available';
     }
   };
 
@@ -999,13 +1006,15 @@ const Contracts = () => {
               </div>
 
               <div className="contract-card-body">
-                <div className="contract-card-row">
-                  <span className="card-label">{t('contracts.customer')}:</span>
-                  <div className="customer-info" style={{ alignItems: 'flex-end' }}>
-                    <span className="customer-name">{customer?.first_name} {customer?.second_name}</span>
-                    {customer?.email && <span className="customer-email">{customer.email}</span>}
+                {!isCustomer && (
+                  <div className="contract-card-row">
+                    <span className="card-label">{t('contracts.customer')}:</span>
+                    <div className="customer-info" style={{ alignItems: 'flex-end' }}>
+                      <span className="customer-name">{customer?.first_name} {customer?.second_name}</span>
+                      {customer?.email && <span className="customer-email">{customer.email}</span>}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="contract-card-row">
                   <span className="card-label">{t('contracts.service')}:</span>
@@ -1096,9 +1105,11 @@ const Contracts = () => {
           <table className="contracts-table">
             <thead className="contracts-table-head">
               <tr>
-                <th className="contracts-table-header cliente-column">
-                  {t('contracts.customer').toUpperCase()}
-                </th>
+                {!isCustomer && (
+                  <th className="contracts-table-header cliente-column">
+                    {t('contracts.customer').toUpperCase()}
+                  </th>
+                )}
                 <th className="contracts-table-header">
                   {t('contracts.contract')}
                 </th>
@@ -1132,29 +1143,31 @@ const Contracts = () => {
 
                 return (
                   <tr key={contract.id} className="contracts-table-row">
-                    <td className="contracts-table-cell cliente-column">
-                      <div className="customer-info" style={{ minWidth: '210px' }}>
-                        <div className="customer-name" style={{
-                          fontWeight: '600',
-                          color: '#1e293b',
-                          marginBottom: '2px',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {contract.customers?.first_name} {contract.customers?.second_name}
-                        </div>
-                        {contract.customers?.company_name && (
-                          <div className="customer-company" style={{
-                            fontSize: '0.75rem',
-                            color: '#64748b',
-                            fontWeight: 'normal',
-                            lineHeight: '1.2',
-                            wordBreak: 'break-word'
+                    {!isCustomer && (
+                      <td className="contracts-table-cell cliente-column">
+                        <div className="customer-info" style={{ minWidth: '210px' }}>
+                          <div className="customer-name" style={{
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            marginBottom: '2px',
+                            whiteSpace: 'nowrap'
                           }}>
-                            {contract.customers.company_name}
+                            {contract.customers?.first_name} {contract.customers?.second_name}
                           </div>
-                        )}
-                      </div>
-                    </td>
+                          {contract.customers?.company_name && (
+                            <div className="customer-company" style={{
+                              fontSize: '0.75rem',
+                              color: '#64748b',
+                              fontWeight: 'normal',
+                              lineHeight: '1.2',
+                              wordBreak: 'break-word'
+                            }}>
+                              {contract.customers.company_name}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td className="contracts-table-cell">
                       <div className="contract-info">
                         <div className="contract-number">{contract.contract_number}</div>
@@ -1263,7 +1276,7 @@ const Contracts = () => {
               {canCreateContracts && !Object.values(activeFilters).some(value => value !== '') && (
                 <button
                   onClick={handleCreateContract}
-                  className="btn-primary mt-4"
+                  className="add-contract-btn mt-4"
                 >
                   {t('contracts.createFirstContract')}
                 </button>
@@ -1404,6 +1417,13 @@ const Contracts = () => {
         partnerSettings={partnerSettings}
         uploadStatuses={uploadStatuses}
         partnerUuid={profile?.partner_uuid}
+      />
+      <MessageModal
+        isOpen={showStatusAlert}
+        onClose={() => setShowStatusAlert(false)}
+        title={t('contracts.actionNotAllowed') || 'Azione non consentita'}
+        message={t('contracts.statusRestrictionMessage') || 'Il tuo profilo non è ancora attivo. Non puoi creare contratti finché non sarai qualificato dal partner.'}
+        closeText={t('common.close') || 'Chiudi'}
       />
     </div>
   );

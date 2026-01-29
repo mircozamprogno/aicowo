@@ -1415,7 +1415,7 @@ const ContractFormPage = () => {
           </div>
         </div>
 
-        <div className="contract-form-container" style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div className="contract-form-container" style={{ maxWidth: '1200px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div className="confirmation-content">
 
 
@@ -1444,12 +1444,14 @@ const ContractFormPage = () => {
                 </span>
               </div>
 
-              <div className="summary-item">
-                <span className="summary-label">{t('contracts.resource')}:</span>
-                <span className="summary-value">
-                  {selectedService?.location_resources?.resource_name}
-                </span>
-              </div>
+              {(selectedService?.service_type === 'abbonamento' || selectedService?.service_type === 'free_trial') && (
+                <div className="summary-item">
+                  <span className="summary-label">{t('contracts.resource')}:</span>
+                  <span className="summary-value">
+                    {selectedService?.location_resources?.resource_name}
+                  </span>
+                </div>
+              )}
 
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.period')}:</span>
@@ -1576,8 +1578,8 @@ const ContractFormPage = () => {
         </div>
       </div>
 
-      <div className="contract-form-container" style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <form onSubmit={handleSubmit} className="page-form">
+      <div className="contract-form-container" style={{ maxWidth: '1200px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <form onSubmit={handleSubmit} className="page-form" style={{ width: '100%' }}>
           {/* Customer Selection - Only for partner admins */}
           {!isCustomerMode && (
             <div className="form-section-clean">
@@ -1662,10 +1664,9 @@ const ContractFormPage = () => {
           </div>
 
 
-
           {selectedService && (
             <div className="form-section-clean">
-              <div className="service-details">
+              <div className="form-group">
                 <div className="service-info-display">
                   <div className="service-detail-item">
                     <span className="detail-label">{t('contracts.description')}:</span>
@@ -1884,36 +1885,38 @@ const ContractFormPage = () => {
                 </div>
 
                 {/* VAT Calculation Display */}
-                <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
-                    <span style={{ color: '#6b7280' }}>{t('contracts.baseAmount') || 'Prezzo Netto'}:</span>
-                    <span>{formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}</span>
-                  </div>
+                <div className="form-group">
+                  <div style={{ padding: '0.75rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', border: '1px solid #e5e7eb', width: '100%', boxSizing: 'border-box' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
+                      <span style={{ color: '#6b7280' }}>{t('contracts.baseAmount') || 'Prezzo Netto'}:</span>
+                      <span>{formatCurrency(overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost, selectedService.currency)}</span>
+                    </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                    <span style={{ color: '#6b7280' }}>
-                      {t('contracts.vat') || 'IVA'} ({selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22}%):
-                    </span>
-                    <span>
-                      {formatCurrency(
-                        (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
-                        ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100),
-                        selectedService.currency
-                      )}
-                    </span>
-                  </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                      <span style={{ color: '#6b7280' }}>
+                        {t('contracts.vat') || 'IVA'} ({selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22}%):
+                      </span>
+                      <span>
+                        {formatCurrency(
+                          (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
+                          ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100),
+                          selectedService.currency
+                        )}
+                      </span>
+                    </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', paddingTop: '0.5rem', fontWeight: 600 }}>
-                    <span style={{ color: '#111827' }}>{t('contracts.total') || 'Totale'}:</span>
-                    <span style={{ color: '#4f46e5' }}>
-                      {formatCurrency(
-                        (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
-                        (1 + ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100)),
-                        selectedService.currency
-                      )}
-                    </span>
-                  </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', paddingTop: '0.5rem', fontWeight: 600 }}>
+                      <span style={{ color: '#111827' }}>{t('contracts.total') || 'Totale'}:</span>
+                      <span style={{ color: '#4f46e5' }}>
+                        {formatCurrency(
+                          (overridePrice ? parseFloat(manualPrice || 0) : selectedService.cost) *
+                          (1 + ((selectedService.location_resources?.locations?.vat_percentage || selectedLocation?.vat_percentage || 22) / 100)),
+                          selectedService.currency
+                        )}
+                      </span>
+                    </div>
 
+                  </div>
                 </div>
               </div>
             )
@@ -2023,8 +2026,8 @@ const ContractFormPage = () => {
             </div>
           </div>
 
-          {/* Resource Selection - Moved after dates */}
-          {selectedService && (
+          {/* Resource Selection - Only for Abbonamento (Subscriptions) and Free Trial */}
+          {selectedService && (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'free_trial') && (
             <div className="form-section-clean">
               <div className="form-group">
                 <label htmlFor="location_resource_id" className="form-label">

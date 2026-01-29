@@ -108,21 +108,37 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
 
   const loadBannerUrl = async () => {
     try {
-      const { data: files } = await supabase.storage
+      const { data, error } = await supabase
         .from('partners')
-        .list(`${partnerUuid}`, { search: 'email_banner' });
+        .select('email_banner_url')
+        .eq('partner_uuid', partnerUuid)
+        .single();
 
-      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+      if (error) {
+        logger.log('Error fetching email banner url for editor:', error);
 
-      if (bannerFile) {
-        const { data } = supabase.storage
+        // Fallback to storage list if DB is empty
+        const { data: files } = await supabase.storage
           .from('partners')
-          .getPublicUrl(`${partnerUuid}/${bannerFile.name}`);
+          .list(`${partnerUuid}`, { search: 'email_banner' });
 
-        setBannerUrl(data.publicUrl);
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+
+        if (bannerFile) {
+          const { data: urlData } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${partnerUuid}/${bannerFile.name}`);
+
+          setBannerUrl(urlData.publicUrl);
+        }
+        return;
+      }
+
+      if (data?.email_banner_url) {
+        setBannerUrl(data.email_banner_url);
       }
     } catch (error) {
-      logger.error('Error loading banner URL:', error);
+      logger.error('Error loading banner URL in editor:', error);
     }
   };
 
@@ -405,7 +421,18 @@ const EmailTemplateEditor = ({ template, partnerUuid, mode = 'partner', onBack }
       previewHtml = previewHtml.replace(new RegExp(variable, 'g'), `<strong>${value}</strong>`);
     });
 
-    return previewHtml;
+    return `
+      <div class="email-preview-container" style="max-width: 600px; margin: 0 auto; font-family: sans-serif;">
+        ${bannerUrl ? `
+          <div class="email-preview-banner" style="margin-bottom: 20px;">
+            <img src="${bannerUrl}" alt="Email Banner" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px;" />
+          </div>
+        ` : ''}
+        <div class="email-preview-body">
+          ${previewHtml}
+        </div>
+      </div>
+    `;
   };
 
   if (loading) {

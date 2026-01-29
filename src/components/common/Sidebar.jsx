@@ -93,7 +93,6 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
       { name: t('navigation.contracts'), href: '/contracts', icon: FileText, roles: ['user'] },
       { name: t('navigation.myBookings'), href: '/bookings', icon: Calendar, roles: ['user'] },
-      { name: t('navigation.ganttBookings') || 'Gantt View', href: '/bookings-new', icon: Layers, roles: ['user'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['user'] },
     ];
 

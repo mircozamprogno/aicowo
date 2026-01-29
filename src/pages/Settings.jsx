@@ -286,25 +286,32 @@ const Settings = () => {
     if (!profile?.partner_uuid) return;
 
     try {
-      const { data: files, error } = await supabase.storage
+      const { data: partnerData, error } = await supabase
         .from('partners')
-        .list(`${profile.partner_uuid}`, {
-          search: 'email_banner'
-        });
+        .select('email_banner_url')
+        .eq('partner_uuid', profile.partner_uuid)
+        .single();
 
       if (error) {
-        logger.log('No existing email banner found or error:', error);
+        logger.log('Error fetching email banner url:', error);
         return;
       }
 
-      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-
-      if (bannerFile) {
-        const { data } = supabase.storage
+      if (partnerData?.email_banner_url) {
+        setCurrentBannerUrl(partnerData.email_banner_url);
+      } else {
+        // Fallback to storage list if DB is empty (legacy support)
+        const { data: files } = await supabase.storage
           .from('partners')
-          .getPublicUrl(`${profile.partner_uuid}/${bannerFile.name}`);
+          .list(`${profile.partner_uuid}`, { search: 'email_banner' });
 
-        setCurrentBannerUrl(data.publicUrl);
+        if (files?.length > 0) {
+          const bannerFile = files.find(f => f.name.startsWith('email_banner.'));
+          if (bannerFile) {
+            const { data } = supabase.storage.from('partners').getPublicUrl(`${profile.partner_uuid}/${bannerFile.name}`);
+            setCurrentBannerUrl(data.publicUrl);
+          }
+        }
       }
     } catch (error) {
       logger.error('Error loading current email banner:', error);
@@ -572,17 +579,15 @@ const Settings = () => {
 
       const publicUrl = urlData.publicUrl;
 
-      // Update the banner_url (or similar field if exists, assuming sticking to just storage for now or maybe user implies consistency?)
-      // Wait, user only mentioned Logo. But I should be consistent. Does banner_url exist in DB?
-      // I don't see banner_url in the earlier `fetchPartnerData` select. 
-      // I will stick to JUST fixing the filename uniqueness for banner to avoid cache issues, 
-      // but I won't assume a DB column exists unless I verify.
-      // Actually, looking at `loadCurrentBanner` above (lines 276-303), it also lists files.
-      // Given the user only complained about LOGO, I will fix LOGO retrieval first. 
-      // But for Banner, I'll validly use timestamping to avoid cache issues at least.
+      // Update the email_banner_url in the partners table
+      const { error: dbError } = await supabase
+        .from('partners')
+        .update({ email_banner_url: publicUrl })
+        .eq('partner_uuid', profile.partner_uuid);
 
-      // Let's NOT touch DB for banner if we are not sure column exists. 
-      // But using unique filename is safe.
+      if (dbError) {
+        logger.error('Error updating email_banner_url in database:', dbError);
+      }
 
       setCurrentBannerUrl(publicUrl);
       setBannerPreview(null);
@@ -613,11 +618,24 @@ const Settings = () => {
     if (!profile?.partner_uuid || !currentBannerUrl) return;
 
     try {
-      const { error } = await supabase.storage
-        .from('partners')
-        .remove([`${profile.partner_uuid}/email_banner.png`]);
+      // Extract filename from URL to delete specific file if possible, 
+      // but simpler to just clear DB and let next upload clean up or just list and delete.
+      const urlParts = currentBannerUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1].split('?')[0];
 
-      if (error) throw error;
+      const { error: storageError } = await supabase.storage
+        .from('partners')
+        .remove([`${profile.partner_uuid}/${fileName}`]);
+
+      if (storageError) logger.warn('Storage removal error (might be okay):', storageError);
+
+      // Update the database to clear the URL
+      const { error: dbError } = await supabase
+        .from('partners')
+        .update({ email_banner_url: null })
+        .eq('partner_uuid', profile.partner_uuid);
+
+      if (dbError) throw dbError;
 
       setCurrentBannerUrl(null);
       toast.success('Email banner removed successfully!');

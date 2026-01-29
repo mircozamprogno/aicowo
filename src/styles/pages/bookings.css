@@ -1029,4 +1029,217 @@
   cursor: not-allowed;
   background-color: #ef4444 !important;
   color: #ffffff !important;
+}/* ===== Mobile Responsive Styles ===== */
+
+/* Mobile Bookings List View */
+.mobile-bookings-container {
+  padding: 1rem;
+  max-width: 100%;
+}
+
+.mobile-month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-month-selector h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.mobile-month-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mobile-month-nav button {
+  padding: 0.5rem;
+  background: var(--color-gray-100);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.mobile-month-nav button:hover {
+  background: var(--color-gray-200);
+}
+
+.mobile-month-nav button:active {
+  background: var(--color-gray-300);
+}
+
+/* Mobile Date Headers */
+.mobile-date-header {
+  position: sticky;
+  top: 0;
+  background: var(--color-gray-50);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 10;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.mobile-date-header.today {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+
+/* Mobile Booking Cards */
+.mobile-bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mobile-booking-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 4px solid var(--color-primary-500);
+}
+
+.mobile-booking-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-booking-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.mobile-booking-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-gray-900);
+}
+
+.mobile-booking-time svg {
+  color: var(--color-primary-500);
+}
+
+.mobile-booking-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-booking-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+}
+
+.mobile-booking-info svg {
+  flex-shrink: 0;
+  color: var(--color-gray-400);
+}
+
+.mobile-booking-label {
+  font-weight: 500;
+  color: var(--color-gray-900);
+}
+
+.mobile-booking-delete {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--color-red-50);
+  color: var(--color-red-600);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.mobile-booking-delete:hover {
+  background: var(--color-red-100);
+}
+
+.mobile-booking-delete:active {
+  background: var(--color-red-200);
+}
+
+/* Empty State */
+.mobile-empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-gray-500);
+}
+
+.mobile-empty-state svg {
+  margin: 0 auto 1rem;
+  color: var(--color-gray-300);
+}
+
+.mobile-empty-state h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.mobile-empty-state p {
+  font-size: 0.875rem;
+}
+
+/* Hide desktop calendar on mobile */
+@media (max-width: 767px) {
+  .calendar-container,
+  .bookings-view-selector {
+    display: none;
+  }
+  
+  .bookings-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .bookings-filters {
+    width: 100%;
+  }
+}
+
+/* Show desktop calendar only on larger screens */
+@media (min-width: 768px) {
+  .mobile-bookings-container,
+  .mobile-month-selector,
+  .mobile-date-header,
+  .mobile-bookings-list,
+  .mobile-booking-card,
+  .mobile-empty-state {
+    display: none;
+  }
 }

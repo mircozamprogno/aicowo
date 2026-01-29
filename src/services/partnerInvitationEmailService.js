@@ -37,7 +37,7 @@ export const sendPartnerInvitationEmail = async (
 
     // 2. Use customized template or fall back to default
     let subject, bodyHtml;
-    
+
     if (template && !templateError) {
       logger.log('Using customized partner invitation template');
       subject = template.subject_line;
@@ -45,8 +45,8 @@ export const sendPartnerInvitationEmail = async (
     } else {
       logger.log('Using default partner invitation template');
       // Use default from defaultEmailTemplates.js
-      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.partner_invitation || 
-                              DEFAULT_EMAIL_TEMPLATES.en.partner_invitation;
+      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.partner_invitation ||
+        DEFAULT_EMAIL_TEMPLATES.en.partner_invitation;
       subject = defaultTemplate.subject;
       bodyHtml = defaultTemplate.body;
     }
@@ -66,19 +66,29 @@ export const sendPartnerInvitationEmail = async (
       bodyHtml = bodyHtml.replace(new RegExp(escapedVariable, 'g'), value);
     });
 
-    // 4. Load system banner (if exists)
+    // 4. Load banner (if exists) from database or storage fallback
     let bannerUrl = '';
     try {
-      const { data: files } = await supabase.storage
+      const { data: partnerData } = await supabase
         .from('partners')
-        .list(SYSTEM_PARTNER_UUID, { search: 'email_banner' });
+        .select('email_banner_url')
+        .eq('partner_uuid', SYSTEM_PARTNER_UUID)
+        .single();
 
-      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-      if (bannerFile) {
-        const { data } = supabase.storage
+      if (partnerData?.email_banner_url) {
+        bannerUrl = partnerData.email_banner_url;
+      } else {
+        const { data: files } = await supabase.storage
           .from('partners')
-          .getPublicUrl(`${SYSTEM_PARTNER_UUID}/${bannerFile.name}`);
-        bannerUrl = data.publicUrl;
+          .list(SYSTEM_PARTNER_UUID, { search: 'email_banner' });
+
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+        if (bannerFile) {
+          const { data } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${SYSTEM_PARTNER_UUID}/${bannerFile.name}`);
+          bannerUrl = data.publicUrl;
+        }
       }
     } catch (bannerError) {
       logger.log('No system banner found or error loading banner:', bannerError);
@@ -146,13 +156,13 @@ export const getPartnerInvitationPreview = async (language = 'en') => {
       .single();
 
     let subject, bodyHtml;
-    
+
     if (template) {
       subject = template.subject_line;
       bodyHtml = template.body_html;
     } else {
-      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.partner_invitation || 
-                              DEFAULT_EMAIL_TEMPLATES.en.partner_invitation;
+      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES[language]?.partner_invitation ||
+        DEFAULT_EMAIL_TEMPLATES.en.partner_invitation;
       subject = defaultTemplate.subject;
       bodyHtml = defaultTemplate.body;
     }

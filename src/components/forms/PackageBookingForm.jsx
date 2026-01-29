@@ -93,8 +93,8 @@ const PackageBookingForm = ({
       const { data } = await query.eq('is_available', true);
       setAvailableResources(data || []);
 
-      // Auto-select if only one
-      if (data?.length === 1) {
+      // Auto-select first available if none selected
+      if (data?.length > 0 && !formData.location_resource_id) {
         setFormData(prev => ({ ...prev, location_resource_id: data[0].id.toString() }));
       }
     } catch (e) {
@@ -134,7 +134,13 @@ const PackageBookingForm = ({
       const resourceIdForQuery = formData.location_resource_id || serviceData.location_resources?.id;
 
       if (!resourceIdForQuery) {
-        setAvailabilityStatus({ available: false, error: 'Seleziona una risorsa specifica' });
+        // If there are resources to select from, don't show an error yet, just wait for selection
+        if (availableResources.length > 0) {
+          setAvailabilityStatus(null);
+        } else {
+          setAvailabilityStatus({ available: false, error: t('contracts.selectResource') });
+        }
+        setCheckingAvailability(false);
         return;
       }
 
@@ -144,7 +150,7 @@ const PackageBookingForm = ({
         : availableResources.find(r => r.id.toString() === resourceIdForQuery);
 
       if (!locationResource) {
-        setAvailabilityStatus({ available: false, error: 'Risorsa non trovata' });
+        setAvailabilityStatus({ available: false, error: t('reservations.resourceNotAvailable') });
         return;
       }
 
@@ -167,12 +173,7 @@ const PackageBookingForm = ({
       let hasConflict = false;
       let conflictReason = '';
       let usedSlots = 0;
-      const resourceId = formData.location_resource_id || serviceData.location_resources?.id;
-
-      if (!resourceId) {
-        setAvailabilityStatus({ available: false, error: 'Seleziona una risorsa specifica' });
-        return;
-      }
+      const resourceId = resourceIdForQuery;
 
       // 1. Check for overlapping long-term subscription bookings
       const { data: existingBookings, error: bookingsError } = await supabase
@@ -257,7 +258,7 @@ const PackageBookingForm = ({
 
     // Check if enough entries remain
     if (remainingEntries < entriesNeeded) {
-      toast.error('Insufficient entries remaining in your package');
+      toast.error(t('reservations.insufficientEntriesError'));
       return false;
     }
 
@@ -267,13 +268,13 @@ const PackageBookingForm = ({
     const contractEnd = new Date(contract.end_date);
 
     if (reservationDate < contractStart || reservationDate > contractEnd) {
-      toast.error('Reservation date must be within contract period');
+      toast.error(t('reservations.reservationDateRangeError'));
       return false;
     }
 
     // Check if resource is available
     if (!availabilityStatus?.available) {
-      toast.error('Resource not available for selected date and time');
+      toast.error(t('reservations.resourceNotAvailableError'));
       return false;
     }
 
@@ -409,7 +410,7 @@ const PackageBookingForm = ({
 
     } catch (error) {
       logger.error('Error creating reservation:', error);
-      toast.error('Error creating reservation: ' + error.message);
+      toast.error(t('reservations.errorCreatingReservation') + ': ' + error.message);
     } finally {
       setLoading(false);
       setShowConfirmation(false);
@@ -563,7 +564,7 @@ const PackageBookingForm = ({
                   className="form-input"
                 />
                 <div className="form-help-text">
-                  Available period: {formatDate(contract.start_date)} to {formatDate(contract.end_date)}
+                  {t('reservations.availablePeriod')}: {formatDate(contract.start_date)} {t('common.to')} {formatDate(contract.end_date)}
                 </div>
               </div>
 
@@ -684,9 +685,11 @@ const PackageBookingForm = ({
                       <CheckCircle size={20} color="#16a34a" style={{ marginTop: '2px', flexShrink: 0 }} />
                       <div style={{ color: '#166534', fontSize: '0.875rem' }}>
                         <p style={{ margin: '0 0 0.25rem 0', fontWeight: '600' }}>{t('reservations.resourceAvailable')}</p>
-                        <p style={{ margin: '0 0 0.25rem 0' }}>{availabilityStatus.resourceName} is available for your selected time</p>
+                        <p style={{ margin: '0 0 0.25rem 0' }}>{t('reservations.resourceAvailableFor', { resource: availabilityStatus.resourceName })}</p>
                         {availabilityStatus.totalQuantity > 1 && (
-                          <p style={{ margin: 0 }}>Capacity: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} of {availabilityStatus.totalQuantity} available</p>
+                          <p style={{ margin: 0 }}>
+                            {t('reservations.capacity')}: {availabilityStatus.totalQuantity - (availabilityStatus.usedSlots || 0)} {t('common.of')} {availabilityStatus.totalQuantity} {t('common.available')}
+                          </p>
                         )}
                       </div>
                     </div>

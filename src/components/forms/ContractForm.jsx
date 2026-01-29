@@ -57,6 +57,8 @@ const ContractForm = ({
   const [validatingDiscount, setValidatingDiscount] = useState(false);
   const [discountValidation, setDiscountValidation] = useState(null);
   const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [hasDiscountCodes, setHasDiscountCodes] = useState(false);
+  const [loadingDiscounts, setLoadingDiscounts] = useState(false);
 
   // Determine if user can override
   const isPartnerAdmin = profile?.role === 'admin';
@@ -138,6 +140,35 @@ const ContractForm = ({
       checkExistingFreeTrial();
     }
   }, [formData.customer_id, isOpen, isCustomerMode]);
+
+  useEffect(() => {
+    if (isOpen && partnerUuid) {
+      fetchDiscountsStatus();
+    }
+  }, [isOpen, partnerUuid]);
+
+  const fetchDiscountsStatus = async () => {
+    setLoadingDiscounts(true);
+    try {
+      const { count, error } = await supabase
+        .from('customers_discount_codes')
+        .select('*', { count: 'exact', head: true })
+        .eq('partner_uuid', partnerUuid)
+        .eq('is_active', true)
+        .gte('valid_until', new Date().toISOString());
+
+      if (!error && count > 0) {
+        setHasDiscountCodes(true);
+      } else {
+        setHasDiscountCodes(false);
+      }
+    } catch (error) {
+      logger.error('Error fetching discounts status:', error);
+      setHasDiscountCodes(false);
+    } finally {
+      setLoadingDiscounts(false);
+    }
+  };
 
   // Validate discount code when it changes or service changes
   useEffect(() => {
@@ -319,7 +350,7 @@ const ContractForm = ({
             )
           )
         `)
-        .eq('location_resources.location_id', parseInt(locationId))
+        .eq('location_id', parseInt(locationId))
         .eq('partner_uuid', partnerUuid)
         .eq('service_status', 'active');
 
@@ -597,7 +628,9 @@ const ContractForm = ({
         totalQuantity,
         bookedQuantity: bookedQuantity - editExclusion,
         availableQuantity: finalAvailableQuantity,
-        resourceName: locationResource.resource_name,
+        resourceName: locationResource.resource_type
+          ? `${t('services.all')} ${getResourceTypeLabel(locationResource.resource_type)}`
+          : locationResource.resource_name,
         resourceType: locationResource.resource_type
       });
 
@@ -607,6 +640,10 @@ const ContractForm = ({
     } finally {
       setCheckingAvailability(false);
     }
+  };
+
+  const getResourceTypeLabel = (type) => {
+    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
   };
 
   const handleChange = (e) => {
@@ -763,8 +800,8 @@ const ContractForm = ({
 
         // Location snapshot
         location_name: selectedLocation?.location_name || 'Unknown Location',
-        resource_name: selectedService.location_resources?.resource_name || 'Unknown Resource',
-        resource_type: selectedService.location_resources?.resource_type || 'scrivania',
+        resource_name: selectedService.location_resources?.resource_name || (selectedService.resource_type ? `${t('services.all')} ${getResourceTypeLabel(selectedService.resource_type)}` : 'Unknown Resource'),
+        resource_type: selectedService.location_resources?.resource_type || selectedService.resource_type || 'scrivania',
 
         // Discount fields
         discount_code: appliedDiscount ? discountCode.trim().toUpperCase() : null,
@@ -1440,8 +1477,8 @@ const ContractForm = ({
             )}
           </div>
 
-          {/* Discount Code Section - Only for abbonamento and pacchetto */}
-          {selectedService && (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'pacchetto') && (
+          {/* Discount Code Section - Only for abbonamento and pacchetto, and ONLY if discounts exist */}
+          {hasDiscountCodes && selectedService && (selectedService.service_type === 'abbonamento' || selectedService.service_type === 'pacchetto') && (
             <div className="form-section-clean">
               <div className="form-group">
                 <label htmlFor="discount_code" className="form-label">

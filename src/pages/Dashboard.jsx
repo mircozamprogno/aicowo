@@ -9,6 +9,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 
 // Add these imports to the top of Dashboard.jsx:
+import MessageModal from '../components/common/MessageModal';
 import CustomerForm from '../components/forms/CustomerForm';
 import SetupProgressIndicator from '../components/tour/SetupProgressIndicator';
 import TourOverlay from '../components/tour/TourOverlay';
@@ -110,6 +111,9 @@ const Dashboard = () => {
   const [contracts, setContracts] = useState([]);
   const [contractsLoading, setContractsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStatusAlert, setShowStatusAlert] = useState(false);
+  const [customerStatus, setCustomerStatus] = useState(null);
   const [showPackageBooking, setShowPackageBooking] = useState(false);
   const [selectedPackageContract, setSelectedPackageContract] = useState(null);
   const [editingContract, setEditingContract] = useState(null);
@@ -492,7 +496,7 @@ const Dashboard = () => {
       // Get customer ID
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
-        .select('id')
+        .select('id, customer_status')
         .eq('user_id', user.id)
         .single();
 
@@ -505,6 +509,7 @@ const Dashboard = () => {
       }
 
       const customerId = customerData.id;
+      setCustomerStatus(customerData.customer_status);
 
       // Fetch active contracts
       const { data: contractsData, error: contractsError } = await supabase
@@ -716,7 +721,7 @@ const Dashboard = () => {
           try {
             const { data: partner, error: partnerError } = await supabase
               .from('partners')
-              .select('email, first_name, second_name, company_name')
+              .select('email, first_name, second_name, company_name, structure_name, email_banner_url')
               .eq('partner_uuid', profile.partner_uuid)
               .single();
 
@@ -1716,6 +1721,12 @@ const Dashboard = () => {
 
     // Handle purchase more entries or new package
     const handlePurchaseMore = (contract = null) => {
+      // Check customer status first
+      if (profile?.role === 'user' && customerStatus !== 'active') {
+        setShowStatusAlert(true);
+        return;
+      }
+
       logger.log('Opening contract form for new purchase');
       if (contract) {
         setEditingContract({
@@ -2195,6 +2206,14 @@ const Dashboard = () => {
       {/* Tour Components */}
       <WelcomeModal />
       <TourOverlay />
+      {/* Status Alert Modal */}
+      <MessageModal
+        isOpen={showStatusAlert}
+        onClose={() => setShowStatusAlert(false)}
+        title={t('contracts.actionNotAllowed') || 'Azione non consentita'}
+        message={t('contracts.statusRestrictionMessage') || 'Il tuo profilo non è ancora attivo. Non puoi creare contratti finché non sarai qualificato dal partner.'}
+        closeText={t('common.close') || 'Chiudi'}
+      />
     </div>
   );
 };

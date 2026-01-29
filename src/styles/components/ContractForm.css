@@ -1,14 +1,17 @@
 /* src/components/forms/ContractForm.css */
 
 .service-details {
-  margin-top: 1rem;
+  width: 100%;
+  margin: 0;
 }
 
 .service-info-display {
+  width: 100%;
   padding: 1rem;
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
+  box-sizing: border-box;
 }
 
 .service-detail-item {
@@ -34,4 +37,37 @@
   color: #111827;
   text-align: right;
   flex: 1;
+}
+
+/* Ensure form sections and inputs match the width of info boxes */
+.form-section-clean {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  width: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+.form-row .form-group {
+  width: 100%;
+}
+
+/* Ensure all form inputs and selects have consistent width */
+.form-section-clean .form-input,
+.form-section-clean .form-select,
+.form-section-clean input[type="text"],
+.form-section-clean input[type="number"],
+.form-section-clean input[type="date"],
+.form-section-clean input[type="email"],
+.form-section-clean select {
+  width: 100% !important;
+  box-sizing: border-box !important;
 }

@@ -19,7 +19,7 @@ const ArchivedContracts = () => {
   const [deleteStep, setDeleteStep] = useState(1); // Add delete step for double confirmation
   const [generatingPDF, setGeneratingPDF] = useState(null);
   const [archiveAnalytics, setArchiveAnalytics] = useState(null);
-  
+
   const { profile, user } = useAuth();
   const { t } = useTranslation();
 
@@ -158,7 +158,7 @@ const ArchivedContracts = () => {
 
       setArchivedContracts(prev => prev.filter(c => c.id !== contractToDelete.id));
       toast.success(t('contracts.contractDeletedPermanently') || 'Contract deleted permanently');
-      
+
       if (archiveAnalytics) {
         fetchArchiveAnalytics(); // Refresh analytics
       }
@@ -180,44 +180,44 @@ const ArchivedContracts = () => {
 
   const handleGeneratePDF = async (contract) => {
     setGeneratingPDF(contract.id);
-    
+
     try {
       // Fetch complete customer data with address information
       let fullCustomerData = contract.customers;
-      
+
       if (contract.customer_id) {
         const { data: customerData, error: customerError } = await supabase
           .from('customers')
           .select('*')
           .eq('id', contract.customer_id)
           .single();
-        
+
         if (!customerError && customerData) {
           fullCustomerData = customerData;
         }
       }
-      
+
       // Create enhanced contract object with full customer data
       const enhancedContract = {
         ...contract,
         customers: fullCustomerData
       };
-      
+
       // Fetch partner data for PDF header
       let partnerData = null;
       let logoUrl = null;
-      
+
       if (profile?.partner_uuid) {
         const { data: partner } = await supabase
           .from('partners')
           .select('*')
           .eq('partner_uuid', profile.partner_uuid)
           .single();
-        
+
         if (partner) {
           partnerData = partner;
         }
-        
+
         // Get partner logo
         try {
           const { data: files } = await supabase.storage
@@ -227,12 +227,12 @@ const ArchivedContracts = () => {
             });
 
           const logoFile = files?.find(file => file.name.startsWith('logo.'));
-          
+
           if (logoFile) {
             const { data } = supabase.storage
               .from('partners')
               .getPublicUrl(`${profile.partner_uuid}/${logoFile.name}`);
-            
+
             logoUrl = data.publicUrl;
           }
         } catch (logoError) {
@@ -242,9 +242,9 @@ const ArchivedContracts = () => {
 
       // Generate PDF with enhanced data
       await generateContractPDF(enhancedContract, partnerData, logoUrl, t);
-      
+
       toast.success(t('contracts.pdfGeneratedSuccessfully') || 'PDF generated successfully!');
-      
+
     } catch (error) {
       logger.error('Error generating PDF:', error);
       toast.error(t('contracts.errorGeneratingPDF') || 'Error generating PDF. Please try again.');
@@ -306,12 +306,12 @@ const ArchivedContracts = () => {
     if (contract.resource_name && contract.resource_name !== 'Unknown Resource') {
       return contract.resource_name;
     }
-    
+
     const resourceTypeNames = {
       'scrivania': t('locations.scrivania'),
       'sala_riunioni': t('locations.salaRiunioni')
     };
-    
+
     return resourceTypeNames[contract.resource_type] || t('services.resource');
   };
 
@@ -328,12 +328,12 @@ const ArchivedContracts = () => {
             {t('contracts.archivedContracts') || 'Archived Contracts'}
           </h1>
           <p className="archived-contracts-description">
-            {isCustomer 
+            {isCustomer
               ? (t('contracts.manageYourArchivedContracts') || 'View your archived service contracts')
               : (t('contracts.managePartnerArchivedContracts') || 'Manage archived contracts for your partner customers')
             }
           </p>
-          
+
           {/* Archive Analytics for Admins */}
           {archiveAnalytics && isPartnerAdmin && (
             <div className="archive-stats">
@@ -406,8 +406,8 @@ const ArchivedContracts = () => {
                     <td className="contracts-table-cell">
                       <div className="customer-info">
                         <div className="customer-name">
-                          {contract.customers?.company_name || 
-                           `${contract.customers?.first_name} ${contract.customers?.second_name}`}
+                          {contract.customers?.company_name ||
+                            `${contract.customers?.first_name} ${contract.customers?.second_name}`}
                         </div>
                         <div className="customer-email">{contract.customers?.email}</div>
                       </div>
@@ -461,11 +461,6 @@ const ArchivedContracts = () => {
                       <div className="archive-date">
                         {t('contracts.archivedOn') || 'Archived on'}: {formatDateTime(contract.archived_at)}
                       </div>
-                      {contract.archive_reason && (
-                        <div className="archive-reason">
-                          {t('contracts.reason')}: {contract.archive_reason}
-                        </div>
-                      )}
                       <div className="archive-status">
                         <span className="status-badge status-archived">
                           {t('contracts.archived') || 'Archived'}
@@ -476,7 +471,7 @@ const ArchivedContracts = () => {
                   <td className="contracts-table-cell">
                     <div className="contract-actions">
                       {/* PDF Generation Button */}
-                      <button 
+                      <button
                         className="pdf-btn"
                         onClick={() => handleGeneratePDF(contract)}
                         disabled={generatingPDF === contract.id}
@@ -504,7 +499,7 @@ const ArchivedContracts = () => {
 
                       {/* Restore Button - Only for admins */}
                       {canRestore && (
-                        <button 
+                        <button
                           className="restore-btn"
                           onClick={() => handleRestore(contract)}
                           title={t('contracts.restoreContract') || 'Restore Contract'}
@@ -524,10 +519,10 @@ const ArchivedContracts = () => {
                           <RotateCcw size={16} />
                         </button>
                       )}
-                      
+
                       {/* Permanent Delete Button - Show for admins and superadmins */}
                       {(isPartnerAdmin || isSuperAdmin) && (
-                        <button 
+                        <button
                           className="permanent-delete-btn"
                           onClick={() => handlePermanentDelete(contract)}
                           title={t('contracts.deletePermanently') || 'Delete Permanently'}
@@ -589,7 +584,7 @@ const ArchivedContracts = () => {
                   <strong>{t('contracts.contract')}:</strong> {contractToRestore.contract_number}
                 </div>
                 <div className="contract-detail">
-                  <strong>{t('contracts.customer')}:</strong> {contractToRestore.customers?.company_name || 
+                  <strong>{t('contracts.customer')}:</strong> {contractToRestore.customers?.company_name ||
                     `${contractToRestore.customers?.first_name} ${contractToRestore.customers?.second_name}`}
                 </div>
                 <div className="contract-detail">
@@ -600,10 +595,10 @@ const ArchivedContracts = () => {
                 </div>
               </div>
 
-              <div className="restore-modal-actions" style={{ 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
-                gap: '0.75rem', 
+              <div className="restore-modal-actions" style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
                 marginTop: '1.5rem',
                 paddingTop: '1.5rem',
                 borderTop: '1px solid #e5e7eb'
@@ -658,7 +653,7 @@ const ArchivedContracts = () => {
                       <strong>{t('contracts.contract')}:</strong> {contractToDelete.contract_number}
                     </div>
                     <div className="contract-detail">
-                      <strong>{t('contracts.customer')}:</strong> {contractToDelete.customers?.company_name || 
+                      <strong>{t('contracts.customer')}:</strong> {contractToDelete.customers?.company_name ||
                         `${contractToDelete.customers?.first_name} ${contractToDelete.customers?.second_name}`}
                     </div>
                     <div className="contract-detail">
@@ -694,10 +689,10 @@ const ArchivedContracts = () => {
                 </>
               )}
 
-              <div className="delete-modal-actions" style={{ 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
-                gap: '0.75rem', 
+              <div className="delete-modal-actions" style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
                 marginTop: '1.5rem',
                 paddingTop: '1.5rem',
                 borderTop: '1px solid #e5e7eb'

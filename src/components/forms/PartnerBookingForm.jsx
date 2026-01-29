@@ -104,6 +104,10 @@ const PartnerBookingForm = ({
   }, [formData.reservation_date, formData.duration_type, formData.time_slot, selectedPackage]);
 
 
+  const getResourceTypeLabel = (type) => {
+    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+  };
+
   // Fetch current customer data (for end customers)
   const fetchCurrentCustomerData = async () => {
     setLoadingCustomers(true);
@@ -211,7 +215,6 @@ const PartnerBookingForm = ({
         .eq('service_type', 'pacchetto')
         .eq('contract_status', 'active')
         .eq('is_archived', false)
-        .lte('start_date', today)
         .gte('end_date', today);
 
       if (packagesError) throw packagesError;
@@ -223,7 +226,7 @@ const PartnerBookingForm = ({
       }).map(pkg => ({
         ...pkg,
         resource_name: pkg.services?.resource_type
-          ? `Tutte le ${pkg.services.resource_type}`
+          ? `${t('services.all')} ${getResourceTypeLabel(pkg.services.resource_type)}`
           : pkg.services?.location_resources?.resource_name,
         resource_type: pkg.services?.resource_type || pkg.services?.location_resources?.resource_type,
         location_name: pkg.services?.location_resources?.locations?.location_name || pkg.services?.locations?.location_name,
@@ -634,7 +637,7 @@ const PartnerBookingForm = ({
       try {
         const { data: partnerData } = await supabase
           .from('partners')
-          .select('company_name, email')
+          .select('company_name, structure_name, email, email_banner_url, first_name, second_name')
           .eq('partner_uuid', selectedPackage.partner_uuid)
           .single();
 

@@ -8,6 +8,7 @@ import CustomerForm from '../components/forms/CustomerForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+import userDeletionService from '../services/userDeletionService';
 import logger from '../utils/logger';
 
 const Customers = () => {
@@ -299,29 +300,23 @@ const Customers = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('customers')
-        .update({
-          customer_status: 'inactive',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', customer.id);
+      // Use the deletion service to perform a complete deletion (including auth/profile if user_id exists)
+      const result = await userDeletionService.deleteCustomer(customer.id, !!customer.user_id);
 
-      if (error) {
-        logger.error('Database error:', error);
-        throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete customer');
       }
 
-      logger.log('=== CUSTOMER STATUS UPDATED TO INACTIVE');
+      logger.log('=== CUSTOMER DELETED SUCCESSFULLY');
 
       setCustomers(prev => prev.filter(c => c.id !== customer.id));
-      toast.success(t('customers.customerDeactivatedSuccessfully'));
+      toast.success(t('customers.customerDeletedSuccessfully') || t('customers.customerDeactivatedSuccessfully'));
 
       return { success: true };
 
     } catch (error) {
-      logger.error('Error deactivating customer:', error);
-      toast.error(t('customers.errorDeactivatingCustomer'));
+      logger.error('Error deleting customer:', error);
+      toast.error(error.message || t('customers.errorDeletingCustomer'));
       return { success: false, error: error.message };
     }
   };

@@ -64,7 +64,7 @@
 }
 
 .add-contract-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   background-color: #4f46e5;
@@ -547,8 +547,8 @@
 }
 
 @keyframes spin {
-  to { 
-    transform: rotate(360deg); 
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -978,17 +978,18 @@
 
 /* Print Styles */
 @media print {
+
   .partner-contracts-header-actions,
   .partner-contracts-filters,
   .contract-actions,
   .add-payment-btn {
     display: none;
   }
-  
+
   .partner-contracts-table {
     font-size: 0.75rem;
   }
-  
+
   .partner-contracts-table-cell {
     padding: 0.5rem;
   }
@@ -1072,6 +1073,11 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

@@ -143,7 +143,7 @@
 
 /* ===== Standardized Purple Buttons ===== */
 .add-contract-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   padding: 8px 12px;
   border: 2px solid #4f46e5;
@@ -578,8 +578,8 @@ button.btn-primary:hover:not(:disabled) {
 }
 
 .contract-info {
-  min-width: 180px;
-  max-width: 220px;
+  min-width: 120px;
+  max-width: 160px;
 }
 
 .contract-number,
@@ -664,6 +664,10 @@ button.btn-primary:hover:not(:disabled) {
 
 /* ===== Empty State ===== */
 .contracts-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 3rem;
   color: var(--color-gray-500);
@@ -1445,7 +1449,7 @@ button.btn-primary:hover:not(:disabled) {
 .archived-contracts-btn,
 .bulk-upload-btn,
 .renewal-logs-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   padding: 8px 12px;
   /* Smaller padding */

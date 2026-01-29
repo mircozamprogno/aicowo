@@ -109,7 +109,7 @@ const PartnerDiscountCodes = () => {
 
   const handleFormSuccess = (savedCode) => {
     if (editingCode) {
-      setDiscountCodes(prev => 
+      setDiscountCodes(prev =>
         prev.map(c => c.id === savedCode.id ? savedCode : c)
       );
       toast.success(t('messages.discountCodeUpdatedSuccessfully') || 'Discount code updated successfully');
@@ -165,15 +165,15 @@ const PartnerDiscountCodes = () => {
 
   const getStatusBadgeClass = (code) => {
     if (!code.is_active) return 'status-inactive';
-    
+
     const now = new Date();
     const validUntil = new Date(code.valid_until);
     const validFrom = new Date(code.valid_from);
-    
+
     if (now > validUntil) return 'status-expired';
     if (now < validFrom) return 'status-scheduled';
     if (code.usage_limit && code.usage_count >= code.usage_limit) return 'status-used-up';
-    
+
     return 'status-active';
   };
 
@@ -279,7 +279,7 @@ const PartnerDiscountCodes = () => {
             ))}
           </select>
         </div>
-        
+
         <div className="filter-group">
           <label htmlFor="type-filter" className="filter-label">
             {t('discountCodes.discountType')}:
@@ -360,8 +360,8 @@ const PartnerDiscountCodes = () => {
                         {formatDate(code.valid_from)} - {formatDate(code.valid_until)}
                       </div>
                       <div className="validity-remaining">
-                        {new Date() > new Date(code.valid_until) 
-                          ? t('discountCodes.expired') 
+                        {new Date() > new Date(code.valid_until)
+                          ? t('discountCodes.expired')
                           : `${Math.ceil((new Date(code.valid_until) - new Date()) / (1000 * 60 * 60 * 24))} days left`
                         }
                       </div>
@@ -380,8 +380,8 @@ const PartnerDiscountCodes = () => {
                       </div>
                       {code.usage_limit && (
                         <div className="usage-bar">
-                          <div 
-                            className="usage-progress" 
+                          <div
+                            className="usage-progress"
                             style={{ width: `${getUsagePercentage(code)}%` }}
                           ></div>
                         </div>
@@ -395,14 +395,14 @@ const PartnerDiscountCodes = () => {
                   </td>
                   <td className="discount-codes-table-cell">
                     <div className="code-actions">
-                      <button 
+                      <button
                         className="action-btn edit-btn"
                         onClick={() => handleEditCode(code)}
                         title={t('discountCodes.editCode')}
                       >
                         <Edit size={16} />
                       </button>
-                      <button 
+                      <button
                         className="action-btn delete-btn"
                         onClick={() => handleDeleteCode(code)}
                         title={t('common.delete')}
@@ -420,7 +420,7 @@ const PartnerDiscountCodes = () => {
               <Tag size={48} className="empty-icon" />
               <p>{discountCodes.length === 0 ? t('discountCodes.noCodesFound') : 'No codes match the current filters'}</p>
               {discountCodes.length === 0 && (
-                <button 
+                <button
                   onClick={handleAddCode}
                   className="btn-primary mt-4"
                 >
@@ -496,7 +496,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const isEditing = !!code;
-  
+
   const [formData, setFormData] = useState({
     code: '',
     discount_type: 'percentage',
@@ -507,7 +507,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
     usage_limit: '',
     is_active: true
   });
-  
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -536,7 +536,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: newValue
@@ -580,7 +580,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
 
     const startDate = new Date(formData.valid_from);
     const endDate = new Date(formData.valid_until);
-    
+
     if (endDate <= startDate) {
       toast.error(t('discountCodes.endDateMustBeAfterStartDate') || 'End date must be after start date');
       return false;
@@ -591,7 +591,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -612,7 +612,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
       };
 
       let result;
-      
+
       if (isEditing) {
         result = await supabase
           .from('partners_discount_codes')
@@ -636,11 +636,11 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
       }
 
       toast.success(
-        isEditing 
+        isEditing
           ? t('messages.discountCodeUpdatedSuccessfully') || 'Discount code updated successfully'
           : t('messages.discountCodeCreatedSuccessfully') || 'Discount code created successfully'
       );
-      
+
       onSuccess(data);
       onClose();
     } catch (error) {
@@ -672,8 +672,28 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-section">
             <h3 className="form-section-title">{t('discountCodes.basicInfo')}</h3>
-            
+
             <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="partner_uuid" className="form-label">
+                  Partner
+                </label>
+                <select
+                  id="partner_uuid"
+                  name="partner_uuid"
+                  className="form-select"
+                  value={formData.partner_uuid}
+                  onChange={handleChange}
+                >
+                  <option value="">All Partners (Global)</option>
+                  {partners.map((partner) => (
+                    <option key={partner.partner_uuid} value={partner.partner_uuid}>
+                      {partner.company_name || `${partner.first_name} ${partner.second_name}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="code" className="form-label">
                   {t('discountCodes.code')} *
@@ -699,7 +719,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
                   </button>
                 </div>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="description" className="form-label">
                   {t('discountCodes.description')}
@@ -719,7 +739,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
 
           <div className="form-section">
             <h3 className="form-section-title">{t('discountCodes.discountSettings')}</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="discount_type" className="form-label">
@@ -737,7 +757,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
                   <option value="fixed_amount">{t('discountCodes.fixedAmount')}</option>
                 </select>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="discount_value" className="form-label">
                   {t('discountCodes.discountValue')} *
@@ -756,7 +776,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
                   placeholder={formData.discount_type === 'percentage' ? '25' : '50.00'}
                 />
                 <small className="form-help">
-                  {formData.discount_type === 'percentage' 
+                  {formData.discount_type === 'percentage'
                     ? t('discountCodes.percentageHelp') || 'Enter percentage (0-100)'
                     : t('discountCodes.fixedAmountHelp') || 'Enter fixed amount in USD'
                   }
@@ -767,7 +787,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
 
           <div className="form-section">
             <h3 className="form-section-title">{t('discountCodes.validity')}</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="valid_from" className="form-label">
@@ -783,7 +803,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
                   onChange={handleChange}
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="valid_until" className="form-label">
                   {t('discountCodes.validUntil')} *
@@ -803,7 +823,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
 
           <div className="form-section">
             <h3 className="form-section-title">{t('discountCodes.usageSettings')}</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="usage_limit" className="form-label">
@@ -823,7 +843,7 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
                   {t('discountCodes.usageLimitHelp') || 'Leave empty for unlimited usage'}
                 </small>
               </div>
-              
+
               <div className="form-group">
                 <label className="form-checkbox-label">
                   <input
@@ -858,8 +878,8 @@ const DiscountCodeForm = ({ isOpen, onClose, onSuccess, code = null }) => {
               className="btn-primary"
               disabled={loading}
             >
-              {loading 
-                ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...') 
+              {loading
+                ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...')
                 : (isEditing ? t('common.save') : t('common.create'))
               }
             </button>

@@ -9,11 +9,14 @@ import { supabase } from '../services/supabase';
 import '../styles/components/timeline-view.css';
 import '../styles/pages/bookings.css';
 
+import MobileBookingCard from '../components/bookings/MobileBookingCard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import SearchableSelect from '../components/common/SearchableSelect';
 
+import useMediaQuery from '../hooks/useMediaQuery';
 import { logActivity } from '../utils/activityLogger';
 import logger from '../utils/logger';
+
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -48,6 +51,9 @@ const Bookings = () => {
   const isCustomer = profile?.role === 'user';
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
+
+  // Responsive detection
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const [closures, setClosures] = useState([]);
 
@@ -310,12 +316,18 @@ const Bookings = () => {
 
       const normalizedPackages = (packagesData || []).map(pkg => ({
         id: `pkg-${pkg.id}`,
-        original_id: pkg.id, // Keep original ID for ICS filename
+        original_id: pkg.id,
         start_date: pkg.reservation_date,
         end_date: pkg.reservation_date,
+        booking_status: pkg.reservation_status, // Map reservation_status to booking_status for consistency
         contracts: pkg.contracts,
         location_resources: pkg.location_resources,
         customers: pkg.customers,
+        // Flattened properties for card consumption
+        customer_first_name: pkg.customers?.first_name,
+        customer_second_name: pkg.customers?.second_name,
+        resource_name: pkg.location_resources?.resource_name,
+        location_name: pkg.location_resources?.locations?.location_name,
         duration_type: pkg.duration_type,
         time_slot: pkg.time_slot,
         booking_type: 'package'
@@ -323,6 +335,11 @@ const Bookings = () => {
 
       const normalizedBookings = (bookingsData || []).map(booking => ({
         ...booking,
+        // Flattened properties for card consumption
+        customer_first_name: booking.customers?.first_name,
+        customer_second_name: booking.customers?.second_name,
+        resource_name: booking.location_resources?.resource_name,
+        location_name: booking.location_resources?.locations?.location_name,
         booking_type: 'subscription'
       }));
 
@@ -709,7 +726,7 @@ const Bookings = () => {
             action_category: 'booking',
             action_type: 'deleted',
             entity_type: 'package_reservations',
-            entity_id: parseInt(bookingId),
+            entity_id: bookingId,
             description: isCustomer
               ? `Customer deleted package reservation for ${packageData.location_resources?.resource_name}`
               : `Deleted package reservation for ${customerName} at ${packageData.location_resources?.resource_name}`,
@@ -777,7 +794,7 @@ const Bookings = () => {
             action_category: 'booking',
             action_type: 'deleted',
             entity_type: 'bookings',
-            entity_id: parseInt(bookingId),
+            entity_id: bookingId,
             description: isCustomer
               ? `Customer deleted subscription booking for ${bookingData.location_resources?.resource_name}`
               : `Deleted subscription booking for ${customerName} at ${bookingData.location_resources?.resource_name}`,
@@ -883,13 +900,18 @@ const Bookings = () => {
   };
 
   const navigateDate = (direction) => {
+    // Map string directions to numeric values
+    const dir = direction === 'prev' ? -1 : direction === 'next' ? 1 : direction;
     const newDate = new Date(currentDate);
-    if (viewType === 'month') {
-      newDate.setMonth(newDate.getMonth() + direction);
+
+    // If in month view OR on mobile (which behaves like month view), avoid day-overflow skips
+    if (viewType === 'month' || isMobile) {
+      newDate.setDate(1);
+      newDate.setMonth(newDate.getMonth() + dir);
     } else if (viewType === 'week') {
-      newDate.setDate(newDate.getDate() + (direction * 7));
+      newDate.setDate(newDate.getDate() + (dir * 7));
     } else if (viewType === 'day') {
-      newDate.setDate(newDate.getDate() + direction);
+      newDate.setDate(newDate.getDate() + dir);
     }
     setCurrentDate(newDate);
   };
@@ -965,6 +987,110 @@ const Bookings = () => {
   const getContractForBooking = (booking) => {
     if (!isCustomer) return null;
     return customerContracts.find(c => c.id === booking.contracts?.id);
+  };
+
+  // Mobile list view renderer
+  const renderMobileListView = () => {
+
+
+    // Group bookings by date
+    const groupedBookings = {};
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    filteredBookings.forEach(booking => {
+      // Use correct date property
+      const dateStr = booking.start_date || booking.reservation_date || booking.booking_date;
+      if (!dateStr) return;
+
+      const bookingDate = new Date(dateStr);
+
+      if (bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear) {
+        const dateKey = bookingDate.toISOString().split('T')[0];
+        if (!groupedBookings[dateKey]) {
+          groupedBookings[dateKey] = [];
+        }
+        groupedBookings[dateKey].push(booking);
+      }
+    });
+
+
+
+
+    // Sort dates
+    const sortedDates = Object.keys(groupedBookings).sort();
+
+    const formatDateHeader = (dateStr) => {
+
+      const date = new Date(dateStr);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      if (date.toDateString() === today.toDateString()) {
+        return t('bookings.today');
+      } else if (date.toDateString() === tomorrow.toDateString()) {
+        return t('bookings.tomorrow');
+      } else {
+        return date.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+      }
+    };
+
+    return (
+      <div className="mobile-bookings-container">
+        {/* Month selector */}
+        <div className="mobile-month-selector">
+          <div className="mobile-month-nav">
+            <button onClick={() => navigateDate('prev')} title={t('bookings.previousMonth')}>
+              <ChevronLeft size={20} />
+            </button>
+          </div>
+          <h2>{formatMonthYear(currentDate)}</h2>
+          <div className="mobile-month-nav">
+            <button onClick={() => navigateDate('next')} title={t('bookings.nextMonth')}>
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Bookings list */}
+        {sortedDates.length > 0 ? (
+          <div className="mobile-bookings-list">
+            {sortedDates.map(dateKey => {
+              const isToday = new Date(dateKey).toDateString() === new Date().toDateString();
+              return (
+                <div key={dateKey}>
+                  <div className={`mobile-date-header ${isToday ? 'today' : ''}`}>
+                    {formatDateHeader(dateKey)}
+                  </div>
+                  {groupedBookings[dateKey].map(booking => (
+                    <MobileBookingCard
+                      key={booking.id}
+                      booking={booking}
+                      isCustomer={isCustomer}
+                      onClick={() => {
+                        setSelectedBooking(booking);
+                        setShowBookingDetails(true);
+                      }}
+                      onDelete={isPartnerAdmin ? () => {
+                        setSelectedBooking(booking);
+                        setShowDeleteConfirm(true);
+                      } : null}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mobile-empty-state">
+            <Calendar size={48} />
+            <h3>{t('bookings.noBookingsThisMonth')}</h3>
+            <p>{t('bookings.selectDifferentMonth')}</p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderMonthView = () => {
@@ -1615,21 +1741,26 @@ const Bookings = () => {
             </button>
           )}
 
-          <div className="view-selector">
-            <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>
-              {t('bookings.month')}
-            </button>
-            <button className={`view-btn ${viewType === 'week' ? 'active' : ''}`} onClick={() => setViewType('week')}>
-              {t('bookings.week')}
-            </button>
-            <button className={`view-btn ${viewType === 'day' ? 'active' : ''}`} onClick={() => setViewType('day')}>
-              {t('bookings.day')}
-            </button>
-          </div>
-          <button className="today-btn" onClick={goToToday}>
-            <Home size={16} />
-            {t('bookings.today')}
-          </button>
+
+          {!isMobile && (
+            <>
+              <div className="view-selector">
+                <button className={`view-btn ${viewType === 'month' ? 'active' : ''}`} onClick={() => setViewType('month')}>
+                  {t('bookings.month')}
+                </button>
+                <button className={`view-btn ${viewType === 'week' ? 'active' : ''}`} onClick={() => setViewType('week')}>
+                  {t('bookings.week')}
+                </button>
+                <button className={`view-btn ${viewType === 'day' ? 'active' : ''}`} onClick={() => setViewType('day')}>
+                  {t('bookings.day')}
+                </button>
+              </div>
+              <button className="today-btn" onClick={goToToday}>
+                <Home size={16} />
+                {t('bookings.today')}
+              </button>
+            </>
+          )}
 
         </div>
       </div>
@@ -1711,32 +1842,38 @@ const Bookings = () => {
         </div>
       )}
 
-      <div className="calendar-navigation">
-        <button className="nav-btn" onClick={() => navigateDate(-1)}>
-          <ChevronLeft size={20} />
-        </button>
-        <h2 className="calendar-title">
-          {viewType === 'month' ? formatMonthYear(currentDate) : formatDisplayDate(currentDate)}
-        </h2>
-        <button className="nav-btn" onClick={() => navigateDate(1)}>
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      {!isMobile && (
+        <div className="calendar-navigation">
+          <button className="nav-btn" onClick={() => navigateDate(-1)}>
+            <ChevronLeft size={20} />
+          </button>
+          <h2 className="calendar-title">
+            {viewType === 'month' ? formatMonthYear(currentDate) : formatDisplayDate(currentDate)}
+          </h2>
+          <button className="nav-btn" onClick={() => navigateDate(1)}>
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
 
-      <div className="calendar-container">
-        {filteredBookings.length === 0 ? (
-          <div className="day-no-bookings">
-            <Calendar size={48} className="empty-icon" />
-            <p>{t('bookings.noBookingsFound')}</p>
-          </div>
-        ) : (
-          <>
-            {viewType === 'month' && renderMonthView()}
-            {viewType === 'week' && renderWeekView()}
-            {viewType === 'day' && renderDayView()}
-          </>
-        )}
-      </div>
+      {isMobile ? (
+        renderMobileListView()
+      ) : (
+        <div className="calendar-container">
+          {filteredBookings.length === 0 ? (
+            <div className="day-no-bookings">
+              <Calendar size={48} className="empty-icon" />
+              <p>{t('bookings.noBookingsFound')}</p>
+            </div>
+          ) : (
+            <>
+              {viewType === 'month' && renderMonthView()}
+              {viewType === 'week' && renderWeekView()}
+              {viewType === 'day' && renderDayView()}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="calendar-legend">
         <h4>{t('bookings.legend')}:</h4>

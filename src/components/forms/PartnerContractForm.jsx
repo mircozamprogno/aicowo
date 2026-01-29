@@ -7,10 +7,10 @@ import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
 
-const PartnerContractForm = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
+const PartnerContractForm = ({
+  isOpen,
+  onClose,
+  onSuccess,
   contract = null,
   partners = [],
   pricingPlans = [],
@@ -19,7 +19,7 @@ const PartnerContractForm = ({
   const { user } = useAuth();
   const { t } = useTranslation();
   const isEditing = !!contract;
-  
+
   const [formData, setFormData] = useState({
     partner_uuid: '',
     plan_id: '',
@@ -32,7 +32,7 @@ const PartnerContractForm = ({
     contract_terms: '',
     notes: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
@@ -99,8 +99,8 @@ const PartnerContractForm = ({
   // Calculate pricing when plan, billing frequency, or discount changes
   useEffect(() => {
     if (selectedPlan) {
-      const basePrice = formData.billing_frequency === 'monthly' 
-        ? selectedPlan.monthly_price 
+      const basePrice = formData.billing_frequency === 'monthly'
+        ? selectedPlan.monthly_price
         : selectedPlan.yearly_price;
 
       let discountAmount = 0;
@@ -133,7 +133,7 @@ const PartnerContractForm = ({
     if (formData.start_date && selectedPlan && !isEditing) {
       const startDate = new Date(formData.start_date);
       const endDate = new Date(startDate);
-      
+
       if (selectedPlan.is_trial) {
         endDate.setDate(startDate.getDate() + (selectedPlan.trial_duration_days || 14));
       } else if (formData.billing_frequency === 'monthly') {
@@ -141,9 +141,9 @@ const PartnerContractForm = ({
       } else {
         endDate.setFullYear(startDate.getFullYear() + 1); // 1 year contract
       }
-      
-      setFormData(prev => ({ 
-        ...prev, 
+
+      setFormData(prev => ({
+        ...prev,
         end_date: endDate.toISOString().split('T')[0]
       }));
     }
@@ -152,7 +152,7 @@ const PartnerContractForm = ({
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: newValue
@@ -189,7 +189,7 @@ const PartnerContractForm = ({
 
     const startDate = new Date(formData.start_date);
     const endDate = new Date(formData.end_date);
-    
+
     if (endDate <= startDate) {
       toast.error(t('messages.endDateMustBeAfterStartDate') || 'End date must be after start date');
       return false;
@@ -200,7 +200,7 @@ const PartnerContractForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -228,7 +228,7 @@ const PartnerContractForm = ({
       };
 
       let result;
-      
+
       if (isEditing) {
         // Update existing contract
         result = await supabase
@@ -314,11 +314,11 @@ const PartnerContractForm = ({
       }
 
       toast.success(
-        isEditing 
+        isEditing
           ? t('messages.partnerContractUpdatedSuccessfully') || 'Partner contract updated successfully'
           : t('messages.partnerContractCreatedSuccessfully') || 'Partner contract created successfully'
       );
-      
+
       onSuccess(data);
       onClose();
     } catch (error) {
@@ -358,7 +358,7 @@ const PartnerContractForm = ({
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-section">
             <h3 className="form-section-title">{t('partnerContracts.partnerAndPlan')}</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="partner_uuid" className="form-label">
@@ -381,7 +381,7 @@ const PartnerContractForm = ({
                   ))}
                 </select>
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="plan_id" className="form-label">
                   {t('partnerContracts.pricingPlan')} *
@@ -436,7 +436,7 @@ const PartnerContractForm = ({
 
           <div className="form-section">
             <h3 className="form-section-title">{t('partnerContracts.billingAndDiscount')}</h3>
-            
+
             <div className="form-row">
               {selectedPlan && !selectedPlan.is_trial && (
                 <div className="form-group">
@@ -456,7 +456,7 @@ const PartnerContractForm = ({
                   </select>
                 </div>
               )}
-              
+
               <div className="form-group">
                 <label htmlFor="discount_code_id" className="form-label">
                   {t('partnerContracts.discountCode')} ({t('common.optional')})
@@ -471,8 +471,8 @@ const PartnerContractForm = ({
                   <option value="">{t('partnerContracts.noDiscount')}</option>
                   {discountCodes.map((discount) => (
                     <option key={discount.id} value={discount.id}>
-                      {discount.code} - {discount.discount_type === 'percentage' 
-                        ? `${discount.discount_value}%` 
+                      {discount.code} - {discount.discount_type === 'percentage'
+                        ? `${discount.discount_value}%`
                         : formatCurrency(discount.discount_value, selectedPlan?.currency || 'EUR')
                       } off
                     </option>
@@ -507,7 +507,7 @@ const PartnerContractForm = ({
 
           <div className="form-section">
             <h3 className="form-section-title">{t('partnerContracts.contractPeriod')}</h3>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="start_date" className="form-label">
@@ -523,7 +523,7 @@ const PartnerContractForm = ({
                   onChange={handleChange}
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="end_date" className="form-label">
                   {t('partnerContracts.endDate')} *
@@ -559,7 +559,7 @@ const PartnerContractForm = ({
                   <option value="cancelled">{t('partnerContracts.cancelled')}</option>
                 </select>
               </div>
-              
+
               <div className="form-group">
                 <label className="form-checkbox-label">
                   <input
@@ -582,7 +582,7 @@ const PartnerContractForm = ({
 
           <div className="form-section">
             <h3 className="form-section-title">{t('partnerContracts.additionalInformation')}</h3>
-            
+
             <div className="form-group">
               <label htmlFor="contract_terms" className="form-label">
                 {t('partnerContracts.contractTerms')}
@@ -628,8 +628,8 @@ const PartnerContractForm = ({
               className="btn-primary"
               disabled={loading || !selectedPlan}
             >
-              {loading 
-                ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...') 
+              {loading
+                ? (isEditing ? t('common.updating') + '...' : t('common.creating') + '...')
                 : (isEditing ? t('common.save') : t('common.create'))
               }
             </button>

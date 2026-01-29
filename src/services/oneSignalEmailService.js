@@ -139,7 +139,7 @@ class OneSignalEmailService {
       // Fetch partner data for email settings
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
-        .select('company_name, structure_name, first_name, second_name, email')
+        .select('company_name, structure_name, first_name, second_name, email, email_banner_url')
         .eq('partner_uuid', invitationData.partner_uuid)
         .single();
 
@@ -197,19 +197,22 @@ class OneSignalEmailService {
       bodyHtml = bodyHtml.replace(/\{\{invitation_link\}\}/g, invitationLink);
       bodyHtml = bodyHtml.replace(/\{\{custom_message\}\}/g, invitationData.custom_message || '');
 
-      // Fetch banner URL
-      const { data: files } = await supabase.storage
-        .from('partners')
-        .list(`${invitationData.partner_uuid}`, { search: 'email_banner' });
+      // Fetch banner URL from partner data or storage fallback
+      let bannerUrl = partnerData.email_banner_url || '';
 
-      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-      let bannerUrl = '';
-
-      if (bannerFile) {
-        const { data } = supabase.storage
+      if (!bannerUrl) {
+        const { data: files } = await supabase.storage
           .from('partners')
-          .getPublicUrl(`${invitationData.partner_uuid}/${bannerFile.name}`);
-        bannerUrl = data.publicUrl;
+          .list(`${invitationData.partner_uuid}`, { search: 'email_banner' });
+
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+
+        if (bannerFile) {
+          const { data } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${invitationData.partner_uuid}/${bannerFile.name}`);
+          bannerUrl = data.publicUrl;
+        }
       }
 
       // Send using unique template with partner email settings
@@ -277,7 +280,7 @@ class OneSignalEmailService {
       if (!partnerData) {
         const { data: fetchedPartnerData, error: partnerError } = await supabase
           .from('partners')
-          .select('company_name, structure_name, first_name, second_name, email')
+          .select('company_name, structure_name, first_name, second_name, email, email_banner_url')
           .eq('partner_uuid', contractData.partner_uuid)
           .single();
 
@@ -469,19 +472,22 @@ class OneSignalEmailService {
       bodyHtml = bodyHtml.replace(/\{\{calendar_link\}\}/g, finalCalendarLink);
       bodyHtml = bodyHtml.replace(/\{\{calendar_link_label\}\}/g, t?.('bookings.addToCalendar') || 'Aggiungi al Calendario 📅');
 
-      // Fetch banner URL
-      const { data: files } = await supabase.storage
-        .from('partners')
-        .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+      // Fetch banner URL from partner data or storage fallback
+      let bannerUrl = partnerData.email_banner_url || '';
 
-      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-      let bannerUrl = '';
-
-      if (bannerFile) {
-        const { data } = supabase.storage
+      if (!bannerUrl) {
+        const { data: files } = await supabase.storage
           .from('partners')
-          .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
-        bannerUrl = data.publicUrl;
+          .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+
+        if (bannerFile) {
+          const { data } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
+          bannerUrl = data.publicUrl;
+        }
       }
 
       logger.log('🔍 DEBUG email_from_name:', partnerName);
@@ -565,7 +571,7 @@ class OneSignalEmailService {
       // Fetch partner data if not provided
       const { data: fetchedPartnerData, error: partnerError } = await supabase
         .from('partners')
-        .select('company_name, structure_name, first_name, second_name, email')
+        .select('company_name, structure_name, first_name, second_name, email, email_banner_url')
         .eq('partner_uuid', contractData.partner_uuid)
         .single();
 
@@ -657,19 +663,22 @@ class OneSignalEmailService {
       bodyHtml = bodyHtml.replace(/\{\{start_date\}\}/g, startDate);
       bodyHtml = bodyHtml.replace(/\{\{end_date\}\}/g, endDate);
 
-      // Fetch banner URL
-      const { data: files } = await supabase.storage
-        .from('partners')
-        .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+      // Fetch banner URL from partner data or storage fallback
+      let bannerUrl = partnerData.email_banner_url || '';
 
-      const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
-      let bannerUrl = '';
-
-      if (bannerFile) {
-        const { data } = supabase.storage
+      if (!bannerUrl) {
+        const { data: files } = await supabase.storage
           .from('partners')
-          .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
-        bannerUrl = data.publicUrl;
+          .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+
+        if (bannerFile) {
+          const { data } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
+          bannerUrl = data.publicUrl;
+        }
       }
 
       // Send email

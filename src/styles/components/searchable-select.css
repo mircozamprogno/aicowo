@@ -6,6 +6,7 @@
 .searchable-select {
   position: relative;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .searchable-select-trigger {
@@ -19,6 +20,8 @@
   cursor: pointer;
   transition: all 0.2s;
   min-height: 42px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .searchable-select-trigger:hover {

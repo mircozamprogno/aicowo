@@ -251,7 +251,7 @@ const Router = () => {
       ) : <Login />;
     case '/bookings-new':
       return user ? (
-        <ProtectedRoute requiredRoles={['user', 'admin', 'superadmin']}>
+        <ProtectedRoute requiredRoles={['admin', 'superadmin']}>
           <BookingsNew />
         </ProtectedRoute>
       ) : <Login />;

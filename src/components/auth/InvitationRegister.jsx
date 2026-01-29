@@ -55,24 +55,29 @@ const InvitationRegister = () => {
     try {
       const { data, error } = await supabase
         .from('invitations')
-        .select(`
-          *,
-          partners (
-            first_name,
-            second_name,
-            company_name,
-            structure_name
-          )
-        `)
+        .select('*')
         .eq('invitation_uuid', invitationToken)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
         .single();
 
       if (error || !data) {
+        console.error('Invitation query error:', error);
         toast.error(t('messages.invitationExpiredOrInvalid'));
         window.location.hash = '/login';
         return;
+      }
+
+      console.log('Invitation data fetched:', data);
+
+      // Use partner_structure_name from the invitation itself (no need to query partners table)
+      if (data.partner_structure_name) {
+        console.log('✅ Partner name from invitation:', data.partner_structure_name);
+        data.partners = {
+          structure_name: data.partner_structure_name
+        };
+      } else {
+        console.warn('⚠️ No partner_structure_name in invitation - run the SQL migration first');
       }
 
       setInvitation(data);
@@ -88,10 +93,23 @@ const InvitationRegister = () => {
     }
   };
 
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Phone number validation: only allow + and digits
+    if (name === 'phone') {
+      const sanitizedValue = value.replace(/[^+0-9]/g, '');
+      setFormData({
+        ...formData,
+        [name]: sanitizedValue
+      });
+      return;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
   };
 
@@ -252,16 +270,19 @@ const InvitationRegister = () => {
           </h2>
           <div className="invitation-info">
             <p className="invitation-text">
-              {invitation.invited_role === 'admin'
-                ? t('auth.invitedAsPartnerAdmin', {
-                  partnerName: invitation.partners?.first_name && invitation.partners?.second_name
-                    ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
-                    : invitation.partners?.first_name || invitation.partners?.company_name
-                })
-                : t('auth.invitedAsUser', {
-                  partnerName: invitation.partners?.structure_name || invitation.partners?.company_name
-                })
-              }
+              {(() => {
+                const partnerName = invitation.partners?.structure_name
+                  || invitation.partners?.company_name
+                  || invitation.partners?.first_name
+                  || 'Partner';
+
+                console.log('Partner data:', invitation.partners);
+                console.log('Partner name being used:', partnerName);
+
+                return invitation.invited_role === 'admin'
+                  ? t('auth.invitedAsPartnerAdmin', { partnerName })
+                  : t('auth.invitedAsUser', { partnerName });
+              })()}
             </p>
           </div>
         </div>
@@ -366,6 +387,13 @@ const InvitationRegister = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            <p style={{
+              fontSize: '0.75rem',
+              color: '#6b7280',
+              marginTop: '0.25rem'
+            }}>
+              {t('auth.passwordRequirements')}
+            </p>
           </div>
 
           <div className="form-group">
