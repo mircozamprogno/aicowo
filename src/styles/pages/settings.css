@@ -131,6 +131,11 @@
   padding: 2rem;
 }
 
+/* Partner Billing History tab content */
+.partner-billing-history-tab-content {
+  padding: 2rem;
+}
+
 .email-templates-tab-header {
   margin-bottom: 2rem;
 }

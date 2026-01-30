@@ -1859,7 +1859,7 @@ const Settings = () => {
         )}
 
         {activeTab === 'invoices' && (isAdminPartner || isSuperAdmin) && (
-          <div className="partner-billing-history-page" style={{ padding: 0, background: 'transparent' }}>
+          <div className="partner-billing-history-tab-content">
             <div className="partner-billing-history-header">
               <div className="partner-billing-history-header-content">
                 <h1 className="partner-billing-history-title">
