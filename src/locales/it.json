@@ -2129,7 +2129,9 @@
     "expiryReminder": "Promemoria Scadenza",
     "expiryReminderDescription": "Inviata per ricordare ai clienti le scadenze imminenti (contratti, pagamenti, ecc.)",
     "contractCreation": "Creazione Nuovo Contratto",
-    "contractCreationDescription": "Inviata ai clienti quando viene creato un nuovo contratto"
+    "contractCreationDescription": "Inviata ai clienti quando viene creato un nuovo contratto",
+    "customerBookingDeleted": "Prenotazione Cancellata",
+    "customerBookingDeletedDescription": "Inviata ai clienti quando una prenotazione viene cancellata dal partner"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto",

@@ -5,6 +5,7 @@ import { toast } from '../components/common/ToastContainer';
 import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import oneSignalEmailService from '../services/oneSignalEmailService';
 import { supabase } from '../services/supabase';
 import '../styles/components/timeline-view.css';
 import '../styles/pages/bookings.css';
@@ -682,7 +683,7 @@ const Bookings = () => {
           .from('package_reservations')
           .select(`
             *,
-            contracts(id, entries_used, customer_id, contract_number, service_name),
+            contracts(id, entries_used, customer_id, contract_number, service_name, service_type, partner_uuid),
             location_resources(
               resource_name,
               resource_type,
@@ -754,13 +755,26 @@ const Bookings = () => {
         }
 
         toast.success(t('bookings.packageReservationDeleted'));
+
+        // Send deletion email to customer
+        try {
+          await oneSignalEmailService.sendBookingDeletionEmail(
+            packageData,
+            packageData.contracts,
+            t
+          );
+          logger.log('✅ Deletion email sent successfully');
+        } catch (emailError) {
+          logger.error('Error sending deletion email:', emailError);
+          // Don't block deletion if email fails
+        }
       } else {
         // Handle subscription booking deletion
         const { data: bookingData, error: fetchError } = await supabase
           .from('bookings')
           .select(`
             *,
-            contracts(id, customer_id, contract_number, service_name),
+            contracts(id, customer_id, contract_number, service_name, service_type, partner_uuid),
             location_resources(
               resource_name,
               resource_type,
@@ -821,6 +835,19 @@ const Bookings = () => {
         }
 
         toast.success(t('bookings.subscriptionBookingDeleted'));
+
+        // Send deletion email to customer
+        try {
+          await oneSignalEmailService.sendBookingDeletionEmail(
+            bookingData,
+            bookingData.contracts,
+            t
+          );
+          logger.log('✅ Deletion email sent successfully');
+        } catch (emailError) {
+          logger.error('Error sending deletion email:', emailError);
+          // Don't block deletion if email fails
+        }
       }
 
       // Refresh data

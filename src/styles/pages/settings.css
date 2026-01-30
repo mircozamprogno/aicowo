@@ -1052,6 +1052,16 @@
   transform: translateY(-2px);
 }
 
+.template-card.template-not-saved {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.template-card.template-not-saved:hover {
+  border-color: #f87171;
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
+}
+
 .template-card-icon {
   flex-shrink: 0;
   width: 48px;

@@ -1,5 +1,5 @@
 // src/components/email/EmailTemplateList.jsx
-import { Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Shield, UserPlus } from 'lucide-react';
+import { Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Shield, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -38,6 +38,12 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.contractCreation',
     descriptionKey: 'emailTemplates.contractCreationDescription',
     icon: 'FileText'
+  },
+  customer_booking_deleted: {
+    id: 'customer_booking_deleted',
+    nameKey: 'emailTemplates.customerBookingDeleted',
+    descriptionKey: 'emailTemplates.customerBookingDeletedDescription',
+    icon: 'XCircle'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
@@ -100,7 +106,8 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       Bell: Bell,
       Mail: Mail,
       Clock: Clock,
-      FileText: FileText
+      FileText: FileText,
+      XCircle: XCircle
     };
     const Icon = icons[iconName] || UserPlus;
     return <Icon size={24} />;
@@ -167,7 +174,7 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
           return (
             <div
               key={templateType}
-              className="template-card"
+              className={`template-card ${!dbTemplate ? 'template-not-saved' : ''}`}
               onClick={() => handleTemplateClick(templateType)}
             >
               <div className="template-card-icon">

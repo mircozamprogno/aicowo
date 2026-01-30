@@ -1026,6 +1026,202 @@ class OneSignalEmailService {
       return false;
     }
   }
+
+  /**
+   * Send booking deletion email to customer
+   * @param {Object} bookingData - The booking/reservation data
+   * @param {Object} contractData - The contract data
+   * @param {Function} t - Translation function
+   * @param {Object} partnerData - Partner data (optional)
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendBookingDeletionEmail(bookingData, contractData, t, partnerData = null) {
+    if (!this.uniqueTemplateId) {
+      logger.error('Unique template ID not configured');
+      return false;
+    }
+
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { supabase } = await import('./supabase');
+      const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
+
+      logger.log('=== BOOKING DELETION EMAIL DEBUG ===');
+      logger.log('bookingData:', bookingData);
+      logger.log('contractData:', contractData);
+
+      // Fetch partner data if not provided
+      if (!partnerData) {
+        const { data: fetchedPartnerData, error: partnerError } = await supabase
+          .from('partners')
+          .select('company_name, structure_name, first_name, second_name, email, email_banner_url')
+          .eq('partner_uuid', contractData.partner_uuid)
+          .single();
+
+        if (partnerError || !fetchedPartnerData) {
+          logger.error('Error fetching partner data:', partnerError);
+          return false;
+        }
+        partnerData = fetchedPartnerData;
+      }
+
+      // Fetch custom template from database
+      const { data: templateData, error: templateError } = await supabase
+        .from('email_templates')
+        .select('body_html, subject_line')
+        .eq('partner_uuid', contractData.partner_uuid)
+        .eq('template_type', 'customer_booking_deleted')
+        .single();
+
+      // Use custom template or fallback to default
+      let bodyHtml;
+      let emailSubject = 'Prenotazione Cancellata';
+
+      if (templateData && !templateError) {
+        bodyHtml = templateData.body_html;
+        emailSubject = templateData.subject_line || 'Prenotazione Cancellata';
+        logger.log('Using custom customer_booking_deleted template');
+      } else {
+        logger.log('No custom template, using default. Error:', templateError);
+        const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.customer_booking_deleted ||
+          DEFAULT_EMAIL_TEMPLATES.en?.customer_booking_deleted;
+        bodyHtml = defaultTemplate?.body || '<p>Booking cancelled</p>';
+        if (defaultTemplate?.subject) {
+          emailSubject = defaultTemplate.subject;
+        }
+        logger.log('Using default customer_booking_deleted template');
+      }
+
+      // Extract CUSTOMER data
+      let customerFirstName = '';
+      let customerLastName = '';
+      let customerEmail = '';
+
+      if (bookingData.customers) {
+        customerFirstName = bookingData.customers.first_name || '';
+        customerLastName = bookingData.customers.second_name || '';
+        customerEmail = bookingData.customers.email || '';
+        logger.log('✅ Customer from bookingData.customers');
+      } else if (contractData.customers) {
+        customerFirstName = contractData.customers.first_name || '';
+        customerLastName = contractData.customers.second_name || '';
+        customerEmail = contractData.customers.email || '';
+        logger.log('✅ Customer from contractData.customers');
+      }
+
+      const customerName = `${customerFirstName} ${customerLastName}`.trim();
+
+      if (!customerEmail) {
+        logger.error('❌ CUSTOMER EMAIL NOT FOUND!');
+        return false;
+      }
+
+      logger.log('✅ Customer data:', { customerName, customerEmail });
+
+      // Get contract/service info
+      const contractNumber = contractData.contract_number || '';
+      const serviceName = contractData.service_name || '';
+      const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
+
+      // Format booking date
+      const bookingDate = new Date(bookingData.reservation_date || bookingData.start_date).toLocaleDateString('it-IT', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // Get resource info
+      const resourceName = bookingData.location_resources?.resource_name || '';
+      const locationName = bookingData.location_resources?.locations?.location_name || '';
+
+      // Duration info (for package bookings)
+      let durationDisplay = '';
+      if (bookingData.duration_type) {
+        const durationType = bookingData.duration_type === 'full_day'
+          ? (t('reservations.fullDay') || 'Giornata intera')
+          : (t('reservations.halfDay') || 'Mezza giornata');
+
+        if (bookingData.duration_type === 'half_day' && bookingData.time_slot) {
+          const slotLabel = bookingData.time_slot === 'morning'
+            ? (t('reservations.morning') || 'Mattina')
+            : (t('reservations.afternoon') || 'Pomeriggio');
+          const slotHours = bookingData.time_slot === 'morning' ? '9:00 - 13:00' : '14:00 - 18:00';
+          durationDisplay = `${durationType} - ${slotLabel} (${slotHours})`;
+        } else {
+          durationDisplay = durationType;
+        }
+      }
+
+      // Replace variables in subject
+      emailSubject = emailSubject.replace(/\{\{service_name\}\}/g, serviceName);
+      emailSubject = emailSubject.replace(/\{\{contract_number\}\}/g, contractNumber);
+      emailSubject = emailSubject.replace(/\{\{partner_name\}\}/g, partnerName);
+      emailSubject = emailSubject.replace(/\{\{customer_name\}\}/g, customerName);
+      emailSubject = emailSubject.replace(/\{\{booking_date\}\}/g, bookingDate);
+
+      // Replace variables in body
+      bodyHtml = bodyHtml.replace(/\{\{partner_name\}\}/g, partnerName);
+      bodyHtml = bodyHtml.replace(/\{\{structure_name\}\}/g, partnerData?.structure_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_firstname\}\}/g, partnerData?.first_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{partner_lastname\}\}/g, partnerData?.second_name || '');
+      bodyHtml = bodyHtml.replace(/\{\{customer_name\}\}/g, customerName);
+      bodyHtml = bodyHtml.replace(/\{\{booking_date\}\}/g, bookingDate);
+      bodyHtml = bodyHtml.replace(/\{\{resource_name\}\}/g, resourceName);
+      bodyHtml = bodyHtml.replace(/\{\{location_name\}\}/g, locationName);
+      bodyHtml = bodyHtml.replace(/\{\{contract_number\}\}/g, contractNumber);
+      bodyHtml = bodyHtml.replace(/\{\{service_name\}\}/g, serviceName);
+      bodyHtml = bodyHtml.replace(/\{\{duration_display\}\}/g, durationDisplay);
+
+      // Fetch banner URL
+      let bannerUrl = partnerData.email_banner_url || '';
+
+      if (!bannerUrl) {
+        const { data: files } = await supabase.storage
+          .from('partners')
+          .list(`${contractData.partner_uuid}`, { search: 'email_banner' });
+
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+
+        if (bannerFile) {
+          const { data } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${contractData.partner_uuid}/${bannerFile.name}`);
+          bannerUrl = data.publicUrl;
+        }
+      }
+
+      // Send email
+      const payload = {
+        app_id: this.appId,
+        email_from_name: partnerName,
+        email_subject: emailSubject,
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
+        template_id: this.uniqueTemplateId,
+        target_channel: "email",
+        include_email_tokens: [customerEmail],
+        include_aliases: {
+          external_id: [contractData.partner_uuid]
+        },
+        custom_data: {
+          banner_url: bannerUrl,
+          body_html: bodyHtml
+        }
+      };
+
+      logger.log('📧 Sending booking deletion email:', {
+        to: customerEmail,
+        from: partnerName,
+        subject: emailSubject
+      });
+
+      return await this.sendOneSignalRequest(payload);
+    } catch (error) {
+      logger.error('Error sending booking deletion email:', error);
+      return false;
+    }
+  }
 }
 
 

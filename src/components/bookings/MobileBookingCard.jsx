@@ -46,9 +46,6 @@ const MobileBookingCard = ({ booking, onDelete, onClick, isCustomer }) => {
                     <Clock size={16} />
                     <span>{getDurationText()}</span>
                 </div>
-                <span className={`status-badge ${getStatusBadgeClass(booking.booking_status)}`}>
-                    {t(`bookings.${booking.booking_status}`) || booking.booking_status?.toUpperCase()}
-                </span>
             </div>
 
             <div className="mobile-booking-card-body">

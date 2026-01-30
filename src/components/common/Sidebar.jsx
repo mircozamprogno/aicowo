@@ -98,9 +98,13 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
     // Filter items based on user role
     const userRole = profile?.role || 'user';
-    const filteredItems = [...baseItems, ...roleSpecificItems].filter(item =>
-      item.roles.includes(userRole)
-    );
+    const filteredItems = [...baseItems, ...roleSpecificItems].filter(item => {
+      // Hide BookingsNew (Gantt View) on mobile devices
+      if (mobile && item.href === '/bookings-new') {
+        return false;
+      }
+      return item.roles.includes(userRole);
+    });
 
     return filteredItems;
   };

@@ -1117,6 +1117,7 @@
   cursor: pointer;
   transition: all 0.2s;
   border-left: 4px solid var(--color-primary-500);
+  margin-bottom: 0.75rem;
 }
 
 .mobile-booking-card:active {

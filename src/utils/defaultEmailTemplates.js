@@ -98,6 +98,39 @@ export const DEFAULT_EMAIL_TEMPLATES = {
       ]
     },
 
+    customer_booking_deleted: {
+      subject: 'Booking Cancelled - {{service_name}}',
+      body: `<h2>Booking Cancellation Notice</h2>
+<p>Dear {{customer_name}},</p>
+<p>We regret to inform you that your booking has been cancelled.</p>
+<h3>Cancelled Booking Details:</h3>
+<ul>
+  <li><strong>Service:</strong> {{service_name}}</li>
+  <li><strong>Date:</strong> {{booking_date}}</li>
+  <li><strong>Resource:</strong> {{resource_name}}</li>
+  <li><strong>Location:</strong> {{location_name}}</li>
+  <li><strong>Contract Number:</strong> {{contract_number}}</li>
+</ul>
+<p>We apologize for any inconvenience this may cause. If you have any questions or concerns, please don't hesitate to contact us.</p>
+<p>Best regards,<br>{{partner_firstname}} {{partner_lastname}}<br>{{structure_name}}</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">--</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp;</span></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Company name' },
+        { name: '{{structure_name}}', description: 'Structure name' },
+        { name: '{{partner_firstname}}', description: 'Partner first name' },
+        { name: '{{partner_lastname}}', description: 'Partner last name' },
+        { name: '{{customer_name}}', description: "Customer's full name" },
+        { name: '{{booking_date}}', description: 'Date of booking' },
+        { name: '{{duration_display}}', description: 'Duration (for package bookings)' },
+        { name: '{{resource_name}}', description: 'Resource name (desk, meeting room)' },
+        { name: '{{location_name}}', description: 'Location name' },
+        { name: '{{service_name}}', description: 'Service name' },
+        { name: '{{contract_number}}', description: 'Contract number' }
+      ]
+    },
+
     partner_booking_notification: {
       subject: 'New Booking - {{customer_name}}',
       body: `<h2>New Booking Received</h2>
@@ -309,6 +342,38 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{resource}}', description: 'Nome risorsa (scrivania, sala riunioni)' },
         { name: '{{remaining_count}}', description: 'Ingressi rimanenti' },
         { name: '{{service_name}}', description: 'Nome servizio' }
+      ]
+    },
+
+    customer_booking_deleted: {
+      subject: 'Prenotazione Cancellata - {{service_name}}',
+      body: `<h2><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-weight: normal;">Gentile {{customer_name}},&nbsp;<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem; font-weight: normal;">siamo spiacenti di informarti che la tua prenotazione è stata cancellata.</span></h2>
+<h3><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-weight: normal;">Dettagli Prenotazione Cancellata:</span></h3>
+<ul>
+  <li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Servizio:</strong><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{service_name}}</span></li>
+  <li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Data:</strong><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{booking_date}}</span></li>
+  <li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Risorsa:</strong><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{resource_name}}</span></li>
+  <li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Sede:</strong><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{location_name}}</span></li>
+  <li><strong style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Numero Contratto:</strong><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;"> {{contract_number}}</span></li>
+</ul>
+<p><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Ci scusiamo per l'eventuale disagio. Per qualsiasi domanda o chiarimento, non esitare a contattarci.</span></p>
+<p><span style="font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_firstname}},</span></p>
+<p>{{structure_name}}<br></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">--</p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;"><b>⚡️ PowerCowo</b>&nbsp;</span></p>
+<p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">MLM Media Logistic Management GmbH<br></span><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 0.875rem;">Industriepark 11 8610 Uster (ZH) Svizzera</span></p>`,
+      variables: [
+        { name: '{{partner_name}}', description: 'Nome azienda' },
+        { name: '{{structure_name}}', description: 'Nome struttura' },
+        { name: '{{partner_firstname}}', description: 'Nome del partner' },
+        { name: '{{partner_lastname}}', description: 'Cognome del partner' },
+        { name: '{{customer_name}}', description: 'Nome completo del cliente' },
+        { name: '{{booking_date}}', description: 'Data della prenotazione' },
+        { name: '{{duration_display}}', description: 'Durata (per prenotazioni pacchetto)' },
+        { name: '{{resource_name}}', description: 'Nome risorsa (scrivania, sala riunioni)' },
+        { name: '{{location_name}}', description: 'Nome sede' },
+        { name: '{{service_name}}', description: 'Nome servizio' },
+        { name: '{{contract_number}}', description: 'Numero contratto' }
       ]
     },
 

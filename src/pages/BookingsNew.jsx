@@ -6,6 +6,7 @@ import { toast } from '../components/common/ToastContainer';
 import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
+import oneSignalEmailService from '../services/oneSignalEmailService';
 import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 
@@ -299,7 +300,7 @@ const BookingsNew = () => {
                     .from('package_reservations')
                     .select(`
                         *,
-                        contracts(id, entries_used, customer_id, contract_number, service_name),
+                        contracts(id, entries_used, customer_id, contract_number, service_name, service_type, partner_uuid),
                         location_resources(
                             resource_name,
                             resource_type,
@@ -358,6 +359,19 @@ const BookingsNew = () => {
                 }
 
                 toast.success(t('bookings.packageReservationDeleted') || t('common.deletedSuccessfully'));
+
+                // Send deletion email to customer
+                try {
+                    await oneSignalEmailService.sendBookingDeletionEmail(
+                        packageData,
+                        packageData.contracts,
+                        t
+                    );
+                    logger.log('✅ Deletion email sent successfully');
+                } catch (emailError) {
+                    logger.error('Error sending deletion email:', emailError);
+                    // Don't block deletion if email fails
+                }
             } else {
                 // Handle subscription booking deletion
                 const { data: bookingData, error: fetchError } = await supabase
@@ -405,6 +419,28 @@ const BookingsNew = () => {
                 }
 
                 toast.success(t('common.deletedSuccessfully'));
+
+                // Send deletion email to customer
+                try {
+                    // Fetch contract data for email
+                    const { data: contractData } = await supabase
+                        .from('contracts')
+                        .select('id, contract_number, service_name, service_type, partner_uuid, customers(first_name, second_name, email)')
+                        .eq('id', bookingData.contract_id)
+                        .maybeSingle();
+
+                    if (contractData) {
+                        await oneSignalEmailService.sendBookingDeletionEmail(
+                            bookingData,
+                            contractData,
+                            t
+                        );
+                        logger.log('✅ Deletion email sent successfully');
+                    }
+                } catch (emailError) {
+                    logger.error('Error sending deletion email:', emailError);
+                    // Don't block deletion if email fails
+                }
             }
 
             setShowDeleteConfirm(false);
