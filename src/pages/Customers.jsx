@@ -58,7 +58,7 @@ const Customers = () => {
         .from('customers')
         .select('*')
         .eq('partner_uuid', profile.partner_uuid)
-        .neq('customer_status', 'inactive')
+        .neq('customer_status', 'notactive')
         .order('created_at', { ascending: false });
 
       const { data, error } = await query;
@@ -110,7 +110,7 @@ const Customers = () => {
             company_name: '',
             email: 'luca.bianchi@email.com',
             phone: '+39 555 123 4567',
-            customer_status: 'inactive',
+            customer_status: 'notactive',
             customer_type: 'individual',
             city: 'Torino',
             country: 'Italy',
@@ -349,9 +349,9 @@ const Customers = () => {
     switch (status) {
       case 'active':
         return 'status-active';
-      case 'inactive':
+      case 'notactive':
         return 'status-inactive';
-      case 'suspended':
+      case 'incomplete_profile':
         return 'status-suspended';
       default:
         return 'status-inactive';

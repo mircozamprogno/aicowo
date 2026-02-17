@@ -2,7 +2,6 @@ import { AlertTriangle, Building, Calendar, DollarSign, MapPin, Plus, TrendingDo
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from '../components/common/ToastContainer';
-import ContractForm from '../components/forms/ContractForm';
 import PackageBookingForm from '../components/forms/PackageBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -51,13 +50,13 @@ const Dashboard = () => {
     totalCustomers: 0,
     totalContracts: 0,
     activeBookings: 0,
-    totalDesks: 0,
-    totalMeetingRooms: 0,
-    availableDesks: 0,
-    availableMeetingRooms: 0,
     totalContractValue: 0,
     loading: true
   });
+
+  // New state for dynamic resource occupancy
+  const [resourceOccupancy, setResourceOccupancy] = useState([]);
+  const [resourceOccupancyLoading, setResourceOccupancyLoading] = useState(true);
 
   // Enhanced business intelligence state
   const [businessMetrics, setBusinessMetrics] = useState({
@@ -110,13 +109,10 @@ const Dashboard = () => {
   // Contract management states for customer dashboard
   const [contracts, setContracts] = useState([]);
   const [contractsLoading, setContractsLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusAlert, setShowStatusAlert] = useState(false);
   const [customerStatus, setCustomerStatus] = useState(null);
   const [showPackageBooking, setShowPackageBooking] = useState(false);
   const [selectedPackageContract, setSelectedPackageContract] = useState(null);
-  const [editingContract, setEditingContract] = useState(null);
 
   // State for managing auto-renewal toggles
   const [updatingAutoRenew, setUpdatingAutoRenew] = useState({});
@@ -166,6 +162,7 @@ const Dashboard = () => {
       logger.log('👔 Partner admin detected, loading dashboard...');
       setProfileCheckComplete(true);
       fetchStats();
+      fetchResourceOccupancy();
       fetchContractsChartData();
       fetchBusinessMetrics();
     } else if (currentRole === 'superadmin') {
@@ -556,16 +553,6 @@ const Dashboard = () => {
     }
   };
 
-  // Form success handlers
-  const handleFormSuccess = (newContract) => {
-    logger.log('Contract created successfully:', newContract);
-    fetchCustomerContracts(); // Refresh contracts
-    setShowForm(false);
-    setEditingContract(null);
-    toast.success(t('messages.contractCreatedSuccessfully') || 'Contract created successfully');
-  };
-
-
   // Improved checkProfileCompletion function with better error handling
   const checkProfileCompletion = async (retryCount = 0) => {
     // ✅ FIX: Get FRESH values from context/state, NOT from parameters!
@@ -677,11 +664,11 @@ const Dashboard = () => {
     logger.log('🎉 PROFILE COMPLETION SUCCESSFUL:', updatedCustomer);
 
     try {
-      // Update customer status to 'tobequalified'
+      // Update customer status to 'active'
       const { error } = await supabase
         .from('customers')
         .update({
-          customer_status: 'tobequalified',
+          customer_status: 'active',
           updated_at: new Date().toISOString()
         })
         .eq('id', updatedCustomer.id);
@@ -690,7 +677,7 @@ const Dashboard = () => {
         logger.error('Error updating customer status:', error);
         toast.error(t('messages.errorUpdatingStatus') || 'Error updating status');
       } else {
-        logger.log('✅ Customer status updated to tobequalified');
+        logger.log('✅ Customer status updated to active');
         toast.success(t('customers.profileCompletedSuccessfully') || 'Profile completed successfully');
       }
     } catch (error) {
@@ -943,10 +930,6 @@ const Dashboard = () => {
       let customersCount = 0;
       let contractsCount = 0;
       let activeBookingsCount = 0;
-      let totalDesks = 0;
-      let totalMeetingRooms = 0;
-      let availableDesks = 0;
-      let availableMeetingRooms = 0;
 
       // Fetch data based on user role
       if (profile.role === 'superadmin') {
@@ -972,10 +955,6 @@ const Dashboard = () => {
           totalCustomers: 0,
           totalContracts: 0,
           activeBookings: 0,
-          totalDesks: 0,
-          totalMeetingRooms: 0,
-          availableDesks: 0,
-          availableMeetingRooms: 0,
           totalContractValue: totalContractValue,
           loading: false
         });
@@ -1023,81 +1002,6 @@ const Dashboard = () => {
           customersCount = customersResult.count || 0;
           contractsCount = contractsResult.count || 0;
           activeBookingsCount = bookingsResult.count || 0;
-
-          // Calculate resource statistics
-          if (resourcesResult.data) {
-            const resources = resourcesResult.data;
-            totalDesks = resources
-              .filter(r => r.resource_type === 'scrivania')
-              .reduce((sum, r) => sum + r.quantity, 0);
-
-            totalMeetingRooms = resources
-              .filter(r => r.resource_type === 'sala_riunioni')
-              .reduce((sum, r) => sum + r.quantity, 0);
-          }
-
-          // Calculate available resources for the current month
-          if (resourcesResult.data) {
-            // Get first and last day of current month (Local Timesafe)
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
-            const monthStart = `${year}-${month}-01`;
-            const monthEnd = `${year}-${month}-${lastDay}`;
-
-            const [bookingsResult, packageResult] = await Promise.all([
-              supabase
-                .from('bookings')
-                .select(`
-                  location_resource_id,
-                  location_resources!inner (
-                    resource_type,
-                    partner_uuid
-                  )
-                `)
-                .eq('location_resources.partner_uuid', profile.partner_uuid)
-                .eq('booking_status', 'active')
-                .lte('start_date', monthEnd)
-                .gte('end_date', monthStart),
-              supabase
-                .from('package_reservations')
-                .select(`
-                  location_resource_id,
-                  location_resources!inner (
-                    resource_type
-                  )
-                `)
-                .eq('partner_uuid', profile.partner_uuid)
-                .eq('reservation_status', 'confirmed')
-                .lte('reservation_date', monthEnd)
-                .gte('reservation_date', monthStart)
-            ]);
-
-            const detailedBookings = bookingsResult.data || [];
-            const detailedPackages = packageResult.data || [];
-
-            logger.log('📅 Dashboard Stats - Results:', {
-              bookingsCount: detailedBookings.length,
-              packagesCount: detailedPackages.length
-            });
-
-            const allOccupancy = [
-              ...detailedBookings.map(b => ({ type: b.location_resources?.resource_type })),
-              ...detailedPackages.map(p => ({ type: p.location_resources?.resource_type }))
-            ];
-
-            if (allOccupancy.length > 0) {
-              const bookedDesks = allOccupancy.filter(b => b.type === 'scrivania').length;
-              const bookedMeetingRooms = allOccupancy.filter(b => b.type === 'sala_riunioni').length;
-
-              availableDesks = Math.max(0, totalDesks - bookedDesks);
-              availableMeetingRooms = Math.max(0, totalMeetingRooms - bookedMeetingRooms);
-            } else {
-              availableDesks = totalDesks;
-              availableMeetingRooms = totalMeetingRooms;
-            }
-          }
         }
 
         setStats({
@@ -1107,10 +1011,6 @@ const Dashboard = () => {
           totalCustomers: customersCount,
           totalContracts: contractsCount,
           activeBookings: activeBookingsCount,
-          totalDesks,
-          totalMeetingRooms,
-          availableDesks,
-          availableMeetingRooms,
           totalContractValue: 0,
           loading: false
         });
@@ -1122,10 +1022,133 @@ const Dashboard = () => {
       setStats({
         totalPartners: 0, totalLocations: 0, totalUsers: 0,
         totalCustomers: 0, totalContracts: 0, activeBookings: 0,
-        totalDesks: 0, totalMeetingRooms: 0, availableDesks: 0, availableMeetingRooms: 0,
         totalContractValue: 0,
         loading: false
       });
+    }
+  };
+
+  // Fetch dynamic resource occupancy based on partner_resource_types
+  const fetchResourceOccupancy = async () => {
+    if (profile?.role !== 'admin' || !profile?.partner_uuid) {
+      setResourceOccupancyLoading(false);
+      return;
+    }
+
+    setResourceOccupancyLoading(true);
+
+    try {
+      logger.log('📊 Fetching resource occupancy for partner:', profile.partner_uuid);
+
+      // Get current month date range
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+      const monthStart = `${year}-${month}-01`;
+      const monthEnd = `${year}-${month}-${lastDay}`;
+
+      // Fetch partner resource types
+      const { data: resourceTypes, error: resourceTypesError } = await supabase
+        .from('partner_resource_types')
+        .select('*')
+        .eq('partner_uuid', profile.partner_uuid)
+        .eq('is_active', true)
+        .order('type_name');
+
+      if (resourceTypesError) {
+        logger.error('Error fetching resource types:', resourceTypesError);
+        setResourceOccupancyLoading(false);
+        return;
+      }
+
+      if (!resourceTypes || resourceTypes.length === 0) {
+        logger.log('No resource types found for partner');
+        setResourceOccupancy([]);
+        setResourceOccupancyLoading(false);
+        return;
+      }
+
+      // Fetch all location resources for this partner
+      const { data: allResources, error: resourcesError } = await supabase
+        .from('location_resources')
+        .select('id, resource_type, quantity')
+        .eq('partner_uuid', profile.partner_uuid);
+
+      if (resourcesError) {
+        logger.error('Error fetching resources:', resourcesError);
+        setResourceOccupancyLoading(false);
+        return;
+      }
+
+      // Fetch all bookings and package reservations for current month
+      const [bookingsResult, packageResult] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select(`
+            location_resource_id,
+            location_resources!inner (
+              resource_type,
+              partner_uuid
+            )
+          `)
+          .eq('location_resources.partner_uuid', profile.partner_uuid)
+          .eq('booking_status', 'active')
+          .lte('start_date', monthEnd)
+          .gte('end_date', monthStart),
+        supabase
+          .from('package_reservations')
+          .select(`
+            location_resource_id,
+            location_resources!inner (
+              resource_type
+            )
+          `)
+          .eq('partner_uuid', profile.partner_uuid)
+          .eq('reservation_status', 'confirmed')
+          .lte('reservation_date', monthEnd)
+          .gte('reservation_date', monthStart)
+      ]);
+
+      const detailedBookings = bookingsResult.data || [];
+      const detailedPackages = packageResult.data || [];
+
+      // Calculate occupancy for each resource type
+      const occupancyData = resourceTypes.map(resourceType => {
+        // Get total quantity for this resource type
+        const totalQuantity = (allResources || [])
+          .filter(r => r.resource_type === resourceType.type_code)
+          .reduce((sum, r) => sum + (r.quantity || 0), 0);
+
+        // Count booked resources for this type
+        const bookedCount = [
+          ...detailedBookings.filter(b => b.location_resources?.resource_type === resourceType.type_code),
+          ...detailedPackages.filter(p => p.location_resources?.resource_type === resourceType.type_code)
+        ].length;
+
+        const available = Math.max(0, totalQuantity - bookedCount);
+        const occupancyPercentage = totalQuantity > 0
+          ? Math.round((bookedCount / totalQuantity) * 100)
+          : 0;
+
+        return {
+          type_name: resourceType.type_name,
+          type_code: resourceType.type_code,
+          total: totalQuantity,
+          booked: bookedCount,
+          available: available,
+          occupancyPercentage: occupancyPercentage
+        };
+      });
+
+      logger.log('📊 Resource occupancy calculated:', occupancyData);
+      setResourceOccupancy(occupancyData);
+      setResourceOccupancyLoading(false);
+
+    } catch (error) {
+      logger.error('Error fetching resource occupancy:', error);
+      setResourceOccupancy([]);
+      setResourceOccupancyLoading(false);
     }
   };
 
@@ -1260,83 +1283,68 @@ const Dashboard = () => {
 
         {/* Resources Overview - MOVED TO TOP */}
         <div className="dashboard-section">
-          <h2 className="section-title">{t('dashboard.resourcesOverview')}</h2>
+          <h2 className="section-title">
+            {t('dashboard.resourcesOverview')} - {(() => {
+              const now = new Date();
+              const monthKey = now.toLocaleString('en-US', { month: 'long' }).toLowerCase();
+              const year = now.getFullYear();
+              return `${t(`common.months.${monthKey}`)} ${year}`;
+            })()}
+          </h2>
           <div className="resources-grid">
-            {/* Desks Section */}
-            <div className="resource-card desks">
-              <div className="resource-header">
-                <div className="resource-title">
-                  <h3>{t('dashboard.desks')}</h3>
-                  <p>{new Date().toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' })}</p>
-                </div>
+            {resourceOccupancyLoading ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
+                <p>{t('common.loading')}...</p>
               </div>
-              <div className="resource-stats">
-                <div className="resource-stat">
-                  <span className="resource-number">{stats.loading ? '...' : stats.totalDesks}</span>
-                  <span className="resource-label">{t('dashboard.total')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number available">{stats.loading ? '...' : stats.availableDesks}</span>
-                  <span className="resource-label">{t('dashboard.available')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalDesks - stats.availableDesks)}</span>
-                  <span className="resource-label">{t('dashboard.booked')}</span>
-                </div>
+            ) : resourceOccupancy.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
+                <p>{t('dashboard.noResourceTypes') || 'Nessun tipo di risorsa configurato'}</p>
               </div>
-              <div className="resource-progress">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: stats.totalDesks > 0 ? `${Math.max(0, ((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)}%` : '0%',
-                      backgroundColor: '#3b82f6'
-                    }}
-                  />
-                </div>
-                <span className="progress-text">
-                  {stats.totalDesks > 0 ? Math.max(0, Math.round(((stats.totalDesks - stats.availableDesks) / stats.totalDesks) * 100)) : 0}% Occupazione
-                </span>
-              </div>
-            </div>
+            ) : (
+              resourceOccupancy.map((resource, index) => {
+                // Assign colors dynamically based on index
+                const colors = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4'];
+                const color = colors[index % colors.length];
 
-            {/* Meeting Rooms Section */}
-            <div className="resource-card meeting-rooms">
-              <div className="resource-header">
-                <div className="resource-title">
-                  <h3>{t('dashboard.meetingRooms')}</h3>
-                  <p>{new Date().toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' })}</p>
-                </div>
-              </div>
-              <div className="resource-stats">
-                <div className="resource-stat">
-                  <span className="resource-number">{stats.loading ? '...' : stats.totalMeetingRooms}</span>
-                  <span className="resource-label">{t('dashboard.total')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number available">{stats.loading ? '...' : stats.availableMeetingRooms}</span>
-                  <span className="resource-label">{t('dashboard.available')}</span>
-                </div>
-                <div className="resource-stat">
-                  <span className="resource-number booked">{stats.loading ? '...' : Math.max(0, stats.totalMeetingRooms - stats.availableMeetingRooms)}</span>
-                  <span className="resource-label">{t('dashboard.booked')}</span>
-                </div>
-              </div>
-              <div className="resource-progress">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: stats.totalMeetingRooms > 0 ? `${Math.max(0, ((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)}%` : '0%',
-                      backgroundColor: '#f59e0b'
-                    }}
-                  />
-                </div>
-                <span className="progress-text">
-                  {stats.totalMeetingRooms > 0 ? Math.max(0, Math.round(((stats.totalMeetingRooms - stats.availableMeetingRooms) / stats.totalMeetingRooms) * 100)) : 0}% Occupazione
-                </span>
-              </div>
-            </div>
+                return (
+                  <div key={resource.type_code} className="resource-card" style={{ borderTopColor: color }}>
+                    <div className="resource-header">
+                      <div className="resource-title">
+                        <h3>{resource.type_name}</h3>
+                      </div>
+                    </div>
+                    <div className="resource-stats">
+                      <div className="resource-stat">
+                        <span className="resource-number">{resource.total}</span>
+                        <span className="resource-label">{t('dashboard.total')}</span>
+                      </div>
+                      <div className="resource-stat">
+                        <span className="resource-number available">{resource.available}</span>
+                        <span className="resource-label">{t('dashboard.available')}</span>
+                      </div>
+                      <div className="resource-stat">
+                        <span className="resource-number booked">{resource.booked}</span>
+                        <span className="resource-label">{t('dashboard.booked')}</span>
+                      </div>
+                    </div>
+                    <div className="resource-progress">
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${resource.occupancyPercentage}%`,
+                            backgroundColor: color
+                          }}
+                        />
+                      </div>
+                      <span className="progress-text">
+                        {resource.occupancyPercentage}% {t('dashboard.occupancy') || 'Occupazione'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -1727,15 +1735,14 @@ const Dashboard = () => {
         return;
       }
 
-      logger.log('Opening contract form for new purchase');
+      logger.log('Navigating to contract form for new purchase');
       if (contract) {
-        setEditingContract({
-          service_id: contract.service_id,
-          location_id: contract.location_id,
-          isPreselected: true
-        });
+        // Navigate to contract form with preselected service and location
+        window.location.hash = `/contracts/new?service_id=${contract.service_id}&location_id=${contract.location_id}`;
+      } else {
+        // Navigate to contract form without preselection
+        window.location.hash = '/contracts/new';
       }
-      setShowForm(true);
     };
 
     // Check if can book package entry
@@ -2174,22 +2181,6 @@ const Dashboard = () => {
               isProfileCompletion={true}
             />
           )}
-
-          {/* Contract Form Modal - for creating new contracts */}
-          <ContractForm
-            isOpen={showForm}
-            onClose={() => {
-              setShowForm(false);
-              setEditingContract(null);
-            }}
-            onSuccess={handleFormSuccess}
-            partnerUuid={profile?.partner_uuid}
-            isCustomerMode={true}
-            customers={[]}
-            locations={[]}
-            editMode={false}
-            contractToEdit={editingContract}
-          />
 
           {/* Package Booking Modal - for booking package entries */}
           <PackageBookingForm

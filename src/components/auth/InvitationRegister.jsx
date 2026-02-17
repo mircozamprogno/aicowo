@@ -122,6 +122,19 @@ const InvitationRegister = () => {
       return;
     }
 
+    // Password validation logic
+    const password = formData.password;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSymbols = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isLengthValid = password.length >= 8;
+
+    if (!isLengthValid || !hasUpperCase || !hasLowerCase || !hasNumbers || !hasSymbols) {
+      toast.error(t('auth.passwordRequirements'));
+      return;
+    }
+
     setSubmitting(true);
 
     try {

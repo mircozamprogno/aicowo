@@ -13,27 +13,41 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    per_page: 20,
+    total: 0,
+    from: 0,
+    to: 0
+  });
 
   useEffect(() => {
     if (isOpen && partnerSettings?.fattureincloud_enabled) {
-      fetchClients();
+      fetchClients(1, ''); // Start at page 1 with no search
       setSelectedClients(new Set()); // Reset selection when modal opens
       setImportResults([]); // Reset results
+      setSearchQuery(''); // Reset search
     }
   }, [isOpen]);
 
-  const fetchClients = async () => {
+  const fetchClients = async (page = 1, search = searchQuery) => {
     setLoading(true);
     try {
       const result = await FattureInCloudService.fetchClients(
         partnerSettings.fattureincloud_company_id,
         partnerSettings.fattureincloud_api_token,
-        partnerUuid
+        partnerUuid,
+        page,
+        20, // perPage
+        search
       );
 
       if (result.success) {
         logger.log('✅ Fetched clients:', result.clients.map(c => ({ id: c.id, name: c.name })));
         setClients(result.clients);
+        setPagination(result.pagination);
       } else {
         toast.error(`Failed to fetch clients: ${result.error}`);
       }
@@ -41,6 +55,25 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
       toast.error(`Error fetching clients: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    fetchClients(1, searchQuery); // Reset to page 1 when searching
+    setSelectedClients(new Set()); // Clear selection on new search
+  };
+
+  const handleNextPage = () => {
+    if (pagination.current_page < pagination.last_page) {
+      fetchClients(pagination.current_page + 1);
+      setSelectedClients(new Set()); // Clear selection on page change
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (pagination.current_page > 1) {
+      fetchClients(pagination.current_page - 1);
+      setSelectedClients(new Set()); // Clear selection on page change
     }
   };
 
@@ -156,13 +189,112 @@ const FattureInCloudImportModal = ({ isOpen, onClose, partnerSettings, partnerUu
                   <input
                     type="checkbox"
                     id="select-all"
-                    checked={selectedClients.size > 0 && selectedClients.size === clients.length}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    checked={selectedClients.size > 0 && selectedClients.size === clients.length && clients.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const allClientIds = new Set(clients.map(c => c.id));
+                        setSelectedClients(allClientIds);
+                      } else {
+                        setSelectedClients(new Set());
+                      }
+                    }}
                     disabled={importing}
                   />
                   <label htmlFor="select-all">
-                    Select All ({clients.length} clients)
+                    Select All ({clients.length} clients on this page)
                   </label>
+                </div>
+
+                {/* Search Input */}
+                <div className="search-input" style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, VAT number, or city..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
+                    disabled={importing}
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem 1rem',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem'
+                    }}
+                  />
+                  <button
+                    onClick={handleSearch}
+                    disabled={importing || loading}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {/* Pagination Info and Controls */}
+                <div style={{
+                  marginTop: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.75rem',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem'
+                }}>
+                  <div style={{ color: '#6b7280' }}>
+                    Showing {pagination.from} to {pagination.to} of {pagination.total} clients
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={handlePrevPage}
+                      disabled={pagination.current_page <= 1 || loading || importing}
+                      style={{
+                        padding: '0.375rem 0.75rem',
+                        backgroundColor: pagination.current_page <= 1 ? '#e5e7eb' : '#3b82f6',
+                        color: pagination.current_page <= 1 ? '#9ca3af' : 'white',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        cursor: pagination.current_page <= 1 ? 'not-allowed' : 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Previous
+                    </button>
+                    <span style={{ padding: '0.375rem 0.75rem', color: '#374151', fontWeight: '500' }}>
+                      Page {pagination.current_page} of {pagination.last_page}
+                    </span>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={pagination.current_page >= pagination.last_page || loading || importing}
+                      style={{
+                        padding: '0.375rem 0.75rem',
+                        backgroundColor: pagination.current_page >= pagination.last_page ? '#e5e7eb' : '#3b82f6',
+                        color: pagination.current_page >= pagination.last_page ? '#9ca3af' : 'white',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        cursor: pagination.current_page >= pagination.last_page ? 'not-allowed' : 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
 

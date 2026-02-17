@@ -19,10 +19,23 @@ const ContractFormPage = () => {
   // Parse hash manually since we use hash routing
   const getParams = () => {
     const hash = window.location.hash;
-    const parts = hash.split('/');
-    if (parts[1] === 'contracts' && parts[2] === 'edit') {
-      return { id: parts[3] };
+    const parts = hash.split('?');
+    const pathParts = parts[0].split('/');
+
+    // Check for edit mode
+    if (pathParts[1] === 'contracts' && pathParts[2] === 'edit') {
+      return { id: pathParts[3] };
     }
+
+    // Check for query parameters (e.g., /contracts/new?service_id=123&location_id=456)
+    if (parts.length > 1) {
+      const queryParams = new URLSearchParams(parts[1]);
+      return {
+        service_id: queryParams.get('service_id'),
+        location_id: queryParams.get('location_id')
+      };
+    }
+
     return {};
   };
 
@@ -169,6 +182,18 @@ const ContractFormPage = () => {
       fetchCustomerLocations();
     }
   }, [editMode, contractToEdit]);
+
+  // Handle URL query parameters for preselection
+  useEffect(() => {
+    if (!editMode && params.location_id && params.service_id) {
+      logger.log('[CONTRACT FORM] Preselecting from URL params:', params);
+      setFormData(prev => ({
+        ...prev,
+        location_id: params.location_id,
+        service_id: params.service_id
+      }));
+    }
+  }, [editMode, params.location_id, params.service_id]);
 
   // Set service_id AFTER availableServices is populated in edit mode
   useEffect(() => {

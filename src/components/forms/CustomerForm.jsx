@@ -69,13 +69,8 @@ const CustomerForm = ({
   ];
 
   const customerStatusOptions = [
-    { value: 'tobequalified', label: t('customers.tobequalified') },
-    { value: 'qualified', label: t('customers.qualified') },
-    { value: 'tobeactivated', label: t('customers.tobeactivated') },
     { value: 'active', label: t('customers.active') },
-    { value: 'expiring', label: t('customers.expiring') },
-    { value: 'toberenewed', label: t('customers.toberenewed') },
-    { value: 'inactive', label: t('customers.inactive') }
+    { value: 'notactive', label: t('customers.notactive') }
   ];
 
   const needsBusinessInfo = ['freelancer', 'entrepeneur', 'company'].includes(formData.customer_type);

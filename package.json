@@ -15,6 +15,7 @@
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.1",
     "@supabase/supabase-js": "^2.53.0",
+    "dotenv": "^17.2.3",
     "ics": "^3.8.1",
     "jspdf": "^3.0.4",
     "lucide-react": "^0.536.0",

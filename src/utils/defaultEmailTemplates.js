@@ -29,10 +29,14 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 
     confirmation_email: {
       subject: 'Confirm your email address - {{partner_name}}',
-      body: `<h2><span style="font-size: 16px; font-weight: 400;">Dear Customer, 
+      body: `<h2><span style="font-size: 16px; font-weight: 400;">Dear Customer,
       <br>{{partner_name}} welcomes you.&nbsp;</span></h2>
       <h2><span style="font-size: 16px; font-weight: 400;">To complete your registration, please confirm your email address.</span></h2>
-      <h2><a href="{{confirmation_link}}">Confirm Email</a></h2>
+      <h2><a href="{{confirmation_link}}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Confirm Email</a></h2>
+      <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
+        <span style="font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">If the link is blocked, copy and paste this link into your address bar:<br></span>
+        <span style="font-size: 12px; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 8px; display: block; border-radius: 4px; margin-top: 8px;">{{confirmation_link}}</span>
+      </p>
       <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">The Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
       <span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
       <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">-&nbsp;</span></p><p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
@@ -283,10 +287,14 @@ export const DEFAULT_EMAIL_TEMPLATES = {
 
     confirmation_email: {
       subject: 'Conferma il tuo indirizzo email - {{partner_name}}',
-      body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente, 
+      body: `<h2><span style="font-size: 16px; font-weight: 400;">Gentile Cliente,
     <br>{{partner_name}} ti da' il benvenuto.&nbsp;</span></h2>
     <h2><span style="font-size: 16px; font-weight: 400;">Per completare la registrazione, conferma il tuo indirizzo email.</span></h2>
-    <h2><a href="{{confirmation_link}}">Conferma Email</a></h2>
+    <h2><a href="{{confirmation_link}}" style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Conferma Email</a></h2>
+    <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">
+      <span style="font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">Se il collegamento viene bloccato, copia e incolla questo link nella barra degli indirizzi:<br></span>
+      <span style="font-size: 12px; font-family: monospace; word-break: break-all; background: #f3f4f6; padding: 8px; display: block; border-radius: 4px; margin-top: 8px;">{{confirmation_link}}</span>
+    </p>
     <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><i><span style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif; font-size: 16px;">Lo Staff&nbsp;</span><span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">{{partner_name}}</span>
     <span style="color: rgb(17, 24, 39); font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">&nbsp;&nbsp;</span></i></p>
     <p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;"><span style="font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen, Ubuntu, Cantarell, &quot;Fira Sans&quot;, &quot;Droid Sans&quot;, &quot;Helvetica Neue&quot;, sans-serif;">-&nbsp;</span></p><p style="caret-color: rgb(51, 51, 51); color: rgb(51, 51, 51); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 16px;">

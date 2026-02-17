@@ -348,7 +348,7 @@ export class FattureInCloudService {
     return results;
   }
 
-  static async fetchClients(companyId, accessToken, partnerUuid) {
+  static async fetchClients(companyId, accessToken, partnerUuid, page = 1, perPage = 20, search = '') {
     try {
       const { data: existingCustomers } = await supabase
         .from('customers')
@@ -369,7 +369,7 @@ export class FattureInCloudService {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No active session');
 
-      // Call through Supabase Edge Function instead of direct API
+      // Call through Supabase Edge Function with pagination parameters
       const response = await fetch(
         `${supabase.supabaseUrl}/functions/v1/fattureincloud`,
         {
@@ -381,7 +381,10 @@ export class FattureInCloudService {
           body: JSON.stringify({
             action: 'fetch_clients',
             companyId,
-            accessToken
+            accessToken,
+            page,
+            perPage,
+            search
           })
         }
       );
@@ -393,13 +396,38 @@ export class FattureInCloudService {
       }
 
       const result = await response.json();
+
+      logger.log('📦 Edge function response:', result);
+
+      // Check if we got an error in the response
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Ensure data exists
+      if (!result.data || !Array.isArray(result.data)) {
+        throw new Error('Invalid response format from FattureInCloud');
+      }
+
+      // Filter out already imported clients
       const availableClients = result.data.filter(
         client => !activeClientIds.has(client.id)
       );
 
-      logger.log('✅ Available clients for import:', availableClients.length);
+      logger.log('✅ Available clients for import:', availableClients.length, 'of', result.total);
 
-      return { success: true, clients: availableClients };
+      return {
+        success: true,
+        clients: availableClients,
+        pagination: {
+          current_page: result.current_page || 1,
+          last_page: result.last_page || 1,
+          per_page: result.per_page || perPage,
+          total: result.total || availableClients.length,
+          from: result.from || 1,
+          to: result.to || availableClients.length
+        }
+      };
     } catch (error) {
       return { success: false, error: error.message };
     }
