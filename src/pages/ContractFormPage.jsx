@@ -1469,15 +1469,6 @@ const ContractFormPage = () => {
                 </span>
               </div>
 
-              {(selectedService?.service_type === 'abbonamento' || selectedService?.service_type === 'free_trial') && (
-                <div className="summary-item">
-                  <span className="summary-label">{t('contracts.resource')}:</span>
-                  <span className="summary-value">
-                    {selectedService?.location_resources?.resource_name}
-                  </span>
-                </div>
-              )}
-
               <div className="summary-item">
                 <span className="summary-label">{t('contracts.period')}:</span>
                 <span className="summary-value">

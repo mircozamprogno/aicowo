@@ -552,7 +552,9 @@
     "partnersUsersMonitoring": "Monitoraggio Utenti Partner",
     "activeUsersVsPlanLimits": "Utenti Attivi vs Limiti Piano - Top Partner",
     "noPartnersData": "Nessun dato di fatturazione disponibile",
-    "partnersOverLimit": "partner oltre il limite"
+    "partnersOverLimit": "partner oltre il limite",
+    "monthlyBookings": "Prenotazioni Mese",
+    "todayBookings": "Oggi"
   },
   "partners": {
     "title": "Partner",

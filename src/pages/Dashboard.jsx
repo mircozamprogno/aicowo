@@ -1081,8 +1081,11 @@ const Dashboard = () => {
         return;
       }
 
-      // Fetch all bookings and package reservations for current month
-      const [bookingsResult, packageResult] = await Promise.all([
+      // Today's date for today's bookings query
+      const todayStr = `${year}-${month}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // Fetch all bookings and package reservations for current month AND today
+      const [bookingsResult, packageResult, todayBookingsResult, todayPackagesResult] = await Promise.all([
         supabase
           .from('bookings')
           .select(`
@@ -1107,37 +1110,65 @@ const Dashboard = () => {
           .eq('partner_uuid', profile.partner_uuid)
           .eq('reservation_status', 'confirmed')
           .lte('reservation_date', monthEnd)
-          .gte('reservation_date', monthStart)
+          .gte('reservation_date', monthStart),
+        // Today's bookings
+        supabase
+          .from('bookings')
+          .select(`
+            location_resource_id,
+            location_resources!inner (
+              resource_type,
+              partner_uuid
+            )
+          `)
+          .eq('location_resources.partner_uuid', profile.partner_uuid)
+          .eq('booking_status', 'active')
+          .lte('start_date', todayStr)
+          .gte('end_date', todayStr),
+        // Today's package reservations
+        supabase
+          .from('package_reservations')
+          .select(`
+            location_resource_id,
+            location_resources!inner (
+              resource_type
+            )
+          `)
+          .eq('partner_uuid', profile.partner_uuid)
+          .eq('reservation_status', 'confirmed')
+          .eq('reservation_date', todayStr)
       ]);
 
       const detailedBookings = bookingsResult.data || [];
       const detailedPackages = packageResult.data || [];
+      const todayBookings = todayBookingsResult.data || [];
+      const todayPackages = todayPackagesResult.data || [];
 
-      // Calculate occupancy for each resource type
+      // Calculate data for each resource type
       const occupancyData = resourceTypes.map(resourceType => {
         // Get total quantity for this resource type
         const totalQuantity = (allResources || [])
           .filter(r => r.resource_type === resourceType.type_code)
           .reduce((sum, r) => sum + (r.quantity || 0), 0);
 
-        // Count booked resources for this type
-        const bookedCount = [
+        // Count monthly bookings for this type
+        const monthlyBookingsCount = [
           ...detailedBookings.filter(b => b.location_resources?.resource_type === resourceType.type_code),
           ...detailedPackages.filter(p => p.location_resources?.resource_type === resourceType.type_code)
         ].length;
 
-        const available = Math.max(0, totalQuantity - bookedCount);
-        const occupancyPercentage = totalQuantity > 0
-          ? Math.round((bookedCount / totalQuantity) * 100)
-          : 0;
+        // Count today's bookings for this type
+        const todayBookingsCount = [
+          ...todayBookings.filter(b => b.location_resources?.resource_type === resourceType.type_code),
+          ...todayPackages.filter(p => p.location_resources?.resource_type === resourceType.type_code)
+        ].length;
 
         return {
           type_name: resourceType.type_name,
           type_code: resourceType.type_code,
           total: totalQuantity,
-          booked: bookedCount,
-          available: available,
-          occupancyPercentage: occupancyPercentage
+          monthlyBookings: monthlyBookingsCount,
+          todayBookings: todayBookingsCount
         };
       });
 
@@ -1319,27 +1350,13 @@ const Dashboard = () => {
                         <span className="resource-label">{t('dashboard.total')}</span>
                       </div>
                       <div className="resource-stat">
-                        <span className="resource-number available">{resource.available}</span>
-                        <span className="resource-label">{t('dashboard.available')}</span>
+                        <span className="resource-number booked">{resource.monthlyBookings}</span>
+                        <span className="resource-label">{t('dashboard.monthlyBookings') || 'Prenotazioni Mese'}</span>
                       </div>
                       <div className="resource-stat">
-                        <span className="resource-number booked">{resource.booked}</span>
-                        <span className="resource-label">{t('dashboard.booked')}</span>
+                        <span className="resource-number today">{resource.todayBookings}</span>
+                        <span className="resource-label">{t('dashboard.todayBookings') || 'Oggi'}</span>
                       </div>
-                    </div>
-                    <div className="resource-progress">
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{
-                            width: `${resource.occupancyPercentage}%`,
-                            backgroundColor: color
-                          }}
-                        />
-                      </div>
-                      <span className="progress-text">
-                        {resource.occupancyPercentage}% {t('dashboard.occupancy') || 'Occupazione'}
-                      </span>
                     </div>
                   </div>
                 );

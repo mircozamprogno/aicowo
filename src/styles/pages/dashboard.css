@@ -278,6 +278,10 @@
   color: #dc2626;
 }
 
+.resource-number.today {
+  color: #3b82f6;
+}
+
 .resource-label {
   font-size: 0.75rem;
   color: #6b7280;
@@ -1380,7 +1384,7 @@
 
 @media (min-width: 768px) {
   .resources-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .alert-cards-grid {

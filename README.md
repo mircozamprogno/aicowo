@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.02.18 V 0.982 Dashboard UI/UX Improvements
 2026.02.17 V 0.980 Bug Fixes Improvements
 2026.01.30 V 0.976 UI/UX Improvements
 2026.01.29 V 0.975 Nuova email template e segnalazione non salvate

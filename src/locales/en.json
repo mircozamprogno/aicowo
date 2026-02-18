@@ -475,7 +475,9 @@
     "partnersUsersMonitoring": "Partners Users Monitoring",
     "activeUsersVsPlanLimits": "Active Users vs Plan Limits - Top Partners",
     "noPartnersData": "No billing data available",
-    "partnersOverLimit": "partners over limit"
+    "partnersOverLimit": "partners over limit",
+    "monthlyBookings": "Monthly Bookings",
+    "todayBookings": "Today"
   },
   "partners": {
     "title": "Partners",
