@@ -19,6 +19,7 @@ import logger from '../utils/logger';
 // Add this import to the top of Dashboard.jsx with your other imports:
 import { generateAndUploadICS } from '../services/calendarService';
 import oneSignalEmailService from '../services/oneSignalEmailService';
+import { PaymentService } from '../services/paymentService';
 
 
 
@@ -116,6 +117,9 @@ const Dashboard = () => {
 
   // State for managing auto-renewal toggles
   const [updatingAutoRenew, setUpdatingAutoRenew] = useState({});
+
+  // Payment status state for customer dashboard
+  const [contractPayments, setContractPayments] = useState({});
 
   // Determine user type
   const isCustomer = profile?.role === 'user';
@@ -544,6 +548,23 @@ const Dashboard = () => {
       logger.log('Processed contracts:', processedContracts);
       setContracts(processedContracts);
 
+      // Load payment statuses for customer contracts
+      if (processedContracts.length > 0) {
+        try {
+          const contractIds = processedContracts.map(c => c.id);
+          const { data: paymentData } = await PaymentService.getContractPaymentStatus(contractIds);
+          if (paymentData) {
+            const paymentMap = {};
+            paymentData.forEach(p => {
+              paymentMap[p.contract_id] = p;
+            });
+            setContractPayments(paymentMap);
+          }
+        } catch (paymentError) {
+          logger.warn('Could not load payment statuses:', paymentError);
+        }
+      }
+
     } catch (error) {
       logger.error('Error fetching customer contracts:', error);
       // NO MORE MOCK DATA FALLBACK - just set empty array
@@ -814,7 +835,7 @@ const Dashboard = () => {
       let query = supabase
         .from('contracts')
         .select('created_at, start_date, service_type, contract_status')
-        .order('created_at', { ascending: true });
+        .order('start_date', { ascending: true });
 
       // Filter by partner for admin users
       if (profile.role === 'admin' && profile.partner_uuid) {
@@ -855,15 +876,15 @@ const Dashboard = () => {
     const monthlyData = {};
 
     contracts.forEach(contract => {
-      const createdDate = new Date(contract.created_at);
-      const createdMonthKey = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`;
-      const createdMonthName = createdDate.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
+      const startDate = new Date(contract.start_date);
+      const createdMonthKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+      const createdMonthName = startDate.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
 
       if (!monthlyData[createdMonthKey]) {
         monthlyData[createdMonthKey] = {
           month: createdMonthName,
           monthKey: createdMonthKey,
-          date: new Date(createdDate.getFullYear(), createdDate.getMonth(), 1),
+          date: new Date(startDate.getFullYear(), startDate.getMonth(), 1),
           Abbonamento: 0,
           Pacchetto: 0,
           total: 0
@@ -980,7 +1001,8 @@ const Dashboard = () => {
             supabase
               .from('customers')
               .select('*', { count: 'exact', head: true })
-              .eq('partner_uuid', profile.partner_uuid),
+              .eq('partner_uuid', profile.partner_uuid)
+              .eq('customer_status', 'active'),
             supabase
               .from('contracts')
               .select('*', { count: 'exact', head: true })
@@ -1821,6 +1843,20 @@ const Dashboard = () => {
                           : t('services.subscription').toUpperCase() || 'ABBONAMENTO'
                         }
                       </span>
+                      {(() => {
+                        let status;
+                        if (contract.service_type === 'free_trial' || !contract.requires_payment) {
+                          status = 'not_required';
+                        } else {
+                          const paymentInfo = contractPayments[contract.id];
+                          status = paymentInfo ? paymentInfo.payment_status : 'unpaid';
+                        }
+                        return (
+                          <span className={`payment-status-badge payment-status-${status}`}>
+                            {t(`payments.status.${status}`)}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     <div className="contract-card-body">

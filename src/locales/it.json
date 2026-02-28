@@ -1157,7 +1157,7 @@
     "recordPayment": "Registra Pagamento",
     "paymentRequired": "Pagamento Richiesto",
     "paymentOptional": "Pagamento Non Richiesto",
-    "nextDueDate": "Prossima Scadenza",
+    "nextDueDate": "Scadenza Pagamento",
     "lastPayment": "Ultimo Pagamento",
     "paymentOverdue": "Pagamento Scaduto",
     "fullyPaid": "Completamente Pagato",

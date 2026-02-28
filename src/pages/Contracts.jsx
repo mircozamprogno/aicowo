@@ -273,9 +273,7 @@ const Contracts = () => {
 
         setContracts(mockContracts);
 
-        if (canManagePayments) {
-          loadPaymentStatuses(mockContracts.map(c => c.id));
-        }
+        loadPaymentStatuses(mockContracts.map(c => c.id));
       } else {
         const processedContracts = (data || []).map(contract => ({
           ...contract,
@@ -286,9 +284,7 @@ const Contracts = () => {
 
         setContracts(processedContracts);
 
-        if (canManagePayments) {
-          loadPaymentStatuses(processedContracts.map(c => c.id));
-        }
+        loadPaymentStatuses(processedContracts.map(c => c.id));
       }
     } catch (error) {
       logger.error('Error fetching contracts:', error);
@@ -616,7 +612,7 @@ const Contracts = () => {
     setTimeout(async () => {
       await fetchContracts();
 
-      if (canManagePayments && contracts.length > 0) {
+      if (contracts.length > 0) {
         loadPaymentStatuses(contracts.map(c => c.id));
       }
     }, 500);
@@ -933,7 +929,7 @@ const Contracts = () => {
                 {contractsToDisplay.filter(c => c.contract_status === 'cancelled').length}
               </span>
             </div>
-            {canManagePayments && (
+            {(
               <div className="stat-item">
                 <span className="stat-label">{t('payments.outstanding')}</span>
                 <span className="stat-value">
@@ -998,7 +994,7 @@ const Contracts = () => {
                     {t(`contracts.${contract.contract_status}`) || contract.contract_status}
                   </span>
                 </div>
-                {canManagePayments && (
+                {(
                   <span className={`payment-status-badge payment-status-${paymentStatus}`}>
                     {t(`payments.status.${paymentStatus}`) || paymentStatus}
                   </span>
@@ -1122,7 +1118,7 @@ const Contracts = () => {
                 <th className="contracts-table-header">
                   {t('contracts.cost')}
                 </th>
-                {canManagePayments && (
+                {(
                   <th className="contracts-table-header">
                     {t('payments.paymentStatus')}
                   </th>
@@ -1223,7 +1219,7 @@ const Contracts = () => {
                         {formatCurrency(contract.service_cost, contract.service_currency)}
                       </div>
                     </td>
-                    {canManagePayments && (
+                    {(
                       <td className="contracts-table-cell">
                         <div className="payment-info">
                           <span className={`payment-status-badge ${getPaymentStatusBadgeClass(paymentStatus)} ${isOverdue ? 'overdue' : ''}`}>

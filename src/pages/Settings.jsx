@@ -1432,7 +1432,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {((isAdminPartner || isSuperAdmin) || formData.customer_type === 'company') && (
+            {((isAdminPartner || isSuperAdmin) || ['freelancer', 'entrepeneur', 'company'].includes(formData.customer_type)) && (
               <div className="form-section">
                 <h3 className="form-section-title">
                   {t('customers.billingInformation')}

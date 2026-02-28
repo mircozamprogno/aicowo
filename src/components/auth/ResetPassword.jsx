@@ -26,11 +26,11 @@ const ResetPassword = () => {
     const fullUrl = window.location.href;
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
     const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
     const type = hashParams.get('type') || urlParams.get('type');
-    
+
     logger.log('Reset password URL analysis:', {
       fullUrl,
       hash: window.location.hash,
@@ -43,32 +43,32 @@ const ResetPassword = () => {
       allHashParams: Object.fromEntries(hashParams.entries()),
       allUrlParams: Object.fromEntries(urlParams.entries())
     });
-    
+
     return { accessToken, refreshToken, type };
   };
 
   useEffect(() => {
     logger.log('=== RESET PASSWORD COMPONENT DEBUG ===');
-    
+
     const { accessToken, refreshToken, type } = getResetTokenFromURL();
-    
+
     // Check for error parameters
     const urlParams = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    
+
     const error = urlParams.get('error') || hashParams.get('error');
     const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
     const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
-    
-    logger.log('Reset password validation:', { 
-      type, 
+
+    logger.log('Reset password validation:', {
+      type,
       hasAccessToken: !!accessToken,
       error,
       errorCode,
       errorDescription: decodeURIComponent(errorDescription || ''),
       isPasswordRecovery // ← USE CONTEXT STATE
     });
-    
+
     // Handle specific error cases
     if (error) {
       logger.log('❌ Error detected in reset password URL');
@@ -86,7 +86,7 @@ const ResetPassword = () => {
       setValidatingToken(false);
       return;
     }
-    
+
     // SIMPLIFIED validation - rely on AuthContext password recovery state
     if (type === 'recovery' || accessToken || isPasswordRecovery) {
       setTokenValid(true);
@@ -96,7 +96,7 @@ const ResetPassword = () => {
       setTokenValid(false);
       toast.error(t('messages.invalidResetLink'));
     }
-    
+
     logger.log('=====================================');
     setValidatingToken(false);
   }, [isPasswordRecovery]); // ← ADD DEPENDENCY
@@ -110,7 +110,7 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error(t('messages.passwordsDoNotMatch'));
       return;
@@ -127,7 +127,7 @@ const ResetPassword = () => {
       await updatePassword(formData.password);
       setResetComplete(true);
       toast.success(t('messages.passwordResetSuccessfully'));
-      
+
       // Sign out the user so they need to log in with their new password
       // This will also clear the password recovery state
       setTimeout(async () => {
@@ -138,7 +138,7 @@ const ResetPassword = () => {
           logger.log('Note: Could not sign out user after password reset:', signOutError);
         }
       }, 2000);
-      
+
     } catch (error) {
       logger.error('Password reset error:', error);
       toast.error(error.message || t('messages.errorResettingPassword'));
@@ -181,9 +181,9 @@ const ResetPassword = () => {
               <button
                 onClick={() => window.location.hash = '/login'}
                 className="auth-submit-btn"
-                style={{ 
-                  display: 'inline-block', 
-                  textAlign: 'center', 
+                style={{
+                  display: 'inline-block',
+                  textAlign: 'center',
                   textDecoration: 'none',
                   backgroundColor: '#10b981',
                   border: 'none',
@@ -219,15 +219,15 @@ const ResetPassword = () => {
             </p>
           </div>
           <div className="auth-actions">
-            <button 
-              onClick={() => window.location.hash = '/forgot-password'} 
+            <button
+              onClick={() => window.location.hash = '/forgot-password'}
               className="auth-submit-btn"
             >
               {t('auth.requestNewResetLink')}
             </button>
             <div className="auth-back-link">
-              <button 
-                onClick={() => window.location.hash = '/login'} 
+              <button
+                onClick={() => window.location.hash = '/login'}
                 className="auth-switch-link"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
               >
@@ -270,7 +270,7 @@ const ResetPassword = () => {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className="form-input"
+                className="form-input has-right-icon"
                 placeholder={t('placeholders.newPasswordPlaceholder')}
                 value={formData.password}
                 onChange={handleChange}
@@ -279,7 +279,7 @@ const ResetPassword = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon input-icon-right"
+                className="input-icon-right"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -319,8 +319,8 @@ const ResetPassword = () => {
           </div>
 
           <div className="auth-switch">
-            <button 
-              onClick={() => window.location.hash = '/login'} 
+            <button
+              onClick={() => window.location.hash = '/login'}
               className="auth-switch-link"
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >

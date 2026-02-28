@@ -93,6 +93,7 @@ const ContractFormPage = () => {
   // Separate state for tracking if we're loading a contract for edit
   const [loadingEditContract, setLoadingEditContract] = useState(false);
   const [pendingServiceId, setPendingServiceId] = useState(null);
+  const [pendingResourceId, setPendingResourceId] = useState(null);
   const [hasDiscountCodes, setHasDiscountCodes] = useState(false);
 
   // Data Fetching for Admin
@@ -228,6 +229,43 @@ const ContractFormPage = () => {
       setPendingServiceId(null);
     }
   }, [availableServices, loadingEditContract, pendingServiceId]);
+
+  // Set location_resource_id AFTER physicalResources have loaded in edit mode
+  useEffect(() => {
+    if (editMode && pendingResourceId && physicalResources.length > 0) {
+      let matchedResourceId = null;
+
+      if (pendingResourceId.startsWith('name:')) {
+        // Match by resource_name (fallback when no booking found)
+        const resourceName = pendingResourceId.substring(5);
+        const matchedResource = physicalResources.find(r => r.resource_name === resourceName);
+        if (matchedResource) {
+          matchedResourceId = matchedResource.id.toString();
+          logger.log('[EDIT MODE] Matched resource by name:', resourceName, '→ ID:', matchedResourceId);
+        } else {
+          logger.warn('[EDIT MODE] Resource name not found in available resources:', resourceName);
+        }
+      } else {
+        // Direct ID match (from booking lookup)
+        const resourceExists = physicalResources.find(r => r.id.toString() === pendingResourceId.toString());
+        if (resourceExists) {
+          matchedResourceId = pendingResourceId.toString();
+          logger.log('[EDIT MODE] Matched resource by ID:', matchedResourceId);
+        } else {
+          logger.warn('[EDIT MODE] Resource ID', pendingResourceId, 'not found in available resources');
+        }
+      }
+
+      if (matchedResourceId) {
+        setFormData(prev => ({
+          ...prev,
+          location_resource_id: matchedResourceId
+        }));
+        logger.log('[EDIT MODE] Set location_resource_id to:', matchedResourceId);
+      }
+      setPendingResourceId(null);
+    }
+  }, [physicalResources, editMode, pendingResourceId]);
 
   // DEBUG: Log whenever formData.service_id changes
   useEffect(() => {
@@ -380,13 +418,40 @@ const ContractFormPage = () => {
           setDiscountCode(contractToEdit.discount_code);
         }
 
+        // Look up the location_resource_id from the booking associated with this contract
+        let resolvedResourceId = null;
+        try {
+          const { data: bookingData, error: bookingError } = await supabase
+            .from('bookings')
+            .select('location_resource_id')
+            .eq('contract_id', contractToEdit.id)
+            .limit(1)
+            .single();
+
+          if (!bookingError && bookingData?.location_resource_id) {
+            resolvedResourceId = bookingData.location_resource_id.toString();
+            logger.log('[EDIT MODE] Found location_resource_id from booking:', resolvedResourceId);
+          }
+        } catch (bookingLookupError) {
+          logger.warn('[EDIT MODE] Could not look up booking for resource:', bookingLookupError);
+        }
+
+        // Fallback: if no booking found, try to match by resource_name
+        if (!resolvedResourceId && contractToEdit.resource_name) {
+          logger.log('[EDIT MODE] Falling back to resource_name match:', contractToEdit.resource_name);
+          // Store the resource_name so we can match it after physicalResources load
+          setPendingResourceId(`name:${contractToEdit.resource_name}`);
+        } else if (resolvedResourceId) {
+          setPendingResourceId(resolvedResourceId);
+        }
+
         // Set form data - include service_id if we have it
         setFormData({
           customer_id: contractToEdit.customer_id?.toString() || '',
           location_id: contractToEdit.location_id?.toString() || '',
           service_id: contractToEdit.service_id?.toString() || '', // Set it directly
           start_date: contractToEdit.start_date || '',
-          location_resource_id: '' // Will be set after resources load
+          location_resource_id: '' // Will be set by useEffect after resources load
         });
 
         // No need for pendingServiceId anymore - we set it directly above
@@ -422,6 +487,7 @@ const ContractFormPage = () => {
     setManualPrice('');
     setLoadingEditContract(false);
     setPendingServiceId(null);
+    setPendingResourceId(null);
     setDiscountCode('');
     setValidatingDiscount(false);
     setDiscountValidation(null);
