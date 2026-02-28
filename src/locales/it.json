@@ -1230,7 +1230,8 @@
     "contractAmountBreakdown": "Dettaglio Importo Contratto",
     "contractTotal": "Totale Contratto",
     "contractDetails": "Dettagli contratto",
-    "dayPassValidOnlyThisDay": "Giornaliero valido solo per la data selezionata"
+    "dayPassValidOnlyThisDay": "Giornaliero valido solo per la data selezionata",
+    "serviceLinkedToResource": "Questo servizio è collegato a una risorsa specifica."
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

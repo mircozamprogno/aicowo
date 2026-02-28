@@ -1,21 +1,24 @@
 // src/components/common/Select.jsx
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import '../../styles/components/searchable-select.css';
 
-const Select = ({ 
-    value, 
-    onChange, 
-    options, 
+const MOBILE_BREAKPOINT = 768;
+
+const Select = ({
+    value,
+    onChange,
+    options,
     placeholder = "Select...",
     emptyMessage = "No options available",
     className = "",
     name = "",
-    autoSelectSingle = true // New prop to control auto-selection
+    autoSelectSingle = true
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
     const dropdownRef = useRef(null);
     const triggerRef = useRef(null);
 
@@ -26,13 +29,30 @@ const Select = ({
         }
     }, [options, value, autoSelectSingle, onChange, name]);
 
-    // Calculate dropdown position
+    // Track mobile state
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Lock body scroll on mobile when open
+    useEffect(() => {
+        if (isOpen && isMobile) {
+            document.body.style.overflow = 'hidden';
+            return () => { document.body.style.overflow = ''; };
+        }
+    }, [isOpen, isMobile]);
+
+    // Calculate dropdown position (desktop only)
     const updateDropdownPosition = () => {
-        if (triggerRef.current) {
+        if (triggerRef.current && !isMobile) {
             const rect = triggerRef.current.getBoundingClientRect();
             setDropdownPosition({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom,
+                left: rect.left,
                 width: rect.width
             });
         }
@@ -42,7 +62,7 @@ const Select = ({
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
-                dropdownRef.current && 
+                dropdownRef.current &&
                 !dropdownRef.current.contains(event.target) &&
                 triggerRef.current &&
                 !triggerRef.current.contains(event.target)
@@ -59,17 +79,17 @@ const Select = ({
 
     // Update position when dropdown opens or window resizes/scrolls
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !isMobile) {
             updateDropdownPosition();
             window.addEventListener('scroll', updateDropdownPosition, true);
             window.addEventListener('resize', updateDropdownPosition);
-            
+
             return () => {
                 window.removeEventListener('scroll', updateDropdownPosition, true);
                 window.removeEventListener('resize', updateDropdownPosition);
             };
         }
-    }, [isOpen]);
+    }, [isOpen, isMobile]);
 
     const handleSelect = (selectedValue) => {
         onChange({ target: { name: name, value: selectedValue } });
@@ -86,9 +106,48 @@ const Select = ({
         setIsOpen(!isOpen);
     };
 
-    // Dropdown content
-    const dropdownContent = isOpen ? (
-        <div 
+    // Mobile bottom-sheet dropdown
+    const mobileDropdownContent = isOpen && isMobile ? (
+        <div className="select-mobile-overlay" onClick={() => setIsOpen(false)}>
+            <div
+                ref={dropdownRef}
+                className="select-mobile-sheet"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="select-mobile-sheet-header">
+                    <span className="select-mobile-sheet-title">{placeholder}</span>
+                    <button
+                        type="button"
+                        className="select-mobile-sheet-close"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="select-mobile-sheet-options">
+                    {options.length > 0 ? (
+                        options.map((option) => (
+                            <div
+                                key={option.value}
+                                className={`select-mobile-sheet-option ${value === option.value ? 'selected' : ''}`}
+                                onClick={() => handleSelect(option.value)}
+                            >
+                                {option.label}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="searchable-select-empty">
+                            {emptyMessage}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    ) : null;
+
+    // Desktop dropdown
+    const desktopDropdownContent = isOpen && !isMobile ? (
+        <div
             ref={dropdownRef}
             className="searchable-select-dropdown"
             style={{
@@ -122,7 +181,7 @@ const Select = ({
     return (
         <>
             <div className={`searchable-select ${className}`}>
-                <div 
+                <div
                     ref={triggerRef}
                     className={`searchable-select-trigger ${isOpen ? 'open' : ''}`}
                     onClick={handleTriggerClick}
@@ -131,14 +190,15 @@ const Select = ({
                         {getDisplayValue()}
                     </span>
                     <div className="searchable-select-icons">
-                        <ChevronDown 
-                            size={16} 
+                        <ChevronDown
+                            size={16}
                             className={`chevron-icon ${isOpen ? 'rotate' : ''}`}
                         />
                     </div>
                 </div>
             </div>
-            {dropdownContent && createPortal(dropdownContent, document.body)}
+            {desktopDropdownContent && createPortal(desktopDropdownContent, document.body)}
+            {mobileDropdownContent && createPortal(mobileDropdownContent, document.body)}
         </>
     );
 };

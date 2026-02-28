@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../../contexts/LanguageContext';
 import '../../styles/components/searchable-select.css';
 
+const MOBILE_BREAKPOINT = 768;
+
 const SearchableSelect = ({
     value,
     onChange,
@@ -11,16 +13,18 @@ const SearchableSelect = ({
     placeholder = "Search...",
     emptyMessage = "No results found",
     className = "",
-    name = "", // Add name prop
-    autoSelectSingle = true // New prop to control auto-selection
+    name = "",
+    autoSelectSingle = true
 }) => {
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
     const dropdownRef = useRef(null);
     const triggerRef = useRef(null);
     const inputRef = useRef(null);
+    const mobileInputRef = useRef(null);
 
     // Auto-select first option if only one option exists
     useEffect(() => {
@@ -29,22 +33,39 @@ const SearchableSelect = ({
         }
     }, [options, value, autoSelectSingle, onChange, name]);
 
+    // Track mobile state
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Lock body scroll on mobile when open
+    useEffect(() => {
+        if (isOpen && isMobile) {
+            document.body.style.overflow = 'hidden';
+            return () => { document.body.style.overflow = ''; };
+        }
+    }, [isOpen, isMobile]);
+
     // Filter options based on search term
     const filteredOptions = options.filter(option => {
         if (!searchTerm) return true;
         const label = option.label?.toLowerCase() || '';
-        const value = option.value?.toLowerCase() || '';
+        const val = option.value?.toLowerCase() || '';
         const search = searchTerm.toLowerCase();
-        return label.includes(search) || value.includes(search);
+        return label.includes(search) || val.includes(search);
     });
 
-    // Calculate dropdown position
+    // Calculate dropdown position (desktop only)
     const updateDropdownPosition = () => {
-        if (triggerRef.current) {
+        if (triggerRef.current && !isMobile) {
             const rect = triggerRef.current.getBoundingClientRect();
             setDropdownPosition({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom,
+                left: rect.left,
                 width: rect.width
             });
         }
@@ -71,7 +92,7 @@ const SearchableSelect = ({
 
     // Update position when dropdown opens or window resizes/scrolls
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !isMobile) {
             updateDropdownPosition();
             window.addEventListener('scroll', updateDropdownPosition, true);
             window.addEventListener('resize', updateDropdownPosition);
@@ -81,14 +102,14 @@ const SearchableSelect = ({
                 window.removeEventListener('resize', updateDropdownPosition);
             };
         }
-    }, [isOpen]);
+    }, [isOpen, isMobile]);
 
-    // Focus search input when dropdown opens
+    // Focus search input when dropdown opens (desktop only)
     useEffect(() => {
-        if (isOpen && inputRef.current) {
+        if (isOpen && !isMobile && inputRef.current) {
             inputRef.current.focus();
         }
-    }, [isOpen]);
+    }, [isOpen, isMobile]);
 
     const handleSelect = (selectedValue) => {
         onChange({ target: { name: name, value: selectedValue } });
@@ -112,8 +133,66 @@ const SearchableSelect = ({
         setIsOpen(!isOpen);
     };
 
-    // Dropdown content
-    const dropdownContent = isOpen ? (
+    // Shared options render
+    const renderOptions = (opts) => (
+        opts.length > 0 ? (
+            opts.map((option) => (
+                <div
+                    key={option.value}
+                    className={`${isMobile ? 'select-mobile-sheet-option' : 'searchable-select-option'} ${value === option.value ? 'selected' : ''}`}
+                    onClick={() => handleSelect(option.value)}
+                >
+                    {option.label}
+                </div>
+            ))
+        ) : (
+            <div className="searchable-select-empty">
+                {emptyMessage}
+            </div>
+        )
+    );
+
+    // Mobile bottom-sheet dropdown
+    const mobileDropdownContent = isOpen && isMobile ? (
+        <div className="select-mobile-overlay" onClick={() => setIsOpen(false)}>
+            <div
+                ref={dropdownRef}
+                className="select-mobile-sheet"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="select-mobile-sheet-header">
+                    <span className="select-mobile-sheet-title">{placeholder}</span>
+                    <button
+                        type="button"
+                        className="select-mobile-sheet-close"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="select-mobile-sheet-search">
+                    <Search size={16} />
+                    <input
+                        ref={mobileInputRef}
+                        type="text"
+                        placeholder={t('common.search')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    {searchTerm && (
+                        <X size={16} className="clear-search" onClick={() => setSearchTerm('')} />
+                    )}
+                </div>
+                <div className="select-mobile-sheet-options">
+                    {renderOptions(filteredOptions)}
+                </div>
+            </div>
+        </div>
+    ) : null;
+
+    // Desktop dropdown
+    const desktopDropdownContent = isOpen && !isMobile ? (
         <div
             ref={dropdownRef}
             className="searchable-select-dropdown"
@@ -138,21 +217,7 @@ const SearchableSelect = ({
             </div>
 
             <div className="searchable-select-options">
-                {filteredOptions.length > 0 ? (
-                    filteredOptions.map((option) => (
-                        <div
-                            key={option.value}
-                            className={`searchable-select-option ${value === option.value ? 'selected' : ''}`}
-                            onClick={() => handleSelect(option.value)}
-                        >
-                            {option.label}
-                        </div>
-                    ))
-                ) : (
-                    <div className="searchable-select-empty">
-                        {emptyMessage}
-                    </div>
-                )}
+                {renderOptions(filteredOptions)}
             </div>
         </div>
     ) : null;
@@ -183,7 +248,8 @@ const SearchableSelect = ({
                     </div>
                 </div>
             </div>
-            {dropdownContent && createPortal(dropdownContent, document.body)}
+            {desktopDropdownContent && createPortal(desktopDropdownContent, document.body)}
+            {mobileDropdownContent && createPortal(mobileDropdownContent, document.body)}
         </>
     );
 };
