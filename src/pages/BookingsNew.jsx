@@ -1,3 +1,4 @@
+// src/pages/BookingsNew.jsx
 import { Calendar, ChevronLeft, ChevronRight, Filter, Layers, MapPin, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -10,10 +11,11 @@ import oneSignalEmailService from '../services/oneSignalEmailService';
 import { supabase } from '../services/supabase';
 import logger from '../utils/logger';
 
-// Import the specific CSS provided by the user
+import '../styles/pages/bookings-new.css';
 import '../styles/pages/bookings.css';
-import '../styles/pages/exampleBookingNew.css';
 import { logActivity } from '../utils/activityLogger';
+
+const SCROLL_STEP = 7 * 80;
 
 const BookingsNew = () => {
     const [loading, setLoading] = useState(true);
@@ -26,29 +28,22 @@ const BookingsNew = () => {
     const [resourceTypeMap, setResourceTypeMap] = useState({});
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    // Filters
-    const [filters, setFilters] = useState({
-        location: '',
-        resourceType: '',
-        customer: ''
-    });
+    const [filters, setFilters] = useState({ location: '', resourceType: '', customer: '' });
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilters, setShowFilters] = useState(true);
     const [hasAvailablePackages, setHasAvailablePackages] = useState(false);
 
-    // States for modals and selection
     const [showPartnerBooking, setShowPartnerBooking] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [showBookingDetails, setShowBookingDetails] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(true);
+
     const { profile, user } = useAuth();
     const { t } = useTranslation();
-
-    // Refs for sync scroll
-    const headerRef = useRef(null);
-    const bodyRef = useRef(null);
-    const rowRefs = useRef([]);
+    const scrollRef = useRef(null);
 
     const isCustomer = profile?.role === 'user';
     const isPartnerAdmin = profile?.role === 'admin';
@@ -57,146 +52,80 @@ const BookingsNew = () => {
     useEffect(() => {
         if (profile) {
             fetchInitialData();
-            if (isPartnerAdmin) {
-                fetchFilterOptions();
-            }
-            if (isCustomer) {
-                checkAvailablePackages();
-            }
+            if (isPartnerAdmin) fetchFilterOptions();
+            if (isCustomer) checkAvailablePackages();
         }
     }, [profile, currentDate]);
 
+    useEffect(() => { applyFilters(); }, [resources, filters, searchQuery]);
+
+    const updateArrows = () => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 0);
+        setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+    };
+
     useEffect(() => {
-        applyFilters();
-    }, [resources, filters, searchQuery]);
-
-    // Synchronize horizontal scroll
-    useEffect(() => {
-        const header = headerRef.current;
-        if (!header) return;
-
-        const handleScroll = (e) => {
-            const scrollLeft = e.target.scrollLeft;
-            // Update all rows simultaneously
-            rowRefs.current.forEach(row => {
-                if (row && row !== e.target) {
-                    row.scrollLeft = scrollLeft;
-                }
-            });
-            // Update header if we scrolled a row
-            if (header && header !== e.target) {
-                header.scrollLeft = scrollLeft;
-            }
-        };
-
-        header.addEventListener('scroll', handleScroll);
-        return () => header.removeEventListener('scroll', handleScroll);
+        const el = scrollRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', updateArrows, { passive: true });
+        setTimeout(updateArrows, 150);
+        return () => el.removeEventListener('scroll', updateArrows);
     }, [filteredResources, loading]);
+
+    const scrollTimeline = (dir) => {
+        scrollRef.current?.scrollBy({ left: dir * SCROLL_STEP, behavior: 'smooth' });
+    };
 
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            // Fetch locations for filters
-            const { data: locationsData } = await supabase
-                .from('locations')
-                .select('*')
-                .eq('partner_uuid', profile.partner_uuid)
-                .order('location_name');
+            const { data: locationsData } = await supabase.from('locations').select('*').eq('partner_uuid', profile.partner_uuid).order('location_name');
             setLocations(locationsData || []);
 
-            // Fetch resources
-            const { data: resourcesData } = await supabase
-                .from('location_resources')
-                .select(`
-          *,
-          locations (
-            id,
-            location_name
-          )
-        `)
-                .eq('partner_uuid', profile.partner_uuid)
-                .order('locations(location_name)')
-                .order('resource_type')
-                .order('resource_name');
+            const { data: resourcesData } = await supabase.from('location_resources').select(`*, locations (id, location_name)`).eq('partner_uuid', profile.partner_uuid).order('locations(location_name)').order('resource_type').order('resource_name');
             setResources(resourcesData || []);
 
-            // Fetch Resource Type Names
-            const { data: typeNamesData } = await supabase
-                .from('partner_resource_types')
-                .select('type_code, type_name')
-                .eq('partner_uuid', profile.partner_uuid);
-
+            const { data: typeNamesData } = await supabase.from('partner_resource_types').select('type_code, type_name').eq('partner_uuid', profile.partner_uuid);
             const typeMap = {};
-            (typeNamesData || []).forEach(t => {
-                typeMap[t.type_code] = t.type_name;
-            });
+            (typeNamesData || []).forEach(t => { typeMap[t.type_code] = t.type_name; });
             setResourceTypeMap(typeMap);
 
-            // Month bounds
             const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
             const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
-            // Fetch Bookings & Package Reservations
-            let bookingsQuery = supabase
-                .from('bookings')
-                .select(`
-          id, start_date, end_date, booking_status, is_archived,
-          contracts!inner (id, contract_number, service_name, service_type, is_archived),
-          location_resources (id, resource_name, resource_type, locations (id, location_name)),
-          customers (id, first_name, second_name, company_name)
-        `)
-                .eq('booking_status', 'active')
-                .eq('is_archived', false)
-                .lte('start_date', endOfMonth.toISOString())
-                .gte('end_date', startOfMonth.toISOString());
+            let bookingsQuery = supabase.from('bookings')
+                .select(`id, start_date, end_date, booking_status, is_archived, contracts!inner (id, contract_number, service_name, service_type, is_archived), location_resources (id, resource_name, resource_type, locations (id, location_name)), customers (id, first_name, second_name, company_name)`)
+                .eq('booking_status', 'active').eq('is_archived', false)
+                .lte('start_date', endOfMonth.toISOString()).gte('end_date', startOfMonth.toISOString());
 
-            let packagesQuery = supabase
-                .from('package_reservations')
-                .select(`
-          id, reservation_date, duration_type, time_slot, reservation_status, is_archived,
-          contracts!inner (id, contract_number, service_name, service_type, is_archived),
-          location_resources (id, resource_name, resource_type, locations (id, location_name)),
-          customers (id, first_name, second_name, company_name)
-        `)
-                .eq('reservation_status', 'confirmed')
-                .eq('is_archived', false)
+            let packagesQuery = supabase.from('package_reservations')
+                .select(`id, reservation_date, duration_type, time_slot, reservation_status, is_archived, contracts!inner (id, contract_number, service_name, service_type, is_archived), location_resources (id, resource_name, resource_type, locations (id, location_name)), customers (id, first_name, second_name, company_name)`)
+                .eq('reservation_status', 'confirmed').eq('is_archived', false)
                 .gte('reservation_date', startOfMonth.toISOString().split('T')[0])
                 .lte('reservation_date', endOfMonth.toISOString().split('T')[0]);
 
             if (isCustomer) {
                 const { data: cust } = await supabase.from('customers').select('id').eq('user_id', user.id).maybeSingle();
-                if (cust) {
-                    bookingsQuery = bookingsQuery.eq('customer_id', cust.id);
-                    packagesQuery = packagesQuery.eq('customer_id', cust.id);
-                }
+                if (cust) { bookingsQuery = bookingsQuery.eq('customer_id', cust.id); packagesQuery = packagesQuery.eq('customer_id', cust.id); }
             } else {
                 bookingsQuery = bookingsQuery.eq('partner_uuid', profile.partner_uuid);
                 packagesQuery = packagesQuery.eq('partner_uuid', profile.partner_uuid);
             }
 
             const [resBookings, resPackages] = await Promise.all([bookingsQuery, packagesQuery]);
-
-            const normalized = [
+            setBookings([
                 ...(resBookings.data || []).map(b => ({ ...b, booking_type: 'subscription' })),
-                ...(resPackages.data || []).map(p => ({
-                    ...p,
-                    id: `pkg-${p.id}`,
-                    start_date: p.reservation_date,
-                    end_date: p.reservation_date,
-                    booking_type: 'package'
-                }))
-            ];
-            setBookings(normalized);
+                ...(resPackages.data || []).map(p => ({ ...p, id: `pkg-${p.id}`, start_date: p.reservation_date, end_date: p.reservation_date, booking_type: 'package' }))
+            ]);
 
-            // Fetch Closures
-            const { data: closuresData } = await supabase
-                .from('operating_closures')
+            const { data: closuresData } = await supabase.from('operating_closures')
                 .select(`*, locations (id, location_name), location_resources (id, resource_name, resource_type)`)
                 .eq('partner_uuid', profile.partner_uuid)
                 .lte('closure_start_date', endOfMonth.toISOString().split('T')[0])
                 .gte('closure_end_date', startOfMonth.toISOString().split('T')[0]);
             setClosures(closuresData || []);
-
         } catch (error) {
             logger.error('Error fetching data:', error);
             toast.error(t('messages.errorLoadingBookings'));
@@ -207,46 +136,14 @@ const BookingsNew = () => {
 
     const checkAvailablePackages = async () => {
         try {
-            const { data: customerData } = await supabase
-                .from('customers')
-                .select('id')
-                .eq('user_id', user.id)
-                .maybeSingle();
-
+            const { data: customerData } = await supabase.from('customers').select('id').eq('user_id', user.id).maybeSingle();
             if (!customerData) return;
-
-            const { data: packageContracts } = await supabase
-                .from('contracts')
-                .select(`
-                    id,
-                    service_max_entries,
-                    package_reservations (
-                        id,
-                        reservation_status
-                    )
-                `)
-                .eq('customer_id', customerData.id)
-                .eq('service_type', 'pacchetto')
-                .eq('contract_status', 'active')
-                .eq('is_archived', false);
-
-            if (!packageContracts || packageContracts.length === 0) {
-                setHasAvailablePackages(false);
-                return;
-            }
-
-            const hasAvailable = packageContracts.some(contract => {
-                const usedReservations = contract.package_reservations?.filter(
-                    r => r.reservation_status === 'confirmed'
-                ).length || 0;
-                return usedReservations < (contract.service_max_entries || 0);
-            });
-
-            setHasAvailablePackages(hasAvailable);
-        } catch (error) {
-            logger.error('Error checking packages:', error);
-            setHasAvailablePackages(false);
-        }
+            const { data: packageContracts } = await supabase.from('contracts')
+                .select(`id, service_max_entries, package_reservations (id, reservation_status)`)
+                .eq('customer_id', customerData.id).eq('service_type', 'pacchetto').eq('contract_status', 'active').eq('is_archived', false);
+            if (!packageContracts?.length) { setHasAvailablePackages(false); return; }
+            setHasAvailablePackages(packageContracts.some(c => (c.package_reservations?.filter(r => r.reservation_status === 'confirmed').length || 0) < (c.service_max_entries || 0)));
+        } catch (e) { logger.error(e); setHasAvailablePackages(false); }
     };
 
     const fetchFilterOptions = async () => {
@@ -262,187 +159,61 @@ const BookingsNew = () => {
         if (filters.resourceType) filtered = filtered.filter(r => r.resource_type === filters.resourceType);
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
-            filtered = filtered.filter(r => {
-                const typeName = (resourceTypeMap[r.resource_type] || '').toLowerCase();
-                return r.resource_name.toLowerCase().includes(q) ||
-                    r.resource_type.toLowerCase().includes(q) ||
-                    typeName.includes(q);
-            });
+            filtered = filtered.filter(r => r.resource_name.toLowerCase().includes(q) || r.resource_type.toLowerCase().includes(q) || (resourceTypeMap[r.resource_type] || '').toLowerCase().includes(q));
         }
         setFilteredResources(filtered);
     };
 
     const days = useMemo(() => {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear(), month = currentDate.getMonth();
         const count = new Date(year, month + 1, 0).getDate();
         return Array.from({ length: count }, (_, i) => new Date(year, month, i + 1));
     }, [currentDate]);
 
-    const handleBookingClick = (b) => {
-        setSelectedBooking(b);
-        setShowBookingDetails(true);
+    const getBlockStyle = (startDate, endDate) => {
+        const start = new Date(startDate), end = new Date(endDate);
+        const mStart = days[0], mEnd = new Date(days[days.length - 1]); mEnd.setHours(23, 59, 59);
+        if (end < mStart || start > mEnd) return null;
+        const effS = start < mStart ? mStart : start, effE = end > mEnd ? mEnd : end;
+        const sIdx = days.findIndex(d => { const a = new Date(d); a.setHours(0,0,0,0); const b = new Date(effS); b.setHours(0,0,0,0); return a.getTime() === b.getTime(); });
+        if (sIdx === -1) return null;
+        const d1 = new Date(effS); d1.setHours(0,0,0,0);
+        const d2 = new Date(effE); d2.setHours(0,0,0,0);
+        const span = Math.round((d2 - d1) / 86400000) + 1;
+        return { left: `${sIdx * 80}px`, width: `${Math.min(span, days.length - sIdx) * 80 - 8}px` };
     };
+
+    const handleBookingClick = (b) => { setSelectedBooking(b); setShowBookingDetails(true); };
 
     const handleDelete = async () => {
         if (!selectedBooking) return;
         const isPkg = selectedBooking.booking_type === 'package';
         const id = isPkg ? selectedBooking.id.replace('pkg-', '') : selectedBooking.id;
-
         try {
             setLoading(true);
-            const table = isPkg ? 'package_reservations' : 'bookings';
-            const statusField = isPkg ? 'reservation_status' : 'booking_status';
-
             if (isPkg) {
-                // Handle package reservation deletion
-                const { data: packageData, error: fetchError } = await supabase
-                    .from('package_reservations')
-                    .select(`
-                        *,
-                        contracts(id, entries_used, customer_id, contract_number, service_name, service_type, partner_uuid),
-                        location_resources(
-                            resource_name,
-                            resource_type,
-                            locations(id, location_name)
-                        ),
-                        customers(first_name, second_name, email, company_name)
-                    `)
-                    .eq('id', id)
-                    .maybeSingle();
-
+                const { data: packageData, error: fetchError } = await supabase.from('package_reservations').select(`*, contracts(id, entries_used, customer_id, contract_number, service_name, service_type, partner_uuid), location_resources(resource_name, resource_type, locations(id, location_name)), customers(first_name, second_name, email, company_name)`).eq('id', id).maybeSingle();
                 if (fetchError) throw fetchError;
-
-                // Soft delete the package reservation
-                const { error: deleteError } = await supabase
-                    .from('package_reservations')
-                    .update({
-                        is_archived: true,
-                        reservation_status: 'cancelled'
-                    })
-                    .eq('id', id);
-
+                const { error: deleteError } = await supabase.from('package_reservations').update({ is_archived: true, reservation_status: 'cancelled' }).eq('id', id);
                 if (deleteError) throw deleteError;
-
-                // Restore the entry count in the contract
-                if (packageData?.contracts) {
-                    const { error: contractError } = await supabase
-                        .from('contracts')
-                        .update({
-                            entries_used: Math.max(0, (packageData.contracts.entries_used || 0) - 1)
-                        })
-                        .eq('id', packageData.contracts.id);
-
-                    if (contractError) throw contractError;
-                }
-
-                // Log activity
-                const customerName = packageData?.customers?.company_name ||
-                    `${packageData?.customers?.first_name} ${packageData?.customers?.second_name}`;
-
-                try {
-                    await logActivity({
-                        action_category: 'booking',
-                        action_type: 'deleted',
-                        entity_type: 'package_reservations',
-                        entity_id: id,
-                        description: `Deleted package reservation for ${customerName} at ${packageData?.location_resources?.resource_name}`,
-                        metadata: {
-                            reservation_id: id,
-                            contract_id: packageData?.contracts?.id,
-                            customer_name: customerName,
-                            deleted_by: 'partner'
-                        }
-                    });
-                } catch (logError) {
-                    logger.error('Error logging package deletion activity:', logError);
-                }
-
+                if (packageData?.contracts) await supabase.from('contracts').update({ entries_used: Math.max(0, (packageData.contracts.entries_used || 0) - 1) }).eq('id', packageData.contracts.id);
+                const customerName = packageData?.customers?.company_name || `${packageData?.customers?.first_name} ${packageData?.customers?.second_name}`;
+                try { await logActivity({ action_category: 'booking', action_type: 'deleted', entity_type: 'package_reservations', entity_id: id, description: `Deleted package reservation for ${customerName}`, metadata: { reservation_id: id, customer_name: customerName, deleted_by: 'partner' } }); } catch (e) { logger.error(e); }
                 toast.success(t('bookings.packageReservationDeleted') || t('common.deletedSuccessfully'));
-
-                // Send deletion email to customer
-                try {
-                    await oneSignalEmailService.sendBookingDeletionEmail(
-                        packageData,
-                        packageData.contracts,
-                        t
-                    );
-                    logger.log('✅ Deletion email sent successfully');
-                } catch (emailError) {
-                    logger.error('Error sending deletion email:', emailError);
-                    // Don't block deletion if email fails
-                }
+                try { await oneSignalEmailService.sendBookingDeletionEmail(packageData, packageData.contracts, t); } catch (e) { logger.error(e); }
             } else {
-                // Handle subscription booking deletion
-                const { data: bookingData, error: fetchError } = await supabase
-                    .from('bookings')
-                    .select(`
-                        *,
-                        location_resources(resource_name),
-                        customers(first_name, second_name, company_name)
-                    `)
-                    .eq('id', id)
-                    .maybeSingle();
-
+                const { data: bookingData, error: fetchError } = await supabase.from('bookings').select(`*, location_resources(resource_name), customers(first_name, second_name, company_name)`).eq('id', id).maybeSingle();
                 if (fetchError) throw fetchError;
-
-                // Soft delete the booking
-                const { error: deleteError } = await supabase
-                    .from('bookings')
-                    .update({
-                        is_archived: true,
-                        booking_status: 'cancelled'
-                    })
-                    .eq('id', id);
-
+                const { error: deleteError } = await supabase.from('bookings').update({ is_archived: true, booking_status: 'cancelled' }).eq('id', id);
                 if (deleteError) throw deleteError;
-
-                // Log activity
-                const customerName = bookingData?.customers?.company_name ||
-                    `${bookingData?.customers?.first_name} ${bookingData?.customers?.second_name}`;
-
-                try {
-                    await logActivity({
-                        action_category: 'booking',
-                        action_type: 'deleted',
-                        entity_type: 'bookings',
-                        entity_id: id,
-                        description: `Deleted booking for ${customerName} at ${bookingData?.location_resources?.resource_name}`,
-                        metadata: {
-                            booking_id: id,
-                            customer_name: customerName,
-                            deleted_by: 'partner'
-                        }
-                    });
-                } catch (logError) {
-                    logger.error('Error logging booking deletion activity:', logError);
-                }
-
+                const customerName = bookingData?.customers?.company_name || `${bookingData?.customers?.first_name} ${bookingData?.customers?.second_name}`;
+                try { await logActivity({ action_category: 'booking', action_type: 'deleted', entity_type: 'bookings', entity_id: id, description: `Deleted booking for ${customerName}`, metadata: { booking_id: id, customer_name: customerName, deleted_by: 'partner' } }); } catch (e) { logger.error(e); }
                 toast.success(t('common.deletedSuccessfully'));
-
-                // Send deletion email to customer
                 try {
-                    // Fetch contract data for email
-                    const { data: contractData } = await supabase
-                        .from('contracts')
-                        .select('id, contract_number, service_name, service_type, partner_uuid, customers(first_name, second_name, email)')
-                        .eq('id', bookingData.contract_id)
-                        .maybeSingle();
-
-                    if (contractData) {
-                        await oneSignalEmailService.sendBookingDeletionEmail(
-                            bookingData,
-                            contractData,
-                            t
-                        );
-                        logger.log('✅ Deletion email sent successfully');
-                    }
-                } catch (emailError) {
-                    logger.error('Error sending deletion email:', emailError);
-                    // Don't block deletion if email fails
-                }
+                    const { data: contractData } = await supabase.from('contracts').select('id, contract_number, service_name, service_type, partner_uuid, customers(first_name, second_name, email)').eq('id', bookingData.contract_id).maybeSingle();
+                    if (contractData) await oneSignalEmailService.sendBookingDeletionEmail(bookingData, contractData, t);
+                } catch (e) { logger.error(e); }
             }
-
             setShowDeleteConfirm(false);
             setShowBookingDetails(false);
             fetchInitialData();
@@ -462,21 +233,12 @@ const BookingsNew = () => {
         <div className="bookings-page">
             <div className="bookings-header">
                 <div className="bookings-header-content">
-                    <h1 className="bookings-title">
-                        <Calendar size={24} className="mr-2" />
-                        {t('navigation.ganttBookings')}
-                    </h1>
-                    <p className="bookings-description">
-                        {isCustomer ? t('bookings.viewYourBookings') : t('bookings.manageAllBookings')}
-                    </p>
+                    <h1 className="bookings-title"><Calendar size={24} />{t('navigation.ganttBookings')}</h1>
+                    <p className="bookings-description">{isCustomer ? t('bookings.viewYourBookings') : t('bookings.manageAllBookings')}</p>
                 </div>
                 <div className="bookings-controls">
                     {(isPartnerAdmin || (isCustomer && hasAvailablePackages)) && (
-                        <button
-                            className="partner-booking-btn"
-                            onClick={() => setShowPartnerBooking(true)}
-                            title={isCustomer ? t('bookings.bookPackage') : t('bookings.bookForCustomer')}
-                        >
+                        <button className="partner-booking-btn" onClick={() => setShowPartnerBooking(true)}>
                             <Plus size={16} />
                             {isCustomer ? t('bookings.newReservation') : t('bookings.bookForCustomer')}
                         </button>
@@ -484,35 +246,60 @@ const BookingsNew = () => {
                 </div>
             </div>
 
+            {/*
+                Single unified nav bar:
+                Left side  — month prev/today/next  (changes the month)
+                Right side — gantt scroll prev/next (scrolls the day columns)
+                Both groups use the same visual style: no confusion, no extra toolbars.
+            */}
             <div className="timeline-controls">
                 <div className="timeline-navigation">
-                    <button className="btn-icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}><ChevronLeft /></button>
+                    <button className="btn-icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}><ChevronLeft size={18} /></button>
                     <button className="btn-today" onClick={() => setCurrentDate(new Date())}>{t('common.today')}</button>
-                    <button className="btn-icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}><ChevronRight /></button>
+                    <button className="btn-icon" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}><ChevronRight size={18} /></button>
                     <h2 className="timeline-month-header">{formatMonth()}</h2>
                 </div>
-                <button className="btn-toggle-filters" onClick={() => setShowFilters(!showFilters)}>
-                    <Filter size={18} /> {showFilters ? t('common.close') : t('common.filter')}
-                </button>
+
+                <div className="timeline-controls-right">
+                    {/* Gantt scroll group — visually separated by a divider */}
+                    <div className="gantt-scroll-group">
+                        <button
+                            className="gantt-scroll-btn"
+                            onClick={() => scrollTimeline(-1)}
+                            disabled={!canScrollLeft}
+                            title={t('common.previous')}
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="gantt-scroll-label">7 {t('common.days') || 'gg'}</span>
+                        <button
+                            className="gantt-scroll-btn"
+                            onClick={() => scrollTimeline(1)}
+                            disabled={!canScrollRight}
+                            title={t('common.next')}
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+
+                    <div className="timeline-controls-divider" />
+
+                    <button className="btn-toggle-filters" onClick={() => setShowFilters(!showFilters)}>
+                        <Filter size={16} />
+                        {showFilters ? t('common.close') : t('common.filter')}
+                    </button>
+                </div>
             </div>
 
             {showFilters && (
                 <div className="timeline-filters">
                     <div className="filter-group">
                         <label className="filter-label"><MapPin size={16} /> {t('contracts.location')}</label>
-                        <SearchableSelect
-                            value={filters.location}
-                            onChange={v => setFilters(f => ({ ...f, location: v.target.value }))}
-                            options={[{ value: '', label: t('common.all') }, ...locations.map(l => ({ value: l.id.toString(), label: l.location_name }))]}
-                        />
+                        <SearchableSelect value={filters.location} onChange={v => setFilters(f => ({ ...f, location: v.target.value }))} options={[{ value: '', label: t('common.all') }, ...locations.map(l => ({ value: l.id.toString(), label: l.location_name }))]} />
                     </div>
                     <div className="filter-group">
                         <label className="filter-label"><Layers size={16} /> {t('contracts.resourceType')}</label>
-                        <SearchableSelect
-                            value={filters.resourceType}
-                            onChange={v => setFilters(f => ({ ...f, resourceType: v.target.value }))}
-                            options={[{ value: '', label: t('common.all') }, ...[...new Set(resources.map(r => r.resource_type))].map(type => ({ value: type, label: resourceTypeMap[type] || type }))]}
-                        />
+                        <SearchableSelect value={filters.resourceType} onChange={v => setFilters(f => ({ ...f, resourceType: v.target.value }))} options={[{ value: '', label: t('common.all') }, ...[...new Set(resources.map(r => r.resource_type))].map(type => ({ value: type, label: resourceTypeMap[type] || type }))]} />
                     </div>
                     <div className="filter-group">
                         <label className="filter-label"><Search size={16} /> {t('common.search')}</label>
@@ -521,111 +308,59 @@ const BookingsNew = () => {
                 </div>
             )}
 
-            <div className="timeline-container">
+            {/*
+                THE GRID — single overflow:scroll container.
+                - .timeline-header-corner → sticky top:0 + left:0  (corner always visible)
+                - .timeline-car-cell      → sticky left:0          (resource column never scrolls)
+                No child has overflow set — this is the only scroll ancestor.
+            */}
+            <div className="timeline-container" ref={scrollRef}>
                 <div className="timeline-header">
                     <div className="timeline-header-corner">{t('contracts.resource')}</div>
-                    <div className="timeline-days-header" ref={headerRef}>
-                        {days.map((d, i) => (
-                            <div key={i} className={`timeline-day-header ${d.toDateString() === new Date().toDateString() ? 'today' : ''}`}>
-                                <div className="day-name">{d.toLocaleDateString(t('locale') === 'it' ? 'it-IT' : 'en-US', { weekday: 'short' })}</div>
-                                <div className="day-number">{d.getDate()}</div>
-                            </div>
-                        ))}
-                    </div>
+                    {days.map((d, i) => (
+                        <div key={i} className={`timeline-day-header${d.toDateString() === new Date().toDateString() ? ' today' : ''}`}>
+                            <div className="day-name">{d.toLocaleDateString(t('locale') === 'it' ? 'it-IT' : 'en-US', { weekday: 'short' })}</div>
+                            <div className="day-number">{d.getDate()}</div>
+                        </div>
+                    ))}
                 </div>
 
-                <div className="timeline-body" ref={bodyRef}>
-                    {filteredResources.map((res, resIdx) => {
-                        const resBookings = bookings.filter(b => b.location_resources?.id === res.id);
-                        const resClosures = closures.filter(c => c.location_id === res.location_id || c.location_resource_id === res.id);
-
-                        return (
-                            <div key={res.id} className="timeline-row">
-                                <div className="timeline-car-cell col-fixed">
-                                    <div className="car-plate-label">{res.resource_name}</div>
-                                    <div className="car-model-label">{res.locations?.location_name}</div>
-                                </div>
-                                <div
-                                    className="timeline-days-row"
-                                    ref={el => rowRefs.current[resIdx] = el}
-                                    onScroll={(e) => {
-                                        const scrollLeft = e.target.scrollLeft;
-                                        if (headerRef.current) headerRef.current.scrollLeft = scrollLeft;
-                                        rowRefs.current.forEach((r, idx) => {
-                                            if (r && idx !== resIdx) r.scrollLeft = scrollLeft;
-                                        });
-                                    }}
-                                >
-                                    {days.map((_, dayIdx) => <div key={dayIdx} className="timeline-day-cell" />)}
-
-                                    {/* Bookings Overlay */}
-                                    {resBookings.map(b => {
-                                        const start = new Date(b.start_date); const end = new Date(b.end_date);
-                                        const mStart = days[0]; const mEnd = new Date(days[days.length - 1]); mEnd.setHours(23, 59, 59);
-                                        if (end < mStart || start > mEnd) return null;
-                                        const effS = start < mStart ? mStart : start; const effE = end > mEnd ? mEnd : end;
-                                        const sIdx = days.findIndex(d => {
-                                            const dS = new Date(d); dS.setHours(0, 0, 0, 0);
-                                            const sC = new Date(effS); sC.setHours(0, 0, 0, 0);
-                                            return dS.getTime() === sC.getTime();
-                                        });
-                                        if (sIdx === -1) return null;
-                                        const d1 = new Date(effS); d1.setHours(0, 0, 0, 0);
-                                        const d2 = new Date(effE); d2.setHours(0, 0, 0, 0);
-                                        const span = Math.round((d2 - d1) / 86400000) + 1;
-                                        const finalSpan = Math.min(span, days.length - sIdx);
-
-                                        return (
-                                            <div
-                                                key={b.id}
-                                                className={`timeline-booking-block status-${b.booking_type === 'package' ? 'active' : 'open'}`}
-                                                style={{ left: `${sIdx * 80}px`, width: `${finalSpan * 80 - 8}px` }}
-                                                onClick={() => handleBookingClick(b)}
-                                            >
-                                                <span className="booking-renter">{b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`}</span>
-                                            </div>
-                                        );
-                                    })}
-
-                                    {/* Closures Overlay */}
-                                    {resClosures.map(c => {
-                                        const start = new Date(c.closure_start_date); const end = new Date(c.closure_end_date);
-                                        const mStart = days[0]; const mEnd = new Date(days[days.length - 1]); mEnd.setHours(23, 59, 59);
-                                        if (end < mStart || start > mEnd) return null;
-                                        const effS = start < mStart ? mStart : start; const effE = end > mEnd ? mEnd : end;
-                                        const sIdx = days.findIndex(d => {
-                                            const dS = new Date(d); dS.setHours(0, 0, 0, 0);
-                                            const sC = new Date(effS); sC.setHours(0, 0, 0, 0);
-                                            return dS.getTime() === sC.getTime();
-                                        });
-                                        if (sIdx === -1) return null;
-                                        const d1 = new Date(effS); d1.setHours(0, 0, 0, 0);
-                                        const d2 = new Date(effE); d2.setHours(0, 0, 0, 0);
-                                        const span = Math.round((d2 - d1) / 86400000) + 1;
-                                        const finalSpan = Math.min(span, days.length - sIdx);
-
-                                        return (
-                                            <div
-                                                key={c.id}
-                                                className="timeline-booking-block status-closed"
-                                                style={{ left: `${sIdx * 80}px`, width: `${finalSpan * 80 - 8}px`, opacity: 0.7 }}
-                                            >
-                                                <span className="booking-renter">{c.reason || 'Chiuso'}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                {filteredResources.map(res => {
+                    const resBookings = bookings.filter(b => b.location_resources?.id === res.id);
+                    const resClosures = closures.filter(c => c.location_id === res.location_id || c.location_resource_id === res.id);
+                    return (
+                        <div key={res.id} className="timeline-row">
+                            <div className="timeline-car-cell">
+                                <div className="car-plate-label">{res.resource_name}</div>
+                                <div className="car-model-label">{res.locations?.location_name}</div>
                             </div>
-                        );
-                    })}
-                </div>
+                            <div className="timeline-days-row">
+                                {days.map((_, dayIdx) => <div key={dayIdx} className="timeline-day-cell" />)}
+                                {resBookings.map(b => {
+                                    const style = getBlockStyle(b.start_date, b.end_date);
+                                    if (!style) return null;
+                                    return (
+                                        <div key={b.id} className={`timeline-booking-block status-${b.booking_type === 'package' ? 'active' : 'open'}`} style={style} onClick={() => handleBookingClick(b)}>
+                                            <span className="booking-renter">{b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`}</span>
+                                        </div>
+                                    );
+                                })}
+                                {resClosures.map(c => {
+                                    const style = getBlockStyle(c.closure_start_date, c.closure_end_date);
+                                    if (!style) return null;
+                                    return (
+                                        <div key={c.id} className="timeline-booking-block status-closed" style={{ ...style, opacity: 0.7 }}>
+                                            <span className="booking-renter">{c.reason || 'Chiuso'}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
-            <PartnerBookingForm
-                isOpen={showPartnerBooking}
-                onClose={() => setShowPartnerBooking(false)}
-                onSuccess={() => { fetchInitialData(); setShowPartnerBooking(false); }}
-            />
+            <PartnerBookingForm isOpen={showPartnerBooking} onClose={() => setShowPartnerBooking(false)} onSuccess={() => { fetchInitialData(); setShowPartnerBooking(false); }} />
 
             {showBookingDetails && selectedBooking && (
                 <div className="modal-overlay">
@@ -646,19 +381,7 @@ const BookingsNew = () => {
                 </div>
             )}
 
-            <ConfirmModal
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                onConfirm={handleDelete}
-                title={t('bookings.deleteBookingTitle')}
-                message={
-                    selectedBooking?.booking_type === 'package'
-                        ? t('bookings.confirmDeletePackageReservation')
-                        : t('bookings.confirmDeleteSubscriptionBooking')
-                }
-                confirmText={t('bookings.confirmDelete')}
-                isDestructive={true}
-            />
+            <ConfirmModal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} onConfirm={handleDelete} title={t('bookings.deleteBookingTitle')} message={selectedBooking?.booking_type === 'package' ? t('bookings.confirmDeletePackageReservation') : t('bookings.confirmDeleteSubscriptionBooking')} confirmText={t('bookings.confirmDelete')} isDestructive={true} />
         </div>
     );
 };

@@ -522,6 +522,14 @@ export class PaymentService {
    */
   static calculateDueDate(startDate, paymentTerms = 'net_30') {
     const start = new Date(startDate);
+
+    if (paymentTerms === 'net_30') {
+      const dueDate = new Date(start);
+      // Add exactly 1 month instead of 30 days
+      dueDate.setMonth(dueDate.getMonth() + 1);
+      return dueDate;
+    }
+
     let daysToAdd;
 
     switch (paymentTerms) {
@@ -534,9 +542,6 @@ export class PaymentService {
       case 'net_15':
         daysToAdd = 15;
         break;
-      case 'net_30':
-        daysToAdd = 30;
-        break;
       case 'net_45':
         daysToAdd = 45;
         break;
@@ -544,7 +549,10 @@ export class PaymentService {
         daysToAdd = 60;
         break;
       default:
-        daysToAdd = 30;
+        // Default to +1 month behavior
+        const defaultDueDate = new Date(start);
+        defaultDueDate.setMonth(defaultDueDate.getMonth() + 1);
+        return defaultDueDate;
     }
 
     const dueDate = new Date(start);

@@ -676,6 +676,7 @@
       "november": "Novembre",
       "december": "Dicembre"
     },
+    "days": "gg",
     "edit": "Modifica",
     "close": "Chiudi",
     "closeWindow": "Chiudi Finestra",

@@ -287,57 +287,118 @@ const Dashboard = () => {
 
     try {
       const today = new Date();
+      // Reset time to start of day for accurate comparison
+      today.setHours(0, 0, 0, 0);
+
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
       const nextMonth = new Date(today);
       nextMonth.setMonth(today.getMonth() + 1);
 
+      // We query the contract_payment_status view to correctly include
+      // unpaid contracts that don't have a payment record yet.
       const { data, error } = await supabase
-        .from('payments')
+        .from('contract_payment_status')
         .select(`
-          id,
-          payment_number,
-          amount,
-          currency,
-          due_date,
-          payment_status,
           contract_id,
-          contracts (
-            contract_number,
-            customers (
-              first_name,
-              second_name,
-              company_name
-            )
-          )
+          contract_number,
+          partner_uuid,
+          customer_first_name,
+          customer_second_name,
+          customer_company_name,
+          outstanding_amount,
+          currency,
+          next_due_date,
+          payment_status,
+          is_overdue
         `)
         .eq('partner_uuid', profile.partner_uuid)
-        .in('payment_status', ['pending', 'failed'])
-        .order('due_date');
+        .in('payment_status', ['unpaid', 'partial', 'overdue'])
+        .order('next_due_date');
 
       if (error) throw error;
 
       const payments = data || [];
-      const overdue = payments.filter(p => new Date(p.due_date) < today);
+
+      const overdue = payments.filter(p => p.is_overdue || (p.next_due_date && new Date(p.next_due_date) < today));
       const dueThisWeek = payments.filter(p => {
-        const dueDate = new Date(p.due_date);
+        if (!p.next_due_date || p.is_overdue || new Date(p.next_due_date) < today) return false;
+        const dueDate = new Date(p.next_due_date);
+        dueDate.setHours(0, 0, 0, 0);
         return dueDate >= today && dueDate <= nextWeek;
       });
       const dueThisMonth = payments.filter(p => {
-        const dueDate = new Date(p.due_date);
+        if (!p.next_due_date || p.is_overdue || new Date(p.next_due_date) < today) return false;
+        const dueDate = new Date(p.next_due_date);
+        dueDate.setHours(0, 0, 0, 0);
         return dueDate >= today && dueDate <= nextMonth;
       });
 
       const totalOverdue = overdue.reduce((sum, payment) => {
-        return sum + (parseFloat(payment.amount) || 0);
+        return sum + (parseFloat(payment.outstanding_amount) || 0);
       }, 0);
+
+      // Map the data structure to match what the UI expects (which was based on the old `payments` table)
+      const mappedOverdue = overdue.map(p => ({
+        id: p.contract_id,
+        payment_number: 'N/A', // Unpaid contracts might not have a payment number
+        amount: p.outstanding_amount,
+        currency: p.currency,
+        due_date: p.next_due_date,
+        payment_status: p.payment_status,
+        contract_id: p.contract_id,
+        contracts: {
+          contract_number: p.contract_number,
+          customers: {
+            first_name: p.customer_first_name,
+            second_name: p.customer_second_name,
+            company_name: p.customer_company_name
+          }
+        }
+      }));
+
+      const mappedDueThisWeek = dueThisWeek.map(p => ({
+        id: p.contract_id,
+        payment_number: 'N/A',
+        amount: p.outstanding_amount,
+        currency: p.currency,
+        due_date: p.next_due_date,
+        payment_status: p.payment_status,
+        contract_id: p.contract_id,
+        contracts: {
+          contract_number: p.contract_number,
+          customers: {
+            first_name: p.customer_first_name,
+            second_name: p.customer_second_name,
+            company_name: p.customer_company_name
+          }
+        }
+      }));
+
+      const mappedDueThisMonth = dueThisMonth.map(p => ({
+        id: p.contract_id,
+        payment_number: 'N/A',
+        amount: p.outstanding_amount,
+        currency: p.currency,
+        due_date: p.next_due_date,
+        payment_status: p.payment_status,
+        contract_id: p.contract_id,
+        contracts: {
+          contract_number: p.contract_number,
+          customers: {
+            first_name: p.customer_first_name,
+            second_name: p.customer_second_name,
+            company_name: p.customer_company_name
+          }
+        }
+      }));
 
       setBusinessMetrics(prev => ({
         ...prev,
         paymentStatus: {
-          overdue,
-          dueThisWeek,
-          dueThisMonth,
+          overdue: mappedOverdue,
+          dueThisWeek: mappedDueThisWeek,
+          dueThisMonth: mappedDueThisMonth,
           totalOverdue,
           loading: false
         }

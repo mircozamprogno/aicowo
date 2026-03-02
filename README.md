@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.03.02 V 0.988 Dashboard and Contracts fixes
 2026.02.28 V 0.986 UI/UX Contracts Page Improvements
 2026.02.28 V 0.984 Payment Status
 2026.02.18 V 0.982 Dashboard UI/UX Improvements

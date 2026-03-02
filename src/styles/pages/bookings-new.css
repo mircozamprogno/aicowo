@@ -1,53 +1,181 @@
-/* src/styles/pages/bookings-new.css */
+/* src/styles/pages/bookings-new.css — SINGLE CLEAN FILE */
 
-.bookings-new {
+/* ── PAGE ──────────────────────────────────────────────────────────── */
+.bookings-page {
     padding: 20px;
     background-color: #f3f4f6;
     min-height: 100vh;
 }
 
-.timeline-controls {
+.bookings-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 20px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
-
-.timeline-navigation {
+.bookings-header-content {}
+.bookings-title {
     display: flex;
     align-items: center;
-    gap: 15px;
-}
-
-.timeline-month-header {
-    font-size: 1.5rem;
+    gap: 10px;
+    font-size: 1.75rem;
     font-weight: 700;
-    color: #1f2937;
+    color: #111827;
     margin: 0;
-    min-width: 200px;
-    text-align: center;
-    text-transform: capitalize;
 }
+.bookings-description { color: #6b7280; margin: 4px 0 0; }
+.bookings-controls { display: flex; gap: 10px; align-items: center; }
 
-.btn-today {
-    padding: 8px 16px;
-    background: #4f46e5;
+.partner-booking-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    background: #16a34a;
     color: white;
     border: none;
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
+}
+.partner-booking-btn:hover { background: #15803d; }
+
+/* ── UNIFIED NAV + SCROLL CONTROL BAR ─────────────────────────────── */
+.timeline-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    background: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
 }
 
-.btn-today:hover {
-    background: #4338ca;
+/* Left: month navigation */
+.timeline-navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
+.timeline-month-header {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 8px;
+    min-width: 180px;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.btn-today {
+    padding: 7px 14px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-today:hover { background: #4338ca; }
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s, border-color 0.15s;
+}
+.btn-icon:hover { background: #f9fafb; border-color: #d1d5db; }
+
+/* Right side container */
+.timeline-controls-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.timeline-controls-divider {
+    width: 1px;
+    height: 24px;
+    background: #e5e7eb;
+}
+
+/* Gantt day-scroll group — same visual weight as month nav buttons */
+.gantt-scroll-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.gantt-scroll-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: #374151;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.gantt-scroll-btn:hover:not(:disabled) {
+    background: #4f46e5;
+    color: white;
+}
+.gantt-scroll-btn:disabled {
+    color: #d1d5db;
+    cursor: not-allowed;
+    background: transparent;
+}
+
+.gantt-scroll-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    padding: 0 10px;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    line-height: 34px;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.btn-toggle-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    height: 34px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.btn-toggle-filters:hover { background: #f9fafb; border-color: #d1d5db; }
+
+/* ── FILTER PANEL ──────────────────────────────────────────────────── */
 .timeline-filters {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -55,15 +183,12 @@
     background: white;
     padding: 20px;
     border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
 }
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+.filter-group { display: flex; flex-direction: column; gap: 8px; }
 
 .filter-label {
     display: flex;
@@ -81,35 +206,47 @@
     font-size: 0.95rem;
     transition: border-color 0.2s;
 }
-
 .filter-input:focus {
     outline: none;
     border-color: #4f46e5;
     box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
-/* Timeline Grid */
+/* ── GRID SCROLL CONTAINER ─────────────────────────────────────────────────
+   THE ONLY ELEMENT WITH overflow SET.
+   Do NOT add overflow to .timeline-days-row or any child — it will break
+   position:sticky on .timeline-car-cell and .timeline-header-corner.
+────────────────────────────────────────────────────────────────────────── */
 .timeline-container {
+    overflow-x: scroll;
+    overflow-y: auto;
+    max-height: calc(100vh - 360px);
     background: white;
     border-radius: 12px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    position: relative;
     border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    -webkit-overflow-scrolling: touch;
 }
 
+/* ── STICKY HEADER ROW ─────────────────────────────────────────────── */
 .timeline-header {
     display: flex;
-    background: #f9fafb;
-    border-bottom: 2px solid #e5e7eb;
-    z-index: 20;
     position: sticky;
     top: 0;
+    z-index: 20;
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+    min-width: max-content;
 }
 
+/* Pinned top-left corner */
 .timeline-header-corner {
+    position: sticky;
+    left: 0;
+    z-index: 30;
     width: 200px;
     min-width: 200px;
+    flex-shrink: 0;
     padding: 15px;
     border-right: 2px solid #e5e7eb;
     display: flex;
@@ -118,28 +255,13 @@
     font-weight: 700;
     color: #4b5563;
     background: #f3f4f6;
-    position: sticky;
-    left: 0;
-    z-index: 30;
-}
-
-.timeline-days-header {
-    display: flex;
-    overflow-x: auto;
-    scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE and Edge */
-}
-
-.timeline-days-header::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari and Opera */
+    box-shadow: 3px 0 8px -2px rgba(0, 0, 0, 0.1);
 }
 
 .timeline-day-header {
     width: 80px;
     min-width: 80px;
+    flex-shrink: 0;
     padding: 10px 5px;
     text-align: center;
     border-right: 1px solid #e5e7eb;
@@ -147,113 +269,78 @@
     flex-direction: column;
     gap: 2px;
 }
+.timeline-day-header.today { background: #eef2ff; color: #4f46e5; }
 
-.timeline-day-header.today {
-    background: #eef2ff;
-    color: #4f46e5;
-}
+.day-name { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; }
+.day-number { font-size: 1.1rem; font-weight: 800; }
 
-.timeline-day-header.weekend {
-    background: #f9fafb;
-    color: #9ca3af;
-}
-
-.day-name {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    font-weight: 700;
-}
-
-.day-number {
-    font-size: 1.1rem;
-    font-weight: 800;
-}
-
-.timeline-body {
-    max-height: calc(100vh - 350px);
-    overflow-y: auto;
-}
-
+/* ── RESOURCE ROWS ─────────────────────────────────────────────────── */
 .timeline-row {
     display: flex;
     border-bottom: 1px solid #f3f4f6;
-    transition: background-color 0.2s;
+    min-width: max-content;
 }
+.timeline-row:hover { background-color: #fafafa; }
 
-.timeline-row:hover {
-    background-color: #f9fafb;
-}
-
+/* Frozen resource column — sticky works because .timeline-container is the
+   only overflow ancestor. Never add overflow to .timeline-days-row. */
 .timeline-car-cell {
-    width: 200px;
-    min-width: 200px;
-    padding: 15px;
-    border-right: 2px solid #e5e7eb;
-    background: white;
     position: sticky;
     left: 0;
     z-index: 10;
+    width: 200px;
+    min-width: 200px;
+    flex-shrink: 0;
+    padding: 15px;
+    border-right: 2px solid #e5e7eb;
+    background: white;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    box-shadow: 3px 0 8px -2px rgba(0, 0, 0, 0.1);
 }
+.timeline-row:hover .timeline-car-cell { background: #fafafa; }
 
-.car-plate-label {
-    font-weight: 700;
-    color: #111827;
-    font-size: 0.95rem;
-}
+.car-plate-label { font-weight: 700; color: #111827; font-size: 0.95rem; }
+.car-model-label { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
 
-.car-model-label {
-    font-size: 0.75rem;
-    color: #6b7280;
-}
-
+/* Day cells container — NO overflow property (must stay default: visible) */
 .timeline-days-row {
     display: flex;
     position: relative;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.timeline-days-row::-webkit-scrollbar {
-    display: none;
+    flex-shrink: 0;
 }
 
 .timeline-day-cell {
     width: 80px;
     min-width: 80px;
     height: 80px;
+    flex-shrink: 0;
     border-right: 1px solid #f3f4f6;
 }
 
-.timeline-day-cell.weekend {
-    background-color: #fdfdfd;
-}
-
-/* Booking Blocks */
+/* ── BOOKING / CLOSURE BLOCKS ──────────────────────────────────────── */
 .timeline-booking-block {
     position: absolute;
     top: 15px;
     height: 50px;
-    background: #4f46e5;
     border-radius: 8px;
     padding: 5px 10px;
     color: white;
     font-size: 0.8rem;
     cursor: pointer;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
     justify-content: center;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: filter 0.15s, box-shadow 0.15s;
     z-index: 5;
+    overflow: hidden;
 }
-
 .timeline-booking-block:hover {
-    transform: scale(1.02);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    filter: brightness(1.08);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
     z-index: 15;
 }
 
@@ -264,38 +351,72 @@
     text-overflow: ellipsis;
 }
 
-.booking-timeslot {
-    font-size: 0.65rem;
-    font-weight: 600;
-    opacity: 0.9;
-}
+.status-open   { background: #4f46e5; }
+.status-active { background: #3b82f6; }
+.status-closed { background: #9ca3af; }
 
-/* Status Colors */
-.status-active {
-    background: #3b82f6;
+/* ── MODAL ─────────────────────────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
-
-.status-confirmed {
-    background: #10b981;
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 480px;
+    max-width: 95vw;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
-
-.status-closed {
-    background: #9ca3af;
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
 }
-
-.timeline-empty-state {
-    padding: 100px;
-    text-align: center;
-    color: #9ca3af;
+.modal-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.modal-close-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
 }
+.modal-close-icon:hover { background: #f3f4f6; color: #111827; }
 
-/* Modal Adjustments */
-.booking-details-modal {
-    padding: 20px;
+.booking-modal-body {
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
 }
+.booking-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+}
+.btn-delete-booking {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-delete-booking:hover { background: #b91c1c; }
 
 .detail-item label {
     display: block;
@@ -305,19 +426,10 @@
     text-transform: uppercase;
     margin-bottom: 4px;
 }
+.detail-item p { font-weight: 600; color: #111827; margin: 0; }
 
-.detail-item p {
-    font-weight: 600;
-    color: #111827;
-}
-
-.loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
+/* ── LOADING ────────────────────────────────────────────────────────── */
+.loading-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
 .loading-spinner {
     width: 50px;
     height: 50px;
@@ -326,13 +438,4 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
