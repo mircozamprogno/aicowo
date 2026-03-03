@@ -673,7 +673,7 @@ const Dashboard = () => {
       logger.error('❌ MAX RETRIES REACHED');
       setProfileCheckComplete(true);
       setContractsLoading(false);
-      toast.error('Unable to load customer profile. Please refresh.');
+      logger.warn('⚠️ Could not verify customer profile after retries - continuing silently');
       return;
     }
 
@@ -710,7 +710,7 @@ const Dashboard = () => {
           logger.error('❌ Customer record not found after retries');
           setProfileCheckComplete(true);
           setContractsLoading(false);
-          toast.error('Customer profile not found. Please contact support.');
+          logger.warn('⚠️ Customer record not found after retries - continuing silently');
         }
         return;
       }
