@@ -175,10 +175,10 @@ const BookingsNew = () => {
         const mStart = days[0], mEnd = new Date(days[days.length - 1]); mEnd.setHours(23, 59, 59);
         if (end < mStart || start > mEnd) return null;
         const effS = start < mStart ? mStart : start, effE = end > mEnd ? mEnd : end;
-        const sIdx = days.findIndex(d => { const a = new Date(d); a.setHours(0,0,0,0); const b = new Date(effS); b.setHours(0,0,0,0); return a.getTime() === b.getTime(); });
+        const sIdx = days.findIndex(d => { const a = new Date(d); a.setHours(0, 0, 0, 0); const b = new Date(effS); b.setHours(0, 0, 0, 0); return a.getTime() === b.getTime(); });
         if (sIdx === -1) return null;
-        const d1 = new Date(effS); d1.setHours(0,0,0,0);
-        const d2 = new Date(effE); d2.setHours(0,0,0,0);
+        const d1 = new Date(effS); d1.setHours(0, 0, 0, 0);
+        const d2 = new Date(effE); d2.setHours(0, 0, 0, 0);
         const span = Math.round((d2 - d1) / 86400000) + 1;
         return { left: `${sIdx * 80}px`, width: `${Math.min(span, days.length - sIdx) * 80 - 8}px` };
     };
@@ -225,7 +225,7 @@ const BookingsNew = () => {
         }
     };
 
-    const formatMonth = () => currentDate.toLocaleDateString(t('locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' });
+    const formatMonth = () => currentDate.toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US', { month: 'long', year: 'numeric' });
 
     if (loading && resources.length === 0) return <div className="loading-container"><div className="loading-spinner"></div></div>;
 
@@ -319,7 +319,7 @@ const BookingsNew = () => {
                     <div className="timeline-header-corner">{t('contracts.resource')}</div>
                     {days.map((d, i) => (
                         <div key={i} className={`timeline-day-header${d.toDateString() === new Date().toDateString() ? ' today' : ''}`}>
-                            <div className="day-name">{d.toLocaleDateString(t('locale') === 'it' ? 'it-IT' : 'en-US', { weekday: 'short' })}</div>
+                            <div className="day-name">{d.toLocaleDateString(t('app.locale') === 'it' ? 'it-IT' : 'en-US', { weekday: 'short' })}</div>
                             <div className="day-number">{d.getDate()}</div>
                         </div>
                     ))}
