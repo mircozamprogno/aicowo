@@ -37,6 +37,19 @@ const Register = () => {
       return;
     }
 
+    // Password validation logic
+    const password = formData.password;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSymbols = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isLengthValid = password.length >= 8;
+
+    if (!isLengthValid || !hasUpperCase || !hasLowerCase || !hasNumbers || !hasSymbols) {
+      toast.error(t('auth.passwordRequirements'));
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -170,11 +183,21 @@ const Register = () => {
               <Lock size={16} className="input-icon input-icon-left" />
               <button
                 type="button"
-                className="input-icon-right"  // Remove "input-icon" class
+                className="input-icon-right"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              <p style={{ marginBottom: '0.15rem' }}>{t('auth.passwordRequirementsTitle')}</p>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', listStyleType: 'disc' }}>
+                <li>{t('auth.passwordReqLength')}</li>
+                <li>{t('auth.passwordReqUppercase')}</li>
+                <li>{t('auth.passwordReqLowercase')}</li>
+                <li>{t('auth.passwordReqNumber')}</li>
+                <li>{t('auth.passwordReqSymbol')}</li>
+              </ul>
             </div>
           </div>
 

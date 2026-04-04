@@ -681,6 +681,14 @@ class OneSignalEmailService {
         }
       }
 
+      // Build recipient list: customer + partner (if partner has an email)
+      const emailRecipients = [customerEmail];
+      const partnerEmail = partnerData.email || '';
+      if (partnerEmail && partnerEmail !== customerEmail) {
+        emailRecipients.push(partnerEmail);
+        logger.log('✅ Partner email added as recipient:', partnerEmail);
+      }
+
       // Send email
       const payload = {
         app_id: this.appId,
@@ -690,7 +698,7 @@ class OneSignalEmailService {
         email_reply_to_address: "app@powercowo.com",
         template_id: this.uniqueTemplateId,
         target_channel: "email",
-        include_email_tokens: [customerEmail],
+        include_email_tokens: emailRecipients,
         include_aliases: {
           external_id: [contractData.partner_uuid]
         },
@@ -701,7 +709,7 @@ class OneSignalEmailService {
       };
 
       logger.log('📧 Sending contract creation email:', {
-        to: customerEmail,
+        to: emailRecipients,
         from: partnerName,
         subject: emailSubject
       });
@@ -712,6 +720,7 @@ class OneSignalEmailService {
       return false;
     }
   }
+
 
   /**
    * Send notification via OneSignal API (extracted for reuse)

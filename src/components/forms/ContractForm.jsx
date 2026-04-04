@@ -628,9 +628,7 @@ const ContractForm = ({
         totalQuantity,
         bookedQuantity: bookedQuantity - editExclusion,
         availableQuantity: finalAvailableQuantity,
-        resourceName: locationResource.resource_type
-          ? `${t('services.all')} ${getResourceTypeLabel(locationResource.resource_type)}`
-          : locationResource.resource_name,
+        resourceName: `${t('services.all')} ${getResourceTypeLabel(locationResource.resource_type)}`,
         resourceType: locationResource.resource_type
       });
 
@@ -643,7 +641,7 @@ const ContractForm = ({
   };
 
   const getResourceTypeLabel = (type) => {
-    return type === 'scrivania' ? t('locations.scrivania') : t('locations.salaRiunioni');
+    return type === 'scrivania' ? t('resources.scrivania') : t('resources.sala_riunioni');
   };
 
   const handleChange = (e) => {
@@ -992,6 +990,7 @@ const ContractForm = ({
           logger.error('Error sending contract creation email:', emailError);
           // Don't block contract creation if email fails
         }
+
       }
 
       onSuccess(result);

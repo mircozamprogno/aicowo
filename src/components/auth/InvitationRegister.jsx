@@ -400,13 +400,16 @@ const InvitationRegister = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <p style={{
-              fontSize: '0.75rem',
-              color: '#6b7280',
-              marginTop: '0.25rem'
-            }}>
-              {t('auth.passwordRequirements')}
-            </p>
+            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              <p style={{ marginBottom: '0.15rem' }}>{t('auth.passwordRequirementsTitle')}</p>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', listStyleType: 'disc' }}>
+                <li>{t('auth.passwordReqLength')}</li>
+                <li>{t('auth.passwordReqUppercase')}</li>
+                <li>{t('auth.passwordReqLowercase')}</li>
+                <li>{t('auth.passwordReqNumber')}</li>
+                <li>{t('auth.passwordReqSymbol')}</li>
+              </ul>
+            </div>
           </div>
 
           <div className="form-group">

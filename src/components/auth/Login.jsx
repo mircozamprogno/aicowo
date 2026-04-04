@@ -55,7 +55,12 @@ const Login = () => {
       window.location.hash = '/dashboard';
       toast.success(t('messages.signedInSuccessfully'));
     } catch (error) {
-      toast.error(error.message);
+      // Show user-friendly message for invalid credentials
+      if (error.message === 'Invalid login credentials') {
+        toast.error(t('auth.invalidCredentials'));
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
