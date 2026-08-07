@@ -1,4 +1,4 @@
-import { Activity, BellRing, Building, Calendar, Cog, CreditCard, DollarSign, File, FileText, Home, Layers, LogOut, Mail, Send, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
+import { Activity, BellRing, Building, Calendar, Cog, CreditCard, DollarSign, File, FileText, Home, Layers, LogOut, Mail, Router as RouterIcon, Send, Settings, Tag, TrendingUp, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -84,6 +84,7 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       { name: t('navigation.customersDiscountCodes'), href: '/customers-discount-codes', icon: Tag, roles: ['admin'] },
       { name: t('navigation.logview'), href: '/logview', icon: Activity, roles: ['admin'] },
       { name: t('navigation.notifications'), href: '/notifications', icon: BellRing, roles: ['admin', 'superadmin'] },
+      { name: 'MikroTik', href: '/mikrotik-test', icon: RouterIcon, roles: ['admin'] },
       { name: t('navigation.settings'), href: '/settings', icon: Settings, roles: ['admin'] },
 
 

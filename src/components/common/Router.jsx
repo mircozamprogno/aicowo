@@ -11,6 +11,7 @@ import Dashboard from '../../pages/Dashboard';
 import Invitations from '../../pages/Invitations';
 import LocationFormPage from '../../pages/LocationFormPage';
 import LogView from '../../pages/LogView';
+import MikroTikTest from '../../pages/MikroTikTest';
 import Notifications from '../../pages/Notifications';
 import PartnerBillingManagement from '../../pages/PartnerBillingManagement';
 import PartnerContracts from '../../pages/PartnerContracts';
@@ -324,6 +325,13 @@ const Router = () => {
       return user ? (
         <ProtectedRoute requiredRoles={['admin', 'superadmin']}>
           <LogView />
+        </ProtectedRoute>
+      ) : <Login />;
+
+    case '/mikrotik-test':
+      return user ? (
+        <ProtectedRoute requiredRoles={['admin']}>
+          <MikroTikTest />
         </ProtectedRoute>
       ) : <Login />;
 

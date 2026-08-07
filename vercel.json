@@ -3,5 +3,8 @@
     "devCommand": "vite --port $PORT",
     "installCommand": "npm install",
     "framework": null,
-    "outputDirectory": "dist"
+    "outputDirectory": "dist",
+    "rewrites": [
+        { "source": "/api/mikrotik/:path*", "destination": "/api/mikrotik/[...path]" }
+    ]
 }
