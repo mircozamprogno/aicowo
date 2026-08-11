@@ -483,6 +483,11 @@ button.btn-primary:hover:not(:disabled) {
   color: var(--color-gray-600);
 }
 
+.status-renewed {
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
 .service-type-subscription {
   background-color: var(--color-info-bg);
   color: var(--color-info-text);
