@@ -422,15 +422,6 @@ const LogView = () => {
             </div>
           </div>
 
-          {/* Pagination Controls */}
-          <Pagination
-            totalItems={pagination.totalCount}
-            itemsPerPage={pagination.pageSize}
-            currentPage={pagination.currentPage}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handlePageSizeChange}
-          />
-
           {/* Logs Table */}
           {loading ? (
             <div className="logs-loading">{t('common.loading')}</div>
@@ -506,6 +497,15 @@ const LogView = () => {
               </div>
             </div>
           )}
+
+          {/* Pagination Controls */}
+          <Pagination
+            totalItems={pagination.totalCount}
+            itemsPerPage={pagination.pageSize}
+            currentPage={pagination.currentPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handlePageSizeChange}
+          />
         </>
       )}
 

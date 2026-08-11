@@ -969,14 +969,6 @@ const Contracts = () => {
         </div>
       )}
 
-      <Pagination
-        totalItems={totalContractsCount}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onItemsPerPageChange={setItemsPerPage}
-      />
-
       <div className="contracts-mobile-list">
         {contractsToDisplay.map((contract) => {
           const service = contract.services;
@@ -1021,6 +1013,11 @@ const Contracts = () => {
                         {service?.service_type}
                       </span>
                     </div>
+                    {(contract.resource_name || contract.resource_type) && (
+                      <span className="service-resource" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        📍 {getResourceDisplayName(contract)}
+                      </span>
+                    )}
                     {/* Simplified service details for mobile */}
                     {service?.service_type === 'pacchetto' && (
                       <span className="remaining-entries">
@@ -1180,6 +1177,11 @@ const Contracts = () => {
                             {getServiceTypeLabel(contract.service_type)}
                           </span>
                         </div>
+                        {(contract.resource_name || contract.resource_type) && (
+                          <div className="service-resource" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                            📍 {getResourceDisplayName(contract)}
+                          </div>
+                        )}
                         {contract.service_type === 'pacchetto' && contract.service_max_entries && (
                           <div className="usage-info">
                             <div className="usage-display">
@@ -1292,6 +1294,14 @@ const Contracts = () => {
           )}
         </div>
       </div>
+
+      <Pagination
+        totalItems={totalContractsCount}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
 
       {/* ContractForm modals removed */}
 

@@ -345,19 +345,6 @@ const Customers = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case 'active':
-        return 'status-active';
-      case 'notactive':
-        return 'status-inactive';
-      case 'incomplete_profile':
-        return 'status-suspended';
-      default:
-        return 'status-inactive';
-    }
-  };
-
   // Pagination logic
   const totalPages = Math.ceil(customers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -436,15 +423,6 @@ const Customers = () => {
         </div>
       </div>
 
-      <Pagination
-        totalItems={customers.length}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onItemsPerPageChange={setItemsPerPage}
-        itemsPerPageOptions={itemsPerPageOptions}
-      />
-
       <div className="customers-table-container">
         <div className="customers-table-wrapper">
           <table className="customers-table">
@@ -454,7 +432,10 @@ const Customers = () => {
                   {t('customers.customer')}
                 </th>
                 <th className="customers-table-header">
-                  {t('customers.status')}
+                  {t('customers.phone')}
+                </th>
+                <th className="customers-table-header">
+                  {t('customers.email')}
                 </th>
                 <th className="customers-table-header">
                   {t('customers.type')}
@@ -483,9 +464,10 @@ const Customers = () => {
                     </div>
                   </td>
                   <td className="customers-table-cell">
-                    <span className={`status-badge ${getStatusBadgeClass(customer.customer_status)}`}>
-                      {t(`customers.${customer.customer_status}`)}
-                    </span>
+                    {customer.phone || '-'}
+                  </td>
+                  <td className="customers-table-cell">
+                    {customer.email || '-'}
                   </td>
                   <td className="customers-table-cell">
                     <span className="type-badge">
@@ -540,6 +522,15 @@ const Customers = () => {
           )}
         </div>
       </div>
+
+      <Pagination
+        totalItems={customers.length}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+        itemsPerPageOptions={itemsPerPageOptions}
+      />
 
       <CustomerForm
         isOpen={showForm}

@@ -466,14 +466,6 @@ const Invitations = () => {
         )}
       </div>
 
-      <Pagination
-        totalItems={filteredInvitations.length}
-        itemsPerPage={pageSize}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onItemsPerPageChange={setPageSize}
-      />
-
       <div className="invitations-table-container">
         <div className="invitations-table-wrapper">
           <table className="invitations-table">
@@ -585,7 +577,13 @@ const Invitations = () => {
         </div>
       </div>
 
-      {/* Pagination removed from bottom and moved to top */}
+      <Pagination
+        totalItems={filteredInvitations.length}
+        itemsPerPage={pageSize}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setPageSize}
+      />
 
       {/* Confirm Modal */}
       <ConfirmModal

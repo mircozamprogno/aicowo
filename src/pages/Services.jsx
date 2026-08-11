@@ -240,14 +240,6 @@ const Services = () => {
         </div>
       </div>
 
-      <Pagination
-        totalItems={services.length}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onItemsPerPageChange={setItemsPerPage}
-      />
-
       <div className="services-table-container">
         <div className="services-table-wrapper">
           <table className="services-table">
@@ -379,7 +371,13 @@ const Services = () => {
         </div>
       </div>
 
-
+      <Pagination
+        totalItems={services.length}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
 
       {showServiceInfo && (
         <div className="modal-overlay">
