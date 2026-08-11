@@ -31,7 +31,8 @@ const ContractsFilter = ({
     { value: 'active', label: t('contracts.active') },
     { value: 'expired', label: t('contracts.expired') },
     { value: 'cancelled', label: t('contracts.cancelled') },
-    { value: 'suspended', label: t('contracts.suspended') }
+    { value: 'suspended', label: t('contracts.suspended') },
+    { value: 'renewed', label: t('contracts.renewed') }
   ];
 
   const paymentStatusOptions = [
