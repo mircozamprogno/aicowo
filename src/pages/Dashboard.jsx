@@ -431,55 +431,62 @@ const Dashboard = () => {
 
       const contracts = activeContracts || [];
 
-      // Calculate current MRR (Monthly Recurring Revenue)
-      const currentMRR = contracts.reduce((sum, contract) => {
-        if (contract.service_type === 'abbonamento') {
-          // Assume monthly recurring for subscriptions
-          return sum + (parseFloat(contract.service_cost) || 0);
-        }
-        return sum;
-      }, 0);
+      // Accrual-based MRR: for each abbonamento contract, prorate service_cost
+      // by the number of days that fall within the target calendar month.
+      // All day math is done at UTC midnight to avoid off-by-one at month
+      // boundaries caused by DB dates being parsed with local-TZ offsets.
+      const MS_PER_DAY = 86400000;
+      const toUtcMidnight = (raw) => {
+        const d = String(raw).slice(0, 10); // YYYY-MM-DD
+        return Date.parse(d + 'T00:00:00Z');
+      };
+      const proratedForMonth = (contract, monthStartMs, monthEndMs) => {
+        if (contract.service_type !== 'abbonamento') return 0;
+        const cost = parseFloat(contract.service_cost) || 0;
+        const startMs = toUtcMidnight(contract.start_date);
+        const endMs = toUtcMidnight(contract.end_date);
+        const totalDays = Math.floor((endMs - startMs) / MS_PER_DAY) + 1;
+        if (totalDays <= 0 || cost <= 0) return 0;
+        const overlapStart = Math.max(startMs, monthStartMs);
+        const overlapEnd = Math.min(endMs, monthEndMs);
+        if (overlapEnd < overlapStart) return 0;
+        const overlapDays = Math.floor((overlapEnd - overlapStart) / MS_PER_DAY) + 1;
+        return cost * (overlapDays / totalDays);
+      };
+
+      const now = new Date();
+      const currentMonthStart = Date.UTC(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthEnd = Date.UTC(now.getFullYear(), now.getMonth() + 1, 0);
+      const lastMonthStart = Date.UTC(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = Date.UTC(now.getFullYear(), now.getMonth(), 0);
+
+      const currentMRR = contracts.reduce(
+        (sum, c) => sum + proratedForMonth(c, currentMonthStart, currentMonthEnd),
+        0
+      );
+      const lastMonthMRR = contracts.reduce(
+        (sum, c) => sum + proratedForMonth(c, lastMonthStart, lastMonthEnd),
+        0
+      );
 
       // Calculate total active contract value
       const totalActiveValue = contracts.reduce((sum, contract) => {
         return sum + (parseFloat(contract.service_cost) || 0);
       }, 0);
 
-      // Calculate month-over-month growth (simplified)
-      const thisMonth = new Date();
-      const lastMonth = new Date(thisMonth);
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const monthOverMonthGrowth = lastMonthMRR > 0
+        ? ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100
+        : 0;
 
-      const { data: lastMonthContracts, error: lastMonthError } = await supabase
-        .from('contracts')
-        .select('service_cost, service_type')
-        .eq('partner_uuid', profile.partner_uuid)
-        .eq('contract_status', 'active')
-        .eq('is_archived', false)
-        .lte('start_date', lastMonth.toISOString().split('T')[0]);
-
-      if (!lastMonthError) {
-        const lastMonthMRR = (lastMonthContracts || []).reduce((sum, contract) => {
-          if (contract.service_type === 'abbonamento') {
-            return sum + (parseFloat(contract.service_cost) || 0);
-          }
-          return sum;
-        }, 0);
-
-        const monthOverMonthGrowth = lastMonthMRR > 0
-          ? ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100
-          : 0;
-
-        setBusinessMetrics(prev => ({
-          ...prev,
-          revenueMetrics: {
-            currentMRR,
-            totalActiveValue,
-            monthOverMonthGrowth,
-            loading: false
-          }
-        }));
-      }
+      setBusinessMetrics(prev => ({
+        ...prev,
+        revenueMetrics: {
+          currentMRR,
+          totalActiveValue,
+          monthOverMonthGrowth,
+          loading: false
+        }
+      }));
     } catch (error) {
       logger.error('Error fetching revenue metrics:', error);
       setBusinessMetrics(prev => ({
