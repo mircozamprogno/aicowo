@@ -39,7 +39,7 @@ const ServiceFormPage = () => {
         location_id: '',
         resource_type: '', // Matches DB column
         cost: '',
-        currency: 'CHF',
+        currency: 'EUR',
         duration_days: '30',
         max_entries: '',
         service_status: 'active',
@@ -103,7 +103,7 @@ const ServiceFormPage = () => {
                         location_id: service.location_id?.toString() || '',
                         resource_type: service.resource_type || '', // Use correct DB column
                         cost: service.cost?.toString() || '',
-                        currency: service.currency || 'CHF',
+                        currency: service.currency || 'EUR',
                         duration_days: service.duration_days?.toString() || '30',
                         max_entries: service.max_entries?.toString() || '',
                         service_status: service.service_status || 'active',
@@ -383,7 +383,7 @@ const ServiceFormPage = () => {
                             <Select
                                 value={formData.currency}
                                 onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                                options={[{ value: 'CHF', label: 'CHF' }, { value: 'USD', label: 'USD' }, { value: 'GBP', label: 'GBP' }]}
+                                options={[{ value: 'EUR', label: 'EUR' }, { value: 'USD', label: 'USD' }, { value: 'GBP', label: 'GBP' }]}
                             />
                         </div>
                         <div className="form-field">

@@ -372,7 +372,7 @@ const ContractForm = ({
             service_type: 'abbonamento',
             service_description: '10 meeting room bookings',
             cost: 200.00,
-            currency: 'CHF',
+            currency: 'EUR',
             duration_days: 90,
             max_entries: 10,
             location_resources: {
@@ -1119,7 +1119,7 @@ const ContractForm = ({
     }
   };
 
-  const formatCurrency = (amount, currency = 'CHF') => {
+  const formatCurrency = (amount, currency = 'EUR') => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
       currency: currency,

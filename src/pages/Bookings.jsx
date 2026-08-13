@@ -1464,7 +1464,7 @@ const Bookings = () => {
                                 <span className="detail-value">
                                   {new Intl.NumberFormat('it-IT', {
                                     style: 'currency',
-                                    currency: contract.service_currency || 'CHF'
+                                    currency: contract.service_currency || 'EUR'
                                   }).format(contract.service_cost)}
                                 </span>
                               </div>
@@ -1550,7 +1550,7 @@ const Bookings = () => {
                                     <span className="stat-value">
                                       {new Intl.NumberFormat('it-IT', {
                                         style: 'currency',
-                                        currency: contract.service_currency || 'CHF'
+                                        currency: contract.service_currency || 'EUR'
                                       }).format(contract.service_cost / contract.service_max_entries)}
                                     </span>
                                   </div>
@@ -1559,7 +1559,7 @@ const Bookings = () => {
                                     <span className="stat-value">
                                       {new Intl.NumberFormat('it-IT', {
                                         style: 'currency',
-                                        currency: contract.service_currency || 'CHF'
+                                        currency: contract.service_currency || 'EUR'
                                       }).format((contract.service_cost / contract.service_max_entries) * entriesRemaining)}
                                     </span>
                                   </div>
@@ -2033,7 +2033,7 @@ const Bookings = () => {
                     <span className="detail-value">
                       {new Intl.NumberFormat('it-IT', {
                         style: 'currency',
-                        currency: selectedBooking.contracts.service_currency || 'CHF'
+                        currency: selectedBooking.contracts.service_currency || 'EUR'
                       }).format(selectedBooking.contracts.service_cost)}
                     </span>
                   </div>

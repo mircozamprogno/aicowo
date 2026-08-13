@@ -220,7 +220,7 @@ const PartnerContractForm = ({
         base_price: calculatedPricing.basePrice,
         discount_amount: calculatedPricing.discountAmount,
         final_price: calculatedPricing.finalPrice,
-        currency: selectedPlan?.currency || 'CHF',
+        currency: selectedPlan?.currency || 'EUR',
         auto_renew: formData.auto_renew,
         contract_terms: formData.contract_terms.trim() || null,
         notes: formData.notes.trim() || null,
@@ -329,8 +329,9 @@ const PartnerContractForm = ({
     }
   };
 
-  const formatCurrency = (amount, currency = 'CHF') => {
-    return new Intl.NumberFormat('de-CH', { style: 'currency',
+  const formatCurrency = (amount, currency = 'EUR') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount);
@@ -472,7 +473,7 @@ const PartnerContractForm = ({
                     <option key={discount.id} value={discount.id}>
                       {discount.code} - {discount.discount_type === 'percentage'
                         ? `${discount.discount_value}%`
-                        : formatCurrency(discount.discount_value, selectedPlan?.currency || 'CHF')
+                        : formatCurrency(discount.discount_value, selectedPlan?.currency || 'EUR')
                       } off
                     </option>
                   ))}

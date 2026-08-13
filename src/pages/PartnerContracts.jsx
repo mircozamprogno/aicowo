@@ -95,7 +95,7 @@ const PartnerContracts = () => {
             base_price: 79.99,
             discount_amount: 0,
             final_price: 79.99,
-            currency: 'CHF',
+            currency: 'USD',
             auto_renew: true,
             created_at: new Date().toISOString(),
             partners: {
@@ -126,7 +126,7 @@ const PartnerContracts = () => {
             base_price: 1199.99,
             discount_amount: 200.00,
             final_price: 999.99,
-            currency: 'CHF',
+            currency: 'USD',
             auto_renew: false,
             created_at: new Date(Date.now() - 86400000).toISOString(),
             partners: {
@@ -348,8 +348,9 @@ const PartnerContracts = () => {
     setSelectedContract(null);
   };
 
-  const formatCurrency = (amount, currency = 'CHF') => {
-    return new Intl.NumberFormat('de-CH', { style: 'currency',
+  const formatCurrency = (amount, currency = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount);
@@ -621,15 +622,15 @@ const PartnerContracts = () => {
                     <td className="partner-contracts-table-cell">
                       <div className="amount-info">
                         <div className="final-price">
-                          {formatCurrency(contract.final_price, contract.partners_pricing_plans?.currency || 'CHF')}
+                          {formatCurrency(contract.final_price, contract.partners_pricing_plans?.currency || 'EUR')}
                         </div>
                         {contract.discount_amount > 0 && (
                           <div className="discount-info">
                             <span className="base-price">
-                              {formatCurrency(contract.base_price, contract.partners_pricing_plans?.currency || 'CHF')}
+                              {formatCurrency(contract.base_price, contract.partners_pricing_plans?.currency || 'EUR')}
                             </span>
                             <span className="discount">
-                              -{formatCurrency(contract.discount_amount, contract.partners_pricing_plans?.currency || 'CHF')}
+                              -{formatCurrency(contract.discount_amount, contract.partners_pricing_plans?.currency || 'EUR')}
                             </span>
                           </div>
                         )}

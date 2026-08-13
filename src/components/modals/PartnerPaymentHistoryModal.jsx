@@ -43,7 +43,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
             payment_period_start: '2025-01-01',
             payment_period_end: '2025-01-31',
             amount: contract.final_price || 79.99,
-            currency: contract?.partners_pricing_plans?.currency || 'CHF',
+            currency: contract?.partners_pricing_plans?.currency || 'EUR',
             payment_status: 'paid',
             payment_date: '2025-01-01',
             due_date: '2025-01-01',
@@ -57,7 +57,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
             payment_period_start: '2025-02-01',
             payment_period_end: '2025-02-28',
             amount: contract.final_price || 79.99,
-            currency: contract?.partners_pricing_plans?.currency || 'CHF',
+            currency: contract?.partners_pricing_plans?.currency || 'EUR',
             payment_status: 'pending',
             payment_date: null,
             due_date: '2025-02-01',
@@ -140,7 +140,8 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
   };
 
   const formatCurrency = (amount, currency) => {
-    return new Intl.NumberFormat('de-CH', { style: 'currency',
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount);

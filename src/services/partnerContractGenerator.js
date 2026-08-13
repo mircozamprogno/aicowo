@@ -35,10 +35,11 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
     };
     
     // Helper function to format currency
-    const formatCurrency = (amount, currency = 'CHF') => {
+    const formatCurrency = (amount, currency = 'EUR') => {
       // Get currency from the contract's plan, not hardcoded
       const contractCurrency = contract.partners_pricing_plans?.currency || currency;
-      return new Intl.NumberFormat('de-CH', { style: 'currency',
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
         currency: contractCurrency,
         minimumFractionDigits: 2,
       }).format(amount);
@@ -344,7 +345,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
       
       // Amount - use the correct price based on billing frequency
       let price = 0;
-      const currency = contract.partners_pricing_plans?.currency || contract.currency || 'CHF';
+      const currency = contract.partners_pricing_plans?.currency || contract.currency || 'EUR';
       
       logger.log('Currency being used:', currency);
       logger.log('Plan currency:', contract.partners_pricing_plans?.currency);
@@ -378,7 +379,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
       
       // Show both monthly and yearly prices if available
       if (plan.monthly_price && plan.yearly_price) {
-        const currency = plan.currency || 'CHF'; // Use plan's currency
+        const currency = plan.currency || 'EUR'; // Use plan's currency
         pdf.text(`${t('partnerContracts.monthlyPrice') || 'Prezzo Mensile'}: ${formatCurrency(plan.monthly_price, currency)}`, col1X, currentY);
         currentY += 4;
         pdf.text(`${t('partnerContracts.yearlyPrice') || 'Prezzo Annuale'}: ${formatCurrency(plan.yearly_price, currency)}`, col1X, currentY);
@@ -387,7 +388,7 @@ export const generatePartnerContractPDF = async (contract, partnerData, logoUrl,
       
       // Show discount if any
       if (contract.discount_amount && contract.discount_amount > 0) {
-        const currency = plan.currency || 'CHF'; // Use plan's currency
+        const currency = plan.currency || 'EUR'; // Use plan's currency
         pdf.text(`${t('partnerContracts.discount') || 'Sconto'}: ${formatCurrency(contract.discount_amount, currency)}`, col1X, currentY);
         currentY += 4;
       }

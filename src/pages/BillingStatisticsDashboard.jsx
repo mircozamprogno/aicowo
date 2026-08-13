@@ -339,7 +339,7 @@ const BillingStatisticsDashboard = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
-      currency: 'CHF'
+      currency: 'EUR'
     }).format(amount);
   };
 

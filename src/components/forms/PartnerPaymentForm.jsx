@@ -22,7 +22,7 @@ const PartnerPaymentForm = ({
     payment_period_start: '',
     payment_period_end: '',
     amount: '',
-    currency: 'CHF',
+    currency: 'EUR',
     payment_status: 'paid',
     payment_date: new Date().toISOString().split('T')[0],
     due_date: '',
@@ -40,7 +40,7 @@ const PartnerPaymentForm = ({
         payment_period_start: payment.payment_period_start || '',
         payment_period_end: payment.payment_period_end || '',
         amount: payment.amount?.toString() || '',
-        currency: payment.currency || 'CHF',
+        currency: payment.currency || 'EUR',
         payment_status: payment.payment_status || 'paid',
         payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
         due_date: payment.due_date || '',
@@ -58,7 +58,7 @@ const PartnerPaymentForm = ({
         payment_period_start: startOfMonth.toISOString().split('T')[0],
         payment_period_end: endOfMonth.toISOString().split('T')[0],
         amount: contract.final_price?.toString() || '',
-        currency: contract.currency || 'CHF',
+        currency: contract.currency || 'EUR',
         payment_status: 'paid',
         payment_date: new Date().toISOString().split('T')[0],
         due_date: new Date().toISOString().split('T')[0],
@@ -186,8 +186,8 @@ const PartnerPaymentForm = ({
     }
   };
 
-  const formatCurrency = (amount, currency = 'CHF') => {
-    const locale = currency === 'CHF' ? 'de-CH' : 
+  const formatCurrency = (amount, currency = 'EUR') => {
+    const locale = currency === 'EUR' ? 'de-DE' : 
                   currency === 'GBP' ? 'en-GB' : 'en-US';
     
     return new Intl.NumberFormat(locale, {
@@ -282,7 +282,7 @@ const PartnerPaymentForm = ({
                   value={formData.currency}
                   onChange={handleChange}
                 >
-                  <option value="CHF">CHF</option>
+                  <option value="EUR">EUR</option>
                   <option value="USD">USD</option>
                   <option value="GBP">GBP</option>
                 </select>

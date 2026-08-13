@@ -220,7 +220,7 @@ export const CSVExportService = {
           
           // Financial data
           baseAmount.toFixed(2),
-          contract.service_currency || 'CHF',
+          contract.service_currency || 'EUR',
           vatPercentage.toFixed(1),
           vatAmount.toFixed(2),
           totalAmount.toFixed(2),

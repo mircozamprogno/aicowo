@@ -132,7 +132,7 @@ const PaymentHistoryModal = ({
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
-      currency: contract?.service_currency || 'CHF'
+      currency: contract?.service_currency || 'EUR'
     }).format(amount || 0);
   };
 

@@ -154,7 +154,7 @@ const AllPartnersBilling = () => {
     }
   };
 
-  const formatCurrency = (amount, currency = 'CHF') => {
+  const formatCurrency = (amount, currency = 'EUR') => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
       currency: currency
