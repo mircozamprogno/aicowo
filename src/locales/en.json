@@ -1871,7 +1871,7 @@
     "endDateMustBeAfterStartDate": "End date must be after start date",
     "codeAlreadyExists": "This discount code already exists",
     "percentageHelp": "Enter percentage (0-100)",
-    "fixedAmountHelp": "Enter fixed amount in EUR",
+    "fixedAmountHelp": "Enter fixed amount in CHF",
     "usageLimitHelp": "Leave empty for unlimited usage"
   },
   "support": {

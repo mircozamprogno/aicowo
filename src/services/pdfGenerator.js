@@ -34,7 +34,7 @@ export const generateContractPDF = async (contract, partnerData, logoUrl, t) => 
     };
 
     // Helper function to format currency
-    const formatCurrency = (amount, currency = 'EUR') => {
+    const formatCurrency = (amount, currency = 'CHF') => {
       return new Intl.NumberFormat('it-IT', {
         style: 'currency',
         currency: currency,
@@ -509,7 +509,7 @@ export const generateInvoicePDF = async (payment, partnerData, logoUrl, t) => {
       return y + (lines.length * lineHeight);
     };
 
-    const formatCurrency = (amount, currency = 'EUR') => {
+    const formatCurrency = (amount, currency = 'CHF') => {
       return new Intl.NumberFormat('it-IT', {
         style: 'currency',
         currency: currency,

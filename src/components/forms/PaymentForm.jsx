@@ -349,7 +349,7 @@ const PaymentForm = ({
         amount_gross: breakdown.gross,
         vat_percentage: breakdown.vatPercentage,
         created_by: user.id,
-        currency: contract.service_currency || 'EUR'
+        currency: contract.service_currency || 'CHF'
       };
 
       let result;
@@ -399,7 +399,7 @@ const PaymentForm = ({
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
-      currency: contract?.service_currency || 'EUR'
+      currency: contract?.service_currency || 'CHF'
     }).format(amount || 0);
   };
 

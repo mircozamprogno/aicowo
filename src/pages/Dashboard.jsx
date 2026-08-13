@@ -1350,9 +1350,8 @@ const Dashboard = () => {
 
 
   // Format currency helper
-  const formatCurrency = (amount, currency = 'EUR') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const formatCurrency = (amount, currency = 'CHF') => {
+    return new Intl.NumberFormat('de-CH', { style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -2124,9 +2123,8 @@ const Dashboard = () => {
                 <div className="stat-info">
                   <div className="stat-label">{t('dashboard.totalContractValue')}</div>
                   <div className="stat-value">
-                    {stats.loading ? '...' : new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'EUR',
+                    {stats.loading ? '...' : new Intl.NumberFormat('de-CH', { style: 'currency',
+                      currency: 'CHF',
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     }).format(stats.totalContractValue)}

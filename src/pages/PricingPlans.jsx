@@ -172,9 +172,8 @@ const PricingPlans = () => {
     fetchPlans();
   };
 
-  const formatCurrency = (amount, currency = 'EUR') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+  const formatCurrency = (amount, currency = 'CHF') => {
+    return new Intl.NumberFormat('de-CH', { style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount);

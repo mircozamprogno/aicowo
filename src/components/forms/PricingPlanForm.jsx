@@ -17,7 +17,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
     plan_description: '',
     monthly_price: '',
     yearly_price: '',
-    currency: 'EUR', // Add currency field with EUR default
+    currency: 'CHF', // Currency field, default CHF
     plan_status: 'active',
     is_trial: false,
     trial_duration_days: ''
@@ -27,7 +27,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
 
   // Add this currency options array near the top of your component:
   const currencyOptions = [
-    { value: 'EUR', label: 'EUR (€)', symbol: '€' },
+    { value: 'CHF', label: 'CHF (Fr.)', symbol: 'Fr.' },
     { value: 'USD', label: 'USD ($)', symbol: '$' },
     { value: 'GBP', label: 'GBP (£)', symbol: '£' },
     { value: 'CHF', label: 'CHF (Fr)', symbol: 'Fr' },
@@ -44,8 +44,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
     
     try {
       const numAmount = parseFloat(amount);
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
+      return new Intl.NumberFormat('de-CH', { style: 'currency',
         currency: currency.trim(),
         minimumFractionDigits: 2,
       }).format(numAmount);
@@ -65,7 +64,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
         plan_description: plan.plan_description || '',
         monthly_price: plan.monthly_price?.toString() || '',
         yearly_price: plan.yearly_price?.toString() || '',
-        currency: plan.currency || 'EUR', // Ensure currency is always set
+        currency: plan.currency || 'CHF', // Ensure currency is always set
         plan_status: plan.plan_status || 'active',
         is_trial: plan.is_trial || false,
         trial_duration_days: plan.trial_duration_days?.toString() || ''
@@ -78,7 +77,7 @@ const PricingPlanForm = ({ isOpen, onClose, onSuccess, plan = null }) => {
         plan_description: '',
         monthly_price: '',
         yearly_price: '',
-        currency: 'EUR', // Default currency
+        currency: 'CHF', // Default currency
         plan_status: 'active',
         is_trial: false,
         trial_duration_days: ''

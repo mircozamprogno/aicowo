@@ -216,7 +216,7 @@ const Contracts = () => {
             service_name: 'Hot Desk Monthly',
             service_type: 'abbonamento',
             service_cost: 150.00,
-            service_currency: 'EUR',
+            service_currency: 'CHF',
             location_name: 'Milano Centro',
             location_id: 1,
             resource_name: 'Hot Desks Area A',
@@ -247,7 +247,7 @@ const Contracts = () => {
             service_name: 'Meeting Room Package',
             service_type: 'pacchetto',
             service_cost: 200.00,
-            service_currency: 'EUR',
+            service_currency: 'CHF',
             location_name: 'Milano Centro',
             location_id: 1,
             resource_name: 'Small Meeting Room',
@@ -631,7 +631,7 @@ const Contracts = () => {
     fetchContracts();
   };
 
-  const formatCurrency = (amount, currency = 'EUR') => {
+  const formatCurrency = (amount, currency = 'CHF') => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
       currency: currency,

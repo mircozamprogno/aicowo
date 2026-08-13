@@ -201,7 +201,7 @@ const BulkUploadModal = ({
                         <div className="contract-details">
                           {contract.customers?.company_name || 
                            `${contract.customers?.first_name} ${contract.customers?.second_name}`} - 
-                          {contract.service_name} - €{contract.service_cost}
+                          {contract.service_name} - CHF {contract.service_cost}
                         </div>
                       </div>
 
