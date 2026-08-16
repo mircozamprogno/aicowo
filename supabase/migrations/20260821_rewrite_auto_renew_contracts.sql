@@ -44,6 +44,7 @@ begin
       and c.is_archived = false
   loop
     v_total_processed := v_total_processed + 1;
+      v_active_booking_id := null;
 
     begin
       v_duration_days := v_contract.duration_days::integer;
