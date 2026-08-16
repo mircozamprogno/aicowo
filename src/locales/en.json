@@ -1492,7 +1492,8 @@
     "date": "Date",
     "fileUploadHint": "JPEG, PNG, WebP, PDF up to 5MB",
     "validAmountRemaining": "Valid amount. Remaining:",
-    "afterPayment": "Outstanding after payment"
+    "afterPayment": "Outstanding after payment",
+    "period": "Period"
   },
   "planFeatures": {
     "title": "Plan Features",

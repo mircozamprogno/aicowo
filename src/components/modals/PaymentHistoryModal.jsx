@@ -268,6 +268,7 @@ const PaymentHistoryModal = ({
                         <th>{t('payments.amount') || 'Importo'}</th>
                         <th>{t('payments.method') || 'Metodo'}</th>
                         <th>{t('payments.date') || 'Data'}</th>
+                        <th>{t('payments.period') || 'Periodo'}</th>
                         {canEditPayments && <th>{t('contracts.actionsColumn') || 'Azioni'}</th>}
                       </tr>
                     </thead>
@@ -297,6 +298,12 @@ const PaymentHistoryModal = ({
 
                           <td className="payment-date-cell">
                             {formatDate(payment.payment_date)}
+                          </td>
+
+                          <td className="payment-period-cell">
+                            {payment.period_start && payment.period_end
+                              ? `${formatDate(payment.period_start)} – ${formatDate(payment.period_end)}`
+                              : '—'}
                           </td>
 
                           {canEditPayments && (
