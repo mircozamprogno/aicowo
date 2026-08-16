@@ -2109,7 +2109,11 @@
     "contractCreation": "Creazione Nuovo Contratto",
     "contractCreationDescription": "Inviata ai clienti quando viene creato un nuovo contratto",
     "customerBookingDeleted": "Prenotazione Cancellata",
-    "customerBookingDeletedDescription": "Inviata ai clienti quando una prenotazione viene cancellata dal partner"
+    "customerBookingDeletedDescription": "Inviata ai clienti quando una prenotazione viene cancellata dal partner",
+    "contractRenewed": "Contratto Rinnovato",
+    "contractRenewedDescription": "Inviata ai clienti dopo il rinnovo automatico del loro contratto",
+    "renewalAtRisk": "Rinnovo a Rischio",
+    "renewalAtRiskDescription": "Inviata all'admin del partner quando un rinnovo automatico imminente non trova una risorsa disponibile"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto",

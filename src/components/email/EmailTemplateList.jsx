@@ -1,5 +1,5 @@
 // src/components/email/EmailTemplateList.jsx
-import { Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Shield, UserPlus, XCircle } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Shield, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -44,6 +44,18 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.customerBookingDeleted',
     descriptionKey: 'emailTemplates.customerBookingDeletedDescription',
     icon: 'XCircle'
+  },
+  contract_renewed: {
+    id: 'contract_renewed',
+    nameKey: 'emailTemplates.contractRenewed',
+    descriptionKey: 'emailTemplates.contractRenewedDescription',
+    icon: 'CheckCircle'
+  },
+  renewal_at_risk: {
+    id: 'renewal_at_risk',
+    nameKey: 'emailTemplates.renewalAtRisk',
+    descriptionKey: 'emailTemplates.renewalAtRiskDescription',
+    icon: 'AlertTriangle'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
@@ -107,7 +119,8 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       Mail: Mail,
       Clock: Clock,
       FileText: FileText,
-      XCircle: XCircle
+      XCircle: XCircle,
+      AlertTriangle: AlertTriangle
     };
     const Icon = icons[iconName] || UserPlus;
     return <Icon size={24} />;

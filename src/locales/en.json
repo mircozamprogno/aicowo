@@ -1977,7 +1977,11 @@
     "contractCreation": "Contract Creation",
     "contractCreationDescription": "Sent to customers when a new contract is created",
     "customerBookingDeleted": "Booking Cancelled",
-    "customerBookingDeletedDescription": "Sent to customers when a booking is cancelled by the partner"
+    "customerBookingDeletedDescription": "Sent to customers when a booking is cancelled by the partner",
+    "contractRenewed": "Contract Renewed",
+    "contractRenewedDescription": "Sent to customers after their contract is automatically renewed",
+    "renewalAtRisk": "Renewal at Risk",
+    "renewalAtRiskDescription": "Sent to partner admins when an upcoming auto-renewal cannot find an available resource"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",
