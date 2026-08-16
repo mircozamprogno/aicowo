@@ -33,3 +33,6 @@ docs/
 
 # Local-only DB connection string (contains credentials)
 supabase/connection.sql
+
+# Local Supabase CLI project link state
+supabase/.temp/
