@@ -1240,7 +1240,8 @@
     "contractTotal": "Totale Contratto",
     "contractDetails": "Dettagli contratto",
     "dayPassValidOnlyThisDay": "Giornaliero valido solo per la data selezionata",
-    "serviceLinkedToResource": "Questo servizio è collegato a una risorsa specifica."
+    "serviceLinkedToResource": "Questo servizio è collegato a una risorsa specifica.",
+    "needsResourceReassignment": "Necessita riassegnazione risorsa"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

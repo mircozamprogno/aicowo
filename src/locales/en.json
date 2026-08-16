@@ -1125,7 +1125,8 @@
     "contractAmountBreakdown": "Contract Amount Breakdown",
     "contractTotal": "Contract Total",
     "contractDetails": "Contract Details",
-    "dayPassValidOnlyThisDay": "Day pass valid only on the selected date"
+    "dayPassValidOnlyThisDay": "Day pass valid only on the selected date",
+    "needsResourceReassignment": "Needs resource reassignment"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",

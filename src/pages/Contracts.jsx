@@ -68,6 +68,7 @@ const Contracts = () => {
 
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [onlyNeedsResource, setOnlyNeedsResource] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -181,6 +182,12 @@ const Contracts = () => {
             id,
             location_name,
             vat_percentage
+          ),
+          bookings (
+            id,
+            end_date,
+            booking_status,
+            is_archived
           )
         `)
         .eq('is_archived', false)
@@ -811,10 +818,17 @@ const Contracts = () => {
   }
 
   // Pagination logic
-  const totalContractsCount = filteredContracts.length >= 0 ? filteredContracts.length : contracts.length;
+  const baseContracts = filteredContracts.length >= 0 ? filteredContracts : contracts;
+  const displayFilter = onlyNeedsResource
+    ? baseContracts.filter(c =>
+        Array.isArray(c.bookings) &&
+        c.bookings.some(b => b.booking_status === 'active' && !b.is_archived && b.end_date < c.end_date)
+      )
+    : baseContracts;
+  const totalContractsCount = displayFilter.length;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const contractsToDisplayTotal = filteredContracts.length >= 0 ? filteredContracts : contracts;
+  const contractsToDisplayTotal = displayFilter;
   const contractsToDisplay = contractsToDisplayTotal.slice(startIndex, endIndex);
 
 
@@ -967,6 +981,21 @@ const Contracts = () => {
             }) || `Showing ${contractsToDisplay.length} of ${contracts.length} contracts`}
           </span>
         </div>
+      )}
+
+      {!isCustomer && (
+        <label className="filter-chip">
+          <input
+            type="checkbox"
+            checked={onlyNeedsResource}
+            onChange={(e) => {
+              setOnlyNeedsResource(e.target.checked);
+              setCurrentPage(1);
+            }}
+          />
+          <AlertTriangle size={14} />
+          {t('contracts.needsResourceReassignment') || 'Necessita riassegnazione risorsa'}
+        </label>
       )}
 
       <div className="contracts-mobile-list">
