@@ -285,7 +285,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
                     <div className="payment-info">
                       <div className="payment-period">
                         <Calendar size={16} />
-                        {formatDate(payment.period_start)} - {formatDate(payment.period_end)}
+                        {formatDate(payment.payment_period_start)} - {formatDate(payment.payment_period_end)}
                       </div>
                       <div className="payment-details">
                         <span className="payment-amount">
@@ -397,7 +397,7 @@ const PartnerPaymentHistoryModal = ({ isOpen, onClose, contract }) => {
                     <div className="summary-item">
                       <span className="summary-label">{t('partnerContracts.period')}:</span>
                       <span className="summary-value">
-                        {formatDate(paymentToDelete.period_start)} - {formatDate(paymentToDelete.period_end)}
+                        {formatDate(paymentToDelete.payment_period_start)} - {formatDate(paymentToDelete.payment_period_end)}
                       </span>
                     </div>
                     <div className="summary-item">
