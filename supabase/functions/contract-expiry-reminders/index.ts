@@ -433,7 +433,7 @@ serve(async (req) => {
                 // 4. Fetch service + resource
                 const { data: serviceData, error: serviceErr } = await supabase
                     .from("services")
-                    .select("location_resource_id, duration_days, location_resources ( resource_name )")
+                    .select("location_resource_id, duration_days, location_resources!fk_services_location_resource ( resource_name )")
                     .eq("id", arContract.service_id)
                     .single();
 
