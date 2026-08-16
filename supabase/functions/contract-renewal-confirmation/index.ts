@@ -88,8 +88,12 @@ serve(async (_req) => {
           month: "long",
           day: "numeric",
         });
-        const amount = latestPayment?.amount ?? contract.service_cost ?? "";
+        const rawAmount = latestPayment?.amount ?? contract.service_cost ?? 0;
         const currency = latestPayment?.currency ?? contract.service_currency ?? "EUR";
+        const amount = new Intl.NumberFormat("it-IT", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(Number(rawAmount));
 
         const substitute = (s: string) =>
           s
