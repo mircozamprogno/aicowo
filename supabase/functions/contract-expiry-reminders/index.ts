@@ -19,6 +19,108 @@ interface EmailResult {
     skipped?: string;
 }
 
+interface SendTemplateEmailParams {
+    supabase: ReturnType<typeof createClient>;
+    partnerUuid: string;
+    templateType: string;
+    recipientEmail: string;
+    variables: Record<string, string>;
+    partnerFromName: string;
+}
+
+interface SendTemplateEmailResult {
+    success: boolean;
+    response?: unknown;
+    error?: string;
+    templateFound: boolean;
+}
+
+async function sendTemplateEmail({
+    supabase,
+    partnerUuid,
+    templateType,
+    recipientEmail,
+    variables,
+    partnerFromName,
+}: SendTemplateEmailParams): Promise<SendTemplateEmailResult> {
+    // Fetch email template
+    const { data: templateData, error: templateError } = await supabase
+        .from("email_templates")
+        .select("body_html, subject_line")
+        .eq("partner_uuid", partnerUuid)
+        .eq("template_type", templateType)
+        .single();
+
+    let bodyHtml = "<p>Your contract is expiring soon.</p>";
+    let emailSubject = "Contract Expiry Reminder";
+    const templateFound = !!(templateData && !templateError);
+
+    if (templateFound) {
+        bodyHtml = templateData.body_html;
+        emailSubject = templateData.subject_line || emailSubject;
+    }
+
+    // Substitute all {{key}} placeholders in subject and body
+    for (const [key, value] of Object.entries(variables)) {
+        const pattern = new RegExp(`\\{\\{${key}\\}\\}`, "g");
+        emailSubject = emailSubject.replace(pattern, value);
+        bodyHtml = bodyHtml.replace(pattern, value);
+    }
+
+    // Fetch banner URL from storage
+    const { data: bannerFiles } = await supabase.storage
+        .from("partners")
+        .list(`${partnerUuid}`, { search: "email_banner" });
+
+    const bannerFile = bannerFiles?.find(file => file.name.startsWith("email_banner."));
+    let bannerUrl = "";
+
+    if (bannerFile) {
+        const { data: urlData } = supabase.storage
+            .from("partners")
+            .getPublicUrl(`${partnerUuid}/${bannerFile.name}`);
+        bannerUrl = urlData.publicUrl;
+    }
+
+    // POST to OneSignal
+    const emailPayload = {
+        app_id: ONESIGNAL_APP_ID,
+        email_from_name: partnerFromName,
+        email_subject: emailSubject,
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
+        template_id: ONESIGNAL_UNIQUE_TEMPLATE_ID,
+        target_channel: "email",
+        include_email_tokens: [recipientEmail],
+        include_aliases: {
+            external_id: [partnerUuid]
+        },
+        custom_data: {
+            banner_url: bannerUrl,
+            body_html: bodyHtml
+        }
+    };
+
+    const emailResponse = await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Basic ${ONESIGNAL_API_KEY}`
+        },
+        body: JSON.stringify(emailPayload)
+    });
+
+    const emailResult = await emailResponse.json();
+    const success = emailResponse.ok && !!emailResult.id;
+
+    return {
+        success,
+        response: emailResult,
+        error: success ? undefined : JSON.stringify(emailResult),
+        templateFound,
+    };
+}
+
 serve(async (req) => {
     try {
         console.log("🚀 Contract Expiry Reminders - Starting...");
@@ -154,22 +256,6 @@ serve(async (req) => {
                     continue;
                 }
 
-                // Fetch email template
-                const { data: templateData, error: templateError } = await supabase
-                    .from("email_templates")
-                    .select("body_html, subject_line")
-                    .eq("partner_uuid", contract.partner_uuid)
-                    .eq("template_type", "expiry_reminder")
-                    .single();
-
-                let bodyHtml = "<p>Your contract is expiring soon.</p>";
-                let emailSubject = "Contract Expiry Reminder";
-
-                if (templateData && !templateError) {
-                    bodyHtml = templateData.body_html;
-                    emailSubject = templateData.subject_line || emailSubject;
-                }
-
                 // Prepare template variables
                 const customerName = contract.customers?.company_name ||
                     `${contract.customers?.first_name || ""} ${contract.customers?.second_name || ""}`.trim();
@@ -189,87 +275,38 @@ serve(async (req) => {
                     expiryStatus = `scaduto da ${Math.abs(daysDifference)} ${Math.abs(daysDifference) === 1 ? 'giorno' : 'giorni'}`;
                 }
 
-                // Replace variables
-                emailSubject = emailSubject
-                    .replace(/\{\{customer_name\}\}/g, customerName)
-                    .replace(/\{\{contract_number\}\}/g, contract.contract_number)
-                    .replace(/\{\{service_name\}\}/g, contract.service_name)
-                    .replace(/\{\{end_date\}\}/g, formattedEndDate)
-                    .replace(/\{\{expiry_date\}\}/g, formattedEndDate)
-                    .replace(/\{\{days_until_expiry\}\}/g, daysDifference.toString())
-                    .replace(/\{\{expiry_status\}\}/g, expiryStatus)
-                    .replace(/\{\{partner_name\}\}/g, partnerName)
-                    .replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || "")
-                    .replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || "");
-
                 const formattedAmount = new Intl.NumberFormat('it-IT', {
                     style: 'currency',
                     currency: contract.service_currency || 'EUR'
                 }).format(contract.service_cost || 0);
 
-                bodyHtml = bodyHtml
-                    .replace(/\{\{customer_name\}\}/g, customerName)
-                    .replace(/\{\{contract_number\}\}/g, contract.contract_number)
-                    .replace(/\{\{service_name\}\}/g, contract.service_name)
-                    .replace(/\{\{contract_type\}\}/g, contract.service_type)
-                    .replace(/\{\{expiry_type\}\}/g, contract.service_type)
-                    .replace(/\{\{end_date\}\}/g, formattedEndDate)
-                    .replace(/\{\{expiry_date\}\}/g, formattedEndDate)
-                    .replace(/\{\{days_until_expiry\}\}/g, daysDifference.toString())
-                    .replace(/\{\{expiry_status\}\}/g, expiryStatus)
-                    .replace(/\{\{partner_name\}\}/g, partnerName)
-                    .replace(/\{\{structure_name\}\}/g, partnerData.structure_name || "")
-                    .replace(/\{\{partner_firstname\}\}/g, partnerData.first_name || "")
-                    .replace(/\{\{partner_lastname\}\}/g, partnerData.second_name || "")
-                    .replace(/\{\{amount\}\}/g, formattedAmount);
-
-                // Fetch banner URL
-                const { data: bannerFiles } = await supabase.storage
-                    .from("partners")
-                    .list(`${contract.partner_uuid}`, { search: "email_banner" });
-
-                const bannerFile = bannerFiles?.find(file => file.name.startsWith("email_banner."));
-                let bannerUrl = "";
-
-                if (bannerFile) {
-                    const { data: urlData } = supabase.storage
-                        .from("partners")
-                        .getPublicUrl(`${contract.partner_uuid}/${bannerFile.name}`);
-                    bannerUrl = urlData.publicUrl;
-                }
-
-                // Send email via OneSignal
-                const emailPayload = {
-                    app_id: ONESIGNAL_APP_ID,
-                    email_from_name: partnerName,
-                    email_subject: emailSubject,
-                    email_from_address: "app@powercowo.com",
-                    email_reply_to_address: "app@powercowo.com",
-                    template_id: ONESIGNAL_UNIQUE_TEMPLATE_ID,
-                    target_channel: "email",
-                    include_email_tokens: [contract.customers?.email],
-                    include_aliases: {
-                        external_id: [contract.partner_uuid]
-                    },
-                    custom_data: {
-                        banner_url: bannerUrl,
-                        body_html: bodyHtml
-                    }
+                const variables: Record<string, string> = {
+                    customer_name: customerName,
+                    contract_number: contract.contract_number,
+                    service_name: contract.service_name,
+                    contract_type: contract.service_type,
+                    expiry_type: contract.service_type,
+                    end_date: formattedEndDate,
+                    expiry_date: formattedEndDate,
+                    days_until_expiry: daysDifference.toString(),
+                    expiry_status: expiryStatus,
+                    partner_name: partnerName,
+                    structure_name: partnerData.structure_name || "",
+                    partner_firstname: partnerData.first_name || "",
+                    partner_lastname: partnerData.second_name || "",
+                    amount: formattedAmount,
                 };
 
                 console.log("📤 Sending email to:", contract.customers?.email);
 
-                const emailResponse = await fetch("https://onesignal.com/api/v1/notifications", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Basic ${ONESIGNAL_API_KEY}`
-                    },
-                    body: JSON.stringify(emailPayload)
+                const { success: emailSuccess, response: emailResult, error: emailError } = await sendTemplateEmail({
+                    supabase,
+                    partnerUuid: contract.partner_uuid,
+                    templateType: "expiry_reminder",
+                    recipientEmail: contract.customers?.email,
+                    variables,
+                    partnerFromName: partnerName,
                 });
-
-                const emailResult = await emailResponse.json();
-                const emailSuccess = emailResponse.ok && emailResult.id;
 
                 if (emailSuccess) {
                     console.log("✅ Email sent successfully");
@@ -303,7 +340,7 @@ serve(async (req) => {
                     customer_email: contract.customers?.email || "unknown",
                     days_difference: daysDifference,
                     success: emailSuccess,
-                    error: emailSuccess ? undefined : JSON.stringify(emailResult)
+                    error: emailSuccess ? undefined : emailError
                 });
 
             } catch (error) {
