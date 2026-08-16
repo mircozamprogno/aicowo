@@ -178,20 +178,9 @@ serve(async (req) => {
 
         console.log(`📋 Found ${contracts?.length || 0} contracts to process`);
 
-        if (!contracts || contracts.length === 0) {
-            return new Response(
-                JSON.stringify({
-                    success: true,
-                    message: "No contracts to process today",
-                    processed: 0
-                }),
-                { headers: { "Content-Type": "application/json" } }
-            );
-        }
-
         const results: EmailResult[] = [];
 
-        for (const contract of contracts) {
+        for (const contract of contracts || []) {
             try {
                 const endDate = new Date(contract.end_date);
                 endDate.setHours(0, 0, 0, 0);
@@ -356,11 +345,243 @@ serve(async (req) => {
             }
         }
 
+        // ── Auto-renew preflight window ──────────────────────────────────────────
+        // Any auto-renew abbonamento contract renewing within 14 days.
+        // Per-partner lead is applied inside the loop from partners.renewal_alert_lead_days.
+        // 14 is a safety ceiling above any realistic partner-configured lead time.
+        const { data: autoRenewContracts, error: autoRenewErr } = await supabase
+            .from("contracts")
+            .select("id, contract_number, end_date, service_id, partner_uuid, renewal_alert_sent_at, customers ( first_name, second_name, company_name )")
+            .eq("auto_renew", true)
+            .eq("is_renewable", true)
+            .eq("contract_status", "active")
+            .eq("service_type", "abbonamento")
+            .eq("is_archived", false)
+            .gte("end_date", today.toISOString().split("T")[0])
+            .lte("end_date", new Date(today.getTime() + 14 * 86400000).toISOString().split("T")[0])
+            .order("end_date", { ascending: true });
+
+        if (autoRenewErr) {
+            console.error("❌ Auto-renew preflight query error:", autoRenewErr);
+        }
+
+        console.log(`\n🔍 Auto-renew preflight: ${autoRenewContracts?.length || 0} contracts in 14-day window`);
+
+        interface PreflightResult {
+            contract_id: number;
+            contract_number: string;
+            days_until_renewal: number;
+            success: boolean;
+            error?: string;
+            skipped?: string;
+        }
+
+        const preflightResults: PreflightResult[] = [];
+
+        for (const arContract of autoRenewContracts || []) {
+            try {
+                // 1. Skip if already alerted this cycle
+                if (arContract.renewal_alert_sent_at !== null) {
+                    console.log(`⏭️ Preflight: alert already sent for ${arContract.contract_number}`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: 0,
+                        success: true,
+                        skipped: "alert_already_sent"
+                    });
+                    continue;
+                }
+
+                // 2. Fetch partner: email, company_name, structure_name, renewal_alert_lead_days
+                const { data: arPartner, error: arPartnerErr } = await supabase
+                    .from("partners")
+                    .select("email, company_name, structure_name, renewal_alert_lead_days")
+                    .eq("partner_uuid", arContract.partner_uuid)
+                    .single();
+
+                if (arPartnerErr || !arPartner) {
+                    console.error(`❌ Preflight: partner not found for ${arContract.contract_number}`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: 0,
+                        success: false,
+                        error: "Partner not found"
+                    });
+                    continue;
+                }
+
+                // 3. Compute days until renewal and apply per-partner lead filter
+                const arEndDate = new Date(arContract.end_date);
+                arEndDate.setHours(0, 0, 0, 0);
+                const daysUntilRenewal = Math.ceil((arEndDate.getTime() - today.getTime()) / 86400000);
+                const leadDays = arPartner.renewal_alert_lead_days ?? 7;
+
+                if (daysUntilRenewal > leadDays || daysUntilRenewal < 0) {
+                    console.log(`⏭️ Preflight: ${arContract.contract_number} is ${daysUntilRenewal} days away (lead=${leadDays}), skipping`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: daysUntilRenewal,
+                        success: true,
+                        skipped: "outside_lead_window"
+                    });
+                    continue;
+                }
+
+                // 4. Fetch service + resource
+                const { data: serviceData, error: serviceErr } = await supabase
+                    .from("services")
+                    .select("location_resource_id, duration_days, location_resources ( resource_name )")
+                    .eq("id", arContract.service_id)
+                    .single();
+
+                if (serviceErr || !serviceData) {
+                    console.error(`❌ Preflight: service not found for ${arContract.contract_number}`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: daysUntilRenewal,
+                        success: false,
+                        error: "Service not found"
+                    });
+                    continue;
+                }
+
+                if (!serviceData.location_resource_id) {
+                    console.log(`⏭️ Preflight: ${arContract.contract_number} has no resource_id, skipping`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: daysUntilRenewal,
+                        success: true,
+                        skipped: "no_resource"
+                    });
+                    continue;
+                }
+
+                // 5. Fetch the contract's active booking id (may be null)
+                const { data: bookingData } = await supabase
+                    .from("bookings")
+                    .select("id")
+                    .eq("contract_id", arContract.id)
+                    .eq("booking_status", "active")
+                    .eq("is_archived", false)
+                    .limit(1)
+                    .maybeSingle();
+
+                // 6. Compute renewal date range and call availability check
+                const renewalStart = new Date(arEndDate.getTime() + 86400000); // end_date + 1 day
+                const renewalEnd = new Date(arEndDate.getTime() + (serviceData.duration_days ?? 0) * 86400000);
+
+                const { data: availabilityData, error: availabilityErr } = await supabase.rpc(
+                    "check_resource_availability",
+                    {
+                        p_resource_id: serviceData.location_resource_id,
+                        p_start_date: renewalStart.toISOString().split("T")[0],
+                        p_end_date: renewalEnd.toISOString().split("T")[0],
+                        p_exclude_booking_id: bookingData?.id ?? null,
+                    }
+                );
+
+                if (availabilityErr) {
+                    console.error(`❌ Preflight: availability check failed for ${arContract.contract_number}:`, availabilityErr);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: daysUntilRenewal,
+                        success: false,
+                        error: "Availability check failed: " + availabilityErr.message
+                    });
+                    continue;
+                }
+
+                // If available, nothing to warn about
+                if (availabilityData?.available === true) {
+                    console.log(`✅ Preflight: resource available for ${arContract.contract_number}, no alert needed`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: daysUntilRenewal,
+                        success: true,
+                        skipped: "resource_available"
+                    });
+                    continue;
+                }
+
+                // 7. Resource unavailable — send renewal_at_risk email to partner admin
+                const customerName = arContract.customers?.company_name ||
+                    `${arContract.customers?.first_name || ""} ${arContract.customers?.second_name || ""}`.trim();
+                const arPartnerName = arPartner.structure_name || arPartner.company_name || "PowerCowo";
+                const resourceName = serviceData.location_resources?.resource_name || "";
+                const formattedArEndDate = arEndDate.toLocaleDateString("it-IT", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                });
+
+                const preflightVariables: Record<string, string> = {
+                    customer_name: customerName,
+                    contract_number: arContract.contract_number,
+                    resource_name: resourceName,
+                    end_date: formattedArEndDate,
+                    days_until_renewal: daysUntilRenewal.toString(),
+                    partner_name: arPartnerName,
+                };
+
+                console.log(`⚠️ Preflight: resource unavailable for ${arContract.contract_number}, alerting partner admin ${arPartner.email}`);
+
+                const { success: preflightSent, error: preflightEmailError } = await sendTemplateEmail({
+                    supabase,
+                    partnerUuid: arContract.partner_uuid,
+                    templateType: "renewal_at_risk",
+                    recipientEmail: arPartner.email,
+                    variables: preflightVariables,
+                    partnerFromName: arPartnerName,
+                });
+
+                // 8. On success, stamp renewal_alert_sent_at
+                if (preflightSent) {
+                    console.log(`✅ Preflight: alert sent for ${arContract.contract_number}`);
+                    await supabase
+                        .from("contracts")
+                        .update({ renewal_alert_sent_at: new Date().toISOString() })
+                        .eq("id", arContract.id);
+                } else {
+                    console.error(`❌ Preflight: alert failed for ${arContract.contract_number}:`, preflightEmailError);
+                }
+
+                // 9. Record outcome
+                preflightResults.push({
+                    contract_id: arContract.id,
+                    contract_number: arContract.contract_number,
+                    days_until_renewal: daysUntilRenewal,
+                    success: preflightSent,
+                    error: preflightSent ? undefined : preflightEmailError
+                });
+
+            } catch (error) {
+                console.error(`❌ Preflight error for contract ${arContract.contract_number}:`, error);
+                preflightResults.push({
+                    contract_id: arContract.id,
+                    contract_number: arContract.contract_number,
+                    days_until_renewal: 0,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
         const successCount = results.filter(r => r.success).length;
         const failureCount = results.filter(r => !r.success).length;
         const skippedCount = results.filter(r => r.skipped).length;
+        const preflightSentCount = preflightResults.filter(r => r.success && !r.skipped).length;
+        const preflightSkippedCount = preflightResults.filter(r => r.skipped).length;
+        const preflightFailedCount = preflightResults.filter(r => !r.success).length;
 
         console.log(`\n✅ Completed: ${successCount} succeeded, ${failureCount} failed, ${skippedCount} skipped`);
+        console.log(`\n🔍 Preflight: ${preflightSentCount} alerts sent, ${preflightFailedCount} failed, ${preflightSkippedCount} skipped`);
 
         return new Response(
             JSON.stringify({
@@ -369,7 +590,14 @@ serve(async (req) => {
                 succeeded: successCount,
                 failed: failureCount,
                 skipped: skippedCount,
-                results: results
+                results: results,
+                preflight: {
+                    processed: preflightResults.length,
+                    alerts_sent: preflightSentCount,
+                    failed: preflightFailedCount,
+                    skipped: preflightSkippedCount,
+                    results: preflightResults
+                }
             }),
             { headers: { "Content-Type": "application/json" } }
         );
