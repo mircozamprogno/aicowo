@@ -8,10 +8,6 @@ import { toast } from './ToastContainer';
 
 import logger from '../../utils/logger';
 
-// Add these imports at the top:
-import { useTour } from '../../contexts/TourContext';
-import TourNotificationBadge from '../tour/TourNotificationBadge';
-
 const RoleBasedSidebar = ({ mobile = false, onClose }) => {
   const currentPath = window.location.hash.slice(1) || '/dashboard';
   const { profile, signOut } = useAuth();
@@ -109,9 +105,6 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
 
     return filteredItems;
   };
-
-  // Then in the RoleBasedSidebar component, add this hook after the existing hooks:
-  const { isOnboardingComplete } = useTour();
 
   // Fetch partner branding data
   useEffect(() => {
@@ -306,31 +299,17 @@ const RoleBasedSidebar = ({ mobile = false, onClose }) => {
       </div>
 
       <nav className="sidebar-nav">
-        {navigationItems.map((item) => {
-          const isOnboardingItem = item.href === '/services';
-          const NavItem = (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`sidebar-nav-item ${currentPath === item.href ? 'active' : ''}`}
-              onClick={mobile ? onClose : undefined}
-            >
-              <item.icon size={24} className="sidebar-nav-icon" />
-              {item.name}
-            </Link>
-          );
-
-          // Only show notification badges for partner admin users during onboarding
-          if (isOnboardingItem && profile?.role === 'admin' && !isOnboardingComplete) {
-            return (
-              <TourNotificationBadge key={item.name} href={item.href}>
-                {NavItem}
-              </TourNotificationBadge>
-            );
-          }
-
-          return NavItem;
-        })}
+        {navigationItems.map((item) => (
+          <Link
+            key={item.name}
+            to={item.href}
+            className={`sidebar-nav-item ${currentPath === item.href ? 'active' : ''}`}
+            onClick={mobile ? onClose : undefined}
+          >
+            <item.icon size={24} className="sidebar-nav-icon" />
+            {item.name}
+          </Link>
+        ))}
 
         {/* Logout button as last item */}
         <button

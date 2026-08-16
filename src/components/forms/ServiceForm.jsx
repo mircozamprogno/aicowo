@@ -2,7 +2,6 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
-import { useTourIntegration } from '../../hooks/useTourIntegration';
 import { supabase } from '../../services/supabase';
 import SearchableSelect from '../common/SearchableSelect';
 import { toast } from '../common/ToastContainer';
@@ -34,7 +33,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
   const [locationResources, setLocationResources] = useState([]);
   const [loadingResources, setLoadingResources] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { onServiceCreated } = useTourIntegration();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showContractsExist, setShowContractsExist] = useState(false);
@@ -328,8 +326,6 @@ const ServiceForm = ({ isOpen, onClose, onSuccess, service = null, partnerUuid, 
         }
 
         if (data && data[0]) {
-          await onServiceCreated(data[0]);
-
           await logActivity({
             action_category: 'service',
             action_type: 'created',

@@ -5,7 +5,6 @@ import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
-import { useTourIntegration } from '../hooks/useTourIntegration';
 import { supabase } from '../services/supabase';
 import '../styles/pages/service-form.css';
 import { logActivity } from '../utils/activityLogger';
@@ -53,7 +52,6 @@ const ServiceFormPage = () => {
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const { onServiceCreated } = useTourIntegration();
 
     // Load initial data (Locations, Resource Types, and Service if editing)
     useEffect(() => {
@@ -233,7 +231,6 @@ const ServiceFormPage = () => {
 
                 if (error) throw error;
                 toast.success(t('messages.serviceCreatedSuccessfully'));
-                if (onServiceCreated) onServiceCreated(data);
 
                 await logActivity({
                     action_category: 'service',

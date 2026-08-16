@@ -2,7 +2,6 @@ import { Calendar, Image, Map, MapPin, Monitor, Navigation, Plus, Trash2, Users,
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from '../../contexts/LanguageContext';
-import { useTourIntegration } from '../../hooks/useTourIntegration';
 import { imageService } from '../../services/imageService';
 import { supabase } from '../../services/supabase';
 import { ACTIVITY_ACTIONS, ACTIVITY_CATEGORIES, logActivity } from '../../utils/activityLogger';
@@ -97,8 +96,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
     hasBookings: false,
     bookingCount: 0
   });
-
-  const { onLocationCreated } = useTourIntegration();
 
   useEffect(() => {
     if (location) {
@@ -712,11 +709,6 @@ const LocationForm = ({ isOpen, onClose, onSuccess, location = null, partnerUuid
 
         if (locationError) throw locationError;
         locationData = newLocation;
-
-        await onLocationCreated({
-          ...locationData,
-          resources: []
-        });
 
         const resourcesData = resources
           .filter(resource => resource.resource_name.trim())

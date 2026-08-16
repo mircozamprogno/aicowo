@@ -10,10 +10,6 @@ import { supabase } from '../services/supabase';
 // Add these imports to the top of Dashboard.jsx:
 import MessageModal from '../components/common/MessageModal';
 import CustomerForm from '../components/forms/CustomerForm';
-import SetupProgressIndicator from '../components/tour/SetupProgressIndicator';
-import TourOverlay from '../components/tour/TourOverlay';
-import WelcomeModal from '../components/tour/WelcomeModal';
-import { useTour } from '../contexts/TourContext';
 import logger from '../utils/logger';
 
 // Add this import to the top of Dashboard.jsx with your other imports:
@@ -125,9 +121,6 @@ const Dashboard = () => {
   const isCustomer = profile?.role === 'user';
   const isPartnerAdmin = profile?.role === 'admin';
   const isSuperAdmin = profile?.role === 'superadmin';
-
-  // Then in the Dashboard component, add this after the existing hooks:
-  const { isOnboardingComplete, shouldShowWelcome } = useTour();
 
   // Add these state variables at the top of Dashboard component:
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
@@ -1396,12 +1389,6 @@ const Dashboard = () => {
           {t('dashboard.welcomeBack')}, {profile?.first_name || 'Admin'}!
         </h1>
 
-        {!isOnboardingComplete && (
-          <div className="dashboard-setup-section">
-            <SetupProgressIndicator />
-          </div>
-        )}
-
         {/* Resources Overview - MOVED TO TOP */}
         <div className="dashboard-section">
           <h2 className="section-title">
@@ -2315,9 +2302,6 @@ const Dashboard = () => {
           />
         </>
       )}
-      {/* Tour Components */}
-      <WelcomeModal />
-      <TourOverlay />
       {/* Status Alert Modal */}
       <MessageModal
         isOpen={showStatusAlert}
