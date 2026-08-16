@@ -10,6 +10,7 @@
 --       - update_expired_contracts()
 --       - auto_renew_contracts()
 --   * Edge Function `contract-expiry-reminders` deployed
+--   * Edge Function `contract-renewal-confirmation` deployed
 --   * Vault secret named `service_role_key` holds the project's
 --     service_role JWT (created with vault.create_secret(...))
 --
@@ -129,6 +130,36 @@ select cron.schedule(
     if extract(hour from (now() at time zone 'Europe/Zurich')) = 2 then
       select net.http_post(
         url := 'https://idtwxzccuehxsoipjixf.supabase.co/functions/v1/contract-expiry-reminders',
+        headers := jsonb_build_object(
+          'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key'),
+          'Content-Type', 'application/json'
+        )
+      ) into req;
+    end if;
+  end $$;
+  $CRON$
+);
+
+-- ---------------------------------------------------------------------
+-- Job 6 — contract-renewal-confirmation-daily (05:00 Europe/Zurich)
+-- Calls the `contract-renewal-confirmation` edge function. Runs one hour
+-- after auto_renew_contracts() (Job 2, 04:00) to email customers for
+-- every successful renewal that hasn't been notified yet.
+-- Auth token is pulled from Vault at run time.
+-- ---------------------------------------------------------------------
+select pg_temp.drop_cron_if_exists('contract-renewal-confirmation-daily');
+
+select cron.schedule(
+  'contract-renewal-confirmation-daily',
+  '0 * * * *',
+  $CRON$
+  do $$
+  declare
+    req bigint;
+  begin
+    if extract(hour from (now() at time zone 'Europe/Zurich')) = 5 then
+      select net.http_post(
+        url := 'https://idtwxzccuehxsoipjixf.supabase.co/functions/v1/contract-renewal-confirmation',
         headers := jsonb_build_object(
           'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key'),
           'Content-Type', 'application/json'
