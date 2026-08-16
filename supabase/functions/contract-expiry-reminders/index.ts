@@ -461,6 +461,18 @@ serve(async (req) => {
                     continue;
                 }
 
+                if (serviceData.duration_days == null) {
+                    console.log(`⏭️ Preflight: ${arContract.contract_number} has no duration_days, skipping`);
+                    preflightResults.push({
+                        contract_id: arContract.id,
+                        contract_number: arContract.contract_number,
+                        days_until_renewal: daysUntilRenewal,
+                        success: true,
+                        skipped: "no_duration_days"
+                    });
+                    continue;
+                }
+
                 // 5. Fetch the contract's active booking id (may be null)
                 const { data: bookingData } = await supabase
                     .from("bookings")
@@ -541,7 +553,28 @@ serve(async (req) => {
                     partnerFromName: arPartnerName,
                 });
 
-                // 8. On success, stamp renewal_alert_sent_at
+                // 8. Log activity
+                await supabase.from("activity_log").insert({
+                    partner_uuid: arContract.partner_uuid,
+                    action_category: "system",
+                    action_type: preflightSent ? "renewal_at_risk_alert_sent" : "renewal_at_risk_alert_failed",
+                    entity_type: "contracts",
+                    entity_id: arContract.id,
+                    description: preflightSent
+                        ? `Renewal-at-risk alert sent to partner admin for contract ${arContract.contract_number} (resource ${serviceData.location_resources?.resource_name || "unknown"} unavailable in ${daysUntilRenewal} days)`
+                        : `Failed to send renewal-at-risk alert for contract ${arContract.contract_number}`,
+                    metadata: {
+                        contract_number: arContract.contract_number,
+                        partner_email: arPartner.email,
+                        resource_name: serviceData.location_resources?.resource_name || null,
+                        days_until_renewal: daysUntilRenewal,
+                        availability: false,
+                        email_success: preflightSent,
+                        error: preflightSent ? null : preflightEmailError
+                    }
+                });
+
+                // 9. On success, stamp renewal_alert_sent_at
                 if (preflightSent) {
                     console.log(`✅ Preflight: alert sent for ${arContract.contract_number}`);
                     await supabase
@@ -552,7 +585,7 @@ serve(async (req) => {
                     console.error(`❌ Preflight: alert failed for ${arContract.contract_number}:`, preflightEmailError);
                 }
 
-                // 9. Record outcome
+                // 10. Record outcome
                 preflightResults.push({
                     contract_id: arContract.id,
                     contract_number: arContract.contract_number,

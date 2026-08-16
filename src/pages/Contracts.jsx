@@ -994,7 +994,7 @@ const Contracts = () => {
             }}
           />
           <AlertTriangle size={14} />
-          {t('contracts.needsResourceReassignment') || 'Necessita riassegnazione risorsa'}
+          {t('contracts.needsResourceReassignment') || 'Needs resource reassignment'}
         </label>
       )}
 
