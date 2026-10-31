@@ -150,7 +150,13 @@
     "documentUploading": "Uploading document...",
     "documentSizeError": "File must be less than 10MB",
     "documentTypeError": "Only PDF or PNG are accepted",
-    "saveCustomerFirst": "Save customer first to upload document"
+    "saveCustomerFirst": "Save customer first to upload document",
+    "doorCode": "Door Code",
+    "doorCodeDescription": "Unique access code and position slot (1–100) assigned to this customer.",
+    "doorCodeLabel": "Code (6 letters)",
+    "doorPosition": "Position (1–100)",
+    "regenerateCode": "Generate new code",
+    "selectPosition": "— select —"
   },
   "settings": {
     "title": "Settings",

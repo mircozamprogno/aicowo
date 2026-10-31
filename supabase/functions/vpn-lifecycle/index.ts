@@ -122,6 +122,53 @@ async function sendEmail(
   return res.ok && !!result.id;
 }
 
+// ── door code ────────────────────────────────────────────────────────────────
+
+async function assignDoorCode(
+  supabase: ReturnType<typeof createClient>,
+  customerId: number,
+  partnerUuid: string,
+): Promise<void> {
+  // Skip if already assigned
+  const { data: existing } = await supabase
+    .from("customers")
+    .select("door_code, door_position")
+    .eq("id", customerId)
+    .single();
+
+  if (existing?.door_code) return;
+
+  // Generate 6 random uppercase letters
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const codeBytes = new Uint8Array(6);
+  crypto.getRandomValues(codeBytes);
+  const doorCode = Array.from(codeBytes).map((b) => alphabet[b % 26]).join("");
+
+  // Find a free position 1-100 for this partner
+  const { data: taken } = await supabase
+    .from("customers")
+    .select("door_position")
+    .eq("partner_uuid", partnerUuid)
+    .not("door_position", "is", null);
+
+  const takenSet = new Set((taken ?? []).map((r: { door_position: number }) => r.door_position));
+  const free = Array.from({ length: 100 }, (_, i) => i + 1).filter((p) => !takenSet.has(p));
+
+  if (free.length === 0) {
+    console.warn(`No free door positions for partner ${partnerUuid}`);
+    return;
+  }
+
+  const idxByte = new Uint8Array(1);
+  crypto.getRandomValues(idxByte);
+  const doorPosition = free[idxByte[0] % free.length];
+
+  await supabase
+    .from("customers")
+    .update({ door_code: doorCode, door_position: doorPosition })
+    .eq("id", customerId);
+}
+
 // ── provision ────────────────────────────────────────────────────────────────
 
 async function provision(
@@ -132,7 +179,10 @@ async function provision(
   contractNumber: string,
 ): Promise<{ success: boolean; skipped?: string; error?: string }> {
 
-  // 1. Check partner has MikroTik enabled
+  // 1. Assign door code unconditionally (independent of MikroTik)
+  await assignDoorCode(supabase, customerId, partnerUuid);
+
+  // 2. Check partner has MikroTik enabled
   const { data: partner, error: partnerErr } = await supabase
     .from("partners")
     .select("mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, mikrotik_group, mikrotik_shared_users, email, company_name, structure_name")

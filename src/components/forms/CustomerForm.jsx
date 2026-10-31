@@ -1,5 +1,5 @@
 // src/components/customers/CustomerForm.jsx
-import { FileText, Trash2, Upload, X } from 'lucide-react';
+import { FileText, KeyRound, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -45,8 +45,12 @@ const CustomerForm = ({
     billing_zip: '',
     billing_city: '',
     billing_country: 'Italy',
-    notes: ''
+    notes: '',
+    door_code: '',
+    door_position: ''
   });
+
+  const [takenPositions, setTakenPositions] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -75,6 +79,17 @@ const CustomerForm = ({
 
   const needsBusinessInfo = ['freelancer', 'entrepeneur', 'company'].includes(formData.customer_type);
 
+  const regenerateDoorCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const bytes = new Uint8Array(6);
+    window.crypto.getRandomValues(bytes);
+    const code = Array.from(bytes).map(b => chars[b % 26]).join('');
+    setFormData(prev => ({ ...prev, door_code: code }));
+  };
+
+  const freePositions = Array.from({ length: 100 }, (_, i) => i + 1)
+    .filter(p => !takenPositions.includes(p));
+
   useEffect(() => {
     if (customer) {
       logger.log('Loading customer data for editing:', customer);
@@ -101,7 +116,9 @@ const CustomerForm = ({
         billing_zip: customer.billing_zip || '',
         billing_city: customer.billing_city || '',
         billing_country: customer.billing_country || 'Italy',
-        notes: customer.notes || ''
+        notes: customer.notes || '',
+        door_code: customer.door_code || '',
+        door_position: customer.door_position || ''
       });
     } else {
       logger.log('Resetting form for new customer');
@@ -132,6 +149,20 @@ const CustomerForm = ({
       });
     }
   }, [customer]);
+
+  // Load taken door positions for this partner (excluding this customer)
+  useEffect(() => {
+    if (!isEditing || !partnerUuid) return;
+    supabase
+      .from('customers')
+      .select('door_position')
+      .eq('partner_uuid', partnerUuid)
+      .not('door_position', 'is', null)
+      .neq('id', customer.id)
+      .then(({ data }) => {
+        setTakenPositions((data || []).map(r => r.door_position));
+      });
+  }, [isEditing, partnerUuid, customer?.id]);
 
   // Load existing document
   useEffect(() => {
@@ -788,6 +819,66 @@ const CustomerForm = ({
                 onChange={handleChange}
               />
             </div>
+
+            {isEditing && !isProfileCompletion && (
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <KeyRound size={18} style={{ marginRight: '0.5rem', display: 'inline', verticalAlign: '-3px' }} />
+                  {t('customers.doorCode') || 'Door Code'}
+                </h3>
+                <p className="form-section-description">
+                  {t('customers.doorCodeDescription') || 'Unique access code and position slot (1–100) assigned to this customer.'}
+                </p>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">{t('customers.doorCodeLabel') || 'Code (6 letters)'}</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        className="form-input"
+                        style={{ flex: 1, fontFamily: 'monospace', letterSpacing: '0.15em', textTransform: 'uppercase' }}
+                        value={formData.door_code}
+                        maxLength={6}
+                        placeholder="ABCDEF"
+                        onChange={e => setFormData(prev => ({
+                          ...prev,
+                          door_code: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6)
+                        }))}
+                      />
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ flexShrink: 0 }}
+                        onClick={regenerateDoorCode}
+                        title={t('customers.regenerateCode') || 'Generate new code'}
+                      >
+                        <RefreshCw size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">{t('customers.doorPosition') || 'Position (1–100)'}</label>
+                    <select
+                      className="form-select"
+                      value={formData.door_position}
+                      onChange={e => setFormData(prev => ({
+                        ...prev,
+                        door_position: e.target.value ? Number(e.target.value) : ''
+                      }))}
+                    >
+                      <option value="">{t('customers.selectPosition') || '— select —'}</option>
+                      {/* Keep current position if it's already assigned */}
+                      {formData.door_position && !freePositions.includes(Number(formData.door_position)) && (
+                        <option value={formData.door_position}>{formData.door_position} (current)</option>
+                      )}
+                      {freePositions.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="modal-actions">
               {isEditing && !isProfileCompletion && onDelete && (

@@ -152,7 +152,13 @@
     "documentUploading": "Caricamento documento...",
     "documentSizeError": "Il file deve essere inferiore a 10MB",
     "documentTypeError": "Solo PDF o PNG sono accettati",
-    "saveCustomerFirst": "Salva prima il cliente per caricare il documento"
+    "saveCustomerFirst": "Salva prima il cliente per caricare il documento",
+    "doorCode": "Codice Porta",
+    "doorCodeDescription": "Codice di accesso unico e posizione (1–100) assegnati a questo cliente.",
+    "doorCodeLabel": "Codice (6 lettere)",
+    "doorPosition": "Posizione (1–100)",
+    "regenerateCode": "Genera nuovo codice",
+    "selectPosition": "— seleziona —"
   },
   "settings": {
     "title": "Impostazioni",
