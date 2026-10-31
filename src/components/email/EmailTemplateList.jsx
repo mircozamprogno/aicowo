@@ -1,5 +1,5 @@
 // src/components/email/EmailTemplateList.jsx
-import { AlertTriangle, Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Shield, UserPlus, XCircle } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Router, Shield, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -56,6 +56,18 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.renewalAtRisk',
     descriptionKey: 'emailTemplates.renewalAtRiskDescription',
     icon: 'AlertTriangle'
+  },
+  vpn_credentials_partner: {
+    id: 'vpn_credentials_partner',
+    nameKey: 'emailTemplates.vpnCredentialsPartner',
+    descriptionKey: 'emailTemplates.vpnCredentialsPartnerDescription',
+    icon: 'Router'
+  },
+  vpn_credentials_customer: {
+    id: 'vpn_credentials_customer',
+    nameKey: 'emailTemplates.vpnCredentialsCustomer',
+    descriptionKey: 'emailTemplates.vpnCredentialsCustomerDescription',
+    icon: 'Router'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
@@ -120,7 +132,8 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       Clock: Clock,
       FileText: FileText,
       XCircle: XCircle,
-      AlertTriangle: AlertTriangle
+      AlertTriangle: AlertTriangle,
+      Router: Router
     };
     const Icon = icons[iconName] || UserPlus;
     return <Icon size={24} />;

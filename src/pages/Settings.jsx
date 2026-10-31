@@ -1,11 +1,12 @@
 // src/pages/Settings.jsx
-import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, Download, FileText, Filter, Globe, Image, Mail, MapPin, Save, Settings as SettingsIcon, Upload, User, X } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, Download, FileText, Filter, Globe, Image, Mail, MapPin, Router, Save, Settings as SettingsIcon, Upload, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import CalendarSubscription from '../components/calendar/CalendarSubscription';
 import OperatingScheduleManager from '../components/calendar/OperatingScheduleManager';
 import Select from '../components/common/Select';
 import { toast } from '../components/common/ToastContainer';
 import EmailTemplateList from '../components/email/EmailTemplateList';
+import MikroTikSettings from '../components/settings/MikroTikSettings';
 import LocationsList from '../components/partners/LocationsList';
 import ResourcesManager from '../components/partners/ResourcesManager';
 import ResourceTypesManager from '../components/partners/ResourceTypesManager';
@@ -1025,6 +1026,14 @@ const Settings = () => {
             >
               <Calendar size={20} />
               {t('settings.calendarSubscription') || 'Calendar Subscription'}
+            </button>
+            <button
+              type="button"
+              className={`settings-tab ${activeTab === 'mikrotik' ? 'active' : ''}`}
+              onClick={() => setActiveTab('mikrotik')}
+            >
+              <Router size={20} />
+              {t('settings.mikrotik') || 'MikroTik'}
             </button>
           </div>
         </div>
@@ -2055,6 +2064,10 @@ const Settings = () => {
           </div>
         )}
 
+
+        {activeTab === 'mikrotik' && (isAdminPartner || isSuperAdmin) && (
+          <MikroTikSettings partnerUuid={profile?.partner_uuid} />
+        )}
 
       </div>
     </div>

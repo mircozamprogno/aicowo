@@ -249,7 +249,8 @@
     "loadingCalendarSubscription": "Caricamento sottoscrizione calendario...",
     "errorLoadingCalendarToken": "Errore nel caricamento del token calendario. Riprova.",
     "errorRegeneratingToken": "Errore nella rigenerazione del token. Riprova.",
-    "errorCopyingUrl": "Errore nella copia dell'URL. Copia manualmente."
+    "errorCopyingUrl": "Errore nella copia dell'URL. Copia manualmente.",
+    "mikrotik": "MikroTik"
   },
   "locations": {
     "resource": "Risorsa",
@@ -2116,7 +2117,11 @@
     "contractRenewed": "Contratto Rinnovato",
     "contractRenewedDescription": "Inviata ai clienti dopo il rinnovo automatico del loro contratto",
     "renewalAtRisk": "Rinnovo a Rischio",
-    "renewalAtRiskDescription": "Inviata all'admin del partner quando un rinnovo automatico imminente non trova una risorsa disponibile"
+    "renewalAtRiskDescription": "Inviata all'admin del partner quando un rinnovo automatico imminente non trova una risorsa disponibile",
+    "vpnCredentialsPartner": "Credenziali WiFi (Notifica Partner)",
+    "vpnCredentialsPartnerDescription": "Inviata all'admin partner quando viene creata una nuova credenziale WiFi per un cliente. Variabili: {{customer_name}}, {{vpn_name}}, {{contract_number}}, {{partner_name}}",
+    "vpnCredentialsCustomer": "Credenziali WiFi (Cliente)",
+    "vpnCredentialsCustomerDescription": "Inviata al cliente con i suoi dati di accesso WiFi. Variabili: {{customer_name}}, {{vpn_name}}, {{vpn_password}}, {{partner_name}}"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto",

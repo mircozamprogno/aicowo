@@ -186,7 +186,8 @@
     "operatingCalendar": "Operating Calendar",
     "manageOperatingCalendar": "Manage Operating Calendar",
     "operatingCalendarDescription": "Configure when your locations and resources are available for booking",
-    "invoices": "Invoices Powercowo"
+    "invoices": "Invoices Powercowo",
+    "mikrotik": "MikroTik"
   },
   "locations": {
     "resource": "Resource",
@@ -994,7 +995,6 @@
     "active": "Active",
     "cancelled": "Cancelled",
     "suspended": "Suspended",
-    "expired": "Expired",
     "renewed": "Renewed",
     "confirmUpdate": "Confirm Contract Update",
     "contractUpdateWarning": "Contract updates will modify existing agreement terms. Please review all changes carefully before confirming.",
@@ -1984,7 +1984,11 @@
     "contractRenewed": "Contract Renewed",
     "contractRenewedDescription": "Sent to customers after their contract is automatically renewed",
     "renewalAtRisk": "Renewal at Risk",
-    "renewalAtRiskDescription": "Sent to partner admins when an upcoming auto-renewal cannot find an available resource"
+    "renewalAtRiskDescription": "Sent to partner admins when an upcoming auto-renewal cannot find an available resource",
+    "vpnCredentialsPartner": "WiFi Credentials (Partner Notification)",
+    "vpnCredentialsPartnerDescription": "Sent to the partner admin when a new WiFi credential is created for a customer. Variables: {{customer_name}}, {{vpn_name}}, {{contract_number}}, {{partner_name}}",
+    "vpnCredentialsCustomer": "WiFi Credentials (Customer)",
+    "vpnCredentialsCustomerDescription": "Sent to the customer with their WiFi login details. Variables: {{customer_name}}, {{vpn_name}}, {{vpn_password}}, {{partner_name}}"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",
