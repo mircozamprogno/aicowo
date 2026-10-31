@@ -103,7 +103,7 @@ const MikroTikSettings = ({ partnerUuid }) => {
               customer's first contract becomes active, and removed when their last contract ends.
             </p>
           </div>
-          <label className="toggle-switch">
+          <label className="schedule-toggle" style={{ cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={settings.mikrotik_enabled}
