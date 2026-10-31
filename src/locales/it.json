@@ -2027,14 +2027,16 @@
       "total": "Tentativi Totali",
       "successful": "Riusciti",
       "failed": "Falliti",
-      "noAvailability": "Non Disponibili"
+      "noAvailability": "Non Disponibili",
+      "noBooking": "Rinnovati, Senza Prenotazione"
     },
     "statusLabels": {
       "success": "Successo",
       "failedNoAvailability": "Non Disponibile",
       "failedBooking": "Errore Prenotazione",
       "failedPayment": "Errore Pagamento",
-      "failedError": "Errore Sistema"
+      "failedError": "Errore Sistema",
+      "successNoBooking": "Rinnovato (Senza Prenotazione)"
     },
     "filters": {
       "status": "Stato",
@@ -2055,7 +2057,8 @@
     "resourceAvailability": "Disponibilità Risorsa",
     "totalQuantity": "Quantità Totale",
     "bookedQuantity": "Quantità Prenotata",
-    "availableQuantity": "Quantità Disponibile"
+    "availableQuantity": "Quantità Disponibile",
+    "noResourceOnService": "Nessuna risorsa assegnata al servizio"
   },
   "emailTemplates": {
     "manageTemplates": "Gestisci Template Email",

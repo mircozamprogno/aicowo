@@ -1896,14 +1896,16 @@
       "total": "Total Attempts",
       "successful": "Successful",
       "failed": "Failed",
-      "noAvailability": "No Availability"
+      "noAvailability": "No Availability",
+      "noBooking": "Renewed, No Booking"
     },
     "statusLabels": {
       "success": "Success",
       "failedNoAvailability": "No Availability",
       "failedBooking": "Booking Error",
       "failedPayment": "Payment Error",
-      "failedError": "System Error"
+      "failedError": "System Error",
+      "successNoBooking": "Renewed (No Booking)"
     },
     "filters": {
       "status": "Status",
@@ -1924,7 +1926,8 @@
     "resourceAvailability": "Resource Availability",
     "totalQuantity": "Total Quantity",
     "bookedQuantity": "Booked Quantity",
-    "availableQuantity": "Available Quantity"
+    "availableQuantity": "Available Quantity",
+    "noResourceOnService": "No resource assigned on service"
   },
   "emailTemplates": {
     "manageTemplates": "Manage Email Templates",

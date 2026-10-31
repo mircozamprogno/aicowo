@@ -17,6 +17,7 @@ const ContractRenewalLogs = () => {
     total: 0,
     successful: 0,
     failed: 0,
+    no_booking: 0,
     failed_no_availability: 0,
     failed_payment: 0,
     failed_booking: 0,
@@ -43,7 +44,7 @@ const ContractRenewalLogs = () => {
 
       // Apply status filter
       if (filter === 'success') {
-        query = query.eq('renewal_status', 'success');
+        query = query.in('renewal_status', ['success', 'success_no_booking']);
       } else if (filter === 'failed') {
         query = query.like('renewal_status', 'failed%');
       }
@@ -91,8 +92,9 @@ const ContractRenewalLogs = () => {
   const calculateStats = (logsData) => {
     const stats = {
       total: logsData.length,
-      successful: logsData.filter(l => l.renewal_status === 'success').length,
+      successful: logsData.filter(l => l.renewal_status === 'success' || l.renewal_status === 'success_no_booking').length,
       failed: logsData.filter(l => l.renewal_status.startsWith('failed')).length,
+      no_booking: logsData.filter(l => l.renewal_status === 'success_no_booking').length,
       failed_no_availability: logsData.filter(l => l.renewal_status === 'failed_no_availability').length,
       failed_payment: logsData.filter(l => l.renewal_status === 'failed_payment_error').length,
       failed_booking: logsData.filter(l => l.renewal_status === 'failed_booking_error').length,
@@ -104,6 +106,8 @@ const ContractRenewalLogs = () => {
   const getStatusIcon = (status) => {
     if (status === 'success') {
       return <CheckCircle size={20} className="status-icon success" />;
+    } else if (status === 'success_no_booking') {
+      return <AlertTriangle size={20} className="status-icon warning" />;
     } else if (status.startsWith('failed')) {
       return <XCircle size={20} className="status-icon failed" />;
     }
@@ -112,6 +116,7 @@ const ContractRenewalLogs = () => {
 
   const getStatusBadgeClass = (status) => {
     if (status === 'success') return 'status-badge-success';
+    if (status === 'success_no_booking') return 'status-badge-warning';
     if (status.startsWith('failed')) return 'status-badge-failed';
     return 'status-badge-pending';
   };
@@ -120,6 +125,8 @@ const ContractRenewalLogs = () => {
     switch(status) {
       case 'success':
         return t('renewalLogs.statusLabels.success') || 'Success';
+      case 'success_no_booking':
+        return t('renewalLogs.statusLabels.successNoBooking') || 'Renewed (No Booking)';
       case 'failed_no_availability':
         return t('renewalLogs.statusLabels.failedNoAvailability') || 'No Availability';
       case 'failed_booking_error':
@@ -223,8 +230,8 @@ const ContractRenewalLogs = () => {
             <AlertTriangle size={24} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">{stats.failed_no_availability}</div>
-            <div className="stat-label">{t('renewalLogs.stats.noAvailability')}</div>
+            <div className="stat-value">{stats.no_booking}</div>
+            <div className="stat-label">{t('renewalLogs.stats.noBooking')}</div>
           </div>
         </div>
       </div>
@@ -352,26 +359,36 @@ const ContractRenewalLogs = () => {
                     {log.resource_availability_details && (
                       <div className="availability-details">
                         <h4>{t('renewalLogs.resourceAvailability')}:</h4>
-                        <div className="availability-grid">
-                          <div className="availability-item">
-                            <span className="availability-label">{t('renewalLogs.totalQuantity')}:</span>
-                            <span className="availability-value">
-                              {log.resource_availability_details.total_quantity}
+                        {log.resource_availability_details.reason === 'no_resource_on_service' ? (
+                          <div className="availability-no-resource">
+                            <AlertTriangle size={16} />
+                            <span>
+                              {t('renewalLogs.noResourceOnService') || 'No resource assigned on service'}{' '}
+                              (service id: {log.resource_availability_details.service_id})
                             </span>
                           </div>
-                          <div className="availability-item">
-                            <span className="availability-label">{t('renewalLogs.bookedQuantity')}:</span>
-                            <span className="availability-value">
-                              {log.resource_availability_details.booked_quantity}
-                            </span>
+                        ) : (
+                          <div className="availability-grid">
+                            <div className="availability-item">
+                              <span className="availability-label">{t('renewalLogs.totalQuantity')}:</span>
+                              <span className="availability-value">
+                                {log.resource_availability_details.total_quantity}
+                              </span>
+                            </div>
+                            <div className="availability-item">
+                              <span className="availability-label">{t('renewalLogs.bookedQuantity')}:</span>
+                              <span className="availability-value">
+                                {log.resource_availability_details.booked_quantity}
+                              </span>
+                            </div>
+                            <div className="availability-item">
+                              <span className="availability-label">{t('renewalLogs.availableQuantity')}:</span>
+                              <span className="availability-value">
+                                {log.resource_availability_details.available_quantity}
+                              </span>
+                            </div>
                           </div>
-                          <div className="availability-item">
-                            <span className="availability-label">{t('renewalLogs.availableQuantity')}:</span>
-                            <span className="availability-value">
-                              {log.resource_availability_details.available_quantity}
-                            </span>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
