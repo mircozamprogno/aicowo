@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { toast } from '../common/ToastContainer';
 import logger from '../../utils/logger';
+import '../../styles/components/mikrotik-settings.css';
 
 const MikroTikSettings = ({ partnerUuid }) => {
   const [settings, setSettings] = useState({
@@ -13,10 +14,10 @@ const MikroTikSettings = ({ partnerUuid }) => {
     mikrotik_group:        'IGY',
     mikrotik_shared_users: '5',
   });
-  const [saving,      setSaving]      = useState(false);
-  const [testing,     setTesting]     = useState(false);
-  const [testResult,  setTestResult]  = useState(null);
-  const [showSecret,  setShowSecret]  = useState(false);
+  const [saving,     setSaving]     = useState(false);
+  const [testing,    setTesting]    = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [showSecret, setShowSecret] = useState(false);
 
   useEffect(() => { loadSettings(); }, [partnerUuid]);
 
@@ -28,15 +29,13 @@ const MikroTikSettings = ({ partnerUuid }) => {
         .eq('partner_uuid', partnerUuid)
         .single();
       if (error) throw error;
-      if (data) {
-        setSettings({
-          mikrotik_enabled:      data.mikrotik_enabled      ?? false,
-          mikrotik_agent_url:    data.mikrotik_agent_url    ?? '',
-          mikrotik_agent_secret: data.mikrotik_agent_secret ?? '',
-          mikrotik_group:        data.mikrotik_group        ?? 'IGY',
-          mikrotik_shared_users: data.mikrotik_shared_users ?? '5',
-        });
-      }
+      if (data) setSettings({
+        mikrotik_enabled:      data.mikrotik_enabled      ?? false,
+        mikrotik_agent_url:    data.mikrotik_agent_url    ?? '',
+        mikrotik_agent_secret: data.mikrotik_agent_secret ?? '',
+        mikrotik_group:        data.mikrotik_group        ?? 'IGY',
+        mikrotik_shared_users: data.mikrotik_shared_users ?? '5',
+      });
     } catch (err) {
       logger.error('Error loading MikroTik settings:', err);
     }
@@ -68,16 +67,9 @@ const MikroTikSettings = ({ partnerUuid }) => {
     setTesting(true);
     setTestResult(null);
     try {
-      const url    = settings.mikrotik_agent_url.replace(/\/$/, '');
-      const secret = settings.mikrotik_agent_secret;
-
-      const res = await fetch(`/api/mikrotik/system/identity`, {
-        headers: {
-          'Content-Type':    'application/json',
-          'x-agent-secret':  secret,
-        },
+      const res = await fetch('/api/mikrotik/system/identity', {
+        headers: { 'Content-Type': 'application/json', 'x-agent-secret': settings.mikrotik_agent_secret },
       });
-
       if (res.ok) {
         const data = await res.json();
         setTestResult({ success: true, message: `Connected — router identity: ${data?.name ?? 'unknown'}` });
@@ -91,26 +83,29 @@ const MikroTikSettings = ({ partnerUuid }) => {
     }
   };
 
+  const set = (key, value) => setSettings(prev => ({ ...prev, [key]: value }));
+
   return (
-    <div className="fatturecloud-settings">
-      {/* Enable toggle */}
+    <div className="settings-form">
+
+      {/* ── Enable toggle ── */}
       <div className="form-section">
-        <div className="section-header-row">
-          <div>
-            <h3 className="form-section-title">
-              <Router size={20} style={{ marginRight: '0.5rem', display: 'inline', verticalAlign: '-3px' }} />
+        <div className="mikrotik-toggle-row">
+          <div className="mikrotik-toggle-label">
+            <h3>
+              <Router size={18} />
               MikroTik Integration
             </h3>
-            <p className="form-section-description">
-              When enabled, a WiFi credential (User Manager) is automatically created on your router
-              when a customer's first contract becomes active, and removed when their last contract ends.
+            <p>
+              When enabled, a WiFi credential is automatically created on your router when a
+              customer's first contract becomes active, and removed when their last contract ends.
             </p>
           </div>
           <label className="toggle-switch">
             <input
               type="checkbox"
               checked={settings.mikrotik_enabled}
-              onChange={(e) => setSettings({ ...settings, mikrotik_enabled: e.target.checked })}
+              onChange={e => set('mikrotik_enabled', e.target.checked)}
             />
             <span className="toggle-slider" />
           </label>
@@ -119,9 +114,9 @@ const MikroTikSettings = ({ partnerUuid }) => {
 
       {settings.mikrotik_enabled && (
         <>
-          {/* Connection */}
+          {/* ── Router connection ── */}
           <div className="form-section">
-            <h4 className="form-section-subtitle">Router Agent Connection</h4>
+            <p className="mikrotik-section-label">Router Agent Connection</p>
 
             <div className="form-group">
               <label className="form-label">Agent URL</label>
@@ -130,69 +125,70 @@ const MikroTikSettings = ({ partnerUuid }) => {
                 type="url"
                 placeholder="http://192.168.88.1:3000"
                 value={settings.mikrotik_agent_url}
-                onChange={(e) => setSettings({ ...settings, mikrotik_agent_url: e.target.value })}
+                onChange={e => set('mikrotik_agent_url', e.target.value)}
               />
-              <p className="form-hint">Base URL of the PowerCowo agent running on your router.</p>
+              <span className="form-hint">Base URL of the PowerCowo agent running on your router.</span>
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ marginTop: '1rem' }}>
               <label className="form-label">Agent Secret</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="input-with-reveal">
                 <input
                   className="form-input"
                   type={showSecret ? 'text' : 'password'}
                   placeholder="••••••••••••••••"
                   value={settings.mikrotik_agent_secret}
-                  onChange={(e) => setSettings({ ...settings, mikrotik_agent_secret: e.target.value })}
-                  style={{ flex: 1 }}
+                  onChange={e => set('mikrotik_agent_secret', e.target.value)}
                 />
                 <button
                   type="button"
-                  className="btn btn-ghost"
-                  onClick={() => setShowSecret(!showSecret)}
-                  title={showSecret ? 'Hide' : 'Show'}
+                  className="btn-icon"
+                  onClick={() => setShowSecret(s => !s)}
+                  title={showSecret ? 'Hide secret' : 'Show secret'}
                 >
-                  {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showSecret ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              <p className="form-hint">Must match the AGENT_SECRET set in the router container.</p>
+              <span className="form-hint">Must match the AGENT_SECRET set in the router container.</span>
             </div>
 
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleTest}
-              disabled={testing || !settings.mikrotik_agent_url || !settings.mikrotik_agent_secret}
-            >
-              <TestTube size={16} />
-              {testing ? 'Testing…' : 'Test Connection'}
-            </button>
+            <div style={{ marginTop: '1rem' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleTest}
+                disabled={testing || !settings.mikrotik_agent_url || !settings.mikrotik_agent_secret}
+              >
+                <TestTube size={15} />
+                {testing ? 'Testing…' : 'Test Connection'}
+              </button>
 
-            {testResult && (
-              <div className={`connection-test-result ${testResult.success ? 'success' : 'error'}`} style={{ marginTop: '0.75rem' }}>
-                {testResult.success
-                  ? <CheckCircle size={16} style={{ color: '#16a34a', flexShrink: 0 }} />
-                  : <XCircle    size={16} style={{ color: '#dc2626', flexShrink: 0 }} />
-                }
-                <span>{testResult.message}</span>
-              </div>
-            )}
+              {testResult && (
+                <div className={`test-result-panel ${testResult.success ? 'success' : 'error'}`}>
+                  {testResult.success
+                    ? <CheckCircle size={15} />
+                    : <XCircle    size={15} />
+                  }
+                  {testResult.message}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* User Manager defaults */}
+          {/* ── User Manager defaults ── */}
           <div className="form-section">
-            <h4 className="form-section-subtitle">User Manager Defaults</h4>
+            <p className="mikrotik-section-label">User Manager Defaults</p>
 
-            <div className="form-row-2">
+            <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Default Group</label>
                 <input
                   className="form-input"
                   placeholder="IGY"
                   value={settings.mikrotik_group}
-                  onChange={(e) => setSettings({ ...settings, mikrotik_group: e.target.value })}
+                  onChange={e => set('mikrotik_group', e.target.value)}
                 />
-                <p className="form-hint">User Manager group assigned to every new credential.</p>
+                <span className="form-hint">User Manager group assigned to every new credential.</span>
               </div>
 
               <div className="form-group">
@@ -201,26 +197,28 @@ const MikroTikSettings = ({ partnerUuid }) => {
                   className="form-input"
                   placeholder="5"
                   value={settings.mikrotik_shared_users}
-                  onChange={(e) => setSettings({ ...settings, mikrotik_shared_users: e.target.value })}
+                  onChange={e => set('mikrotik_shared_users', e.target.value)}
                 />
-                <p className="form-hint">RouterOS shared-users field ("unlimited" is also valid).</p>
+                <span className="form-hint">RouterOS <code>shared-users</code> field ("unlimited" also valid).</span>
               </div>
             </div>
           </div>
         </>
       )}
 
+      {/* ── Save ── */}
       <div className="settings-actions">
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn-primary"
           onClick={handleSave}
           disabled={saving}
         >
-          <Save size={16} />
+          <Save size={15} />
           {saving ? 'Saving…' : 'Save MikroTik Settings'}
         </button>
       </div>
+
     </div>
   );
 };
