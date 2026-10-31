@@ -1994,7 +1994,7 @@
     "vpnCredentialsPartner": "WiFi Credentials (Partner Notification)",
     "vpnCredentialsPartnerDescription": "Sent to the partner admin when a new WiFi credential is created for a customer. Variables: {{customer_name}}, {{vpn_name}}, {{contract_number}}, {{partner_name}}",
     "vpnCredentialsCustomer": "WiFi Credentials (Customer)",
-    "vpnCredentialsCustomerDescription": "Sent to the customer with their WiFi login details. Variables: {{customer_name}}, {{vpn_name}}, {{vpn_password}}, {{partner_name}}"
+    "vpnCredentialsCustomerDescription": "Sent to the customer with their WiFi login details. Variables: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{partner_name}}"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",

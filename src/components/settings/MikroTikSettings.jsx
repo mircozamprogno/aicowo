@@ -11,6 +11,7 @@ const MikroTikSettings = ({ partnerUuid }) => {
     mikrotik_enabled:      false,
     mikrotik_agent_url:    '',
     mikrotik_agent_secret: '',
+    mikrotik_ssid:         '',
     mikrotik_group:        'IGY',
     mikrotik_shared_users: '5',
   });
@@ -25,7 +26,7 @@ const MikroTikSettings = ({ partnerUuid }) => {
     try {
       const { data, error } = await supabase
         .from('partners')
-        .select('mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, mikrotik_group, mikrotik_shared_users')
+        .select('mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, mikrotik_ssid, mikrotik_group, mikrotik_shared_users')
         .eq('partner_uuid', partnerUuid)
         .single();
       if (error) throw error;
@@ -33,6 +34,7 @@ const MikroTikSettings = ({ partnerUuid }) => {
         mikrotik_enabled:      data.mikrotik_enabled      ?? false,
         mikrotik_agent_url:    data.mikrotik_agent_url    ?? '',
         mikrotik_agent_secret: data.mikrotik_agent_secret ?? '',
+        mikrotik_ssid:         data.mikrotik_ssid         ?? '',
         mikrotik_group:        data.mikrotik_group        ?? 'IGY',
         mikrotik_shared_users: data.mikrotik_shared_users ?? '5',
       });
@@ -150,6 +152,19 @@ const MikroTikSettings = ({ partnerUuid }) => {
                 </button>
               </div>
               <span className="form-hint">Must match the AGENT_SECRET set in the router container.</span>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+              <label className="form-label">WiFi Network Name (SSID)</label>
+              <input
+                className="form-input"
+                placeholder="PowerCowo-WiFi"
+                value={settings.mikrotik_ssid}
+                onChange={e => set('mikrotik_ssid', e.target.value)}
+              />
+              <span className="form-hint">
+                The WiFi network name customers must select on their device. Included in the credentials email as <code>{'{{network_name}}'}</code>.
+              </span>
             </div>
 
             <div style={{ marginTop: '1rem' }}>

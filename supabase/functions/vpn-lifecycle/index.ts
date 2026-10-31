@@ -185,7 +185,7 @@ async function provision(
   // 2. Check partner has MikroTik enabled
   const { data: partner, error: partnerErr } = await supabase
     .from("partners")
-    .select("mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, mikrotik_group, mikrotik_shared_users, email, company_name, structure_name")
+    .select("mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, mikrotik_group, mikrotik_shared_users, mikrotik_ssid, email, company_name, structure_name")
     .eq("partner_uuid", partnerUuid)
     .single();
 
@@ -290,7 +290,8 @@ async function provision(
   if (customer.email) {
     await sendEmail(supabase, partnerUuid, partnerName, "vpn_credentials_customer", customer.email, {
       ...variables,
-      vpn_password: vpnPassword,
+      vpn_password:  vpnPassword,
+      network_name:  partner.mikrotik_ssid ?? "",
     });
   }
 

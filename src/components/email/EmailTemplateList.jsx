@@ -66,7 +66,7 @@ const PARTNER_TEMPLATE_CONFIGS = {
   vpn_credentials_customer: {
     id: 'vpn_credentials_customer',
     nameKey: 'emailTemplates.vpnCredentialsCustomer',
-    descriptionKey: 'emailTemplates.vpnCredentialsCustomerDescription',
+    descriptionKey: 'emailTemplates.vpnCredentialsCustomerDescription', // includes {{network_name}}
     icon: 'Router'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
