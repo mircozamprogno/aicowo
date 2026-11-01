@@ -793,7 +793,9 @@ const ContractForm = ({
         service_type: selectedService.service_type,
         service_cost: discountCalc ? discountCalc.finalPrice : basePrice,
         service_currency: selectedService.currency,
-        service_duration_days: selectedService.duration_days,
+        service_duration_days: overrideEndDate
+          ? Math.round((new Date(finalEndDate) - new Date(formData.start_date)) / 86400000)
+          : selectedService.duration_days,
         service_max_entries: selectedService.max_entries,
 
         // Location snapshot
