@@ -157,6 +157,9 @@
     "doorCodeDescription": "Codice di accesso unico e posizione (1–100) assegnati a questo cliente.",
     "doorCodeLabel": "Codice (6 lettere)",
     "doorPosition": "Posizione (1–100)",
+    "wifiName": "Nome Utente WiFi",
+    "wifiNameDescription": "Nome di accesso WiFi assegnato automaticamente a questo cliente.",
+    "noWifiAssigned": "Nessun accesso WiFi assegnato",
     "regenerateCode": "Genera nuovo codice",
     "selectPosition": "— seleziona —"
   },

@@ -155,6 +155,9 @@
     "doorCodeDescription": "Unique access code and position slot (1–100) assigned to this customer.",
     "doorCodeLabel": "Code (6 letters)",
     "doorPosition": "Position (1–100)",
+    "wifiName": "WiFi Username",
+    "wifiNameDescription": "WiFi access name automatically assigned to this customer.",
+    "noWifiAssigned": "No WiFi access assigned",
     "regenerateCode": "Generate new code",
     "selectPosition": "— select —"
   },

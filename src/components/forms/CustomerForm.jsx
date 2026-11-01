@@ -1,5 +1,5 @@
 // src/components/customers/CustomerForm.jsx
-import { FileText, KeyRound, RefreshCw, Trash2, Upload, X } from 'lucide-react';
+import { FileText, KeyRound, RefreshCw, Trash2, Upload, Wifi, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -61,6 +61,21 @@ const CustomerForm = ({
   const [documentUrl, setDocumentUrl] = useState(null);
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentType, setDocumentType] = useState(null);
+
+  // VPN credential (read-only display)
+  const [vpnCredential, setVpnCredential] = useState(null);
+
+  useEffect(() => {
+    if (!isEditing || !customer?.id || !partnerUuid) return;
+    supabase
+      .from('customer_vpn_credentials')
+      .select('vpn_name')
+      .eq('partner_uuid', partnerUuid)
+      .eq('customer_id', customer.id)
+      .is('revoked_at', null)
+      .maybeSingle()
+      .then(({ data }) => setVpnCredential(data));
+  }, [isEditing, customer?.id, partnerUuid]);
 
   const customerTypeOptions = [
     { value: 'individual', label: t('customers.individual') },
@@ -819,6 +834,32 @@ const CustomerForm = ({
                 onChange={handleChange}
               />
             </div>
+
+            {isEditing && !isProfileCompletion && (
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <Wifi size={18} style={{ marginRight: '0.5rem', display: 'inline', verticalAlign: '-3px' }} />
+                  {t('customers.wifiName') || 'WiFi Username'}
+                </h3>
+                <p className="form-section-description">
+                  {t('customers.wifiNameDescription') || 'WiFi access name automatically assigned to this customer.'}
+                </p>
+                <div className="form-group">
+                  <div style={{
+                    padding: '0.5rem 0.75rem',
+                    background: 'var(--color-bg-secondary, #f9fafb)',
+                    border: '1px solid var(--color-border, #e5e7eb)',
+                    borderRadius: '0.375rem',
+                    fontFamily: 'monospace',
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.05em',
+                    color: vpnCredential ? 'var(--color-text-primary, #111827)' : 'var(--color-text-muted, #9ca3af)'
+                  }}>
+                    {vpnCredential ? vpnCredential.vpn_name : (t('customers.noWifiAssigned') || 'No WiFi access assigned')}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {isEditing && !isProfileCompletion && (
               <div className="form-section">
