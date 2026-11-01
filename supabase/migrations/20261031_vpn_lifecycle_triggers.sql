@@ -59,13 +59,15 @@ BEGIN
       'partner_uuid',     NEW.partner_uuid
     );
 
+    -- Correct signature: net.http_post(url, body jsonb, params jsonb, headers jsonb)
     PERFORM net.http_post(
-      url     := 'https://idtwxzccuehxsoipjixf.supabase.co/functions/v1/vpn-lifecycle',
-      headers := jsonb_build_object(
+      'https://idtwxzccuehxsoipjixf.supabase.co/functions/v1/vpn-lifecycle',
+      v_payload,
+      '{}'::jsonb,
+      jsonb_build_object(
         'Content-Type',  'application/json',
         'Authorization', 'Bearer ' || v_token
-      ),
-      body    := v_payload::text
+      )
     );
   EXCEPTION WHEN OTHERS THEN
     RAISE WARNING 'vpn-lifecycle trigger failed (non-blocking): %', SQLERRM;
