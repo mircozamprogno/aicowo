@@ -1,5 +1,5 @@
 // src/pages/Contracts.jsx
-import { AlertTriangle, Archive, Calendar, Clock, Download, Edit2, FileText, Filter, Plus, RefreshCw, Upload, X } from 'lucide-react';
+import { AlertTriangle, Archive, Calendar, Clock, Download, Edit2, FileText, Filter, Plus, RefreshCw, Upload, X, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Pagination from '../components/common/Pagination';
 import { toast } from '../components/common/ToastContainer';
@@ -34,6 +34,9 @@ const Contracts = () => {
   // Modal states removed
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [contractToArchive, setContractToArchive] = useState(null);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [contractToClose, setContractToClose] = useState(null);
+  const [closing, setClosing] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
 
@@ -521,6 +524,49 @@ const Contracts = () => {
   const handleArchiveContract = (contract) => {
     setContractToArchive(contract);
     setShowArchiveConfirm(true);
+  };
+
+  const handleCloseContract = (contract) => {
+    setContractToClose(contract);
+    setShowCloseConfirm(true);
+  };
+
+  const handleCloseConfirm = async () => {
+    if (!contractToClose) return;
+    setClosing(true);
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .update({ contract_status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', contractToClose.id);
+
+      if (error) throw error;
+
+      await logActivity({
+        action_category: 'contract',
+        action_type: 'cancelled',
+        entity_id: contractToClose.id.toString(),
+        entity_type: 'contracts',
+        description: `Closed contract ${contractToClose.contract_number} for ${contractToClose.customers?.company_name || `${contractToClose.customers?.first_name} ${contractToClose.customers?.second_name}`}`,
+        metadata: {
+          contract_number: contractToClose.contract_number,
+          customer_id: contractToClose.customer_id,
+          service_name: contractToClose.service_name,
+          end_date: contractToClose.end_date
+        }
+      });
+
+      setContracts(prev => prev.map(c =>
+        c.id === contractToClose.id ? { ...c, contract_status: 'cancelled' } : c
+      ));
+      toast.success(t('contracts.contractClosedSuccessfully') || 'Contract closed successfully');
+    } catch (err) {
+      toast.error(t('contracts.errorClosingContract') || 'Error closing contract');
+    } finally {
+      setClosing(false);
+      setShowCloseConfirm(false);
+      setContractToClose(null);
+    }
   };
 
   const handleArchiveConfirm = async () => {
@@ -1281,6 +1327,7 @@ const Contracts = () => {
                       onEditContract={handleEditContract}
                       onPackageBooking={handlePackageBooking}
                       onDeleteContract={handleArchiveContract}
+                      onCloseContract={handleCloseContract}
                       canBookPackage={canBookPackage}
                       getBookButtonText={getBookButtonText}
                       isInRange={isInRange}
@@ -1340,6 +1387,86 @@ const Contracts = () => {
         onSuccess={handlePackageBookingSuccess}
         contract={selectedPackageContract}
       />
+
+      {showCloseConfirm && contractToClose && (
+        <div className="modal-overlay">
+          <div className="modal-container archive-modal">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {t('contracts.confirmClose') || 'Close Contract'}
+              </h2>
+              <button onClick={() => { setShowCloseConfirm(false); setContractToClose(null); }} className="modal-close-btn">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="archive-modal-content" style={{ padding: '1.5rem' }}>
+              <div className="archive-warning">
+                <XCircle size={24} className="warning-icon" style={{ color: '#ef4444' }} />
+                <div className="warning-text">
+                  <h3>{t('contracts.closeContractTitle') || 'Close this contract?'}</h3>
+                  <p>{t('contracts.closeContractWarning') || 'The contract will be marked as cancelled and remain visible in the contracts list. This action cannot be undone.'}</p>
+                </div>
+              </div>
+
+              <div className="contract-to-archive" style={{ marginTop: '1rem' }}>
+                <div className="contract-detail">
+                  <strong>{t('contracts.contract')}:</strong> {contractToClose.contract_number}
+                </div>
+                <div className="contract-detail">
+                  <strong>{t('contracts.customer')}:</strong> {contractToClose.customers?.company_name ||
+                    `${contractToClose.customers?.first_name} ${contractToClose.customers?.second_name}`}
+                </div>
+                <div className="contract-detail">
+                  <strong>{t('contracts.service')}:</strong> {contractToClose.service_name}
+                </div>
+                <div className="contract-detail">
+                  <strong>{t('contracts.period')}:</strong> {formatDate(contractToClose.start_date)} - {formatDate(contractToClose.end_date)}
+                </div>
+              </div>
+
+              <div className="archive-info-note" style={{ marginTop: '1rem' }}>
+                <h4>{t('contracts.closeNoteTitle') || 'What happens when you close:'}</h4>
+                <ul>
+                  <li>{t('contracts.closeNote1') || 'Contract status changes to Cancelled'}</li>
+                  <li>{t('contracts.closeNote2') || 'Contract stays visible (not archived)'}</li>
+                  <li>{t('contracts.closeNote3') || 'If this is the customer\'s last active contract, WiFi access and door code are automatically removed'}</li>
+                </ul>
+              </div>
+
+              <div className="archive-modal-actions" style={{
+                display: 'flex', justifyContent: 'flex-end',
+                gap: '0.75rem', marginTop: '1.5rem',
+                paddingTop: '1.5rem', borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowCloseConfirm(false); setContractToClose(null); }}
+                  className="btn-secondary"
+                  disabled={closing}
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseConfirm}
+                  disabled={closing}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.75rem 1.5rem', background: '#ef4444', border: 'none',
+                    borderRadius: '0.375rem', color: 'white', fontSize: '0.875rem',
+                    fontWeight: 500, cursor: closing ? 'not-allowed' : 'pointer',
+                    opacity: closing ? 0.6 : 1
+                  }}
+                >
+                  <XCircle size={15} />
+                  {closing ? (t('common.saving') || 'Closing…') : (t('contracts.closeContract') || 'Close Contract')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showArchiveConfirm && contractToArchive && (
         <div className="modal-overlay">

@@ -176,6 +176,15 @@
   color: #dc2626;
 }
 
+.dropdown-item.close-contract-btn {
+  color: #dc2626;
+}
+
+.dropdown-item.close-contract-btn:hover:not(:disabled) {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes dropdownSlideDown {
   from {

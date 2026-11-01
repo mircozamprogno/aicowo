@@ -1232,7 +1232,8 @@
       "recordPayment": "Registra Pagamento",
       "paymentHistory": "Storico Pagamenti",
       "editContract": "Modifica Contratto",
-      "archiveContract": "Archivia Contratto"
+      "archiveContract": "Archivia Contratto",
+      "closeContract": "Chiudi Contratto"
     },
     "discountCode": "Codice Sconto",
     "askPartnerForCode": "Chiedi al tuo partner il codice sconto",
@@ -1248,7 +1249,17 @@
     "contractDetails": "Dettagli contratto",
     "dayPassValidOnlyThisDay": "Giornaliero valido solo per la data selezionata",
     "serviceLinkedToResource": "Questo servizio è collegato a una risorsa specifica.",
-    "needsResourceReassignment": "Necessita riassegnazione risorsa"
+    "needsResourceReassignment": "Necessita riassegnazione risorsa",
+    "closeContract": "Chiudi Contratto",
+    "confirmClose": "Chiudi Contratto",
+    "closeContractTitle": "Chiudere questo contratto?",
+    "closeContractWarning": "Il contratto verrà contrassegnato come annullato e rimarrà visibile. Questa azione non può essere annullata.",
+    "closeNoteTitle": "Cosa succede alla chiusura:",
+    "closeNote1": "Lo stato del contratto cambia in Annullato",
+    "closeNote2": "Il contratto rimane visibile (non archiviato)",
+    "closeNote3": "Se è l'ultimo contratto attivo del cliente, l'accesso WiFi viene rimosso automaticamente",
+    "contractClosedSuccessfully": "Contratto chiuso con successo",
+    "errorClosingContract": "Errore nella chiusura del contratto"
   },
   "placeholders": {
     "emailPlaceholder": "Indirizzo email",

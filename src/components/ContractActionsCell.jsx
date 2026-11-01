@@ -8,7 +8,8 @@ import {
   Edit2,
   EyeOff,
   MoreVertical,
-  Upload
+  Upload,
+  XCircle
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import '../styles/components/contractaction.css';
@@ -29,6 +30,7 @@ const ContractActionsCell = ({
   onEditContract,
   onPackageBooking,
   onDeleteContract,
+  onCloseContract,
   canBookPackage,
   getBookButtonText,
   isInRange,
@@ -153,6 +155,14 @@ const ContractActionsCell = ({
       },
       disabled: !canBook,
       show: contract.service_type === 'pacchetto' && isInRange
+    },
+    {
+      key: 'close',
+      icon: <XCircle size={14} />,
+      label: t('contracts.actions.closeContract') || 'Close Contract',
+      className: 'close-contract-btn',
+      onClick: () => onCloseContract(contract),
+      show: (isPartnerAdmin || isSuperAdmin) && contract.contract_status === 'active'
     },
     {
       key: 'delete',

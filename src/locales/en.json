@@ -1117,7 +1117,8 @@
       "recordPayment": "Record Payment",
       "paymentHistory": "Payment History",
       "editContract": "Edit Contract",
-      "archiveContract": "Archive Contract"
+      "archiveContract": "Archive Contract",
+      "closeContract": "Close Contract"
     },
     "discountCode": "Discount Code",
     "askPartnerForCode": "Ask your partner for the discount code",
@@ -1132,7 +1133,17 @@
     "contractTotal": "Contract Total",
     "contractDetails": "Contract Details",
     "dayPassValidOnlyThisDay": "Day pass valid only on the selected date",
-    "needsResourceReassignment": "Needs resource reassignment"
+    "needsResourceReassignment": "Needs resource reassignment",
+    "closeContract": "Close Contract",
+    "confirmClose": "Close Contract",
+    "closeContractTitle": "Close this contract?",
+    "closeContractWarning": "The contract will be marked as cancelled and remain visible. This action cannot be undone.",
+    "closeNoteTitle": "What happens when you close:",
+    "closeNote1": "Contract status changes to Cancelled",
+    "closeNote2": "Contract stays visible (not archived)",
+    "closeNote3": "If this is the customer's last active contract, WiFi access is automatically removed",
+    "contractClosedSuccessfully": "Contract closed successfully",
+    "errorClosingContract": "Error closing contract"
   },
   "placeholders": {
     "emailPlaceholder": "Email address",
