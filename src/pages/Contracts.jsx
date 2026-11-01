@@ -1122,7 +1122,7 @@ const Contracts = () => {
         })}
       </div>
 
-      <div className="contracts-table-container">
+      <div className="contracts-table-container hide-on-mobile">
         <div className="contracts-table-wrapper">
           <table className="contracts-table">
             <thead className="contracts-table-head">

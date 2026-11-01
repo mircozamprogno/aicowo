@@ -251,3 +251,108 @@
   top: 1rem;
   right: 1rem;
 }
+
+/* ===== MOBILE AUTH (max-width: 768px) ===== */
+@media (max-width: 768px) {
+  /* Page wrapper: less vertical breathing room */
+  .auth-page {
+    padding: 2rem 0;
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+
+  /* Card: full-width with side margin, no max-width cap */
+  .auth-container {
+    max-width: none;
+    width: calc(100% - 2rem);
+    margin: 0 1rem;
+    gap: 1.25rem;
+  }
+
+  /* Logo: scale down, never taller than 60px */
+  .auth-logo {
+    height: auto;
+    width: auto;
+  }
+
+  .auth-logo img {
+    max-height: 60px;
+    width: auto;
+  }
+
+  /* Title: slightly smaller on mobile */
+  .auth-title {
+    font-size: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  /* Form: tighter gaps */
+  .auth-form {
+    margin-top: 1.25rem;
+    gap: 1rem;
+  }
+
+  /* First name / Last name row: collapse to single column */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Inputs: ensure full-width with correct box model */
+  .form-input,
+  .form-select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Submit button: full-width with adequate tap target */
+  .auth-submit-btn {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* Forgot password link: minimum 44px tap target */
+  .auth-links {
+    justify-content: center;
+  }
+
+  .forgot-password-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.25rem;
+  }
+
+  /* Secondary actions / back-to-login links: 44px tap targets */
+  .auth-switch {
+    margin-top: 0.25rem;
+  }
+
+  .auth-switch-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.25rem;
+  }
+
+  .auth-back-link {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .auth-back-link .auth-switch-link,
+  .auth-back-link a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.25rem;
+  }
+
+  /* Language switcher: keep top-right but give it breathing room */
+  .auth-language-switcher {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+}

@@ -1596,6 +1596,128 @@
 }
 
 /* ========================================
+   MOBILE OPTIMIZATIONS (max-width: 768px)
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Page layout: tighten gaps */
+  .dashboard-page {
+    gap: 1rem;
+  }
+
+  .dashboard-section {
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+  }
+
+  .section-title {
+    font-size: 1.0625rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /* Dashboard title: stack naturally, reduce size */
+  .dashboard-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Stat cards: max 2 columns */
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  /* Resources grid: max 2 columns on tablet/mobile */
+  .resources-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .resource-card {
+    padding: 1rem;
+  }
+
+  /* Alert cards: already 2-col at 768px from min-width rule;
+     on mobile keep 1-col (handled by base style) */
+  .alert-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Alert metrics: keep 3 numbers side by side (override the existing rule above) */
+  .alert-metrics {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* Financial metrics: max 2 columns */
+  .financial-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .financial-metric-card {
+    padding: 1rem;
+  }
+
+  /* Contract cards: 1 column on mobile */
+  .contract-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Charts: full width, reduced height */
+  .dashboard-chart {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .chart-container {
+    height: 240px;
+    min-height: 240px;
+  }
+
+  .chart-container.utilization {
+    height: 260px;
+    min-height: 260px;
+  }
+
+  .chart-loading {
+    height: 14rem;
+  }
+
+  .chart-empty {
+    height: 10rem;
+  }
+
+  /* Quick actions: single column */
+  .quick-actions {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Partners over-limit alert */
+  .partners-overlimit-alert {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* ========================================
    PRINT STYLES
    ======================================== */
 

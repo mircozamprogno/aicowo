@@ -28,6 +28,7 @@ import './styles/pages/services.css'
 import './styles/pages/settings.css'
 import './styles/pages/support.css'
 import './styles/pages/users.css'
+import './styles/mobile-utilities.css'
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(

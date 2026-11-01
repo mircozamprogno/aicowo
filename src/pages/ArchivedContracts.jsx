@@ -359,7 +359,7 @@ const ArchivedContracts = () => {
       </div>
 
       <div className="archived-contracts-table-container">
-        <div className="archived-contracts-table-wrapper">
+        <div className="archived-contracts-table-wrapper hide-on-mobile">
           <table className="contracts-table">
             <thead className="contracts-table-head">
               <tr>
@@ -553,6 +553,126 @@ const ArchivedContracts = () => {
               <Archive size={48} className="empty-icon" />
               <p>{t('contracts.noArchivedContractsFound') || 'No archived contracts found.'}</p>
             </div>
+          )}
+        </div>
+
+        {/* Mobile card list */}
+        <div className="mobile-card-list">
+          {archivedContracts.length === 0 ? (
+            <div className="contracts-empty">
+              <Archive size={48} className="empty-icon" />
+              <p>{t('contracts.noArchivedContractsFound') || 'No archived contracts found.'}</p>
+            </div>
+          ) : (
+            archivedContracts.map((contract) => (
+              <div className="mobile-card" key={contract.id}>
+                <div className="mobile-card-header">
+                  <span className="mobile-card-title">{contract.contract_number}</span>
+                  <span className="status-badge status-archived">
+                    {t('contracts.archived') || 'Archived'}
+                  </span>
+                </div>
+                <div className="mobile-card-body">
+                  {!isCustomer && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">{t('contracts.customer')}</span>
+                      <span>
+                        {contract.customers?.company_name ||
+                          `${contract.customers?.first_name} ${contract.customers?.second_name}`}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('contracts.service')}</span>
+                    <span>{contract.service_name}</span>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('contracts.period')}</span>
+                    <span>{formatDate(contract.start_date)} – {formatDate(contract.end_date)}</span>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('contracts.cost')}</span>
+                    <span>{formatCurrency(contract.service_cost, contract.service_currency)}</span>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('contracts.archivedOn') || 'Archived on'}</span>
+                    <span>{formatDate(contract.archived_at)}</span>
+                  </div>
+                </div>
+                <div className="mobile-card-actions">
+                  <button
+                    className="pdf-btn"
+                    onClick={() => handleGeneratePDF(contract)}
+                    disabled={generatingPDF === contract.id}
+                    title={t('contracts.generatePDF') || 'Generate PDF'}
+                    style={{
+                      backgroundColor: generatingPDF === contract.id ? '#9ca3af' : '#8b5cf6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      padding: '0.5rem 0.75rem',
+                      cursor: generatingPDF === contract.id ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      opacity: generatingPDF === contract.id ? 0.6 : 1,
+                      fontSize: '0.8125rem'
+                    }}
+                  >
+                    {generatingPDF === contract.id ? (
+                      <div className="loading-spinner-small" style={{ borderTopColor: 'white' }}></div>
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    PDF
+                  </button>
+                  {canRestore && (
+                    <button
+                      className="restore-btn"
+                      onClick={() => handleRestore(contract)}
+                      title={t('contracts.restoreContract') || 'Restore Contract'}
+                      style={{
+                        backgroundColor: '#16a34a',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        padding: '0.5rem 0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        fontSize: '0.8125rem'
+                      }}
+                    >
+                      <RotateCcw size={14} />
+                      {t('contracts.restoreContract') || 'Restore'}
+                    </button>
+                  )}
+                  {(isPartnerAdmin || isSuperAdmin) && (
+                    <button
+                      className="permanent-delete-btn"
+                      onClick={() => handlePermanentDelete(contract)}
+                      title={t('contracts.deletePermanently') || 'Delete Permanently'}
+                      style={{
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        padding: '0.5rem 0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        fontSize: '0.8125rem'
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      {t('contracts.deletePermanently') || 'Delete'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

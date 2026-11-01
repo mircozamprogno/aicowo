@@ -242,120 +242,180 @@ const Services = () => {
 
       <div className="services-table-container">
         <div className="services-table-wrapper">
-          <table className="services-table">
-            <thead className="services-table-head">
-              <tr>
-                <th className="services-table-header">
-                  {t('services.service')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.type')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.resource')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.cost')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.duration')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.status')}
-                </th>
-                <th className="services-table-header">
-                  {t('services.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="services-table-body">
-              {currentServices.map((service) => (
-                <tr key={service.id} className="services-table-row">
-                  <td className="services-table-cell">
-                    <div className="service-info">
-                      <div className="service-name">{service.service_name}</div>
-                      <div className="service-description">
-                        {service.service_description}
-                      </div>
-                      {service.service_type === 'pacchetto' && service.max_entries && (
-                        <div className="service-entries">
-                          {t('services.maxEntries')}: {service.max_entries}
+          <div className="hide-on-mobile">
+            <table className="services-table">
+              <thead className="services-table-head">
+                <tr>
+                  <th className="services-table-header">
+                    {t('services.service')}
+                  </th>
+                  <th className="services-table-header">
+                    {t('services.type')}
+                  </th>
+                  <th className="services-table-header">
+                    {t('services.resource')}
+                  </th>
+                  <th className="services-table-header">
+                    {t('services.cost')}
+                  </th>
+                  <th className="services-table-header">
+                    {t('services.duration')}
+                  </th>
+                  <th className="services-table-header">
+                    {t('services.status')}
+                  </th>
+                  <th className="services-table-header">
+                    {t('services.actions')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="services-table-body">
+                {currentServices.map((service) => (
+                  <tr key={service.id} className="services-table-row">
+                    <td className="services-table-cell">
+                      <div className="service-info">
+                        <div className="service-name">{service.service_name}</div>
+                        <div className="service-description">
+                          {service.service_description}
                         </div>
-                      )}
-                      <div className="service-created">
-                        {t('common.createdAt')}: {formatDate(service.created_at)}
+                        {service.service_type === 'pacchetto' && service.max_entries && (
+                          <div className="service-entries">
+                            {t('services.maxEntries')}: {service.max_entries}
+                          </div>
+                        )}
+                        <div className="service-created">
+                          {t('common.createdAt')}: {formatDate(service.created_at)}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="services-table-cell">
+                    </td>
+                    <td className="services-table-cell">
+                      <span className={`service-type-badge ${getServiceTypeBadgeClass(service.service_type)}`}>
+                        {getServiceTypeLabel(service.service_type)}
+                      </span>
+                    </td>
+                    <td className="services-table-cell">
+                      <div className="service-resource">
+                        {service.location_resources ? (
+                          <div className="resource-info">
+                            <div className="resource-header">
+                              <span className="resource-name">
+                                {service.location_resources.resource_name}
+                              </span>
+                            </div>
+                            <div className="resource-location">
+                              📍 {service.location_resources.locations?.location_name}
+                            </div>
+                            <div className="resource-quantity">
+                              {service.location_resources.quantity} {t('services.available')}
+                            </div>
+                          </div>
+                        ) : service.resource_type ? (
+                          <div className="resource-info">
+                            <div className="resource-header">
+                              <span className="resource-name">
+                                {getResourceTypeLabel(service.resource_type)}
+                              </span>
+                            </div>
+                            <div className="resource-location">
+                              {locations.find(l => l.id === service.location_id)?.location_name && (
+                                <>📍 {locations.find(l => l.id === service.location_id)?.location_name}</>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="no-resource">{t('services.noResource')}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="services-table-cell">
+                      <div className="service-cost">
+                        {service.cost > 0 ? formatCurrency(service.cost, service.currency) : t('services.free')}
+                      </div>
+                    </td>
+                    <td className="services-table-cell">
+                      <div className="service-duration">
+                        {service.duration_days} {t('services.days')}
+                      </div>
+                    </td>
+                    <td className="services-table-cell">
+                      <span className={`status-badge ${getStatusBadgeClass(service.service_status)}`}>
+                        {t(`services.${service.service_status}`)}
+                      </span>
+                    </td>
+                    <td className="services-table-cell">
+                      <div className="service-actions">
+                        <button
+                          className="edit-btn"
+                          onClick={() => handleEditService(service)}
+                          title={t('services.editService')}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mobile-card-list">
+            {currentServices.map((service) => (
+              <div className="mobile-card" key={service.id}>
+                <div className="mobile-card-header">
+                  <span className="mobile-card-title">{service.service_name}</span>
+                  <span className={`status-badge ${getStatusBadgeClass(service.service_status)}`}>
+                    {t(`services.${service.service_status}`)}
+                  </span>
+                </div>
+                <div className="mobile-card-body">
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('services.type')}</span>
                     <span className={`service-type-badge ${getServiceTypeBadgeClass(service.service_type)}`}>
                       {getServiceTypeLabel(service.service_type)}
                     </span>
-                  </td>
-                  <td className="services-table-cell">
-                    <div className="service-resource">
-                      {service.location_resources ? (
-                        <div className="resource-info">
-                          <div className="resource-header">
-                            <span className="resource-name">
-                              {service.location_resources.resource_name}
-                            </span>
-                          </div>
-                          <div className="resource-location">
-                            📍 {service.location_resources.locations?.location_name}
-                          </div>
-                          <div className="resource-quantity">
-                            {service.location_resources.quantity} {t('services.available')}
-                          </div>
-                        </div>
-                      ) : service.resource_type ? (
-                        <div className="resource-info">
-                          <div className="resource-header">
-                            <span className="resource-name">
-                              {getResourceTypeLabel(service.resource_type)}
-                            </span>
-                          </div>
-                          <div className="resource-location">
-                            {locations.find(l => l.id === service.location_id)?.location_name && (
-                              <>📍 {locations.find(l => l.id === service.location_id)?.location_name}</>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="no-resource">{t('services.noResource')}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="services-table-cell">
-                    <div className="service-cost">
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('services.cost')}</span>
+                    <span className="service-cost">
                       {service.cost > 0 ? formatCurrency(service.cost, service.currency) : t('services.free')}
-                    </div>
-                  </td>
-                  <td className="services-table-cell">
-                    <div className="service-duration">
-                      {service.duration_days} {t('services.days')}
-                    </div>
-                  </td>
-                  <td className="services-table-cell">
-                    <span className={`status-badge ${getStatusBadgeClass(service.service_status)}`}>
-                      {t(`services.${service.service_status}`)}
                     </span>
-                  </td>
-                  <td className="services-table-cell">
-                    <div className="service-actions">
-                      <button
-                        className="edit-btn"
-                        onClick={() => handleEditService(service)}
-                        title={t('services.editService')}
-                      >
-                        <Edit2 size={16} />
-                      </button>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('services.duration')}</span>
+                    <span>{service.duration_days} {t('services.days')}</span>
+                  </div>
+                  {(service.location_resources || service.resource_type) && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">{t('services.resource')}</span>
+                      <span>
+                        {service.location_resources
+                          ? service.location_resources.resource_name
+                          : getResourceTypeLabel(service.resource_type)}
+                      </span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                  {service.service_type === 'pacchetto' && service.max_entries && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">{t('services.maxEntries')}</span>
+                      <span>{service.max_entries}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mobile-card-actions">
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEditService(service)}
+                    title={t('services.editService')}
+                  >
+                    <Edit2 size={16} />
+                    <span style={{ marginLeft: '0.25rem', fontSize: '0.8125rem' }}>{t('services.editService')}</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {services.length === 0 && (
             <div className="services-empty">
               <Settings size={48} className="empty-icon" />

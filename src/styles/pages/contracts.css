@@ -1800,3 +1800,149 @@ button.btn-primary:hover:not(:disabled) {
   background: transparent !important;
   border: none !important;
 }
+
+/* ===== MOBILE OPTIMIZATIONS (max-width: 768px) ===== */
+
+/* Utility: hide-on-mobile / mobile-card-list pattern */
+.mobile-card-list { display: none; }
+
+@media (max-width: 768px) {
+  /* Page container padding */
+  .contracts-page {
+    gap: 1rem;
+    padding: 0;
+  }
+
+  /* hide-on-mobile utility — hides table container on mobile */
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  /* mobile-card-list utility — the existing contracts-mobile-list already uses these
+     patterns; these rules ensure the generic utility class also works */
+  .mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-card {
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .mobile-card-title {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.9375rem;
+  }
+
+  .mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mobile-card-label {
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .mobile-card-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* Page header: stack title section and action buttons vertically */
+  .contracts-header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .contracts-title-section {
+    width: 100%;
+  }
+
+  .contracts-header-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .add-contract-btn,
+  .export-csv-btn,
+  .archived-contracts-btn,
+  .bulk-upload-btn,
+  .renewal-logs-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stats row: 2-column grid on mobile */
+  .contracts-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    flex-direction: unset;
+  }
+
+  .stat-item {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding: 0.875rem 0.5rem;
+    min-width: 0;
+  }
+
+  .stat-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.65rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  /* Filter chip bar: scroll horizontally, no wrap */
+  .filter-chip {
+    white-space: nowrap;
+  }
+
+  .contracts-header > .filter-chip,
+  .filter-chip-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Filter results info */
+  .filter-results-info {
+    font-size: 0.8125rem;
+  }
+}

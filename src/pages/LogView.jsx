@@ -427,72 +427,127 @@ const LogView = () => {
             <div className="logs-loading">{t('common.loading')}</div>
           ) : (
             <div className="logs-table-container">
-              <div className="logs-table-wrapper">
-                <table className="logs-table">
-                  <thead className="logs-table-head">
-                    <tr>
-                      <th className="logs-table-header">{t('logs.dateTime')}</th>
-                      <th className="logs-table-header">{t('logs.user')}</th>
-                      <th className="logs-table-header">{t('logs.category')}</th>
-                      <th className="logs-table-header">{t('logs.actionType')}</th>
-                      <th className="logs-table-header">{t('logs.entityType')}</th>
-                      <th className="logs-table-header">{t('logs.description')}</th>
-                      <th className="logs-table-header">{t('logs.actionsColumn')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="logs-table-body">
-                    {logs.map((log) => (
-                      <tr key={log.id} className="logs-table-row">
-                        <td className="logs-table-cell">
-                          <div className="log-datetime">
-                            {formatDateTime(log.created_at)}
-                          </div>
-                        </td>
-                        <td className="logs-table-cell">
-                          <div className="log-user">
-                            <div className="user-name">{formatUserName(log)}</div>
-                            <div className="user-email">{formatUserEmail(log)}</div>
-                          </div>
-                        </td>
-                        <td className="logs-table-cell">
-                          <span className={`category-badge ${getCategoryBadgeClass(log.action_category)}`}>
-                            {t(`logs.categories.${log.action_category}`)}
-                          </span>
-                        </td>
-                        <td className="logs-table-cell">
-                          <span className={`action-badge ${getActionTypeBadgeClass(log.action_type)}`}>
-                            {t(`logs.actions.${log.action_type}`)}
-                          </span>
-                        </td>
-                        <td className="logs-table-cell">
-                          <div className="log-entity">
-                            {log.entity_type || '-'}
-                          </div>
-                        </td>
-                        <td className="logs-table-cell">
-                          <div className="log-description">
-                            {truncateText(log.description)}
-                          </div>
-                        </td>
-                        <td className="logs-table-cell">
-                          <button
-                            className="view-details-btn"
-                            onClick={() => handleViewDetails(log)}
-                            title={t('logs.viewDetails')}
-                          >
-                            <Eye size={16} />
-                          </button>
-                        </td>
+              <div className="hide-on-mobile">
+                <div className="logs-table-wrapper">
+                  <table className="logs-table">
+                    <thead className="logs-table-head">
+                      <tr>
+                        <th className="logs-table-header">{t('logs.dateTime')}</th>
+                        <th className="logs-table-header">{t('logs.user')}</th>
+                        <th className="logs-table-header">{t('logs.category')}</th>
+                        <th className="logs-table-header">{t('logs.actionType')}</th>
+                        <th className="logs-table-header">{t('logs.entityType')}</th>
+                        <th className="logs-table-header">{t('logs.description')}</th>
+                        <th className="logs-table-header">{t('logs.actionsColumn')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="logs-table-body">
+                      {logs.map((log) => (
+                        <tr key={log.id} className="logs-table-row">
+                          <td className="logs-table-cell">
+                            <div className="log-datetime">
+                              {formatDateTime(log.created_at)}
+                            </div>
+                          </td>
+                          <td className="logs-table-cell">
+                            <div className="log-user">
+                              <div className="user-name">{formatUserName(log)}</div>
+                              <div className="user-email">{formatUserEmail(log)}</div>
+                            </div>
+                          </td>
+                          <td className="logs-table-cell">
+                            <span className={`category-badge ${getCategoryBadgeClass(log.action_category)}`}>
+                              {t(`logs.categories.${log.action_category}`)}
+                            </span>
+                          </td>
+                          <td className="logs-table-cell">
+                            <span className={`action-badge ${getActionTypeBadgeClass(log.action_type)}`}>
+                              {t(`logs.actions.${log.action_type}`)}
+                            </span>
+                          </td>
+                          <td className="logs-table-cell">
+                            <div className="log-entity">
+                              {log.entity_type || '-'}
+                            </div>
+                          </td>
+                          <td className="logs-table-cell">
+                            <div className="log-description">
+                              {truncateText(log.description)}
+                            </div>
+                          </td>
+                          <td className="logs-table-cell">
+                            <button
+                              className="view-details-btn"
+                              onClick={() => handleViewDetails(log)}
+                              title={t('logs.viewDetails')}
+                            >
+                              <Eye size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
 
-                {logs.length === 0 && (
+                  {logs.length === 0 && (
+                    <div className="logs-empty">
+                      <FileText size={48} className="empty-icon" />
+                      <p>{t('logs.noLogsFound')}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="mobile-card-list">
+                {logs.length === 0 ? (
                   <div className="logs-empty">
                     <FileText size={48} className="empty-icon" />
                     <p>{t('logs.noLogsFound')}</p>
                   </div>
+                ) : (
+                  logs.map((log) => (
+                    <div className="mobile-card" key={log.id}>
+                      <div className="mobile-card-header">
+                        <span className="mobile-card-title">{formatUserName(log)}</span>
+                        <span className={`action-badge ${getActionTypeBadgeClass(log.action_type)}`}>
+                          {t(`logs.actions.${log.action_type}`)}
+                        </span>
+                      </div>
+                      <div className="mobile-card-body">
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-label">{t('logs.dateTime')}</span>
+                          <span>{formatDateTime(log.created_at)}</span>
+                        </div>
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-label">{t('logs.category')}</span>
+                          <span className={`category-badge ${getCategoryBadgeClass(log.action_category)}`}>
+                            {t(`logs.categories.${log.action_category}`)}
+                          </span>
+                        </div>
+                        <div className="mobile-card-row">
+                          <span className="mobile-card-label">{t('logs.entityType')}</span>
+                          <span>{log.entity_type || '-'}</span>
+                        </div>
+                        {log.description && (
+                          <div className="mobile-card-row">
+                            <span className="mobile-card-label">{t('logs.description')}</span>
+                            <span>{truncateText(log.description, 60)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mobile-card-actions">
+                        <button
+                          className="view-details-btn"
+                          onClick={() => handleViewDetails(log)}
+                          title={t('logs.viewDetails')}
+                        >
+                          <Eye size={16} />
+                          <span>{t('logs.viewDetails')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>

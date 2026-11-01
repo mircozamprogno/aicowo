@@ -424,7 +424,7 @@ const Customers = () => {
       </div>
 
       <div className="customers-table-container">
-        <div className="customers-table-wrapper">
+        <div className="hide-on-mobile customers-table-wrapper">
           <table className="customers-table">
             <thead className="customers-table-head">
               <tr>
@@ -519,6 +519,68 @@ const Customers = () => {
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        <div className="mobile-card-list">
+          {currentCustomers.length === 0 ? (
+            <div className="customers-empty">
+              <div className="empty-content">
+                <h3>{t('customers.noCustomersYet')}</h3>
+                <p>{t('customers.customersWillAppearHere')}</p>
+              </div>
+            </div>
+          ) : (
+            currentCustomers.map((customer) => (
+              <div className="mobile-card" key={customer.id}>
+                <div className="mobile-card-header">
+                  <span className="mobile-card-title">
+                    {customer.first_name} {customer.second_name}
+                  </span>
+                  <span className="type-badge">
+                    {t(`customers.${customer.customer_type}`)}
+                  </span>
+                </div>
+                <div className="mobile-card-body">
+                  {customer.company_name && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">{t('customers.company') || 'Company'}</span>
+                      <span>{customer.company_name}</span>
+                    </div>
+                  )}
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('customers.email') || 'Email'}</span>
+                    <span>{customer.email || '-'}</span>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('customers.phone')}</span>
+                    <span>{customer.phone || '-'}</span>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('customers.activeContracts')}</span>
+                    <span style={{ fontWeight: '600', color: '#1e293b' }}>{customer.active_contracts_count || 0}</span>
+                  </div>
+                </div>
+                <div className="mobile-card-actions">
+                  <button
+                    className="edit-btn"
+                    onClick={() => handleEditCustomer(customer)}
+                    title={t('common.edit')}
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  {customer.active_contracts_count > 0 && (
+                    <button
+                      className="edit-btn"
+                      onClick={() => handleViewContracts(customer)}
+                      title={t('navigation.contracts')}
+                    >
+                      <FileText size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

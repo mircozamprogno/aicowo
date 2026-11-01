@@ -1268,3 +1268,184 @@
     margin: 1rem;
   }
 }
+
+/* ===== MOBILE — added for responsive layout ===== */
+@media (max-width: 768px) {
+  /* Page container padding */
+  .notifications-page {
+    padding: 1rem;
+  }
+
+  /* Header: stack icon + text, reduce font size */
+  .notifications-header {
+    margin-bottom: 1rem;
+  }
+
+  .notifications-header-content {
+    gap: 0.75rem;
+  }
+
+  .notifications-header-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .notifications-title {
+    font-size: 1.375rem;
+  }
+
+  /* Tabs: scrollable, no wrap, whitespace */
+  .notifications-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    gap: 0;
+    margin-bottom: 1rem;
+  }
+
+  .notifications-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notifications-tab {
+    white-space: nowrap;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+  }
+
+  /* Notification list items: full-width cards */
+  .notifications-list-container {
+    padding: 1rem;
+  }
+
+  .notifications-list-filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .notifications-list-search {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .notifications-list-filter-buttons {
+    flex-wrap: wrap;
+  }
+
+  .notification-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.875rem;
+  }
+
+  .notification-item-content {
+    width: 100%;
+  }
+
+  .notification-item-title {
+    font-size: 0.9375rem;
+  }
+
+  .notification-item-meta {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Sent notifications: table readable on mobile */
+  .sent-notifications-container,
+  .partner-notifications-container {
+    padding: 1rem;
+  }
+
+  .sent-notifications-filters,
+  .partner-notifications-filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .sent-notifications-search,
+  .partner-notifications-search {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .sent-notifications-filter-buttons {
+    flex-wrap: wrap;
+  }
+
+  /* Create notification form */
+  .create-notification-container {
+    padding: 1rem;
+  }
+
+  .create-notification-actions {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .create-notification-actions .btn-notification-primary,
+  .create-notification-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Templates */
+  .templates-container {
+    padding: 1rem;
+  }
+
+  .templates-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .templates-header .btn-notification-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Modal: full-screen on mobile */
+  .notification-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .notification-modal {
+    border-radius: 1rem 1rem 0 0;
+    max-height: 90vh;
+    width: 100%;
+    margin: 0;
+  }
+
+  /* Recipient selector */
+  .recipient-selector-filters {
+    flex-direction: column;
+  }
+
+  .recipient-selector-search {
+    min-width: unset;
+    width: 100%;
+  }
+
+  /* Variables grid */
+  .variables-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Template editor actions */
+  .template-editor-actions {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .template-editor-actions .btn-notification-primary,
+  .template-editor-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

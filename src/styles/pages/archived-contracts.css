@@ -481,6 +481,112 @@
   outline-offset: 2px;
 }
 
+/* ===== Mobile Optimisation (page-content layer) ===== */
+
+/* Mobile card list: hidden on desktop, shown on mobile */
+.mobile-card-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Page container padding */
+  .archived-contracts-page {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  /* Header: reduce padding */
+  .archived-contracts-header {
+    gap: 0.75rem;
+  }
+
+  /* Stats grid: max 2 columns */
+  .archive-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Hide table, show cards */
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-card {
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #f59e0b;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .mobile-card-title {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.9375rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  }
+
+  .mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mobile-card-row span:last-child {
+    text-align: right;
+    max-width: 60%;
+  }
+
+  .mobile-card-label {
+    font-weight: 500;
+    color: #374151;
+    flex-shrink: 0;
+  }
+
+  .mobile-card-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* Modals: full-screen on mobile */
+  .modal-overlay .modal-container {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
+    overflow-y: auto;
+    margin: 0;
+  }
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .archived-row {

@@ -274,3 +274,12 @@
 .topbar-staging .notification-bell {
   color: white;
 }
+
+/* ===== Mobile responsive - layout ===== */
+@media (max-width: 768px) {
+  .page-container { padding: 1rem; }
+  .topbar { height: 3.5rem; }
+  .topbar-content { padding: 0 0.75rem; }
+  .user-info { display: none; }
+  .app-title { font-size: 1rem; }
+}

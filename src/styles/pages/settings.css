@@ -785,18 +785,35 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .settings-tabs-nav {
-    flex-direction: column;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    flex-direction: row;
+  }
+
+  .settings-tabs-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .settings-tab {
-    justify-content: flex-start;
-    border-bottom: none;
-    border-right: 3px solid transparent;
+    flex-shrink: 0;
+    font-size: 0.8125rem;
+    padding: 0.625rem 0.875rem;
+    white-space: nowrap;
+    justify-content: center;
+    border-bottom: 3px solid transparent;
+    border-right: none;
   }
 
   .settings-tab.active {
-    border-bottom: none;
-    border-right-color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    border-right-color: transparent;
+  }
+
+  .settings-tab svg {
+    width: 16px;
+    height: 16px;
   }
 
   .settings-form,
@@ -1600,5 +1617,51 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ===== Mobile Optimizations (max-width: 768px) ===== */
+@media (max-width: 768px) {
+  /* Page container gap */
+  .settings-page {
+    gap: 1rem;
+  }
+
+  /* Form sections */
+  .form-section {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-section-title {
+    font-size: 0.9375rem;
+  }
+
+  /* Settings actions */
+  .settings-actions {
+    flex-direction: column;
+  }
+
+  .settings-actions .btn-primary,
+  .settings-actions .save-settings-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Logo/banner upload areas */
+  .logo-upload-section,
+  .banner-upload-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Invoices table - wrap container for horizontal scroll */
+  .billing-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

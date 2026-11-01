@@ -220,91 +220,163 @@ const Partners = () => {
 
       <div className="partners-table-container">
         <div className="partners-table-wrapper">
-          <table className="partners-table">
-            <thead className="partners-table-head">
-              <tr>
-                <th className="partners-table-header">
-                  {t('partners.partner')}
-                </th>
-                <th className="partners-table-header">
-                  Nome Struttura
-                </th>
-                <th className="partners-table-header">
-                  {t('auth.email')}
-                </th>
-                <th className="partners-table-header">
-                  {t('partners.status')}
-                </th>
-                <th className="partners-table-header">
-                  {t('partners.type')}
-                </th>
-                <th className="partners-table-header">
-                  {t('partners.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="partners-table-body">
-              {paginatedPartners.map((partner) => (
-                <tr key={partner.id} className="partners-table-row">
-                  <td className="partners-table-cell">
-                    <div className="partner-info">
-                      <div className="partner-name">
-                        {partner.first_name && partner.second_name
-                          ? `${partner.first_name} ${partner.second_name}`
-                          : partner.first_name || partner.company_name
-                        }
-                      </div>
-                      <div className="partner-location">{partner.city}, {partner.country}</div>
-                    </div>
-                  </td>
-                  <td className="partners-table-cell">
-                    {partner.structure_name || '-'}
-                  </td>
-                  <td className="partners-table-cell">
-                    {partner.email}
-                  </td>
-                  <td className="partners-table-cell">
-                    <span className={`status-badge status-${partner.partner_status}`}>
-                      {t(`partners.${partner.partner_status}`)}
-                    </span>
-                  </td>
-                  <td className="partners-table-cell">
-                    {t(`partners.${partner.partner_type}`)}
-                  </td>
-                  <td className="partners-table-cell">
-                    <div className="partner-actions">
-                      {canManagePartners && (
-                        <button
-                          className="partner-action-btn edit-btn"
-                          onClick={() => handleEditPartner(partner)}
-                          title={t('partners.edit')}
-                        >
-                          <Edit size={16} />
-                        </button>
-                      )}
-                      {canInvite && (
-                        <button
-                          className="partner-action-btn invite-btn"
-                          onClick={() => handleSendInvitation(partner)}
-                          title={
-                            profile?.role === 'superadmin'
-                              ? t('invitations.invitePartnerAdmin')
-                              : t('invitations.inviteUser')
-                          }
-                        >
-                          {profile?.role === 'superadmin' ? (
-                            <UserPlus size={16} />
-                          ) : (
-                            <Send size={16} />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </td>
+          <div className="hide-on-mobile">
+            <table className="partners-table">
+              <thead className="partners-table-head">
+                <tr>
+                  <th className="partners-table-header">
+                    {t('partners.partner')}
+                  </th>
+                  <th className="partners-table-header">
+                    Nome Struttura
+                  </th>
+                  <th className="partners-table-header">
+                    {t('auth.email')}
+                  </th>
+                  <th className="partners-table-header">
+                    {t('partners.status')}
+                  </th>
+                  <th className="partners-table-header">
+                    {t('partners.type')}
+                  </th>
+                  <th className="partners-table-header">
+                    {t('partners.actions')}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="partners-table-body">
+                {paginatedPartners.map((partner) => (
+                  <tr key={partner.id} className="partners-table-row">
+                    <td className="partners-table-cell">
+                      <div className="partner-info">
+                        <div className="partner-name">
+                          {partner.first_name && partner.second_name
+                            ? `${partner.first_name} ${partner.second_name}`
+                            : partner.first_name || partner.company_name
+                          }
+                        </div>
+                        <div className="partner-location">{partner.city}, {partner.country}</div>
+                      </div>
+                    </td>
+                    <td className="partners-table-cell">
+                      {partner.structure_name || '-'}
+                    </td>
+                    <td className="partners-table-cell">
+                      {partner.email}
+                    </td>
+                    <td className="partners-table-cell">
+                      <span className={`status-badge status-${partner.partner_status}`}>
+                        {t(`partners.${partner.partner_status}`)}
+                      </span>
+                    </td>
+                    <td className="partners-table-cell">
+                      {t(`partners.${partner.partner_type}`)}
+                    </td>
+                    <td className="partners-table-cell">
+                      <div className="partner-actions">
+                        {canManagePartners && (
+                          <button
+                            className="partner-action-btn edit-btn"
+                            onClick={() => handleEditPartner(partner)}
+                            title={t('partners.edit')}
+                          >
+                            <Edit size={16} />
+                          </button>
+                        )}
+                        {canInvite && (
+                          <button
+                            className="partner-action-btn invite-btn"
+                            onClick={() => handleSendInvitation(partner)}
+                            title={
+                              profile?.role === 'superadmin'
+                                ? t('invitations.invitePartnerAdmin')
+                                : t('invitations.inviteUser')
+                            }
+                          >
+                            {profile?.role === 'superadmin' ? (
+                              <UserPlus size={16} />
+                            ) : (
+                              <Send size={16} />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="mobile-card-list">
+            {paginatedPartners.map((partner) => (
+              <div className="mobile-card" key={partner.id}>
+                <div className="mobile-card-header">
+                  <span className="mobile-card-title">
+                    {partner.first_name && partner.second_name
+                      ? `${partner.first_name} ${partner.second_name}`
+                      : partner.first_name || partner.company_name
+                    }
+                  </span>
+                  <span className={`status-badge status-${partner.partner_status}`}>
+                    {t(`partners.${partner.partner_status}`)}
+                  </span>
+                </div>
+                <div className="mobile-card-body">
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('auth.email')}</span>
+                    <span>{partner.email}</span>
+                  </div>
+                  {partner.structure_name && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Nome Struttura</span>
+                      <span>{partner.structure_name}</span>
+                    </div>
+                  )}
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('partners.type')}</span>
+                    <span>{t(`partners.${partner.partner_type}`)}</span>
+                  </div>
+                  {(partner.city || partner.country) && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">Location</span>
+                      <span>{[partner.city, partner.country].filter(Boolean).join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mobile-card-actions">
+                  {canManagePartners && (
+                    <button
+                      className="partner-action-btn edit-btn"
+                      onClick={() => handleEditPartner(partner)}
+                      title={t('partners.edit')}
+                    >
+                      <Edit size={16} />
+                    </button>
+                  )}
+                  {canInvite && (
+                    <button
+                      className="partner-action-btn invite-btn"
+                      onClick={() => handleSendInvitation(partner)}
+                      title={
+                        profile?.role === 'superadmin'
+                          ? t('invitations.invitePartnerAdmin')
+                          : t('invitations.inviteUser')
+                      }
+                    >
+                      {profile?.role === 'superadmin' ? (
+                        <UserPlus size={16} />
+                      ) : (
+                        <Send size={16} />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
           {partners.length === 0 && (
             <div className="partners-empty">
               <p>

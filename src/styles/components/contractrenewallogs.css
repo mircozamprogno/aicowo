@@ -585,6 +585,64 @@
   }
 }
 
+/* ===== Mobile Optimisation (page-content layer) ===== */
+@media (max-width: 768px) {
+  /* Page container padding */
+  .renewal-logs-page {
+    padding: 1rem;
+  }
+
+  /* Header: stack title and button vertically */
+  .renewal-logs-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .refresh-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Stat grid: exactly 2 columns (already set above, reinforce) */
+  .renewal-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Filter bar: full-width groups, select full-width */
+  .renewal-filters {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.875rem;
+  }
+
+  .filter-group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  /* Log items: ensure status info wraps cleanly */
+  .log-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .log-main-info {
+    width: 100%;
+  }
+
+  .log-status-info {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
 /* Accessibility */
 .log-header:focus-visible,
 .filter-btn:focus-visible,

@@ -281,3 +281,90 @@ input:disabled+.switch-slider {
     padding: 1.5rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
+
+/* ===== Mobile Optimizations (max-width: 768px) ===== */
+@media (max-width: 768px) {
+    /* Reduce page padding */
+    .service-form-page {
+        padding: 1rem;
+    }
+
+    .service-back-link {
+        margin-bottom: 1rem;
+    }
+
+    /* Reduce card padding */
+    .service-form-container {
+        padding: 1rem;
+        border-radius: 0.75rem;
+    }
+
+    .service-form-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .service-form-header h2 {
+        font-size: 1.125rem;
+    }
+
+    .service-form-content {
+        gap: 1rem;
+    }
+
+    /* All multi-column grids collapse to 1 column */
+    .form-row,
+    .price-row {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+
+    /* Buttons footer: stack vertically, full-width */
+    .buttons-footer {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+        align-items: stretch;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+    }
+
+    .buttons-footer > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .service-btn-primary,
+    .service-btn-secondary,
+    .service-btn-danger {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Override inline gap style on save/cancel wrapper */
+    .buttons-footer > div[style] {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        width: 100%;
+        margin-left: 0 !important;
+    }
+
+    /* Delete confirm modal: full-screen */
+    .modal-overlay {
+        padding: 0;
+    }
+
+    .modal-container {
+        position: fixed;
+        inset: 0;
+        max-width: 100%;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+
+    /* Switch container: ensure readable layout */
+    .switch-container {
+        padding: 0.75rem 0;
+        gap: 0.5rem;
+    }
+}

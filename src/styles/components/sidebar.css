@@ -365,3 +365,34 @@
   outline: 2px solid #dc2626;
   outline-offset: -2px;
 }
+
+/* ===== Mobile responsive - sidebar ===== */
+@media (max-width: 768px) {
+  /* Full height sidebar */
+  .sidebar {
+    height: 100dvh;
+    height: 100vh; /* fallback */
+  }
+
+  /* Minimum 48px tap target for nav items */
+  .sidebar-nav-item {
+    min-height: 48px;
+    padding: 0.625rem 0.5rem;
+  }
+
+  /* Clear active highlight */
+  .sidebar-nav-item.active {
+    background-color: #eef2ff;
+    color: #312e81;
+    border-left: 3px solid #6366f1;
+    padding-left: calc(0.5rem - 3px);
+  }
+
+  /* Prevent company name overflow */
+  .sidebar-logo-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+}

@@ -1065,3 +1065,111 @@
   background-color: #e0f2fe;
   color: #0369a1;
 }
+
+/* ===== Mobile Optimizations (max-width: 768px) ===== */
+
+/* Mobile card list - hidden on desktop */
+.mobile-card-list { display: none; }
+
+@media (max-width: 768px) {
+  /* Page container spacing */
+  .services-page {
+    gap: 1rem;
+  }
+
+  /* Page header: stack title and actions vertically */
+  .services-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0;
+  }
+
+  .services-header-actions {
+    margin-left: 0;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .btn-service-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Hide table, show cards */
+  .hide-on-mobile { display: none !important; }
+
+  .mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-card {
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .mobile-card-title {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.9375rem;
+  }
+
+  .mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mobile-card-label {
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .mobile-card-actions {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* Services table container spacing */
+  .services-table-container {
+    margin-top: 0.5rem;
+  }
+
+  /* Info modal: full-screen on mobile */
+  .service-info-modal {
+    position: fixed;
+    inset: 0;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    margin: 0;
+    overflow-y: auto;
+  }
+}

@@ -468,101 +468,142 @@ const Invitations = () => {
 
       <div className="invitations-table-container">
         <div className="invitations-table-wrapper">
-          <table className="invitations-table">
-            <thead className="invitations-table-head">
-              <tr>
-                <th className="invitations-table-header checkbox-column">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(el) => {
-                      if (el) el.indeterminate = isIndeterminate;
-                    }}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="checkbox-input"
-                  />
-                </th>
-                {profile?.role === 'admin' && (
-                  <th className="invitations-table-header">
-                    {t('auth.email')}
-                  </th>
-                )}
-
-                {profile?.role === 'superadmin' && (
-                  <th className="invitations-table-header hide-on-mobile">
-                    {t('partners.partner')}
-                  </th>
-                )}
-
-                <th className="invitations-table-header status-column hide-on-mobile">
-                  {t('invitations.status')}
-                </th>
-                <th className="invitations-table-header sent-at-column">
-                  {t('invitations.sentAt')}
-                </th>
-                <th className="invitations-table-header used-at-column">
-                  {t('invitations.usedAt')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="invitations-table-body">
-              {currentInvitations.map((invitation) => (
-                <tr key={invitation.invitation_uuid} className="invitations-table-row">
-                  <td className="invitations-table-cell checkbox-column">
+          <div className="hide-on-mobile">
+            <table className="invitations-table">
+              <thead className="invitations-table-head">
+                <tr>
+                  <th className="invitations-table-header checkbox-column">
                     <input
                       type="checkbox"
-                      checked={selectedInvitations.has(invitation.invitation_uuid)}
-                      onChange={(e) => handleSelectInvitation(invitation.invitation_uuid, e.target.checked)}
+                      checked={isAllSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = isIndeterminate;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
                       className="checkbox-input"
                     />
-                  </td>
+                  </th>
                   {profile?.role === 'admin' && (
-                    <td className="invitations-table-cell email-column">
-                      <div className="invitee-email-container">
-                        {invitation.invited_email}
-                      </div>
-                      <div className="status-mobile-only">
+                    <th className="invitations-table-header">
+                      {t('auth.email')}
+                    </th>
+                  )}
+
+                  {profile?.role === 'superadmin' && (
+                    <th className="invitations-table-header">
+                      {t('partners.partner')}
+                    </th>
+                  )}
+
+                  <th className="invitations-table-header status-column">
+                    {t('invitations.status')}
+                  </th>
+                  <th className="invitations-table-header sent-at-column">
+                    {t('invitations.sentAt')}
+                  </th>
+                  <th className="invitations-table-header used-at-column">
+                    {t('invitations.usedAt')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="invitations-table-body">
+                {currentInvitations.map((invitation) => (
+                  <tr key={invitation.invitation_uuid} className="invitations-table-row">
+                    <td className="invitations-table-cell checkbox-column">
+                      <input
+                        type="checkbox"
+                        checked={selectedInvitations.has(invitation.invitation_uuid)}
+                        onChange={(e) => handleSelectInvitation(invitation.invitation_uuid, e.target.checked)}
+                        className="checkbox-input"
+                      />
+                    </td>
+                    {profile?.role === 'admin' && (
+                      <td className="invitations-table-cell email-column">
+                        <div className="invitee-email-container">
+                          {invitation.invited_email}
+                        </div>
+                      </td>
+                    )}
+
+                    {profile?.role === 'superadmin' && (
+                      <td className="invitations-table-cell">
+                        <div className="partner-info">
+                          <div className="partner-name">
+                            {invitation.partners?.first_name && invitation.partners?.second_name
+                              ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
+                              : invitation.partners?.first_name || invitation.partners?.company_name
+                            }
+                          </div>
+                          <div className="partner-email">
+                            {invitation.partners?.email}
+                          </div>
+                        </div>
+                      </td>
+                    )}
+
+                    <td className="invitations-table-cell status-column">
+                      <div className="status-container">
+                        {getStatusIcon(invitation.status)}
                         <span className={`status-badge ${getStatusBadgeClass(invitation.status)}`}>
                           {t(`invitations.${invitation.status}`)}
                         </span>
                       </div>
                     </td>
-                  )}
-
-                  {profile?.role === 'superadmin' && (
-                    <td className="invitations-table-cell hide-on-mobile">
-                      <div className="partner-info">
-                        <div className="partner-name">
-                          {invitation.partners?.first_name && invitation.partners?.second_name
-                            ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
-                            : invitation.partners?.first_name || invitation.partners?.company_name
-                          }
-                        </div>
-                        <div className="partner-email">
-                          {invitation.partners?.email}
-                        </div>
-                      </div>
+                    <td className="invitations-table-cell sent-at-column">
+                      {formatDate(invitation.sent_at || invitation.created_at)}
                     </td>
-                  )}
+                    <td className="invitations-table-cell used-at-column">
+                      {formatDate(invitation.used_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-                  <td className="invitations-table-cell status-column hide-on-mobile">
-                    <div className="status-container">
-                      {getStatusIcon(invitation.status)}
-                      <span className={`status-badge ${getStatusBadgeClass(invitation.status)}`}>
-                        {t(`invitations.${invitation.status}`)}
+          {/* Mobile card list */}
+          <div className="mobile-card-list">
+            {currentInvitations.map((invitation) => (
+              <div className="mobile-card" key={invitation.invitation_uuid}>
+                <div className="mobile-card-header">
+                  <span className="mobile-card-title">{invitation.invited_email}</span>
+                  <span className={`status-badge ${getStatusBadgeClass(invitation.status)}`}>
+                    {t(`invitations.${invitation.status}`)}
+                  </span>
+                </div>
+                <div className="mobile-card-body">
+                  {profile?.role === 'superadmin' && invitation.partners && (
+                    <div className="mobile-card-row">
+                      <span className="mobile-card-label">{t('partners.partner')}</span>
+                      <span>
+                        {invitation.partners?.first_name && invitation.partners?.second_name
+                          ? `${invitation.partners.first_name} ${invitation.partners.second_name}`
+                          : invitation.partners?.first_name || invitation.partners?.company_name
+                        }
                       </span>
                     </div>
-                  </td>
-                  <td className="invitations-table-cell sent-at-column">
-                    {formatDate(invitation.sent_at || invitation.created_at)}
-                  </td>
-                  <td className="invitations-table-cell used-at-column">
-                    {formatDate(invitation.used_at)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('invitations.sentAt')}</span>
+                    <span>{formatDate(invitation.sent_at || invitation.created_at)}</span>
+                  </div>
+                  <div className="mobile-card-row">
+                    <span className="mobile-card-label">{t('invitations.usedAt')}</span>
+                    <span>{formatDate(invitation.used_at)}</span>
+                  </div>
+                </div>
+                <div className="mobile-card-actions">
+                  <input
+                    type="checkbox"
+                    checked={selectedInvitations.has(invitation.invitation_uuid)}
+                    onChange={(e) => handleSelectInvitation(invitation.invitation_uuid, e.target.checked)}
+                    className="checkbox-input"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
           {filteredInvitations.length === 0 && (
             <div className="invitations-empty">
               <UserPlus size={48} className="empty-icon" />
