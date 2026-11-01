@@ -220,7 +220,7 @@ async function provision(
   // 4. Fetch customer
   const { data: customer, error: custErr } = await supabase
     .from("customers")
-    .select("first_name, second_name, company_name, email")
+    .select("first_name, second_name, company_name, email, door_code, door_position")
     .eq("id", customerId)
     .single();
 
@@ -292,6 +292,8 @@ async function provision(
       ...variables,
       vpn_password:  vpnPassword,
       network_name:  partner.mikrotik_ssid ?? "",
+      door_code:     customer.door_code ?? "",
+      door_position: customer.door_position?.toString() ?? "",
     });
   }
 

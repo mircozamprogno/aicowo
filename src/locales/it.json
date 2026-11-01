@@ -2138,7 +2138,7 @@
     "vpnCredentialsPartner": "Credenziali WiFi (Notifica Partner)",
     "vpnCredentialsPartnerDescription": "Inviata all'admin partner quando viene creata una nuova credenziale WiFi per un cliente. Variabili: {{customer_name}}, {{vpn_name}}, {{contract_number}}, {{partner_name}}",
     "vpnCredentialsCustomer": "Credenziali WiFi (Cliente)",
-    "vpnCredentialsCustomerDescription": "Inviata al cliente con i suoi dati di accesso WiFi. Variabili: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{partner_name}}"
+    "vpnCredentialsCustomerDescription": "Inviata al cliente con i dati di accesso. Variabili: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{door_code}}, {{door_position}}, {{partner_name}}"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto",
