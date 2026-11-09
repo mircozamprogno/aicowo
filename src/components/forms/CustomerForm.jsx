@@ -1,5 +1,5 @@
 // src/components/customers/CustomerForm.jsx
-import { FileText, KeyRound, RefreshCw, Trash2, Upload, Wifi, X } from 'lucide-react';
+import { Check, FileText, KeyRound, Link2, RefreshCw, Trash2, Upload, Wifi, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -74,8 +74,76 @@ const CustomerForm = ({
       .eq('customer_id', customer.id)
       .is('revoked_at', null)
       .maybeSingle()
-      .then(({ data }) => setVpnCredential(data));
+      .then(({ data, error }) => {
+        if (error) logger.error('Failed to load WiFi credential:', error);
+        setVpnCredential(data);
+      });
   }, [isEditing, customer?.id, partnerUuid]);
+
+  // Manual WiFi assignment (for customers whose WiFi user was created on the router before automation)
+  const [wifiAssigning, setWifiAssigning] = useState(false);
+  const [wifiOptions, setWifiOptions] = useState([]);
+  const [wifiLoading, setWifiLoading] = useState(false);
+  const [wifiSaving, setWifiSaving] = useState(false);
+  const [wifiSelected, setWifiSelected] = useState('');
+  const [wifiError, setWifiError] = useState(null);
+
+  const openWifiAssign = async () => {
+    setWifiAssigning(true);
+    setWifiError(null);
+    setWifiSelected('');
+    setWifiLoading(true);
+    try {
+      const [routerRes, { data: linked, error: linkedErr }] = await Promise.all([
+        fetch('/api/mikrotik/user-manager/user'),
+        supabase
+          .from('customer_vpn_credentials')
+          .select('vpn_name')
+          .eq('partner_uuid', partnerUuid)
+          .is('revoked_at', null),
+      ]);
+      if (!routerRes.ok) throw new Error(`MikroTik HTTP ${routerRes.status}`);
+      if (linkedErr) throw linkedErr;
+      const routerUsers = await routerRes.json();
+      const linkedNames = new Set((linked || []).map(c => c.vpn_name));
+      setWifiOptions(
+        (Array.isArray(routerUsers) ? routerUsers : [])
+          .filter(u => u.name && !linkedNames.has(u.name))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
+    } catch (err) {
+      logger.error('Failed to load WiFi users from router:', err);
+      setWifiError(t('customers.wifiLoadError') || 'Could not load WiFi users from the router');
+    } finally {
+      setWifiLoading(false);
+    }
+  };
+
+  const assignWifi = async () => {
+    const routerUser = wifiOptions.find(u => u.name === wifiSelected);
+    if (!routerUser) return;
+    setWifiSaving(true);
+    setWifiError(null);
+    const { data, error } = await supabase
+      .from('customer_vpn_credentials')
+      .insert({
+        partner_uuid: partnerUuid,
+        customer_id: customer.id,
+        vpn_name: routerUser.name,
+        vpn_password: routerUser.password || '',
+        mikrotik_id: routerUser['.id'] || null,
+      })
+      .select('vpn_name')
+      .single();
+    setWifiSaving(false);
+    if (error) {
+      logger.error('Failed to assign WiFi user:', error);
+      setWifiError(error.message);
+      return;
+    }
+    setVpnCredential(data);
+    setWifiAssigning(false);
+  };
 
   const customerTypeOptions = [
     { value: 'individual', label: t('customers.individual') },
@@ -845,7 +913,49 @@ const CustomerForm = ({
                   {t('customers.wifiNameDescription') || 'WiFi access name automatically assigned to this customer.'}
                 </p>
                 <div className="form-group">
+                  {wifiAssigning && !vpnCredential ? (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <select
+                        className="form-select"
+                        style={{ flex: 1 }}
+                        value={wifiSelected}
+                        onChange={e => setWifiSelected(e.target.value)}
+                        disabled={wifiLoading || wifiSaving}
+                      >
+                        <option value="">
+                          {wifiLoading
+                            ? (t('common.loading') || 'Loading…')
+                            : (t('customers.selectWifiUser') || '— select WiFi user —')}
+                        </option>
+                        {wifiOptions.map(u => (
+                          <option key={u['.id'] || u.name} value={u.name}>{u.name}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn-primary-purple"
+                        style={{ flexShrink: 0 }}
+                        onClick={assignWifi}
+                        disabled={!wifiSelected || wifiSaving}
+                        title={t('customers.assignWifi') || 'Assign WiFi'}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ flexShrink: 0 }}
+                        onClick={() => setWifiAssigning(false)}
+                        disabled={wifiSaving}
+                        title={t('common.cancel') || 'Cancel'}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <div style={{
+                    flex: 1,
                     padding: '0.5rem 0.75rem',
                     background: 'var(--color-bg-secondary, #f9fafb)',
                     border: '1px solid var(--color-border, #e5e7eb)',
@@ -857,6 +967,24 @@ const CustomerForm = ({
                   }}>
                     {vpnCredential ? vpnCredential.vpn_name : (t('customers.noWifiAssigned') || 'No WiFi access assigned')}
                   </div>
+                  {!vpnCredential && (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ flexShrink: 0 }}
+                      onClick={openWifiAssign}
+                      title={t('customers.assignWifi') || 'Assign WiFi'}
+                    >
+                      <Link2 size={14} />
+                    </button>
+                  )}
+                  </div>
+                  )}
+                  {wifiError && (
+                    <p style={{ color: 'var(--color-error, #dc2626)', fontSize: '0.85rem', marginTop: '0.375rem' }}>
+                      {wifiError}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

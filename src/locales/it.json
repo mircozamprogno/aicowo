@@ -160,6 +160,9 @@
     "wifiName": "Nome Utente WiFi",
     "wifiNameDescription": "Nome di accesso WiFi assegnato automaticamente a questo cliente.",
     "noWifiAssigned": "Nessun accesso WiFi assegnato",
+    "assignWifi": "Assegna WiFi",
+    "selectWifiUser": "— seleziona utente WiFi —",
+    "wifiLoadError": "Impossibile caricare gli utenti WiFi dal router",
     "regenerateCode": "Genera nuovo codice",
     "selectPosition": "— seleziona —"
   },
