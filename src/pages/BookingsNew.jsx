@@ -1,6 +1,7 @@
 // src/pages/BookingsNew.jsx
 import { Calendar, ChevronLeft, ChevronRight, Filter, Layers, MapPin, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import BookingHoverCard from '../components/bookings/BookingHoverCard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import SearchableSelect from '../components/common/SearchableSelect';
 import { toast } from '../components/common/ToastContainer';
@@ -8,7 +9,9 @@ import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import oneSignalEmailService from '../services/oneSignalEmailService';
+import { PaymentService } from '../services/paymentService';
 import { supabase } from '../services/supabase';
+import { getHoverCardPosition } from '../utils/hoverCardPosition';
 import logger from '../utils/logger';
 
 import '../styles/pages/bookings-new.css';
@@ -37,6 +40,10 @@ const BookingsNew = () => {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [showBookingDetails, setShowBookingDetails] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    // Hover card with the booking's contract details
+    const [hoveredBooking, setHoveredBooking] = useState(null);
+    // contract_id → row of contract_payment_status
+    const [contractPayments, setContractPayments] = useState({});
 
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
@@ -96,12 +103,12 @@ const BookingsNew = () => {
             const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
             let bookingsQuery = supabase.from('bookings')
-                .select(`id, start_date, end_date, booking_status, is_archived, contracts!inner (id, contract_number, service_name, service_type, is_archived), location_resources (id, resource_name, resource_type, locations (id, location_name)), customers (id, first_name, second_name, company_name)`)
+                .select(`id, start_date, end_date, booking_status, is_archived, contracts!inner (id, contract_number, service_name, service_type, service_cost, service_currency, is_archived, start_date, end_date, contract_status, auto_renew, is_renewable, renewal_count, service_max_entries, entries_used, requires_payment), location_resources (id, resource_name, resource_type, locations (id, location_name)), customers (id, first_name, second_name, company_name, email, phone)`)
                 .eq('booking_status', 'active').eq('is_archived', false)
                 .lte('start_date', endOfMonth.toISOString()).gte('end_date', startOfMonth.toISOString());
 
             let packagesQuery = supabase.from('package_reservations')
-                .select(`id, reservation_date, duration_type, time_slot, reservation_status, is_archived, contracts!inner (id, contract_number, service_name, service_type, is_archived), location_resources (id, resource_name, resource_type, locations (id, location_name)), customers (id, first_name, second_name, company_name)`)
+                .select(`id, reservation_date, duration_type, time_slot, reservation_status, is_archived, contracts!inner (id, contract_number, service_name, service_type, service_cost, service_currency, is_archived, start_date, end_date, contract_status, auto_renew, is_renewable, renewal_count, service_max_entries, entries_used, requires_payment), location_resources (id, resource_name, resource_type, locations (id, location_name)), customers (id, first_name, second_name, company_name, email, phone)`)
                 .eq('reservation_status', 'confirmed').eq('is_archived', false)
                 .gte('reservation_date', startOfMonth.toISOString().split('T')[0])
                 .lte('reservation_date', endOfMonth.toISOString().split('T')[0]);
@@ -115,10 +122,12 @@ const BookingsNew = () => {
             }
 
             const [resBookings, resPackages] = await Promise.all([bookingsQuery, packagesQuery]);
-            setBookings([
+            const combined = [
                 ...(resBookings.data || []).map(b => ({ ...b, booking_type: 'subscription' })),
                 ...(resPackages.data || []).map(p => ({ ...p, id: `pkg-${p.id}`, start_date: p.reservation_date, end_date: p.reservation_date, booking_type: 'package' }))
-            ]);
+            ];
+            setBookings(combined);
+            loadPaymentStatuses([...new Set(combined.map(b => b.contracts?.id).filter(Boolean))]);
 
             const { data: closuresData } = await supabase.from('operating_closures')
                 .select(`*, locations (id, location_name), location_resources (id, resource_name, resource_type)`)
@@ -132,6 +141,29 @@ const BookingsNew = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadPaymentStatuses = async (contractIds) => {
+        if (contractIds.length === 0) {
+            setContractPayments({});
+            return;
+        }
+        const { data, error } = await PaymentService.getContractPaymentStatus(contractIds);
+        if (error) {
+            logger.error('Error loading payment statuses:', error);
+            return;
+        }
+        const statusMap = {};
+        (data || []).forEach(status => { statusMap[status.contract_id] = status; });
+        setContractPayments(statusMap);
+    };
+
+    const showBookingHover = (booking, event) => {
+        setHoveredBooking({
+            booking,
+            position: getHoverCardPosition(event.currentTarget),
+            color: getComputedStyle(event.currentTarget).backgroundColor
+        });
     };
 
     const checkAvailablePackages = async () => {
@@ -340,7 +372,7 @@ const BookingsNew = () => {
                                     const style = getBlockStyle(b.start_date, b.end_date);
                                     if (!style) return null;
                                     return (
-                                        <div key={b.id} className={`timeline-booking-block status-${b.booking_type === 'package' ? 'active' : 'open'}`} style={style} onClick={() => handleBookingClick(b)}>
+                                        <div key={b.id} className={`timeline-booking-block status-${b.booking_type === 'package' ? 'active' : 'open'}`} style={style} onClick={() => { setHoveredBooking(null); handleBookingClick(b); }} onMouseEnter={(e) => showBookingHover(b, e)} onMouseLeave={() => setHoveredBooking(null)}>
                                             <span className="booking-renter">{b.customers?.company_name || `${b.customers?.first_name} ${b.customers?.second_name}`}</span>
                                         </div>
                                     );
@@ -361,6 +393,16 @@ const BookingsNew = () => {
             </div>
 
             <PartnerBookingForm isOpen={showPartnerBooking} onClose={() => setShowPartnerBooking(false)} onSuccess={() => { fetchInitialData(); setShowPartnerBooking(false); }} />
+
+            {hoveredBooking && !showBookingDetails && (
+                <BookingHoverCard
+                    booking={hoveredBooking.booking}
+                    position={hoveredBooking.position}
+                    color={hoveredBooking.color}
+                    isCustomer={isCustomer}
+                    paymentInfo={contractPayments[hoveredBooking.booking.contracts?.id]}
+                />
+            )}
 
             {showBookingDetails && selectedBooking && (
                 <div className="modal-overlay">
