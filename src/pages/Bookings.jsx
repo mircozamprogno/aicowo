@@ -913,10 +913,12 @@ const Bookings = () => {
 
   const formatMonthYear = (date) => {
     const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
-    return date.toLocaleDateString(locale, {
+    const label = date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long'
     });
+    // Italian month names are lowercase ("novembre 2026") → "Novembre 2026"
+    return label.charAt(0).toUpperCase() + label.slice(1);
   };
 
   const getClosuresForDate = (date) => {
