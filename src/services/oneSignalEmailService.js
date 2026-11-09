@@ -723,6 +723,116 @@ class OneSignalEmailService {
 
 
   /**
+   * Send the door code to a customer (door_code_customer template)
+   * @param {Object} customer - Customer row (first_name, second_name, company_name, email, door_code)
+   * @param {string} partnerUuid - Partner UUID
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendDoorCodeEmail(customer, partnerUuid) {
+    if (!this.uniqueTemplateId) {
+      logger.error('Unique template ID not configured');
+      return false;
+    }
+
+    try {
+      const { supabase } = await import('./supabase');
+      const { DEFAULT_EMAIL_TEMPLATES } = await import('../utils/defaultEmailTemplates');
+
+      if (!customer?.email || !customer?.door_code) {
+        logger.error('Door code email: missing customer email or door code');
+        return false;
+      }
+
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('company_name, structure_name, email_banner_url')
+        .eq('partner_uuid', partnerUuid)
+        .single();
+
+      if (partnerError || !partnerData) {
+        logger.error('Error fetching partner data:', partnerError);
+        return false;
+      }
+
+      const { data: templateData, error: templateError } = await supabase
+        .from('email_templates')
+        .select('body_html, subject_line')
+        .eq('partner_uuid', partnerUuid)
+        .eq('template_type', 'door_code_customer')
+        .maybeSingle();
+
+      const defaultTemplate = DEFAULT_EMAIL_TEMPLATES.it?.door_code_customer ||
+        DEFAULT_EMAIL_TEMPLATES.en?.door_code_customer;
+
+      let bodyHtml = defaultTemplate?.body || '<p>{{door_code}}</p>';
+      let emailSubject = defaultTemplate?.subject || 'Codice porta';
+
+      if (templateData && !templateError) {
+        bodyHtml = templateData.body_html;
+        emailSubject = templateData.subject_line || emailSubject;
+      }
+
+      const partnerName = partnerData.structure_name || partnerData.company_name || 'PowerCowo';
+      const customerName = customer.company_name ||
+        `${customer.first_name || ''} ${customer.second_name || ''}`.trim();
+
+      const variables = {
+        customer_name: customerName,
+        door_code: customer.door_code,
+        partner_name: partnerName,
+      };
+      for (const [key, value] of Object.entries(variables)) {
+        const re = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+        emailSubject = emailSubject.replace(re, value);
+        bodyHtml = bodyHtml.replace(re, value);
+      }
+
+      // Fetch banner URL from partner data or storage fallback
+      let bannerUrl = partnerData.email_banner_url || '';
+
+      if (!bannerUrl) {
+        const { data: files } = await supabase.storage
+          .from('partners')
+          .list(`${partnerUuid}`, { search: 'email_banner' });
+
+        const bannerFile = files?.find(file => file.name.startsWith('email_banner.'));
+
+        if (bannerFile) {
+          const { data } = supabase.storage
+            .from('partners')
+            .getPublicUrl(`${partnerUuid}/${bannerFile.name}`);
+          bannerUrl = data.publicUrl;
+        }
+      }
+
+      const payload = {
+        app_id: this.appId,
+        email_from_name: partnerName,
+        email_subject: emailSubject,
+        email_from_address: "app@powercowo.com",
+        email_reply_to_address: "app@powercowo.com",
+        template_id: this.uniqueTemplateId,
+        target_channel: "email",
+        include_email_tokens: [customer.email],
+        include_aliases: {
+          external_id: [partnerUuid]
+        },
+        custom_data: {
+          banner_url: bannerUrl,
+          body_html: bodyHtml
+        }
+      };
+
+      logger.log('📧 Sending door code email:', { to: customer.email, from: partnerName, subject: emailSubject });
+
+      return await this.sendOneSignalRequest(payload);
+    } catch (error) {
+      logger.error('Error sending door code email:', error);
+      return false;
+    }
+  }
+
+  /**
    * Send notification via OneSignal API (extracted for reuse)
    * @param {Object} payload - OneSignal notification payload
    * @returns {Promise<boolean>} - Success status

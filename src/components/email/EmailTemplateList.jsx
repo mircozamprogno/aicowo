@@ -1,5 +1,5 @@
 // src/components/email/EmailTemplateList.jsx
-import { AlertTriangle, Bell, CheckCircle, ChevronRight, Clock, FileText, Mail, Router, Shield, UserPlus, XCircle } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, ChevronRight, Clock, FileText, KeyRound, Mail, Router, Shield, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -68,6 +68,12 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.vpnCredentialsCustomer',
     descriptionKey: 'emailTemplates.vpnCredentialsCustomerDescription', // includes {{network_name}}
     icon: 'Router'
+  },
+  door_code_customer: {
+    id: 'door_code_customer',
+    nameKey: 'emailTemplates.doorCodeCustomer',
+    descriptionKey: 'emailTemplates.doorCodeCustomerDescription',
+    icon: 'KeyRound'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };
@@ -133,7 +139,8 @@ const EmailTemplateList = ({ partnerUuid, mode = 'partner' }) => {
       FileText: FileText,
       XCircle: XCircle,
       AlertTriangle: AlertTriangle,
-      Router: Router
+      Router: Router,
+      KeyRound: KeyRound
     };
     const Icon = icons[iconName] || UserPlus;
     return <Icon size={24} />;

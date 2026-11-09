@@ -257,6 +257,23 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{start_date}}', description: 'Contract start date' },
         { name: '{{end_date}}', description: 'Contract end date' }
       ]
+    },
+    door_code_customer: {
+      subject: 'Your door code — {{partner_name}}',
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Hi <strong>{{customer_name}}</strong>,</p>
+  <p>Here is your door access code:</p>
+  <div style="text-align:center;margin:24px 0;padding:20px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+    <div style="font-family:monospace;font-size:32px;font-weight:700;letter-spacing:0.3em;color:#1e40af;">{{door_code}}</div>
+  </div>
+  <p style="color:#6b7280;font-size:14px;">This code is personal: please don't share it. If you have any problem, contact <strong>{{partner_name}}</strong>.</p>
+  <p style="margin-top:24px;">See you soon,<br><strong>{{partner_name}}</strong></p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: 'Customer full name' },
+        { name: '{{door_code}}', description: 'Door code (6 digits)' },
+        { name: '{{partner_name}}', description: 'Partner / structure name' }
+      ]
     }
   },
 
@@ -506,6 +523,23 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{service_name}}', description: 'Nome servizio' },
         { name: '{{start_date}}', description: 'Data inizio contratto' },
         { name: '{{end_date}}', description: 'Data fine contratto' }
+      ]
+    },
+    door_code_customer: {
+      subject: 'Il tuo codice porta — {{partner_name}}',
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Ciao <strong>{{customer_name}}</strong>,</p>
+  <p>Ecco il tuo codice di accesso alla struttura:</p>
+  <div style="text-align:center;margin:24px 0;padding:20px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+    <div style="font-family:monospace;font-size:32px;font-weight:700;letter-spacing:0.3em;color:#1e40af;">{{door_code}}</div>
+  </div>
+  <p style="color:#6b7280;font-size:14px;">Il codice è personale: non condividerlo con altri. In caso di problemi contatta <strong>{{partner_name}}</strong>.</p>
+  <p style="margin-top:24px;">A presto,<br><strong>{{partner_name}}</strong></p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: 'Nome completo del cliente' },
+        { name: '{{door_code}}', description: 'Codice porta (6 cifre)' },
+        { name: '{{partner_name}}', description: 'Nome del partner / struttura' }
       ]
     }
   }

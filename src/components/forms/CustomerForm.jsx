@@ -2,6 +2,7 @@
 import { Check, FileText, KeyRound, Link2, Trash2, Upload, Wifi, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
+import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
 import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
@@ -79,6 +80,9 @@ const CustomerForm = ({
         setVpnCredential(data);
       });
   }, [isEditing, customer?.id, partnerUuid]);
+
+  // Send the door code to the customer by email on save (opt-in, default off)
+  const [sendDoorCodeEmail, setSendDoorCodeEmail] = useState(false);
 
   // Manual WiFi assignment (for customers whose WiFi user was created on the router before automation)
   const [wifiAssigning, setWifiAssigning] = useState(false);
@@ -306,6 +310,14 @@ const CustomerForm = ({
       toast.error(t('customers.doorCodeInvalid') || 'Door code must be exactly 6 digits');
       return;
     }
+    if (sendDoorCodeEmail && !formData.door_code) {
+      toast.error(t('customers.doorCodeEmailMissingCode') || 'Enter the door code before sending it by email');
+      return;
+    }
+    if (sendDoorCodeEmail && !formData.email) {
+      toast.error(t('customers.doorCodeEmailMissingEmail') || 'This customer has no email address');
+      return;
+    }
 
     setLoading(true);
 
@@ -339,6 +351,16 @@ const CustomerForm = ({
       const { data, error } = result;
 
       if (error) throw error;
+
+      if (isEditing && sendDoorCodeEmail) {
+        const sent = await oneSignalEmailService.sendDoorCodeEmail(data[0], partnerUuid);
+        if (sent) {
+          toast.success(t('customers.doorCodeEmailSent') || 'Door code sent to the customer by email');
+        } else {
+          toast.error(t('customers.doorCodeEmailFailed') || 'Customer saved, but the door code email could not be sent');
+        }
+        setSendDoorCodeEmail(false);
+      }
 
       toast.success(
         isEditing
@@ -1089,6 +1111,14 @@ const CustomerForm = ({
                     </select>
                   </div>
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={sendDoorCodeEmail}
+                    onChange={e => setSendDoorCodeEmail(e.target.checked)}
+                  />
+                  {t('customers.sendDoorCodeEmail') || 'Send the door code to the customer by email when saving'}
+                </label>
               </div>
             )}
 
