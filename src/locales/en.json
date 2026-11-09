@@ -1246,6 +1246,8 @@
     "hoverEntries": "Entries",
     "hoverAutoRenewOff": "Off",
     "hoverClickForDetails": "Click to open the details",
+    "hoverOutstanding": "Outstanding",
+    "hoverLastPayment": "Last payment",
     "legend": "Legend",
     "left": "left",
     "entriesLeft": "entries left",

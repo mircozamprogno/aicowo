@@ -1,4 +1,4 @@
-import { Building2, Calendar, Clock, FileText, Mail, MapPin, MousePointerClick, Phone, RefreshCw, Ticket } from 'lucide-react';
+import { AlertTriangle, Building2, Calendar, Clock, CreditCard, FileText, Mail, MapPin, MousePointerClick, Phone, RefreshCw, Ticket } from 'lucide-react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import '../../styles/components/booking-hover-card.css';
 
@@ -32,7 +32,7 @@ const Row = ({ icon: Icon, label, children }) => (
   </div>
 );
 
-const BookingHoverCard = ({ booking, position, color, isCustomer }) => {
+const BookingHoverCard = ({ booking, position, color, isCustomer, paymentInfo }) => {
   const { t } = useTranslation();
   if (!booking || !position) return null;
 
@@ -64,6 +64,15 @@ const BookingHoverCard = ({ booking, position, color, isCustomer }) => {
   }[contract.service_type] || contract.service_type;
 
   const price = formatCurrency(contract.service_cost, contract.service_currency);
+
+  // Same rules as the contracts list
+  const paymentStatus = (contract.service_type === 'free_trial' || !contract.requires_payment)
+    ? 'not_required'
+    : (paymentInfo?.payment_status || 'unpaid');
+  const isOverdue = !!paymentInfo?.is_overdue;
+  const paymentCurrency = paymentInfo?.currency || contract.service_currency;
+  const showPaymentAmounts = paymentStatus !== 'not_required' && paymentStatus !== 'paid' && Number(paymentInfo?.paid_amount) > 0;
+  const outstanding = Number(paymentInfo?.outstanding_amount);
 
   return (
     <div
@@ -150,6 +159,32 @@ const BookingHoverCard = ({ booking, position, color, isCustomer }) => {
           {price && (
             <Row label={t('contracts.cost') || 'Prezzo'}>
               <strong>{price}</strong>
+            </Row>
+          )}
+          <Row icon={CreditCard} label={t('payments.paymentStatus') || 'Stato pagamento'}>
+            <span className={`bhc-pay bhc-pay-${isOverdue ? 'overdue' : paymentStatus}`}>
+              {isOverdue && <AlertTriangle size={11} />}
+              {t(`payments.status.${paymentStatus}`)}
+            </span>
+            {showPaymentAmounts && (
+              <span className="bhc-muted">
+                {' '}· {formatCurrency(paymentInfo.paid_amount, paymentCurrency)} / {formatCurrency(paymentInfo.total_amount, paymentCurrency)}
+              </span>
+            )}
+          </Row>
+          {paymentStatus !== 'not_required' && paymentStatus !== 'paid' && outstanding > 0 && (
+            <Row label={t('bookings.hoverOutstanding') || 'Da pagare'}>
+              <span className={isOverdue ? 'bhc-warning' : ''}>{formatCurrency(outstanding, paymentCurrency)}</span>
+            </Row>
+          )}
+          {paymentStatus !== 'not_required' && paymentStatus !== 'paid' && paymentInfo?.next_due_date && (
+            <Row label={t('contracts.nextDueDate') || 'Scadenza pagamento'}>
+              <span className={isOverdue ? 'bhc-warning' : ''}>{formatDate(paymentInfo.next_due_date)}</span>
+            </Row>
+          )}
+          {paymentInfo?.last_payment_date && (
+            <Row label={t('bookings.hoverLastPayment') || 'Ultimo pagamento'}>
+              {formatDate(paymentInfo.last_payment_date)}
             </Row>
           )}
         </dl>

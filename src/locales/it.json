@@ -1371,6 +1371,8 @@
     "hoverEntries": "Ingressi",
     "hoverAutoRenewOff": "Disattivato",
     "hoverClickForDetails": "Clicca per aprire i dettagli",
+    "hoverOutstanding": "Da pagare",
+    "hoverLastPayment": "Ultimo pagamento",
     "legend": "Legenda",
     "left": "rimasti",
     "entriesLeft": "ingressi rimasti",

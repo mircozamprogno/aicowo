@@ -138,6 +138,37 @@
   color: var(--color-error-text, #b91c1c);
 }
 
+.bhc-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  background: var(--color-gray-100, #f3f4f6);
+  color: var(--color-gray-600, #4b5563);
+}
+
+.bhc-pay-paid {
+  background: var(--color-success-bg, #dcfce7);
+  color: var(--color-success-text, #15803d);
+}
+
+.bhc-pay-unpaid,
+.bhc-pay-overdue {
+  background: var(--color-error-bg, #fee2e2);
+  color: var(--color-error-text, #b91c1c);
+}
+
+.bhc-pay-partial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .bhc-footer {
   display: flex;
   align-items: center;

@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.009 Payment status in the booking calendar hover card
 2026.11.09 V 1.008 Booking calendar hover card with full contract details
 2026.11.09 V 1.007 Contract quick filters as chips above the table
 2026.11.09 V 1.006 Compact contract list with details on hover

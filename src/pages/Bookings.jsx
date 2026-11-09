@@ -6,6 +6,7 @@ import PartnerBookingForm from '../components/forms/PartnerBookingForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import oneSignalEmailService from '../services/oneSignalEmailService';
+import { PaymentService } from '../services/paymentService';
 import { supabase } from '../services/supabase';
 import '../styles/components/timeline-view.css';
 import '../styles/pages/bookings.css';
@@ -65,6 +66,8 @@ const Bookings = () => {
   const [showBookingDetails, setShowBookingDetails] = useState(false);
   // Rich hover card for calendar bookings
   const [hoveredBooking, setHoveredBooking] = useState(null);
+  // contract_id → row of contract_payment_status (shown in the hover card)
+  const [contractPayments, setContractPayments] = useState({});
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -239,7 +242,8 @@ const Bookings = () => {
             is_renewable,
             renewal_count,
             service_max_entries,
-            entries_used
+            entries_used,
+            requires_payment
           ),
           location_resources (
             id,
@@ -287,7 +291,8 @@ const Bookings = () => {
             is_renewable,
             renewal_count,
             service_max_entries,
-            entries_used
+            entries_used,
+            requires_payment
           ),
           location_resources (
             id,
@@ -371,6 +376,7 @@ const Bookings = () => {
       );
 
       setBookings(combined);
+      loadPaymentStatuses([...new Set(combined.map(b => b.contracts?.id).filter(Boolean))]);
     } catch (error) {
       logger.error('Error fetching bookings:', error);
       toast.error(t('messages.errorLoadingBookings') || 'Error loading bookings');
@@ -966,6 +972,23 @@ const Bookings = () => {
   };
 
   const goToToday = () => setCurrentDate(new Date());
+
+  const loadPaymentStatuses = async (contractIds) => {
+    if (contractIds.length === 0) {
+      setContractPayments({});
+      return;
+    }
+    const { data, error } = await PaymentService.getContractPaymentStatus(contractIds);
+    if (error) {
+      logger.error('Error loading payment statuses:', error);
+      return;
+    }
+    const statusMap = {};
+    (data || []).forEach(status => {
+      statusMap[status.contract_id] = status;
+    });
+    setContractPayments(statusMap);
+  };
 
   const showBookingHover = (booking, event) => {
     setHoveredBooking({ booking, position: getHoverCardPosition(event.currentTarget) });
@@ -1974,6 +1997,7 @@ const Bookings = () => {
           booking={hoveredBooking.booking}
           position={hoveredBooking.position}
           color={getResourceColor(hoveredBooking.booking)}
+          paymentInfo={contractPayments[hoveredBooking.booking.contracts?.id]}
           isCustomer={isCustomer}
         />
       )}
