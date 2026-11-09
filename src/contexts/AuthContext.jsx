@@ -16,7 +16,8 @@ export const AuthProvider = ({ children }) => {
 
   // Refs to prevent race conditions
   const lastUserIdRef = useRef(null);
-  const profileFetchingRef = useRef(false);
+  // Promise of the profile fetch in progress, shared by concurrent callers
+  const profileFetchPromiseRef = useRef(null);
   const mountedRef = useRef(true);
   const initializingRef = useRef(false);
 
@@ -79,6 +80,20 @@ export const AuthProvider = ({ children }) => {
 
     checkSession();
 
+    // Supabase queries must not be awaited inside onAuthStateChange: the callback
+    // runs while supabase-js holds its auth lock and the query waits for that same
+    // lock, so it hangs until the 5s timeout (emergency profile). Run it right
+    // after the callback returns instead.
+    const loadProfileAfterAuthEvent = (userId) => {
+      setTimeout(() => {
+        fetchProfile(userId)
+          .catch(err => logger.error('❌ Profile fetch error:', err))
+          .finally(() => {
+            if (mountedRef.current) setLoading(false);
+          });
+      }, 0);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       logger.log('=== AUTH STATE CHANGE ===');
       logger.log('Event:', event);
@@ -122,22 +137,12 @@ export const AuthProvider = ({ children }) => {
           logger.log('🔑 User signed in');
           setUser(session.user);
           lastUserIdRef.current = session.user.id;
-          
-          await fetchProfile(session.user.id)
-            .catch(err => logger.error('❌ Profile fetch error:', err))
-            .finally(() => {
-              if (mountedRef.current) setLoading(false);
-            });
+          loadProfileAfterAuthEvent(session.user.id);
         } else if (event === 'INITIAL_SESSION' && session) {
           logger.log('🎬 Initial session');
           setUser(session.user);
           lastUserIdRef.current = session.user.id;
-          
-          await fetchProfile(session.user.id)
-            .catch(err => logger.error('❌ Profile fetch error:', err))
-            .finally(() => {
-              if (mountedRef.current) setLoading(false);
-            });
+          loadProfileAfterAuthEvent(session.user.id);
         }
       } else {
         logger.log('👤 Same user, minimal update');
@@ -145,7 +150,7 @@ export const AuthProvider = ({ children }) => {
         if (event === 'TOKEN_REFRESHED' && session) {
           logger.log('🔄 Token refreshed');
           setUser(session.user);
-          setLoading(false);
+          if (!profileFetchPromiseRef.current) setLoading(false);
         } else if (event === 'SIGNED_OUT') {
           logger.log('👋 User signed out');
           setUser(null);
@@ -156,7 +161,8 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         } else {
           logger.log('⏭️ No action needed');
-          setLoading(false);
+          // A profile fetch in progress clears loading itself when it finishes
+          if (!profileFetchPromiseRef.current) setLoading(false);
         }
       }
     });
@@ -169,14 +175,23 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const fetchProfile = async (userId) => {
-    if (profileFetchingRef.current) {
-      logger.log('⏳ Profile fetch already in progress');
-      return;
+  // checkSession and the auth event both load the profile on startup: the second
+  // caller waits for the same request instead of returning before the profile
+  // is set (which let the router redirect with no profile yet)
+  const fetchProfile = (userId) => {
+    if (profileFetchPromiseRef.current) {
+      logger.log('⏳ Profile fetch already in progress, waiting for it');
+      return profileFetchPromiseRef.current;
     }
+    const promise = fetchProfileFromDb(userId).finally(() => {
+      profileFetchPromiseRef.current = null;
+    });
+    profileFetchPromiseRef.current = promise;
+    return promise;
+  };
 
+  const fetchProfileFromDb = async (userId) => {
     try {
-      profileFetchingRef.current = true;
       logger.log('📥 Fetching profile for:', userId);
       
       const queryPromise = supabase
@@ -309,7 +324,6 @@ export const AuthProvider = ({ children }) => {
         setProfile(emergencyProfile);
       }
     } finally {
-      profileFetchingRef.current = false;
       if (mountedRef.current) {
         setLoading(false);
       }
@@ -413,7 +427,6 @@ export const AuthProvider = ({ children }) => {
       logger.log('🧹 Clearing local state and redirecting...');
       
       lastUserIdRef.current = null;
-      profileFetchingRef.current = false;
       
       if (mountedRef.current) {
         setUser(null);

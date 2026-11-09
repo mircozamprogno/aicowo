@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.011 Fix 5s profile query timeout at startup
 2026.11.09 V 1.010 Fix render loop (Maximum update depth) in searchable selects
 2026.11.09 V 1.009 Payment status in the booking calendar hover card
 2026.11.09 V 1.008 Booking calendar hover card with full contract details
