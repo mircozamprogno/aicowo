@@ -1,5 +1,5 @@
 // src/components/customers/CustomerForm.jsx
-import { Check, FileText, KeyRound, Link2, RefreshCw, Trash2, Upload, Wifi, X } from 'lucide-react';
+import { Check, FileText, KeyRound, Link2, Trash2, Upload, Wifi, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
@@ -206,14 +206,6 @@ const CustomerForm = ({
 
   const needsBusinessInfo = ['freelancer', 'entrepeneur', 'company'].includes(formData.customer_type);
 
-  const regenerateDoorCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const bytes = new Uint8Array(6);
-    window.crypto.getRandomValues(bytes);
-    const code = Array.from(bytes).map(b => chars[b % 26]).join('');
-    setFormData(prev => ({ ...prev, door_code: code }));
-  };
-
   const freePositions = Array.from({ length: 100 }, (_, i) => i + 1)
     .filter(p => !takenPositions.includes(p));
 
@@ -308,20 +300,32 @@ const CustomerForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Door code is set manually: either empty or exactly 6 digits
+    if (formData.door_code && !/^[0-9]{6}$/.test(formData.door_code)) {
+      toast.error(t('customers.doorCodeInvalid') || 'Door code must be exactly 6 digits');
+      return;
+    }
+
     setLoading(true);
 
     try {
       let result;
+      const payload = {
+        ...formData,
+        door_code: formData.door_code || null,
+        door_position: formData.door_position || null,
+      };
 
       if (isEditing) {
         result = await supabase
           .from('customers')
-          .update(formData)
+          .update(payload)
           .eq('id', customer.id)
           .select();
       } else {
         const customerData = {
-          ...formData,
+          ...payload,
           partner_uuid: partnerUuid,
           user_id: userId || null
         };
@@ -1045,33 +1049,23 @@ const CustomerForm = ({
                   {t('customers.doorCode') || 'Door Code'}
                 </h3>
                 <p className="form-section-description">
-                  {t('customers.doorCodeDescription') || 'Unique access code and position slot (1–100) assigned to this customer.'}
+                  {t('customers.doorCodeDescription') || 'Door access code (6 digits, entered manually) and position slot (1–100) for this customer.'}
                 </p>
                 <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">{t('customers.doorCodeLabel') || 'Code (6 letters)'}</label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input
-                        className="form-input"
-                        style={{ flex: 1, fontFamily: 'monospace', letterSpacing: '0.15em', textTransform: 'uppercase' }}
-                        value={formData.door_code}
-                        maxLength={6}
-                        placeholder="ABCDEF"
-                        onChange={e => setFormData(prev => ({
-                          ...prev,
-                          door_code: e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6)
-                        }))}
-                      />
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        style={{ flexShrink: 0 }}
-                        onClick={regenerateDoorCode}
-                        title={t('customers.regenerateCode') || 'Generate new code'}
-                      >
-                        <RefreshCw size={14} />
-                      </button>
-                    </div>
+                    <label className="form-label">{t('customers.doorCodeLabel') || 'Code (6 digits)'}</label>
+                    <input
+                      className="form-input"
+                      style={{ fontFamily: 'monospace', letterSpacing: '0.15em' }}
+                      value={formData.door_code}
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="123456"
+                      onChange={e => setFormData(prev => ({
+                        ...prev,
+                        door_code: e.target.value.replace(/[^0-9]/g, '').slice(0, 6)
+                      }))}
+                    />
                   </div>
 
                   <div className="form-group">

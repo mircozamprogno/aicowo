@@ -122,9 +122,11 @@ async function sendEmail(
   return res.ok && !!result.id;
 }
 
-// ── door code ────────────────────────────────────────────────────────────────
+// ── door position ────────────────────────────────────────────────────────────
+// The door code itself is set manually by the partner (6 digits); only the
+// position slot is assigned automatically.
 
-async function assignDoorCode(
+async function assignDoorPosition(
   supabase: ReturnType<typeof createClient>,
   customerId: number,
   partnerUuid: string,
@@ -132,17 +134,11 @@ async function assignDoorCode(
   // Skip if already assigned
   const { data: existing } = await supabase
     .from("customers")
-    .select("door_code, door_position")
+    .select("door_position")
     .eq("id", customerId)
     .single();
 
-  if (existing?.door_code) return;
-
-  // Generate 6 random uppercase letters
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const codeBytes = new Uint8Array(6);
-  crypto.getRandomValues(codeBytes);
-  const doorCode = Array.from(codeBytes).map((b) => alphabet[b % 26]).join("");
+  if (existing?.door_position) return;
 
   // Find a free position 1-100 for this partner
   const { data: taken } = await supabase
@@ -165,7 +161,7 @@ async function assignDoorCode(
 
   await supabase
     .from("customers")
-    .update({ door_code: doorCode, door_position: doorPosition })
+    .update({ door_position: doorPosition })
     .eq("id", customerId);
 }
 
@@ -179,8 +175,8 @@ async function provision(
   contractNumber: string,
 ): Promise<{ success: boolean; skipped?: string; error?: string }> {
 
-  // 1. Assign door code unconditionally (independent of MikroTik)
-  await assignDoorCode(supabase, customerId, partnerUuid);
+  // 1. Assign door position unconditionally (independent of MikroTik)
+  await assignDoorPosition(supabase, customerId, partnerUuid);
 
   // 2. Check partner has MikroTik enabled
   const { data: partner, error: partnerErr } = await supabase
@@ -220,7 +216,7 @@ async function provision(
   // 4. Fetch customer
   const { data: customer, error: custErr } = await supabase
     .from("customers")
-    .select("first_name, second_name, company_name, email, door_code, door_position")
+    .select("first_name, second_name, company_name, email, door_position")
     .eq("id", customerId)
     .single();
 
@@ -292,7 +288,6 @@ async function provision(
       ...variables,
       vpn_password:  vpnPassword,
       network_name:  partner.mikrotik_ssid ?? "",
-      door_code:     customer.door_code ?? "",
       door_position: customer.door_position?.toString() ?? "",
     });
   }

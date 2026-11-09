@@ -154,8 +154,9 @@
     "documentTypeError": "Solo PDF o PNG sono accettati",
     "saveCustomerFirst": "Salva prima il cliente per caricare il documento",
     "doorCode": "Codice Porta",
-    "doorCodeDescription": "Codice di accesso unico e posizione (1–100) assegnati a questo cliente.",
-    "doorCodeLabel": "Codice (6 lettere)",
+    "doorCodeDescription": "Codice di accesso alla porta (6 cifre, inserito manualmente) e posizione (1–100) di questo cliente.",
+    "doorCodeLabel": "Codice (6 cifre)",
+    "doorCodeInvalid": "Il codice porta deve essere di esattamente 6 cifre",
     "doorPosition": "Posizione (1–100)",
     "wifiName": "Nome Utente WiFi",
     "wifiNameDescription": "Nome di accesso WiFi assegnato automaticamente a questo cliente.",
@@ -2146,7 +2147,7 @@
     "vpnCredentialsPartner": "Credenziali WiFi (Notifica Partner)",
     "vpnCredentialsPartnerDescription": "Inviata all'admin partner quando viene creata una nuova credenziale WiFi per un cliente. Variabili: {{customer_name}}, {{vpn_name}}, {{contract_number}}, {{partner_name}}",
     "vpnCredentialsCustomer": "Credenziali WiFi (Cliente)",
-    "vpnCredentialsCustomerDescription": "Inviata al cliente con i dati di accesso. Variabili: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{door_code}}, {{door_position}}, {{partner_name}}"
+    "vpnCredentialsCustomerDescription": "Inviata al cliente con i dati di accesso. Variabili: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{door_position}}, {{partner_name}}"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto",

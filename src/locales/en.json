@@ -152,8 +152,9 @@
     "documentTypeError": "Only PDF or PNG are accepted",
     "saveCustomerFirst": "Save customer first to upload document",
     "doorCode": "Door Code",
-    "doorCodeDescription": "Unique access code and position slot (1–100) assigned to this customer.",
-    "doorCodeLabel": "Code (6 letters)",
+    "doorCodeDescription": "Door access code (6 digits, entered manually) and position slot (1–100) for this customer.",
+    "doorCodeLabel": "Code (6 digits)",
+    "doorCodeInvalid": "Door code must be exactly 6 digits",
     "doorPosition": "Position (1–100)",
     "wifiName": "WiFi Username",
     "wifiNameDescription": "WiFi access name automatically assigned to this customer.",
@@ -2013,7 +2014,7 @@
     "vpnCredentialsPartner": "WiFi Credentials (Partner Notification)",
     "vpnCredentialsPartnerDescription": "Sent to the partner admin when a new WiFi credential is created for a customer. Variables: {{customer_name}}, {{vpn_name}}, {{contract_number}}, {{partner_name}}",
     "vpnCredentialsCustomer": "WiFi Credentials (Customer)",
-    "vpnCredentialsCustomerDescription": "Sent to the customer with their access details. Variables: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{door_code}}, {{door_position}}, {{partner_name}}"
+    "vpnCredentialsCustomerDescription": "Sent to the customer with their access details. Variables: {{customer_name}}, {{network_name}}, {{vpn_name}}, {{vpn_password}}, {{door_position}}, {{partner_name}}"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",
