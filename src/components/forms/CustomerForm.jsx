@@ -1,5 +1,5 @@
 // src/components/customers/CustomerForm.jsx
-import { Check, FileText, KeyRound, Link2, Trash2, Upload, Wifi, X } from 'lucide-react';
+import { Check, FileText, KeyRound, Link2, RefreshCw, Trash2, Upload, Wifi, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
@@ -213,6 +213,38 @@ const CustomerForm = ({
   const freePositions = Array.from({ length: 100 }, (_, i) => i + 1)
     .filter(p => !takenPositions.includes(p));
 
+  // Door codes already used by other customers of this partner (codes are unique per structure)
+  const fetchTakenDoorCodes = async () => {
+    let query = supabase
+      .from('customers')
+      .select('door_code')
+      .eq('partner_uuid', partnerUuid)
+      .not('door_code', 'is', null);
+    if (customer?.id) query = query.neq('id', customer.id);
+    const { data, error } = await query;
+    if (error) throw error;
+    return new Set((data || []).map(r => r.door_code));
+  };
+
+  const generateDoorCode = async () => {
+    try {
+      const taken = await fetchTakenDoorCodes();
+      const bytes = new Uint32Array(1);
+      for (let attempt = 0; attempt < 100; attempt++) {
+        window.crypto.getRandomValues(bytes);
+        const code = String(bytes[0] % 1000000).padStart(6, '0');
+        if (!taken.has(code)) {
+          setFormData(prev => ({ ...prev, door_code: code }));
+          return;
+        }
+      }
+      toast.error(t('customers.doorCodeGenerateFailed') || 'Could not generate a unique door code, please try again');
+    } catch (err) {
+      logger.error('Failed to generate door code:', err);
+      toast.error(t('customers.doorCodeGenerateFailed') || 'Could not generate a unique door code, please try again');
+    }
+  };
+
   useEffect(() => {
     if (customer) {
       logger.log('Loading customer data for editing:', customer);
@@ -310,6 +342,17 @@ const CustomerForm = ({
       toast.error(t('customers.doorCodeInvalid') || 'Door code must be exactly 6 digits');
       return;
     }
+    if (formData.door_code) {
+      try {
+        const taken = await fetchTakenDoorCodes();
+        if (taken.has(formData.door_code)) {
+          toast.error(t('customers.doorCodeTaken') || 'This door code is already used by another customer');
+          return;
+        }
+      } catch (err) {
+        logger.error('Failed to check door code uniqueness:', err);
+      }
+    }
     if (sendDoorCodeEmail && !formData.door_code) {
       toast.error(t('customers.doorCodeEmailMissingCode') || 'Enter the door code before sending it by email');
       return;
@@ -376,7 +419,11 @@ const CustomerForm = ({
       }
     } catch (error) {
       logger.error('Error saving customer:', error);
-      toast.error(error.message || t('messages.errorSavingCustomer'));
+      if (error.code === '23505' && error.message?.includes('door_code')) {
+        toast.error(t('customers.doorCodeTaken') || 'This door code is already used by another customer');
+      } else {
+        toast.error(error.message || t('messages.errorSavingCustomer'));
+      }
     } finally {
       setLoading(false);
     }
@@ -1076,18 +1123,29 @@ const CustomerForm = ({
                 <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
                     <label className="form-label">{t('customers.doorCodeLabel') || 'Code (6 digits)'}</label>
-                    <input
-                      className="form-input"
-                      style={{ fontFamily: 'monospace', letterSpacing: '0.15em' }}
-                      value={formData.door_code}
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="123456"
-                      onChange={e => setFormData(prev => ({
-                        ...prev,
-                        door_code: e.target.value.replace(/[^0-9]/g, '').slice(0, 6)
-                      }))}
-                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        className="form-input"
+                        style={{ flex: 1, fontFamily: 'monospace', letterSpacing: '0.15em' }}
+                        value={formData.door_code}
+                        inputMode="numeric"
+                        maxLength={6}
+                        placeholder="123456"
+                        onChange={e => setFormData(prev => ({
+                          ...prev,
+                          door_code: e.target.value.replace(/[^0-9]/g, '').slice(0, 6)
+                        }))}
+                      />
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ flexShrink: 0 }}
+                        onClick={generateDoorCode}
+                        title={t('customers.regenerateCode') || 'Generate new code'}
+                      >
+                        <RefreshCw size={14} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="form-group">

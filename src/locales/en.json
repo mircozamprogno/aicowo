@@ -155,6 +155,8 @@
     "doorCodeDescription": "Door access code (6 digits, entered manually) and position slot (1–100) for this customer.",
     "doorCodeLabel": "Code (6 digits)",
     "doorCodeInvalid": "Door code must be exactly 6 digits",
+    "doorCodeTaken": "This door code is already used by another customer",
+    "doorCodeGenerateFailed": "Could not generate a unique door code, please try again",
     "sendDoorCodeEmail": "Send the door code to the customer by email when saving",
     "doorCodeEmailSent": "Door code sent to the customer by email",
     "doorCodeEmailFailed": "Customer saved, but the door code email could not be sent",
