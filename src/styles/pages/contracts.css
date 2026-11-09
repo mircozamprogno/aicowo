@@ -1934,6 +1934,10 @@ button.btn-primary:hover:not(:disabled) {
     white-space: nowrap;
   }
 
+  .contracts-page > .filter-chip-bar {
+    margin-bottom: -0.25rem;
+  }
+
   .contracts-header > .filter-chip,
   .filter-chip-bar {
     overflow-x: auto;
@@ -1945,6 +1949,84 @@ button.btn-primary:hover:not(:disabled) {
   .filter-results-info {
     font-size: 0.8125rem;
   }
+}
+
+/* ===== Quick filter chips (above the table) ===== */
+.filter-chip-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Chips sit directly on top of the table (cancels the page's flex gap) */
+.filter-chip-bar {
+  margin-bottom: calc(0.75rem - var(--spacing-xl));
+}
+
+.filter-chip-bar ~ .contracts-table-container {
+  margin-top: 0;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-gray-700, #374151);
+  background: #ffffff;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.filter-chip:hover {
+  border-color: var(--color-gray-400);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.filter-chip-count {
+  min-width: 1.25rem;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-gray-500);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-full);
+}
+
+.filter-chip-warning svg {
+  color: #d97706;
+}
+
+.filter-chip-success svg {
+  color: var(--color-success-text);
+}
+
+.filter-chip-warning.active {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.filter-chip-success.active {
+  color: var(--color-success-text);
+  background: var(--color-success-bg);
+  border-color: var(--color-success-text);
+}
+
+.filter-chip.active .filter-chip-count {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 /* ===== Compact contract rows (2 lines per cell) + details panel ===== */

@@ -921,13 +921,13 @@ const Contracts = () => {
 
   // Pagination logic
   const baseContracts = filteredContracts.length >= 0 ? filteredContracts : contracts;
-  const displayFilter = (onlyNeedsResource
-    ? baseContracts.filter(c =>
-        Array.isArray(c.bookings) &&
-        c.bookings.some(b => b.booking_status === 'active' && !b.is_archived && b.end_date < c.end_date)
-      )
-    : baseContracts
-  ).filter(c => !onlyAutoRenew || (c.service_type === 'abbonamento' && c.auto_renew));
+  const needsResource = (c) =>
+    Array.isArray(c.bookings) &&
+    c.bookings.some(b => b.booking_status === 'active' && !b.is_archived && b.end_date < c.end_date);
+  const hasAutoRenew = (c) => c.service_type === 'abbonamento' && c.auto_renew;
+  const displayFilter = baseContracts
+    .filter(c => !onlyNeedsResource || needsResource(c))
+    .filter(c => !onlyAutoRenew || hasAutoRenew(c));
   const totalContractsCount = displayFilter.length;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -1087,33 +1087,34 @@ const Contracts = () => {
       )}
 
       {!isCustomer && (
-        <label className="filter-chip">
-          <input
-            type="checkbox"
-            checked={onlyNeedsResource}
-            onChange={(e) => {
-              setOnlyNeedsResource(e.target.checked);
+        <div className="filter-chip-bar">
+          <button
+            type="button"
+            className={`filter-chip filter-chip-warning ${onlyNeedsResource ? 'active' : ''}`}
+            aria-pressed={onlyNeedsResource}
+            onClick={() => {
+              setOnlyNeedsResource(v => !v);
               setCurrentPage(1);
             }}
-          />
-          <AlertTriangle size={14} />
-          {t('contracts.needsResourceReassignment') || 'Needs resource reassignment'}
-        </label>
-      )}
-
-      {!isCustomer && (
-        <label className="filter-chip">
-          <input
-            type="checkbox"
-            checked={onlyAutoRenew}
-            onChange={(e) => {
-              setOnlyAutoRenew(e.target.checked);
+          >
+            <AlertTriangle size={14} />
+            {t('contracts.needsResourceReassignment') || 'Needs resource reassignment'}
+            <span className="filter-chip-count">{baseContracts.filter(needsResource).length}</span>
+          </button>
+          <button
+            type="button"
+            className={`filter-chip filter-chip-success ${onlyAutoRenew ? 'active' : ''}`}
+            aria-pressed={onlyAutoRenew}
+            onClick={() => {
+              setOnlyAutoRenew(v => !v);
               setCurrentPage(1);
             }}
-          />
-          <RefreshCw size={14} />
-          {t('contracts.onlyAutoRenew') || 'Automatic renewal only'}
-        </label>
+          >
+            <RefreshCw size={14} />
+            {t('contracts.onlyAutoRenew') || 'Automatic renewal only'}
+            <span className="filter-chip-count">{baseContracts.filter(hasAutoRenew).length}</span>
+          </button>
+        </div>
       )}
 
       <div className="contracts-mobile-list">

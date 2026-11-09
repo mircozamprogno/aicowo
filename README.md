@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.007 Contract quick filters as chips above the table
 2026.11.09 V 1.006 Compact contract list with details on hover
 2026.11.09 V 1.005 Automatic renewal switch in contract page
 2026.11.09 V 1.004 Contract renewal: partner + customer emails, calendar-month renewals
