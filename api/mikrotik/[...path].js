@@ -52,9 +52,13 @@ export default async function handler(req, res) {
     });
   }
 
-  const segments = Array.isArray(req.query.path) ? req.query.path : [req.query.path].filter(Boolean);
+  // Vercel may pass the catch-all as an array or as one 'a/b/c' string
+  const segments = (Array.isArray(req.query.path) ? req.query.path : [req.query.path])
+    .filter(Boolean)
+    .flatMap(seg => String(seg).split('/'))
+    .filter(Boolean);
   const path = '/' + segments.join('/');
-  if (segments.some(seg => seg === '..' || seg.includes('/') || seg.includes('\\'))) {
+  if (segments.some(seg => seg === '.' || seg === '..' || seg.includes('\\'))) {
     return res.status(400).json({ error: 'Invalid path' });
   }
   if (req.method !== 'GET' && !path.startsWith(WRITE_PATH_PREFIX)) {
