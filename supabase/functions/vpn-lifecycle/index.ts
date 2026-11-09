@@ -4,7 +4,9 @@
 // contract lifecycle changes.
 //
 // Provision  — called on first active contract for a customer+partner pair
-// Deprovision — called when the customer's last active contract ends or is archived
+// Deprovision — called when the customer's last active contract ends or is archived:
+//               clears the door code (partner emailed) and deletes the WiFi user
+// retry_revocations — nightly (03:00): retries WiFi deletions that failed
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
@@ -311,82 +313,274 @@ async function provision(
 }
 
 // ── deprovision ───────────────────────────────────────────────────────────────
+// Runs when a contract expires, is closed (cancelled) or archived while active.
+// Only acts when it was the customer's LAST active contract with this partner:
+//   1. clears the door code and emails the partner (door code must be disabled
+//      on the lock by hand — the app is not connected to it)
+//   2. deletes the WiFi user from the MikroTik router and revokes the credential;
+//      if the router call fails the credential is marked for the nightly retry
 
-async function deprovision(
-  supabase: ReturnType<typeof createClient>,
-  customerId: number,
-  partnerUuid: string,
-  contractId: number,
-  contractNumber: string,
-): Promise<{ success: boolean; skipped?: string; error?: string }> {
+type Supabase = ReturnType<typeof createClient>;
 
-  // 1. Check partner has MikroTik enabled
-  const { data: partner } = await supabase
+interface PartnerRow {
+  mikrotik_enabled: boolean | null;
+  mikrotik_agent_url: string | null;
+  mikrotik_agent_secret: string | null;
+  email: string | null;
+  company_name: string | null;
+  structure_name: string | null;
+}
+
+const MAX_REVOKE_ATTEMPTS_BEFORE_ALERT = 3;
+
+async function loadPartner(supabase: Supabase, partnerUuid: string): Promise<PartnerRow | null> {
+  const { data } = await supabase
     .from("partners")
-    .select("mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret")
+    .select("mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, email, company_name, structure_name")
     .eq("partner_uuid", partnerUuid)
     .single();
+  return data as PartnerRow | null;
+}
 
-  if (!partner?.mikrotik_enabled) return { success: true, skipped: "mikrotik_disabled" };
-  if (!partner.mikrotik_agent_url || !partner.mikrotik_agent_secret)
-    return { success: false, error: "MikroTik agent not configured" };
+const partnerDisplayName = (p: PartnerRow | null) => p?.structure_name || p?.company_name || "PowerCowo";
 
-  // 2. Skip if customer still has other active non-archived contracts with this partner
-  const { count } = await supabase
+// deno-lint-ignore no-explicit-any
+const customerDisplayName = (c: any) =>
+  c?.company_name || `${c?.first_name ?? ""} ${c?.second_name ?? ""}`.replace(/\s+/g, " ").trim();
+
+async function hasOtherActiveContracts(
+  supabase: Supabase, partnerUuid: string, customerId: number, excludeContractId?: number,
+): Promise<boolean> {
+  let query = supabase
     .from("contracts")
     .select("id", { count: "exact", head: true })
     .eq("partner_uuid", partnerUuid)
     .eq("customer_id", customerId)
     .eq("contract_status", "active")
-    .eq("is_archived", false)
-    .neq("id", contractId);
+    .eq("is_archived", false);
+  if (excludeContractId) query = query.neq("id", excludeContractId);
+  const { count } = await query;
+  return (count ?? 0) > 0;
+}
 
-  if ((count ?? 0) > 0) return { success: true, skipped: "other_active_contracts" };
+async function clearDoorCode(
+  supabase: Supabase, partner: PartnerRow | null, partnerUuid: string,
+  customerId: number, contractId: number, contractNumber: string, dryRun: boolean,
+): Promise<{ cleared: boolean; door_code?: string; partner_emailed?: boolean; skipped?: string }> {
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("door_code, first_name, second_name, company_name, email")
+    .eq("id", customerId)
+    .single();
 
-  // 3. Find active VPN credential
+  const doorCode = customer?.door_code;
+  if (!doorCode) return { cleared: false, skipped: "no_door_code" };
+  if (dryRun) return { cleared: true, door_code: doorCode, partner_emailed: !!partner?.email };
+
+  // Only clear the code we read (a partner editing it meanwhile wins)
+  const { error } = await supabase
+    .from("customers")
+    .update({ door_code: null })
+    .eq("id", customerId)
+    .eq("door_code", doorCode);
+  if (error) return { cleared: false, skipped: `update_failed: ${error.message}` };
+
+  const customerName = customerDisplayName(customer);
+  await supabase.from("activity_logs").insert({
+    partner_uuid:    partnerUuid,
+    user_id:         SYSTEM_USER_ID,
+    action_category: "customer",
+    action_type:     "deactivated",
+    entity_type:     "customers",
+    entity_id:       String(customerId),
+    description:     `Door code ${doorCode} removed from ${customerName}: last contract ${contractNumber} ended`,
+    metadata:        { kind: "door_code_cleared", door_code: doorCode, contract_id: contractId, contract_number: contractNumber },
+  });
+
+  let emailed = false;
+  if (partner?.email) {
+    emailed = await sendEmail(supabase, partnerUuid, partnerDisplayName(partner), "door_code_cleared_partner", partner.email, {
+      customer_name:   customerName,
+      customer_email:  customer?.email ?? "",
+      door_code:       doorCode,
+      contract_number: contractNumber,
+      partner_name:    partnerDisplayName(partner),
+    }).catch(() => false);
+    await supabase.from("activity_logs").insert({
+      partner_uuid:    partnerUuid,
+      user_id:         SYSTEM_USER_ID,
+      action_category: "email",
+      action_type:     emailed ? "sent" : "failed",
+      entity_type:     "customers",
+      entity_id:       String(customerId),
+      description:     emailed
+        ? `Door code removal email sent to partner for ${customerName}`
+        : `Failed to send door code removal email to partner for ${customerName}`,
+      metadata:        { kind: "door_code_cleared_partner", recipient_email: partner.email, door_code: doorCode },
+    });
+  }
+
+  return { cleared: true, door_code: doorCode, partner_emailed: emailed };
+}
+
+// Deletes the WiFi user from the router and revokes the credential.
+// On a router error the credential is marked for the nightly retry.
+async function revokeWifi(
+  supabase: Supabase, partner: PartnerRow | null, partnerUuid: string,
+  customerId: number, contractId: number | null, contractNumber: string | null, dryRun: boolean,
+): Promise<{ success: boolean; skipped?: string; error?: string; vpn_name?: string }> {
+  if (!partner?.mikrotik_enabled) return { success: true, skipped: "mikrotik_disabled" };
+  if (!partner.mikrotik_agent_url || !partner.mikrotik_agent_secret)
+    return { success: false, error: "MikroTik agent not configured" };
+
   const { data: cred } = await supabase
     .from("customer_vpn_credentials")
-    .select("id, vpn_name, mikrotik_id")
+    .select("id, vpn_name, mikrotik_id, revoke_requested_at, revoke_attempts")
     .eq("partner_uuid", partnerUuid)
     .eq("customer_id", customerId)
     .is("revoked_at", null)
     .maybeSingle();
 
   if (!cred) return { success: true, skipped: "no_vpn_found" };
+  if (dryRun) return { success: true, skipped: "dry_run", vpn_name: cred.vpn_name };
 
-  // 4. Delete from MikroTik router
   if (cred.mikrotik_id) {
-    const encoded = encodeURIComponent(cred.mikrotik_id);
-    const mikrotikRes = await callMikrotik(
-      partner.mikrotik_agent_url,
-      partner.mikrotik_agent_secret,
-      "DELETE",
-      `/user-manager/user/${encoded}`,
-    );
-    if (!mikrotikRes.ok && mikrotikRes.status !== 404) {
-      return { success: false, error: `MikroTik delete error ${mikrotikRes.status}: ${JSON.stringify(mikrotikRes.data)}` };
+    let failure: string | null = null;
+    try {
+      const res = await callMikrotik(
+        partner.mikrotik_agent_url,
+        partner.mikrotik_agent_secret,
+        "DELETE",
+        `/user-manager/user/${encodeURIComponent(cred.mikrotik_id)}`,
+      );
+      if (!res.ok && res.status !== 404) failure = `MikroTik delete error ${res.status}: ${JSON.stringify(res.data)}`;
+    } catch (err) {
+      failure = `MikroTik unreachable: ${err instanceof Error ? err.message : String(err)}`;
+    }
+
+    if (failure) {
+      await supabase
+        .from("customer_vpn_credentials")
+        .update({
+          revoke_requested_at: cred.revoke_requested_at ?? new Date().toISOString(),
+          revoke_attempts:     (cred.revoke_attempts ?? 0) + 1,
+          revoke_last_error:   failure.slice(0, 500),
+        })
+        .eq("id", cred.id);
+      return { success: false, error: failure, vpn_name: cred.vpn_name };
     }
   }
 
-  // 5. Stamp revoked_at
   await supabase
     .from("customer_vpn_credentials")
-    .update({ revoked_at: new Date().toISOString() })
+    .update({ revoked_at: new Date().toISOString(), revoke_last_error: null })
     .eq("id", cred.id);
 
-  // 6. Activity log
   await supabase.from("activity_logs").insert({
-    partner_uuid:     partnerUuid,
-    user_id:          SYSTEM_USER_ID,
-    action_category:  "system",
-    action_type:      "deactivated",
-    entity_type:      "contracts",
-    entity_id:        String(contractId),
-    description:      `VPN '${cred.vpn_name}' revoked for customer ${customerId} on contract ${contractNumber}`,
-    metadata:         { vpn_name: cred.vpn_name, customer_id: customerId, mikrotik_id: cred.mikrotik_id },
+    partner_uuid:    partnerUuid,
+    user_id:         SYSTEM_USER_ID,
+    action_category: "system",
+    action_type:     "deactivated",
+    entity_type:     contractId ? "contracts" : "customers",
+    entity_id:       String(contractId ?? customerId),
+    description:     `VPN '${cred.vpn_name}' revoked for customer ${customerId}` +
+      (contractNumber ? ` on contract ${contractNumber}` : " (nightly retry)"),
+    metadata:        { vpn_name: cred.vpn_name, customer_id: customerId, mikrotik_id: cred.mikrotik_id, attempts: (cred.revoke_attempts ?? 0) + 1 },
   });
 
-  return { success: true };
+  return { success: true, vpn_name: cred.vpn_name };
+}
+
+async function deprovision(
+  supabase: Supabase,
+  customerId: number,
+  partnerUuid: string,
+  contractId: number,
+  contractNumber: string,
+  dryRun: boolean,
+) {
+  if (await hasOtherActiveContracts(supabase, partnerUuid, customerId, contractId)) {
+    return { success: true, skipped: "other_active_contracts" };
+  }
+
+  const partner = await loadPartner(supabase, partnerUuid);
+  const doorCode = await clearDoorCode(supabase, partner, partnerUuid, customerId, contractId, contractNumber, dryRun);
+  const wifi = await revokeWifi(supabase, partner, partnerUuid, customerId, contractId, contractNumber, dryRun);
+
+  return { success: wifi.success, dry_run: dryRun, door_code: doorCode, wifi };
+}
+
+// ── nightly retry of failed WiFi deletions ────────────────────────────────────
+
+async function retryRevocations(supabase: Supabase, dryRun: boolean) {
+  const { data: pending, error } = await supabase
+    .from("customer_vpn_credentials")
+    .select("id, customer_id, partner_uuid, vpn_name, revoke_attempts, revoke_last_error, revoke_failure_notified_at")
+    .is("revoked_at", null)
+    .not("revoke_requested_at", "is", null)
+    .limit(200);
+  if (error) throw error;
+
+  const results = [];
+  for (const cred of pending ?? []) {
+    // The customer got a new contract meanwhile: keep the WiFi
+    if (await hasOtherActiveContracts(supabase, cred.partner_uuid, cred.customer_id)) {
+      if (!dryRun) {
+        await supabase
+          .from("customer_vpn_credentials")
+          .update({ revoke_requested_at: null, revoke_attempts: 0, revoke_last_error: null, revoke_failure_notified_at: null })
+          .eq("id", cred.id);
+      }
+      results.push({ vpn_name: cred.vpn_name, kept: "customer_has_active_contract" });
+      continue;
+    }
+
+    const partner = await loadPartner(supabase, cred.partner_uuid);
+    const outcome = await revokeWifi(supabase, partner, cred.partner_uuid, cred.customer_id, null, null, dryRun);
+    const attempts = (cred.revoke_attempts ?? 0) + (outcome.success || dryRun ? 0 : 1);
+
+    let partnerAlerted = false;
+    if (!outcome.success && !dryRun && attempts >= MAX_REVOKE_ATTEMPTS_BEFORE_ALERT && !cred.revoke_failure_notified_at && partner?.email) {
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("first_name, second_name, company_name")
+        .eq("id", cred.customer_id)
+        .single();
+      partnerAlerted = await sendEmail(supabase, cred.partner_uuid, partnerDisplayName(partner), "wifi_revoke_failed_partner", partner.email, {
+        customer_name: customerDisplayName(customer),
+        vpn_name:      cred.vpn_name,
+        attempts:      String(attempts),
+        last_error:    (outcome.error ?? "").slice(0, 200),
+        partner_name:  partnerDisplayName(partner),
+      }).catch(() => false);
+      if (partnerAlerted) {
+        await supabase
+          .from("customer_vpn_credentials")
+          .update({ revoke_failure_notified_at: new Date().toISOString() })
+          .eq("id", cred.id);
+      }
+      await supabase.from("activity_logs").insert({
+        partner_uuid:    cred.partner_uuid,
+        user_id:         SYSTEM_USER_ID,
+        action_category: "email",
+        action_type:     partnerAlerted ? "sent" : "failed",
+        entity_type:     "customers",
+        entity_id:       String(cred.customer_id),
+        description:     `WiFi removal failure alert for '${cred.vpn_name}' after ${attempts} attempts`,
+        metadata:        { kind: "wifi_revoke_failed_partner", recipient_email: partner.email, vpn_name: cred.vpn_name },
+      });
+    }
+
+    results.push({ vpn_name: cred.vpn_name, ...outcome, attempts, partner_alerted: partnerAlerted });
+  }
+
+  return {
+    success: true,
+    dry_run: dryRun,
+    pending: pending?.length ?? 0,
+    revoked: results.filter((r) => "success" in r && r.success && !r.skipped).length,
+    results,
+  };
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -395,18 +589,26 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const { action, contract_id, contract_number, customer_id, partner_uuid } = body;
+    // {"dry_run": true} reports what deprovision / retry would do without writing or sending
+    const dryRun = body?.dry_run === true;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    if (action === "retry_revocations") {
+      const result = await retryRevocations(supabase, dryRun);
+      return new Response(JSON.stringify({ action, ...result }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     if (!action || !contract_id || !customer_id || !partner_uuid) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400 });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     let result;
     if (action === "provision") {
       result = await provision(supabase, customer_id, partner_uuid, contract_id, contract_number);
     } else if (action === "deprovision") {
-      result = await deprovision(supabase, customer_id, partner_uuid, contract_id, contract_number);
+      result = await deprovision(supabase, customer_id, partner_uuid, contract_id, contract_number, dryRun);
     } else {
       return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), { status: 400 });
     }

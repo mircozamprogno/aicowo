@@ -2050,7 +2050,11 @@
     "renewalReminder": "Upcoming Renewal (Customer)",
     "renewalReminderDescription": "Sent once before an auto-renewing subscription renews. Variables: {{customer_name}}, {{contract_number}}, {{service_name}}, {{end_date}}, {{days_until_renewal}}, {{amount}}, {{partner_name}}",
     "contractRenewedPartner": "Contract Renewed (Partner)",
-    "contractRenewedPartnerDescription": "Sent to you at 04:00 when a contract is renewed automatically. Variables: {{customer_name}}, {{contract_number}}, {{service_name}}, {{new_end_date}}, {{amount}}, {{currency}}, {{renewal_count}}, {{partner_name}}"
+    "contractRenewedPartnerDescription": "Sent to you at 04:00 when a contract is renewed automatically. Variables: {{customer_name}}, {{contract_number}}, {{service_name}}, {{new_end_date}}, {{amount}}, {{currency}}, {{renewal_count}}, {{partner_name}}",
+    "doorCodeClearedPartner": "Door code removed (partner)",
+    "doorCodeClearedPartnerDescription": "Sent to the partner when a customer's last contract ends and their door code is removed, so it can be disabled on the lock too",
+    "wifiRevokeFailedPartner": "WiFi not removed from router (partner)",
+    "wifiRevokeFailedPartnerDescription": "Sent to the partner when, after 3 nightly attempts, the WiFi user of a customer whose contract ended could not be deleted from the router"
   },
   "customersDiscountCodes": {
     "title": "Customer Discount Codes",

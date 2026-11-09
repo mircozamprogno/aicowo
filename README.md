@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.015 Door code cleared + WiFi removal retry when last contract ends
 2026.11.09 V 1.014 Booking hover card in the Gantt view
 2026.11.09 V 1.013 Capitalized day heading in booking calendar week/day views
 2026.11.09 V 1.012 Capitalized month name in booking calendar

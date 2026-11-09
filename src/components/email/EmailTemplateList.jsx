@@ -104,6 +104,18 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.contractRenewedPartner',
     descriptionKey: 'emailTemplates.contractRenewedPartnerDescription',
     icon: 'CheckCircle'
+  },
+  door_code_cleared_partner: {
+    id: 'door_code_cleared_partner',
+    nameKey: 'emailTemplates.doorCodeClearedPartner',
+    descriptionKey: 'emailTemplates.doorCodeClearedPartnerDescription',
+    icon: 'KeyRound'
+  },
+  wifi_revoke_failed_partner: {
+    id: 'wifi_revoke_failed_partner',
+    nameKey: 'emailTemplates.wifiRevokeFailedPartner',
+    descriptionKey: 'emailTemplates.wifiRevokeFailedPartnerDescription',
+    icon: 'AlertTriangle'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };

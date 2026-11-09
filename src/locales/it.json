@@ -2183,7 +2183,11 @@
     "renewalReminder": "Rinnovo in Arrivo (Cliente)",
     "renewalReminderDescription": "Inviata una volta prima del rinnovo automatico di un abbonamento. Variabili: {{customer_name}}, {{contract_number}}, {{service_name}}, {{end_date}}, {{days_until_renewal}}, {{amount}}, {{partner_name}}",
     "contractRenewedPartner": "Contratto Rinnovato (Partner)",
-    "contractRenewedPartnerDescription": "Inviata a te alle 04:00 quando un contratto viene rinnovato automaticamente. Variabili: {{customer_name}}, {{contract_number}}, {{service_name}}, {{new_end_date}}, {{amount}}, {{currency}}, {{renewal_count}}, {{partner_name}}"
+    "contractRenewedPartnerDescription": "Inviata a te alle 04:00 quando un contratto viene rinnovato automaticamente. Variabili: {{customer_name}}, {{contract_number}}, {{service_name}}, {{new_end_date}}, {{amount}}, {{currency}}, {{renewal_count}}, {{partner_name}}",
+    "doorCodeClearedPartner": "Codice porta rimosso (partner)",
+    "doorCodeClearedPartnerDescription": "Inviata al partner quando termina l'ultimo contratto di un cliente e il suo codice porta viene rimosso, per disattivarlo anche sulla serratura",
+    "wifiRevokeFailedPartner": "WiFi non rimosso dal router (partner)",
+    "wifiRevokeFailedPartnerDescription": "Inviata al partner quando dopo 3 tentativi notturni non è stato possibile eliminare dal router l'utente WiFi di un cliente con contratto terminato"
   },
   "customersDiscountCodes": {
     "title": "Codici Sconto",
