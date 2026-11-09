@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.002 WiFi assignment, 6-digit door code, door code email
 2026.04.04 V 1.000 official Version 1
 2026.03.03 V 0.990 Gantt Translations
 2026.03.02 V 0.988 Dashboard and Contracts fixes
