@@ -99,10 +99,9 @@ export const sendPartnerInvitationEmail = async (
     logger.log('Sending partner invitation email');
 
     const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
-    const apiKey = import.meta.env.VITE_ONESIGNAL_API_KEY;
     const uniqueTemplateId = import.meta.env.VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID;
 
-    if (!appId || !apiKey || !uniqueTemplateId) {
+    if (!appId || !uniqueTemplateId) {
       logger.error('OneSignal not configured');
       return false;
     }

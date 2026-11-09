@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { supabase } from '../../services/supabase';
+import { fetchPartnerSecrets } from '../../services/partnerSecrets';
 import { toast } from '../common/ToastContainer';
 
 import logger from '../../utils/logger';
@@ -60,6 +61,11 @@ const PartnerForm = ({ isOpen, onClose, onSuccess, partner = null }) => {
         fattureincloud_company_id: partner.fattureincloud_company_id || '',
         fattureincloud_default_vat: partner.fattureincloud_default_vat || 22,
         fattureincloud_document_type: partner.fattureincloud_document_type || 'proforma'
+      });
+      fetchPartnerSecrets(partner.partner_uuid).then(secrets => {
+        if (secrets.fattureincloud_api_token) {
+          setFormData(prev => ({ ...prev, fattureincloud_api_token: secrets.fattureincloud_api_token }));
+        }
       });
     } else {
       // Reset form for new partner

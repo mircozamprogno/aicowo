@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.018 Security hardening: RLS, MikroTik proxy auth, service-only edge functions, OneSignal key server-side
 2026.11.09 V 1.017 Customer details hover card in the customers list
 2026.11.09 V 1.016 Door position also reset when last contract ends
 2026.11.09 V 1.015 Door code cleared + WiFi removal retry when last contract ends

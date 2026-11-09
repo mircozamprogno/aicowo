@@ -9,6 +9,7 @@ import CustomerForm from '../components/forms/CustomerForm';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
+import { withPartnerSecrets } from '../services/partnerSecrets';
 import userDeletionService from '../services/userDeletionService';
 import { getHoverCardPosition } from '../utils/hoverCardPosition';
 import logger from '../utils/logger';
@@ -199,7 +200,7 @@ const Customers = () => {
     logger.log('Partner settings result:', { data, error });
 
     if (!error && data) {
-      setPartnerSettings(data);
+      setPartnerSettings(await withPartnerSecrets(profile.partner_uuid, data));
       logger.log('✅ Partner settings loaded:', data);
     } else {
       logger.error('❌ Error loading partner settings:', error);

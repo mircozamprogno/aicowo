@@ -1,6 +1,7 @@
 // services/fattureInCloudService.js
 import logger from '../utils/logger';
 import { supabase } from './supabase';
+import { withPartnerSecrets } from './partnerSecrets';
 
 export class FattureInCloudService {
   static async uploadContract(contract, partnerSettings, t) {
@@ -292,7 +293,7 @@ export class FattureInCloudService {
       return null;
     }
 
-    return data;
+    return withPartnerSecrets(partnerUuid, data);
   }
 
   static async bulkUploadContracts(contractIds, partnerUuid, t) {

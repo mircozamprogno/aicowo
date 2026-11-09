@@ -1,4 +1,5 @@
 // src/components/notifications/NotificationModal.jsx
+import DOMPurify from 'dompurify';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
@@ -96,7 +97,7 @@ const NotificationModal = ({
         <div className="notification-modal-body">
           <div
             className="notification-modal-content"
-            dangerouslySetInnerHTML={{ __html: notification.message }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(notification.message || '') }}
           />
         </div>
 

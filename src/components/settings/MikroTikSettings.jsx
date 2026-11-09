@@ -2,6 +2,8 @@
 import { CheckCircle, Eye, EyeOff, Router, Save, TestTube, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
+import { mikrotikFetch } from '../../services/mikrotikApi';
+import { fetchPartnerSecrets } from '../../services/partnerSecrets';
 import { toast } from '../common/ToastContainer';
 import logger from '../../utils/logger';
 import '../../styles/components/mikrotik-settings.css';
@@ -30,6 +32,8 @@ const MikroTikSettings = ({ partnerUuid }) => {
         .eq('partner_uuid', partnerUuid)
         .single();
       if (error) throw error;
+      const secrets = await fetchPartnerSecrets(partnerUuid);
+      if (data && secrets.mikrotik_agent_secret) data.mikrotik_agent_secret = secrets.mikrotik_agent_secret;
       if (data) setSettings({
         mikrotik_enabled:      data.mikrotik_enabled      ?? false,
         mikrotik_agent_url:    data.mikrotik_agent_url    ?? '',
@@ -69,9 +73,7 @@ const MikroTikSettings = ({ partnerUuid }) => {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch('/api/mikrotik/system/identity', {
-        headers: { 'Content-Type': 'application/json', 'x-agent-secret': settings.mikrotik_agent_secret },
-      });
+      const res = await mikrotikFetch('/system/identity');
       if (res.ok) {
         const data = await res.json();
         setTestResult({ success: true, message: `Connected — router identity: ${data?.name ?? 'unknown'}` });

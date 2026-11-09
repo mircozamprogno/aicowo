@@ -10,6 +10,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { forbiddenResponse, isServiceRoleRequest } from "../_shared/serviceRoleOnly.ts";
 
 const SUPABASE_URL               = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -191,6 +192,7 @@ async function provision(
     .single();
 
   if (partnerErr || !partner) return { success: false, error: "Partner not found" };
+  partner.mikrotik_agent_secret = (await loadAgentSecret(supabase, partnerUuid)) ?? partner.mikrotik_agent_secret;
   if (!partner.mikrotik_enabled) return { success: true, skipped: "mikrotik_disabled" };
   if (!partner.mikrotik_agent_url || !partner.mikrotik_agent_secret)
     return { success: false, error: "MikroTik agent not configured" };
@@ -334,13 +336,25 @@ interface PartnerRow {
 
 const MAX_REVOKE_ATTEMPTS_BEFORE_ALERT = 3;
 
+// The agent secret lives in partner_secrets (the partners column is blanked)
+async function loadAgentSecret(supabase: Supabase, partnerUuid: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("partner_secrets")
+    .select("mikrotik_agent_secret")
+    .eq("partner_uuid", partnerUuid)
+    .maybeSingle();
+  return data?.mikrotik_agent_secret || null;
+}
+
 async function loadPartner(supabase: Supabase, partnerUuid: string): Promise<PartnerRow | null> {
   const { data } = await supabase
     .from("partners")
     .select("mikrotik_enabled, mikrotik_agent_url, mikrotik_agent_secret, email, company_name, structure_name")
     .eq("partner_uuid", partnerUuid)
     .single();
-  return data as PartnerRow | null;
+  if (!data) return null;
+  data.mikrotik_agent_secret = (await loadAgentSecret(supabase, partnerUuid)) ?? data.mikrotik_agent_secret;
+  return data as PartnerRow;
 }
 
 const partnerDisplayName = (p: PartnerRow | null) => p?.structure_name || p?.company_name || "PowerCowo";
@@ -367,7 +381,7 @@ async function hasOtherActiveContracts(
 async function clearDoorCode(
   supabase: Supabase, partner: PartnerRow | null, partnerUuid: string,
   customerId: number, contractId: number, contractNumber: string, dryRun: boolean,
-): Promise<{ cleared: boolean; door_code?: string; door_position?: number; partner_emailed?: boolean; skipped?: string }> {
+): Promise<{ cleared: boolean; had_door_code?: boolean; door_position?: number; partner_emailed?: boolean; skipped?: string }> {
   const { data: customer } = await supabase
     .from("customers")
     .select("door_code, door_position, first_name, second_name, company_name, email")
@@ -378,7 +392,7 @@ async function clearDoorCode(
   const doorPosition = customer?.door_position ?? null;
   if (!doorCode && !doorPosition) return { cleared: false, skipped: "no_door_code" };
   if (dryRun) {
-    return { cleared: true, door_code: doorCode ?? undefined, door_position: doorPosition ?? undefined, partner_emailed: !!(doorCode && partner?.email) };
+    return { cleared: true, had_door_code: !!doorCode, door_position: doorPosition ?? undefined, partner_emailed: !!(doorCode && partner?.email) };
   }
 
   // Only clear what we read (a partner editing the code meanwhile wins)
@@ -427,7 +441,7 @@ async function clearDoorCode(
     });
   }
 
-  return { cleared: true, door_code: doorCode ?? undefined, door_position: doorPosition ?? undefined, partner_emailed: emailed };
+  return { cleared: true, had_door_code: !!doorCode, door_position: doorPosition ?? undefined, partner_emailed: emailed };
 }
 
 // Deletes the WiFi user from the router and revokes the credential.
@@ -593,6 +607,7 @@ async function retryRevocations(supabase: Supabase, dryRun: boolean) {
 // ── main ──────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
+  if (!(await isServiceRoleRequest(req))) return forbiddenResponse();
   try {
     const body = await req.json();
     const { action, contract_id, contract_number, customer_id, partner_uuid } = body;

@@ -1,12 +1,12 @@
 // OneSignal Email Service for sending invitations and booking confirmations
 
 import logger from '../utils/logger';
+import { supabase } from './supabase';
 
 class OneSignalEmailService {
   constructor() {
     // Get OneSignal configuration from environment variables
     this.appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
-    this.apiKey = import.meta.env.VITE_ONESIGNAL_API_KEY;
     this.adminTemplateId = import.meta.env.VITE_ONESIGNAL_ADMIN_TEMPLATE_ID;
     this.userTemplateId = import.meta.env.VITE_ONESIGNAL_USER_TEMPLATE_ID;
     this.customerBookingTemplateId = import.meta.env.VITE_ONESIGNAL_CUSTOMER_BOOKING_TEMPLATE_ID;
@@ -14,11 +14,10 @@ class OneSignalEmailService {
     this.uniqueTemplateId = import.meta.env.VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID;
     this.useOneSignal = import.meta.env.VITE_USE_ONESIGNAL === 'true';
 
-    // OneSignal API endpoint
-    this.apiEndpoint = 'https://onesignal.com/api/v1/notifications';
+    // Emails go through the onesignal-send edge function, which holds the REST API key
 
     // Check if OneSignal is configured for invitations
-    this.isConfigured = !!(this.appId && this.apiKey && this.adminTemplateId && this.userTemplateId && this.useOneSignal);
+    this.isConfigured = !!(this.appId && this.adminTemplateId && this.userTemplateId && this.useOneSignal);
 
     // Check if booking templates are configured
     this.isBookingConfigured = !!(this.isConfigured && this.customerBookingTemplateId && this.partnerBookingTemplateId);
@@ -27,7 +26,6 @@ class OneSignalEmailService {
     logger.log('=== ONESIGNAL CONFIGURATION DEBUG ===');
     logger.log('Environment Variables Status:');
     logger.log('  VITE_ONESIGNAL_APP_ID:', this.appId ? `✅ SET (${this.appId.substring(0, 8)}...)` : '❌ MISSING');
-    logger.log('  VITE_ONESIGNAL_API_KEY:', this.apiKey ? `✅ SET (${this.apiKey.substring(0, 8)}...)` : '❌ MISSING');
     logger.log('  VITE_ONESIGNAL_ADMIN_TEMPLATE_ID:', this.adminTemplateId ? `✅ SET (${this.adminTemplateId})` : '❌ MISSING');
     logger.log('  VITE_ONESIGNAL_USER_TEMPLATE_ID:', this.userTemplateId ? `✅ SET (${this.userTemplateId})` : '❌ MISSING');
     logger.log('  VITE_ONESIGNAL_UNIQUE_TEMPLATE_ID:', this.uniqueTemplateId ? `✅ SET (${this.uniqueTemplateId})` : '❌ MISSING');
@@ -44,7 +42,6 @@ class OneSignalEmailService {
       logger.error('❌ OneSignal email service NOT CONFIGURED');
       logger.error('Missing required variables:');
       if (!this.appId) logger.error('  - VITE_ONESIGNAL_APP_ID');
-      if (!this.apiKey) logger.error('  - VITE_ONESIGNAL_API_KEY');
       if (!this.adminTemplateId) logger.error('  - VITE_ONESIGNAL_ADMIN_TEMPLATE_ID');
       if (!this.userTemplateId) logger.error('  - VITE_ONESIGNAL_USER_TEMPLATE_ID');
       if (!this.useOneSignal) logger.error('  - VITE_USE_ONESIGNAL (must be exactly "true")');
@@ -839,74 +836,15 @@ class OneSignalEmailService {
    */
   async sendOneSignalRequest(payload) {
     try {
-      // Check if we should use a backend proxy
-      const useProxy = import.meta.env.VITE_ONESIGNAL_PROXY_URL;
-      const apiUrl = useProxy || this.apiEndpoint;
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      // Add authorization header differently based on proxy or direct
-      if (useProxy) {
-        // If using proxy, send API key in custom header
-        headers['X-OneSignal-API-Key'] = this.apiKey;
-      } else {
-        // Direct to OneSignal
-        headers['Authorization'] = `Basic ${this.apiKey}`;
-      }
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { message: errorText };
-        }
-
-        logger.error('OneSignal API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
-
-        // If blocked by client, suggest solutions
-        if (response.status === 0 || errorText.includes('ERR_BLOCKED_BY_CLIENT')) {
-          logger.error('OneSignal request blocked. Solutions:');
-          logger.error('1. Disable ad blocker for localhost');
-          logger.error('2. Add onesignal.com to whitelist');
-          logger.error('3. Use a backend proxy (set VITE_ONESIGNAL_PROXY_URL)');
-        }
-
+      const { data, error } = await supabase.functions.invoke('onesignal-send', { body: { payload } });
+      if (error) {
+        logger.error('OneSignal send failed:', error);
         return false;
       }
-
-      const result = await response.json();
-      logger.log('OneSignal notification sent successfully:', result);
-
-      // Check if notification was created successfully
-      const success = !!(result.id);
-      logger.log('OneSignal success check:', { id: result.id, success });
-
-      return success;
+      logger.log('OneSignal notification sent successfully:', data);
+      return !!data?.id;
     } catch (error) {
       logger.error('OneSignal API request failed:', error);
-
-      // Provide helpful error messages
-      if (error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-        logger.error('Request blocked by browser security. Try:');
-        logger.error('1. Disable ad blocker/security extensions');
-        logger.error('2. Use incognito/private mode');
-        logger.error('3. Set up a backend proxy');
-      }
-
       return false;
     }
   }
@@ -1002,8 +940,7 @@ class OneSignalEmailService {
       logger.log('Config check:', {
         isConfigured: this.isConfigured,
         uniqueTemplateId: this.uniqueTemplateId,
-        appId: this.appId,
-        apiKey: this.apiKey ? 'SET' : 'NOT SET'
+        appId: this.appId
       });
       return false;
     }
@@ -1045,42 +982,10 @@ class OneSignalEmailService {
    * @param {Object} userData - Additional user data
    * @returns {Promise<boolean>} - Success status
    */
+  // eslint-disable-next-line no-unused-vars
   async createOneSignalUser(email, userData = {}) {
-    try {
-      const payload = {
-        app_id: this.appId,
-        device_type: 11, // Email device type
-        identifier: email,
-        tags: {
-          email: email,
-          user_type: userData.role || 'user',
-          partner_name: userData.partnerName || '',
-          created_via: 'invitation_system',
-          ...userData.tags
-        }
-      };
-
-      const response = await fetch('https://onesignal.com/api/v1/players', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${this.apiKey}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        logger.warn('Failed to create OneSignal user:', response.statusText);
-        return false;
-      }
-
-      const result = await response.json();
-      logger.log('OneSignal user created:', result);
-      return true;
-    } catch (error) {
-      logger.warn('Error creating OneSignal user:', error);
-      return false;
-    }
+    // OneSignal creates the email subscription on the first send (include_email_tokens)
+    return true;
   }
 
   /**
@@ -1117,33 +1022,12 @@ class OneSignalEmailService {
       logger.error('OneSignal not configured');
       return false;
     }
-
-    try {
-      // Test API connection by getting app info
-      const response = await fetch(`https://onesignal.com/api/v1/apps/${this.appId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${this.apiKey}`
-        }
-      });
-
-      if (!response.ok) {
-        logger.error('OneSignal configuration test failed:', response.statusText);
-        return false;
-      }
-
-      const appInfo = await response.json();
-      logger.log('OneSignal configuration test successful:', {
-        appName: appInfo.name,
-        appId: this.appId,
-        bookingTemplatesConfigured: this.isBookingConfigured
-      });
-      return true;
-    } catch (error) {
-      logger.error('OneSignal configuration test error:', error);
+    const { data, error } = await supabase.functions.invoke('onesignal-send', { body: { action: 'test' } });
+    if (error || !data?.ok) {
+      logger.error('OneSignal configuration test failed:', error);
       return false;
     }
+    return true;
   }
 
   /**

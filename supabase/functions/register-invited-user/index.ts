@@ -43,6 +43,14 @@ serve(async (req) => {
             )
         }
 
+        // The invitation is only valid for the address it was sent to
+        if (String(email || '').trim().toLowerCase() !== String(invitation.invited_email || '').trim().toLowerCase()) {
+            return new Response(
+                JSON.stringify({ error: 'Email does not match the invitation' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // Create user with email already confirmed (no Supabase confirmation needed)
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email,

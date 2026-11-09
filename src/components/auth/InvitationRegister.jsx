@@ -53,13 +53,10 @@ const InvitationRegister = () => {
 
   const validateInvitation = async () => {
     try {
+      // Pending, non-expired invitation with exactly this UUID (the table itself isn't readable)
       const { data, error } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('invitation_uuid', invitationToken)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .single();
+        .rpc('get_pending_invitation', { p_invitation_uuid: invitationToken })
+        .maybeSingle();
 
       if (error || !data) {
         console.error('Invitation query error:', error);

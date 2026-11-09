@@ -10,30 +10,20 @@
  * logger.error('Error:', error);
  */
 
-// Check if logging is enabled via environment variables
-// Each log type can be controlled individually
-const getEnvVariable = (key) => {
-  // For Vite
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env[key] === 'true';
-  }
-  // For Create React App / Webpack
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key] === 'true';
-  }
-  // Default to false for production safety
-  return false;
-};
+// Check if logging is enabled via environment variables.
+// Each key is read statically: a dynamic import.meta.env[key] makes Vite inline
+// every VITE_* variable (secrets included) into the bundle.
+const isTrue = (value) => value === 'true';
 
 // Individual switches for each log type
-const isLogEnabled = getEnvVariable('VITE_ENABLE_LOG') || getEnvVariable('REACT_APP_ENABLE_LOG');
-const isInfoEnabled = getEnvVariable('VITE_ENABLE_INFO') || getEnvVariable('REACT_APP_ENABLE_INFO');
-const isDebugEnabled = getEnvVariable('VITE_ENABLE_DEBUG') || getEnvVariable('REACT_APP_ENABLE_DEBUG');
-const isWarnEnabled = getEnvVariable('VITE_ENABLE_WARN') || getEnvVariable('REACT_APP_ENABLE_WARN');
-const isErrorEnabled = getEnvVariable('VITE_ENABLE_ERROR') || getEnvVariable('REACT_APP_ENABLE_ERROR');
+const isLogEnabled = isTrue(import.meta.env.VITE_ENABLE_LOG);
+const isInfoEnabled = isTrue(import.meta.env.VITE_ENABLE_INFO);
+const isDebugEnabled = isTrue(import.meta.env.VITE_ENABLE_DEBUG);
+const isWarnEnabled = isTrue(import.meta.env.VITE_ENABLE_WARN);
+const isErrorEnabled = isTrue(import.meta.env.VITE_ENABLE_ERROR);
 
 // Master switch - if true, enables all logs regardless of individual switches
-const masterSwitch = getEnvVariable('VITE_ENABLE_LOGS') || getEnvVariable('REACT_APP_ENABLE_LOGS');
+const masterSwitch = isTrue(import.meta.env.VITE_ENABLE_LOGS);
 
 const logger = {
   /**

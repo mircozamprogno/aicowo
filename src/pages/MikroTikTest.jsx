@@ -6,6 +6,7 @@ import { Activity, Eye, EyeOff, Play, Router as RouterIcon, Send, Trash2, Refres
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
+import { mikrotikFetch } from '../services/mikrotikApi';
 import '../styles/pages/mikrotik-test.css';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -36,7 +37,7 @@ const randomPassword = (length = 12) => {
 const callMikrotik = async (method, path, body) => {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   const url = `/api/mikrotik${cleanPath}`;
-  const init = { method, headers: { 'Content-Type': 'application/json' } };
+  const init = { method };
   if (!['GET', 'HEAD', 'DELETE'].includes(method) && body !== undefined) {
     init.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
@@ -45,7 +46,7 @@ const callMikrotik = async (method, path, body) => {
   let data = null;
   let error = null;
   try {
-    const res = await fetch(url, init);
+    const res = await mikrotikFetch(cleanPath, init);
     status = res.status;
     const text = await res.text();
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }

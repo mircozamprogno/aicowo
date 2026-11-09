@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import oneSignalEmailService from '../../services/oneSignalEmailService';
 import { supabase } from '../../services/supabase';
+import { mikrotikFetch } from '../../services/mikrotikApi';
 import Select from '../common/Select';
 import { toast } from '../common/ToastContainer';
 
@@ -101,7 +102,7 @@ const CustomerForm = ({
     setWifiLoading(true);
     try {
       const [routerRes, { data: linked, error: linkedErr }] = await Promise.all([
-        fetch('/api/mikrotik/user-manager/user'),
+        mikrotikFetch('/user-manager/user'),
         supabase
           .from('customer_vpn_credentials')
           .select('vpn_name')

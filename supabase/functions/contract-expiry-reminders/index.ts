@@ -23,6 +23,7 @@ import {
     sendTemplateEmail,
     type Supabase,
 } from "../_shared/contractEmails.ts";
+import { forbiddenResponse, isServiceRoleRequest } from "../_shared/serviceRoleOnly.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -77,6 +78,7 @@ async function loadPartner(supabase: Supabase, cache: Map<string, Partner>, part
 }
 
 serve(async (req) => {
+    if (!(await isServiceRoleRequest(req))) return forbiddenResponse();
     try {
         const dryRun = await readDryRun(req);
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
