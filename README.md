@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.020 Session notes: UI improvements and security hardening (docs)
 2026.11.09 V 1.019 MikroTik proxy accepts the path as a single string
 2026.11.09 V 1.018 Security hardening: RLS, MikroTik proxy auth, service-only edge functions, OneSignal key server-side
 2026.11.09 V 1.017 Customer details hover card in the customers list
