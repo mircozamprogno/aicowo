@@ -315,8 +315,9 @@ async function provision(
 // ── deprovision ───────────────────────────────────────────────────────────────
 // Runs when a contract expires, is closed (cancelled) or archived while active.
 // Only acts when it was the customer's LAST active contract with this partner:
-//   1. clears the door code and emails the partner (door code must be disabled
-//      on the lock by hand — the app is not connected to it)
+//   1. clears the door code and the door position (lock slot) and emails the
+//      partner (the code must be disabled on the lock by hand — the app is not
+//      connected to it); a new contract assigns a new position automatically
 //   2. deletes the WiFi user from the MikroTik router and revokes the credential;
 //      if the router call fails the credential is marked for the nightly retry
 
@@ -366,23 +367,27 @@ async function hasOtherActiveContracts(
 async function clearDoorCode(
   supabase: Supabase, partner: PartnerRow | null, partnerUuid: string,
   customerId: number, contractId: number, contractNumber: string, dryRun: boolean,
-): Promise<{ cleared: boolean; door_code?: string; partner_emailed?: boolean; skipped?: string }> {
+): Promise<{ cleared: boolean; door_code?: string; door_position?: number; partner_emailed?: boolean; skipped?: string }> {
   const { data: customer } = await supabase
     .from("customers")
-    .select("door_code, first_name, second_name, company_name, email")
+    .select("door_code, door_position, first_name, second_name, company_name, email")
     .eq("id", customerId)
     .single();
 
-  const doorCode = customer?.door_code;
-  if (!doorCode) return { cleared: false, skipped: "no_door_code" };
-  if (dryRun) return { cleared: true, door_code: doorCode, partner_emailed: !!partner?.email };
+  const doorCode = customer?.door_code ?? null;
+  const doorPosition = customer?.door_position ?? null;
+  if (!doorCode && !doorPosition) return { cleared: false, skipped: "no_door_code" };
+  if (dryRun) {
+    return { cleared: true, door_code: doorCode ?? undefined, door_position: doorPosition ?? undefined, partner_emailed: !!(doorCode && partner?.email) };
+  }
 
-  // Only clear the code we read (a partner editing it meanwhile wins)
-  const { error } = await supabase
+  // Only clear what we read (a partner editing the code meanwhile wins)
+  let update = supabase
     .from("customers")
-    .update({ door_code: null })
-    .eq("id", customerId)
-    .eq("door_code", doorCode);
+    .update({ door_code: null, door_position: null })
+    .eq("id", customerId);
+  update = doorCode ? update.eq("door_code", doorCode) : update.is("door_code", null);
+  const { error } = await update;
   if (error) return { cleared: false, skipped: `update_failed: ${error.message}` };
 
   const customerName = customerDisplayName(customer);
@@ -393,16 +398,18 @@ async function clearDoorCode(
     action_type:     "deactivated",
     entity_type:     "customers",
     entity_id:       String(customerId),
-    description:     `Door code ${doorCode} removed from ${customerName}: last contract ${contractNumber} ended`,
-    metadata:        { kind: "door_code_cleared", door_code: doorCode, contract_id: contractId, contract_number: contractNumber },
+    description:     `Door code ${doorCode ?? "-"} / position ${doorPosition ?? "-"} removed from ${customerName}: last contract ${contractNumber} ended`,
+    metadata:        { kind: "door_code_cleared", door_code: doorCode, door_position: doorPosition, contract_id: contractId, contract_number: contractNumber },
   });
 
+  // The partner only needs to act on the lock when there was a code
   let emailed = false;
-  if (partner?.email) {
+  if (doorCode && partner?.email) {
     emailed = await sendEmail(supabase, partnerUuid, partnerDisplayName(partner), "door_code_cleared_partner", partner.email, {
       customer_name:   customerName,
       customer_email:  customer?.email ?? "",
       door_code:       doorCode,
+      door_position:   doorPosition ? String(doorPosition) : "—",
       contract_number: contractNumber,
       partner_name:    partnerDisplayName(partner),
     }).catch(() => false);
@@ -420,7 +427,7 @@ async function clearDoorCode(
     });
   }
 
-  return { cleared: true, door_code: doorCode, partner_emailed: emailed };
+  return { cleared: true, door_code: doorCode ?? undefined, door_position: doorPosition ?? undefined, partner_emailed: emailed };
 }
 
 // Deletes the WiFi user from the router and revokes the credential.
