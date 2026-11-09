@@ -28,7 +28,10 @@ const SearchableSelect = ({
 
     // Auto-select first option if only one option exists
     useEffect(() => {
-        if (autoSelectSingle && options.length === 1 && !value) {
+        // Skip an empty-valued option (e.g. "All …" while lists load): selecting it
+        // changes nothing and re-fires onChange on every render
+        const single = options.length === 1 ? options[0].value : null;
+        if (autoSelectSingle && single !== null && single !== undefined && single !== '' && !value) {
             onChange({ target: { name: name, value: options[0].value } });
         }
     }, [options, value, autoSelectSingle, onChange, name]);
