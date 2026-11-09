@@ -5,6 +5,7 @@
 import { Activity, Eye, EyeOff, Play, Router as RouterIcon, Send, Trash2, RefreshCw, Wand2, Wifi } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../services/supabase';
 import '../styles/pages/mikrotik-test.css';
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -54,6 +55,9 @@ const callMikrotik = async (method, path, body) => {
   const durationMs = Math.round(performance.now() - started);
   return { status, data, error, durationMs, url, method };
 };
+
+const customerLabel = (c) =>
+  c.company_name || `${c.first_name || ''} ${c.second_name || ''}`.trim() || `#${c.id}`;
 
 const StatusPill = ({ status, error }) => {
   if (error) return <span className="mtk-status err">Network error</span>;
@@ -171,8 +175,12 @@ const GenericTester = ({ onResult }) => {
   );
 };
 
-const WifiUsersPanel = ({ onResult }) => {
+const WifiUsersPanel = ({ onResult, partnerUuid }) => {
   const [rows, setRows] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [credentials, setCredentials] = useState([]);
+  const [customerId, setCustomerId] = useState('');
+  const [linkError, setLinkError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
@@ -194,6 +202,59 @@ const WifiUsersPanel = ({ onResult }) => {
   const [deleteId, setDeleteId] = useState('');
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteResult, setDeleteResult] = useState(null);
+
+  const loadLinks = useCallback(async () => {
+    if (!partnerUuid) return;
+    const [{ data: custs }, { data: creds }] = await Promise.all([
+      supabase
+        .from('customers')
+        .select('id, first_name, second_name, company_name')
+        .eq('partner_uuid', partnerUuid)
+        .order('first_name'),
+      supabase
+        .from('customer_vpn_credentials')
+        .select('id, customer_id, vpn_name, mikrotik_id')
+        .eq('partner_uuid', partnerUuid)
+        .is('revoked_at', null),
+    ]);
+    setCustomers(custs || []);
+    setCredentials(creds || []);
+  }, [partnerUuid]);
+
+  useEffect(() => { loadLinks(); }, [loadLinks]);
+
+  const customersById = useMemo(
+    () => Object.fromEntries(customers.map((c) => [c.id, c])),
+    [customers]
+  );
+
+  const credentialFor = useCallback(
+    (row) => credentials.find((c) =>
+      (row['.id'] && c.mikrotik_id === row['.id']) || c.vpn_name === row.name
+    ),
+    [credentials]
+  );
+
+  // Customers that don't have an active WiFi credential yet
+  const unlinkedCustomers = useMemo(() => {
+    const linked = new Set(credentials.map((c) => c.customer_id));
+    return customers.filter((c) => !linked.has(c.id));
+  }, [customers, credentials]);
+
+  const linkToCustomer = async ({ custId, name, password, mikrotikId }) => {
+    setLinkError(null);
+    const { error: insertErr } = await supabase
+      .from('customer_vpn_credentials')
+      .insert({
+        partner_uuid: partnerUuid,
+        customer_id: Number(custId),
+        vpn_name: name,
+        vpn_password: password || '',
+        mikrotik_id: mikrotikId || null,
+      });
+    if (insertErr) setLinkError(`Could not link "${name}" to customer: ${insertErr.message}`);
+    await loadLinks();
+  };
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -251,8 +312,19 @@ const WifiUsersPanel = ({ onResult }) => {
     const res = await callMikrotik('PUT', '/user-manager/user', body);
     setCreateResult(res);
     onResult(res);
+    if (!res.error && res.status < 400) {
+      if (customerId) {
+        await linkToCustomer({
+          custId: customerId,
+          name: body.name,
+          password: body.password,
+          mikrotikId: res.data?.['.id'],
+        });
+        setCustomerId('');
+      }
+      refresh();
+    }
     setCreateBusy(false);
-    if (!res.error && res.status < 400) refresh();
   };
 
   const remove = async () => {
@@ -263,7 +335,19 @@ const WifiUsersPanel = ({ onResult }) => {
     setDeleteResult(res);
     onResult(res);
     setDeleteBusy(false);
-    if (!res.error && res.status < 400) refresh();
+    if (!res.error && (res.status < 400 || res.status === 404)) {
+      // Revoke the customer link so the customer no longer shows this WiFi user
+      const row = rows.find((r) => r['.id'] === deleteId.trim());
+      const cred = row ? credentialFor(row) : credentials.find((c) => c.mikrotik_id === deleteId.trim());
+      if (cred) {
+        await supabase
+          .from('customer_vpn_credentials')
+          .update({ revoked_at: new Date().toISOString() })
+          .eq('id', cred.id);
+        await loadLinks();
+      }
+      refresh();
+    }
   };
 
   const suggestAttributes = () => {
@@ -314,11 +398,11 @@ const WifiUsersPanel = ({ onResult }) => {
         </button>
       </div>
 
-      {error && (
-        <div className="mtk-notice" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca', marginTop: '0.5rem' }}>
-          {error}
+      {[error, linkError].filter(Boolean).map((msg) => (
+        <div key={msg} className="mtk-notice" style={{ background: '#fee2e2', color: '#991b1b', borderColor: '#fecaca', marginTop: '0.5rem' }}>
+          {msg}
         </div>
-      )}
+      ))}
 
       <div style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
         <table className="mtk-table">
@@ -326,6 +410,7 @@ const WifiUsersPanel = ({ onResult }) => {
             <tr>
               <th>.id</th>
               <th>Name</th>
+              <th>Customer</th>
               <th>Group</th>
               <th>Shared</th>
               <th>Password</th>
@@ -336,11 +421,38 @@ const WifiUsersPanel = ({ onResult }) => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={8} className="mtk-empty">{loading ? 'Loading…' : 'No WiFi users.'}</td></tr>
+              <tr><td colSpan={9} className="mtk-empty">{loading ? 'Loading…' : 'No WiFi users.'}</td></tr>
             ) : filtered.map((row) => (
               <tr key={row['.id'] || row.name}>
                 <td className="mtk-mono">{row['.id']}</td>
                 <td>{row.name}</td>
+                <td>
+                  {(() => {
+                    const cred = credentialFor(row);
+                    if (cred) {
+                      const cust = customersById[cred.customer_id];
+                      return cust ? customerLabel(cust) : `#${cred.customer_id}`;
+                    }
+                    return (
+                      <select
+                        className="mtk-select"
+                        style={{ minWidth: 160 }}
+                        value=""
+                        onChange={(e) => e.target.value && linkToCustomer({
+                          custId: e.target.value,
+                          name: row.name,
+                          password: row.password,
+                          mikrotikId: row['.id'],
+                        })}
+                      >
+                        <option value="">Link to customer…</option>
+                        {unlinkedCustomers.map((c) => (
+                          <option key={c.id} value={c.id}>{customerLabel(c)}</option>
+                        ))}
+                      </select>
+                    );
+                  })()}
+                </td>
                 <td>{row.group}</td>
                 <td>{row['shared-users']}</td>
                 <td className="mtk-mono">
@@ -392,6 +504,20 @@ const WifiUsersPanel = ({ onResult }) => {
         />
       ) : (
         <div className="mtk-grid-2">
+          <div className="mtk-field" style={{ gridColumn: '1 / -1' }}>
+            <label>customer (the WiFi user will appear in this customer's details)</label>
+            <select
+              className="mtk-select"
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+            >
+              <option value="">— Not linked to a customer —</option>
+              {unlinkedCustomers.map((c) => (
+                <option key={c.id} value={c.id}>{customerLabel(c)}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="mtk-field">
             <label>name (unique — client's login)</label>
             <input
@@ -592,10 +718,10 @@ const MikroTikTest = () => {
     <div className="mtk-page">
       <div className="mtk-header">
         <h1><RouterIcon size={22} style={{ verticalAlign: '-4px', marginRight: '0.5rem' }} />MikroTik REST test panel</h1>
-        <p>Direct playground for the on-router agent. Nothing here is persisted in the app.</p>
+        <p>Direct playground for the on-router agent. WiFi users linked to a customer are saved in the app and shown in the customer's details.</p>
       </div>
 
-      <WifiUsersPanel onResult={pushHistory} />
+      <WifiUsersPanel onResult={pushHistory} partnerUuid={profile?.partner_uuid} />
       <GenericTester onResult={pushHistory} />
       <UtilitiesPanel onResult={pushHistory} />
       <HistoryPanel history={history} />
