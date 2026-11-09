@@ -10,12 +10,14 @@ import { supabase } from '../services/supabase';
 import '../styles/components/timeline-view.css';
 import '../styles/pages/bookings.css';
 
+import BookingHoverCard from '../components/bookings/BookingHoverCard';
 import MobileBookingCard from '../components/bookings/MobileBookingCard';
 import ConfirmModal from '../components/common/ConfirmModal';
 import SearchableSelect from '../components/common/SearchableSelect';
 
 import useMediaQuery from '../hooks/useMediaQuery';
 import { logActivity } from '../utils/activityLogger';
+import { getHoverCardPosition } from '../utils/hoverCardPosition';
 import logger from '../utils/logger';
 
 
@@ -61,6 +63,8 @@ const Bookings = () => {
   // Booking details modal state
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showBookingDetails, setShowBookingDetails] = useState(false);
+  // Rich hover card for calendar bookings
+  const [hoveredBooking, setHoveredBooking] = useState(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -227,7 +231,15 @@ const Bookings = () => {
             service_type,
             service_cost,
             service_currency,
-            is_archived
+            is_archived,
+            start_date,
+            end_date,
+            contract_status,
+            auto_renew,
+            is_renewable,
+            renewal_count,
+            service_max_entries,
+            entries_used
           ),
           location_resources (
             id,
@@ -243,6 +255,7 @@ const Bookings = () => {
             first_name,
             second_name,
             email,
+            phone,
             company_name
           )
         `)
@@ -266,7 +279,15 @@ const Bookings = () => {
             service_type,
             service_cost,
             service_currency,
-            is_archived
+            is_archived,
+            start_date,
+            end_date,
+            contract_status,
+            auto_renew,
+            is_renewable,
+            renewal_count,
+            service_max_entries,
+            entries_used
           ),
           location_resources (
             id,
@@ -282,6 +303,7 @@ const Bookings = () => {
             first_name,
             second_name,
             email,
+            phone,
             company_name
           )
         `)
@@ -945,6 +967,12 @@ const Bookings = () => {
 
   const goToToday = () => setCurrentDate(new Date());
 
+  const showBookingHover = (booking, event) => {
+    setHoveredBooking({ booking, position: getHoverCardPosition(event.currentTarget) });
+  };
+
+  const hideBookingHover = () => setHoveredBooking(null);
+
   const getResourceColor = (booking) => {
     const serviceType = booking.contracts?.service_type || 'abbonamento';
     const resourceType = booking.location_resources?.resource_type || 'scrivania';
@@ -1216,9 +1244,11 @@ const Bookings = () => {
                           key={b.id}
                           className={`calendar-booking-item ${continuityClasses}`}
                           style={{ backgroundColor: getResourceColor(b) }}
-                          title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                          onMouseEnter={(e) => showBookingHover(b, e)}
+                          onMouseLeave={hideBookingHover}
                           onClick={(e) => {
                             e.stopPropagation();
+                            hideBookingHover();
                             setSelectedBooking(b);
                             setShowBookingDetails(true);
                           }}
@@ -1314,9 +1344,11 @@ const Bookings = () => {
                           key={b.id}
                           className="week-booking-item"
                           style={{ backgroundColor: getResourceColor(b) }}
-                          title={`${getBookingDisplayText(b)} - ${b.location_resources?.resource_name}`}
+                          onMouseEnter={(e) => showBookingHover(b, e)}
+                          onMouseLeave={hideBookingHover}
                           onClick={(e) => {
                             e.stopPropagation();
+                            hideBookingHover();
                             setSelectedBooking(b);
                             setShowBookingDetails(true);
                           }}
@@ -1695,10 +1727,12 @@ const Bookings = () => {
                                 style={{ backgroundColor: getResourceColor(b) }}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  hideBookingHover();
                                   setSelectedBooking(b);
                                   setShowBookingDetails(true);
                                 }}
-                                title={getBookingDisplayText(b)}
+                                onMouseEnter={(e) => showBookingHover(b, e)}
+                                onMouseLeave={hideBookingHover}
                               >
                                 {getBookingDisplayText(b)}
                               </div>
@@ -1714,10 +1748,12 @@ const Bookings = () => {
                                 style={{ backgroundColor: getResourceColor(b) }}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  hideBookingHover();
                                   setSelectedBooking(b);
                                   setShowBookingDetails(true);
                                 }}
-                                title={getBookingDisplayText(b)}
+                                onMouseEnter={(e) => showBookingHover(b, e)}
+                                onMouseLeave={hideBookingHover}
                               >
                                 {getBookingDisplayText(b)}
                               </div>
@@ -1933,6 +1969,15 @@ const Bookings = () => {
 
 
       {/* Booking Details Modal */}
+      {hoveredBooking && !showBookingDetails && (
+        <BookingHoverCard
+          booking={hoveredBooking.booking}
+          position={hoveredBooking.position}
+          color={getResourceColor(hoveredBooking.booking)}
+          isCustomer={isCustomer}
+        />
+      )}
+
       {showBookingDetails && selectedBooking && (
         <div className="modal-overlay" onClick={() => setShowBookingDetails(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
