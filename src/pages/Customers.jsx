@@ -2,6 +2,7 @@
 import { Building, CheckCircle, Download, Edit2, FileText, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Pagination from '../components/common/Pagination';
+import CustomerHoverCard from '../components/customers/CustomerHoverCard';
 import { toast } from '../components/common/ToastContainer';
 import FattureInCloudImportModal from '../components/fattureincloud/FattureInCloudImportModal';
 import CustomerForm from '../components/forms/CustomerForm';
@@ -9,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/LanguageContext';
 import { supabase } from '../services/supabase';
 import userDeletionService from '../services/userDeletionService';
+import { getHoverCardPosition } from '../utils/hoverCardPosition';
 import logger from '../utils/logger';
 
 const Customers = () => {
@@ -20,6 +22,8 @@ const Customers = () => {
   const { t } = useTranslation();
   const [showImportModal, setShowImportModal] = useState(false);
   const [partnerSettings, setPartnerSettings] = useState(null);
+  // Read-only customer summary shown when hovering a row
+  const [hoveredCustomer, setHoveredCustomer] = useState(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,6 +49,12 @@ const Customers = () => {
   const [selectedCustomerContracts, setSelectedCustomerContracts] = useState([]);
   const [showContractsModal, setShowContractsModal] = useState(false);
   const [loadingContracts, setLoadingContracts] = useState(false);
+  // Anchor the card to the whole row, not the hovered cell
+  const showCustomerHover = (customer, event) => {
+    const row = event.currentTarget.closest('tr');
+    setHoveredCustomer({ customer, position: getHoverCardPosition(row) });
+  };
+
   const fetchCustomers = async () => {
     if (!profile?.partner_uuid) {
       logger.warn('No partner_uuid found for user');
@@ -127,16 +137,31 @@ const Customers = () => {
         const customerIds = (data || []).map(c => c.id);
         if (customerIds.length > 0) {
           try {
-            const { data: contractsData, error: contractsError } = await supabase
-              .from('contracts')
-              .select('customer_id')
-              .in('customer_id', customerIds)
-              .eq('contract_status', 'active');
+            const [{ data: contractsData, error: contractsError }, { data: wifiData }] = await Promise.all([
+              supabase
+                .from('contracts')
+                .select('id, customer_id, contract_number, service_name, start_date, end_date, auto_renew')
+                .in('customer_id', customerIds)
+                .eq('contract_status', 'active')
+                .order('end_date', { ascending: true }),
+              // WiFi user per customer (shown in the hover card)
+              supabase
+                .from('customer_vpn_credentials')
+                .select('customer_id, vpn_name')
+                .eq('partner_uuid', profile.partner_uuid)
+                .is('revoked_at', null)
+            ]);
 
             if (!contractsError) {
+              const wifiByCustomer = Object.fromEntries((wifiData || []).map(w => [w.customer_id, w.vpn_name]));
               const customersWithCounts = (data || []).map(customer => {
-                const count = (contractsData || []).filter(c => c.customer_id === customer.id).length;
-                return { ...customer, active_contracts_count: count };
+                const activeContracts = (contractsData || []).filter(c => c.customer_id === customer.id);
+                return {
+                  ...customer,
+                  active_contracts_count: activeContracts.length,
+                  active_contracts: activeContracts,
+                  wifi_name: wifiByCustomer[customer.id] || null
+                };
               });
               setCustomers(customersWithCounts);
             } else {
@@ -423,6 +448,10 @@ const Customers = () => {
         </div>
       </div>
 
+      {hoveredCustomer && !showForm && (
+        <CustomerHoverCard customer={hoveredCustomer.customer} position={hoveredCustomer.position} />
+      )}
+
       <div className="customers-table-container">
         <div className="hide-on-mobile customers-table-wrapper">
           <table className="customers-table">
@@ -450,8 +479,12 @@ const Customers = () => {
             </thead>
             <tbody className="customers-table-body">
               {currentCustomers.map((customer) => (
-                <tr key={customer.id} className="customers-table-row">
-                  <td className="customers-table-cell">
+                <tr
+                  key={customer.id}
+                  className="customers-table-row customers-row-hoverable"
+                  onMouseLeave={() => setHoveredCustomer(null)}
+                >
+                  <td className="customers-table-cell" onMouseEnter={(e) => showCustomerHover(customer, e)}>
                     <div className="customer-info">
                       <div className="customer-person">
                         {customer.first_name} {customer.second_name}
@@ -463,23 +496,23 @@ const Customers = () => {
                       )}
                     </div>
                   </td>
-                  <td className="customers-table-cell">
+                  <td className="customers-table-cell" onMouseEnter={(e) => showCustomerHover(customer, e)}>
                     {customer.phone || '-'}
                   </td>
-                  <td className="customers-table-cell">
+                  <td className="customers-table-cell" onMouseEnter={(e) => showCustomerHover(customer, e)}>
                     {customer.email || '-'}
                   </td>
-                  <td className="customers-table-cell">
+                  <td className="customers-table-cell" onMouseEnter={(e) => showCustomerHover(customer, e)}>
                     <span className="type-badge">
                       {t(`customers.${customer.customer_type}`)}
                     </span>
                   </td>
-                  <td className="customers-table-cell">
+                  <td className="customers-table-cell" onMouseEnter={(e) => showCustomerHover(customer, e)}>
                     <div style={{ fontWeight: '600', color: '#1e293b' }}>
                       {customer.active_contracts_count || 0}
                     </div>
                   </td>
-                  <td className="customers-table-cell">
+                  <td className="customers-table-cell" onMouseEnter={() => setHoveredCustomer(null)}>
                     <div className="customer-actions">
                       <button
                         className="edit-btn"
