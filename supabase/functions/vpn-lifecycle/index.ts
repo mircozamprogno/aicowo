@@ -298,7 +298,7 @@ async function provision(
   }
 
   // 10. Activity log
-  await supabase.from("activity_log").insert({
+  await supabase.from("activity_logs").insert({
     partner_uuid:     partnerUuid,
     action_category:  "system",
     action_type:      "vpn_provisioned",
@@ -376,7 +376,7 @@ async function deprovision(
     .eq("id", cred.id);
 
   // 6. Activity log
-  await supabase.from("activity_log").insert({
+  await supabase.from("activity_logs").insert({
     partner_uuid:     partnerUuid,
     action_category:  "system",
     action_type:      "vpn_deprovisioned",
