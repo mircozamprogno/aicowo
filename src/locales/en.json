@@ -159,6 +159,7 @@
     "wifiNameDescription": "WiFi access name automatically assigned to this customer.",
     "noWifiAssigned": "No WiFi access assigned",
     "assignWifi": "Assign WiFi",
+    "changeWifi": "Change WiFi",
     "selectWifiUser": "— select WiFi user —",
     "wifiLoadError": "Could not load WiFi users from the router",
     "regenerateCode": "Generate new code",

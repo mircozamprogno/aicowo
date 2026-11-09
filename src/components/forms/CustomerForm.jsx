@@ -69,7 +69,7 @@ const CustomerForm = ({
     if (!isEditing || !customer?.id || !partnerUuid) return;
     supabase
       .from('customer_vpn_credentials')
-      .select('vpn_name')
+      .select('id, vpn_name')
       .eq('partner_uuid', partnerUuid)
       .eq('customer_id', customer.id)
       .is('revoked_at', null)
@@ -124,6 +124,22 @@ const CustomerForm = ({
     if (!routerUser) return;
     setWifiSaving(true);
     setWifiError(null);
+
+    // Reassignment: revoke the current link first (only one active WiFi per customer)
+    const previousId = vpnCredential?.id;
+    if (previousId) {
+      const { error: revokeErr } = await supabase
+        .from('customer_vpn_credentials')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('id', previousId);
+      if (revokeErr) {
+        logger.error('Failed to revoke current WiFi assignment:', revokeErr);
+        setWifiError(revokeErr.message);
+        setWifiSaving(false);
+        return;
+      }
+    }
+
     const { data, error } = await supabase
       .from('customer_vpn_credentials')
       .insert({
@@ -133,14 +149,22 @@ const CustomerForm = ({
         vpn_password: routerUser.password || '',
         mikrotik_id: routerUser['.id'] || null,
       })
-      .select('vpn_name')
+      .select('id, vpn_name')
       .single();
-    setWifiSaving(false);
     if (error) {
       logger.error('Failed to assign WiFi user:', error);
+      // Restore the previous assignment so the customer isn't left without WiFi
+      if (previousId) {
+        await supabase
+          .from('customer_vpn_credentials')
+          .update({ revoked_at: null })
+          .eq('id', previousId);
+      }
       setWifiError(error.message);
+      setWifiSaving(false);
       return;
     }
+    setWifiSaving(false);
     setVpnCredential(data);
     setWifiAssigning(false);
   };
@@ -913,7 +937,7 @@ const CustomerForm = ({
                   {t('customers.wifiNameDescription') || 'WiFi access name automatically assigned to this customer.'}
                 </p>
                 <div className="form-group">
-                  {wifiAssigning && !vpnCredential ? (
+                  {wifiAssigning ? (
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <select
                         className="form-select"
@@ -967,17 +991,17 @@ const CustomerForm = ({
                   }}>
                     {vpnCredential ? vpnCredential.vpn_name : (t('customers.noWifiAssigned') || 'No WiFi access assigned')}
                   </div>
-                  {!vpnCredential && (
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      style={{ flexShrink: 0 }}
-                      onClick={openWifiAssign}
-                      title={t('customers.assignWifi') || 'Assign WiFi'}
-                    >
-                      <Link2 size={14} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ flexShrink: 0 }}
+                    onClick={openWifiAssign}
+                    title={vpnCredential
+                      ? (t('customers.changeWifi') || 'Change WiFi')
+                      : (t('customers.assignWifi') || 'Assign WiFi')}
+                  >
+                    <Link2 size={14} />
+                  </button>
                   </div>
                   )}
                   {wifiError && (
