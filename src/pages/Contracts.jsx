@@ -73,6 +73,8 @@ const Contracts = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [onlyNeedsResource, setOnlyNeedsResource] = useState(false);
   const [onlyAutoRenew, setOnlyAutoRenew] = useState(false);
+  // Hover panel with the full contract details (desktop table)
+  const [detailsHover, setDetailsHover] = useState(null);
   const [updatingAutoRenew, setUpdatingAutoRenew] = useState({});
 
   // Pagination states
@@ -713,15 +715,6 @@ const Contracts = () => {
     }
   };
 
-  const getServiceTypeBadgeClass = (type) => {
-    const classes = {
-      abbonamento: 'service-type-subscription',
-      pacchetto: 'service-type-package',
-      free_trial: 'service-type-trial'
-    };
-    return classes[type] || 'service-type-default';
-  };
-
   const getServiceTypeLabel = (type) => {
     const types = {
       abbonamento: t('services.subscription'),
@@ -829,6 +822,42 @@ const Contracts = () => {
   const getNextDueDate = (contract) => {
     const paymentInfo = contractPayments[contract.id];
     return paymentInfo?.next_due_date;
+  };
+
+  const showContractDetails = (contract, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const panelWidth = 300;
+    const left = Math.min(rect.left, window.innerWidth - panelWidth - 16);
+    const below = rect.bottom + 6;
+    // Open above the cell when there's no room below
+    const top = below + 260 > window.innerHeight ? Math.max(8, rect.top - 266) : below;
+    setDetailsHover({ contract, top, left });
+  };
+
+  const hideContractDetails = () => setDetailsHover(null);
+
+  const getContractDetailRows = (contract) => {
+    const rows = [];
+    if (contract.resource_name || contract.resource_type) {
+      rows.push([t('services.resource') || 'Risorsa', `📍 ${getResourceDisplayName(contract)}`]);
+    }
+    rows.push([t('contracts.period') || 'Periodo', `${formatDate(contract.start_date)} → ${formatDate(contract.end_date)}`]);
+    rows.push([t('contracts.duration') || 'Durata', `${calculateContractDuration(contract.start_date, contract.end_date)} ${t('contracts.days')}`]);
+    if (contract.service_type === 'pacchetto' && contract.service_max_entries) {
+      const used = contract.entries_used || 0;
+      rows.push([t('contracts.entriesUsed') || 'Ingressi utilizzati', `${used} / ${contract.service_max_entries}`]);
+      rows.push([t('reservations.entriesRemaining') || 'Ingressi rimanenti', `${contract.service_max_entries - used}`]);
+    }
+    if (contract.service_type === 'abbonamento' && contract.is_renewable !== false) {
+      rows.push([t('contracts.autoRenew') || 'Rinnovo automatico', contract.auto_renew ? '✓' : '—']);
+      rows.push([t('contracts.renewals') || 'Rinnovi', `${contract.renewal_count || 0}`]);
+    }
+    const nextDue = getNextDueDate(contract);
+    const paymentStatus = getPaymentStatus(contract);
+    if (nextDue && paymentStatus !== 'paid' && paymentStatus !== 'not_required') {
+      rows.push([t('contracts.nextDueDate') || 'Scadenza pagamento', formatDate(nextDue)]);
+    }
+    return rows;
   };
 
   // Partner admin turns a subscription's automatic renewal on/off
@@ -1216,13 +1245,8 @@ const Contracts = () => {
           <table className="contracts-table">
             <thead className="contracts-table-head">
               <tr>
-                {!isCustomer && (
-                  <th className="contracts-table-header cliente-column">
-                    {t('contracts.customer').toUpperCase()}
-                  </th>
-                )}
-                <th className="contracts-table-header">
-                  {t('contracts.contract')}
+                <th className="contracts-table-header cliente-column">
+                  {isCustomer ? t('contracts.contract') : t('contracts.customer')}
                 </th>
                 <th className="contracts-table-header">
                   {t('contracts.service')}
@@ -1254,105 +1278,68 @@ const Contracts = () => {
 
                 return (
                   <tr key={contract.id} className="contracts-table-row">
-                    {!isCustomer && (
-                      <td className="contracts-table-cell cliente-column">
-                        <div className="customer-info" style={{ minWidth: '210px' }}>
-                          <div className="customer-name" style={{
-                            fontWeight: '600',
-                            color: '#1e293b',
-                            marginBottom: '2px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {contract.customers?.first_name} {contract.customers?.second_name}
-                          </div>
+                    <td className="contracts-table-cell cliente-column">
+                      {!isCustomer && (
+                        <div className="contract-cell-main">
+                          {`${contract.customers?.first_name || ''} ${contract.customers?.second_name || ''}`.trim()}
                           {contract.customers?.company_name && (
-                            <div className="customer-company" style={{
-                              fontSize: '0.75rem',
-                              color: '#64748b',
-                              fontWeight: 'normal',
-                              lineHeight: '1.2',
-                              wordBreak: 'break-word'
-                            }}>
-                              {contract.customers.company_name}
-                            </div>
+                            <span className="contract-cell-company"> · {contract.customers.company_name}</span>
                           )}
                         </div>
-                      </td>
-                    )}
-                    <td className="contracts-table-cell">
-                      <div className="contract-info">
-                        <div className="contract-number">{contract.contract_number}</div>
-                        <span className={`status-badge ${getStatusBadgeClass(contract.contract_status)}`}>
+                      )}
+                      <div className={isCustomer ? 'contract-cell-main contract-cell-code' : 'contract-cell-sub'}>
+                        <span className="contract-cell-code">{contract.contract_number}</span>
+                        <span className={`status-badge status-badge-sm ${getStatusBadgeClass(contract.contract_status)}`}>
                           {t(`contracts.${contract.contract_status}`)}
                         </span>
                       </div>
                     </td>
-                    <td className="contracts-table-cell">
-                      <div className="service-info">
-                        <div className="service-header">
-                          <span className="service-name">{contract.service_name}</span>
-                          <span className={`service-type-badge ${getServiceTypeBadgeClass(contract.service_type)}`}>
-                            {getServiceTypeLabel(contract.service_type)}
-                          </span>
-                        </div>
-                        {(contract.resource_name || contract.resource_type) && (
-                          <div className="service-resource" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                            📍 {getResourceDisplayName(contract)}
-                          </div>
-                        )}
+                    <td
+                      className="contracts-table-cell contract-cell-hover"
+                      onMouseEnter={(e) => showContractDetails(contract, e)}
+                      onMouseLeave={hideContractDetails}
+                    >
+                      <div className="contract-cell-main">{contract.service_name}</div>
+                      <div className="contract-cell-sub">
+                        <span>{getServiceTypeLabel(contract.service_type)}</span>
                         {contract.service_type === 'pacchetto' && contract.service_max_entries && (
-                          <div className="usage-info">
-                            <div className="usage-display">
-                              <span className="entries-used">{contract.entries_used || 0}</span>
-                              <span className="entries-separator"> / </span>
-                              <span className="entries-total">{contract.service_max_entries}</span>
-                              <span className="entries-label"> {t('contracts.entriesUsed')}</span>
-                            </div>
-                            <div className={`remaining-entries ${(contract.service_max_entries - (contract.entries_used || 0)) <= 2 ? 'warning' : ''
-                              }`}>
-                              {(contract.service_max_entries - (contract.entries_used || 0))} {t('reservations.entriesRemaining')}
-                            </div>
-                          </div>
+                          <span className={(contract.service_max_entries - (contract.entries_used || 0)) <= 2 ? 'contract-cell-warning' : ''}>
+                            · {contract.service_max_entries - (contract.entries_used || 0)}/{contract.service_max_entries} {t('contracts.entriesShort') || 'ingressi'}
+                          </span>
+                        )}
+                        {contract.service_type === 'abbonamento' && contract.is_renewable !== false && (
+                          <button
+                            type="button"
+                            className={`auto-renew-icon ${contract.auto_renew ? 'on' : 'off'}`}
+                            disabled={!isPartnerAdmin || updatingAutoRenew[contract.id]}
+                            onClick={(e) => { e.stopPropagation(); handleToggleAutoRenew(contract); }}
+                            title={contract.auto_renew
+                              ? (t('contracts.autoRenewOn') || 'Automatic renewal on')
+                              : (t('contracts.autoRenewOff') || 'Automatic renewal off')}
+                            aria-label={t('contracts.autoRenew') || 'Automatic renewal'}
+                          >
+                            <RefreshCw size={12} />
+                          </button>
                         )}
                       </div>
                     </td>
-                    <td className="contracts-table-cell">
-                      <div className="period-info">
-                        <div className="period-dates">
-                          {formatDate(contract.start_date)} - {formatDate(contract.end_date)}
-                        </div>
-                        <div className="duration-info">
-                          {calculateContractDuration(contract.start_date, contract.end_date)} {t('contracts.days')} {t('contracts.duration')}
-                        </div>
-                        {contract.contract_status === 'active' && isInRange && (
-                          <div className={`days-remaining ${daysRemaining <= 7 ? 'warning' : ''}`}>
+                    <td
+                      className="contracts-table-cell contract-cell-hover"
+                      onMouseEnter={(e) => showContractDetails(contract, e)}
+                      onMouseLeave={hideContractDetails}
+                    >
+                      <div className="contract-cell-main contract-cell-dates">
+                        {formatDate(contract.start_date)} → {formatDate(contract.end_date)}
+                      </div>
+                      <div className="contract-cell-sub">
+                        {contract.contract_status === 'active' && isInRange ? (
+                          <span className={daysRemaining <= 7 ? 'contract-cell-warning' : 'contract-cell-ok'}>
                             {daysRemaining > 0
                               ? `${daysRemaining} ${t('contracts.daysRemaining')}`
-                              : t('contracts.expired')
-                            }
-                          </div>
-                        )}
-                        {contract.service_type === 'abbonamento' && contract.is_renewable !== false && (
-                          <label
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.375rem',
-                              fontSize: '0.75rem', whiteSpace: 'nowrap',
-                              color: contract.auto_renew ? '#15803d' : '#64748b',
-                              cursor: isPartnerAdmin ? 'pointer' : 'default'
-                            }}
-                            title={t('contracts.autoRenew') || 'Automatic renewal'}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={!!contract.auto_renew}
-                              disabled={!isPartnerAdmin || updatingAutoRenew[contract.id]}
-                              onChange={() => handleToggleAutoRenew(contract)}
-                            />
-                            <RefreshCw size={12} />
-                            {contract.auto_renew
-                              ? (t('contracts.autoRenewOn') || 'Automatic renewal on')
-                              : (t('contracts.autoRenewOff') || 'Automatic renewal off')}
-                          </label>
+                              : t('contracts.expired')}
+                          </span>
+                        ) : (
+                          <span>{calculateContractDuration(contract.start_date, contract.end_date)} {t('contracts.days')}</span>
                         )}
                       </div>
                     </td>
@@ -1361,22 +1348,17 @@ const Contracts = () => {
                         {formatCurrency(contract.service_cost, contract.service_currency)}
                       </div>
                     </td>
-                    {(
-                      <td className="contracts-table-cell">
-                        <div className="payment-info">
-                          <span className={`payment-status-badge ${getPaymentStatusBadgeClass(paymentStatus)} ${isOverdue ? 'overdue' : ''}`}>
-                            {isOverdue && <AlertTriangle size={12} className="overdue-icon" />}
-                            {t(`payments.status.${paymentStatus}`)}
-                          </span>
-                          {nextDue && paymentStatus !== 'paid' && paymentStatus !== 'not_required' && (
-                            <div className="next-due-date">
-                              <Clock size={12} />
-                              {t('contracts.nextDueDate')}: {formatDate(nextDue)}
-                            </div>
-                          )}
+                    <td className="contracts-table-cell">
+                      <span className={`payment-status-badge status-badge-sm ${getPaymentStatusBadgeClass(paymentStatus)} ${isOverdue ? 'overdue' : ''}`}>
+                        {isOverdue && <AlertTriangle size={11} className="overdue-icon" />}
+                        {t(`payments.status.${paymentStatus}`)}
+                      </span>
+                      {nextDue && paymentStatus !== 'paid' && paymentStatus !== 'not_required' && (
+                        <div className={`contract-cell-sub ${isOverdue ? 'contract-cell-warning' : ''}`}>
+                          {t('contracts.dueShort') || 'scade'} {formatDate(nextDue)}
                         </div>
-                      </td>
-                    )}
+                      )}
+                    </td>
                     <ContractActionsCell
                       contract={contract}
                       openDropdownId={openDropdownId}
@@ -1403,6 +1385,26 @@ const Contracts = () => {
               })}
             </tbody>
           </table>
+          {detailsHover && (
+            <div
+              className="contract-details-tooltip"
+              style={{ top: detailsHover.top, left: detailsHover.left }}
+              role="tooltip"
+            >
+              <div className="contract-details-title">
+                {detailsHover.contract.service_name}
+                <span className="contract-cell-code"> · {detailsHover.contract.contract_number}</span>
+              </div>
+              <dl>
+                {getContractDetailRows(detailsHover.contract).map(([label, value]) => (
+                  <div key={label} className="contract-details-row">
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           {contractsToDisplay.length === 0 && (
             <div className="contracts-empty">
               <FileText size={48} className="empty-icon" />
