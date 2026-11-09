@@ -72,6 +72,8 @@ const Contracts = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [onlyNeedsResource, setOnlyNeedsResource] = useState(false);
+  const [onlyAutoRenew, setOnlyAutoRenew] = useState(false);
+  const [updatingAutoRenew, setUpdatingAutoRenew] = useState({});
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -829,6 +831,31 @@ const Contracts = () => {
     return paymentInfo?.next_due_date;
   };
 
+  // Partner admin turns a subscription's automatic renewal on/off
+  const handleToggleAutoRenew = async (contract) => {
+    const newValue = !contract.auto_renew;
+    setUpdatingAutoRenew(prev => ({ ...prev, [contract.id]: true }));
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .update({ auto_renew: newValue, updated_at: new Date().toISOString() })
+        .eq('id', contract.id);
+      if (error) throw error;
+
+      const apply = list => list.map(c => (c.id === contract.id ? { ...c, auto_renew: newValue } : c));
+      setContracts(apply);
+      setFilteredContracts(apply);
+      toast.success(newValue
+        ? (t('contracts.autoRenewEnabled') || 'Automatic renewal enabled')
+        : (t('contracts.autoRenewDisabled') || 'Automatic renewal disabled'));
+    } catch (error) {
+      logger.error('Error updating auto-renew:', error);
+      toast.error(t('contracts.autoRenewUpdateError') || 'Error updating automatic renewal');
+    } finally {
+      setUpdatingAutoRenew(prev => ({ ...prev, [contract.id]: false }));
+    }
+  };
+
   const handleExportCSV = async () => {
     if (!isPartnerAdmin && !isSuperAdmin) {
       toast.error(t('contracts.exportNotAllowed') || 'Export non consentito');
@@ -865,12 +892,13 @@ const Contracts = () => {
 
   // Pagination logic
   const baseContracts = filteredContracts.length >= 0 ? filteredContracts : contracts;
-  const displayFilter = onlyNeedsResource
+  const displayFilter = (onlyNeedsResource
     ? baseContracts.filter(c =>
         Array.isArray(c.bookings) &&
         c.bookings.some(b => b.booking_status === 'active' && !b.is_archived && b.end_date < c.end_date)
       )
-    : baseContracts;
+    : baseContracts
+  ).filter(c => !onlyAutoRenew || (c.service_type === 'abbonamento' && c.auto_renew));
   const totalContractsCount = displayFilter.length;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -1041,6 +1069,21 @@ const Contracts = () => {
           />
           <AlertTriangle size={14} />
           {t('contracts.needsResourceReassignment') || 'Needs resource reassignment'}
+        </label>
+      )}
+
+      {!isCustomer && (
+        <label className="filter-chip">
+          <input
+            type="checkbox"
+            checked={onlyAutoRenew}
+            onChange={(e) => {
+              setOnlyAutoRenew(e.target.checked);
+              setCurrentPage(1);
+            }}
+          />
+          <RefreshCw size={14} />
+          {t('contracts.onlyAutoRenew') || 'Automatic renewal only'}
         </label>
       )}
 
@@ -1288,6 +1331,28 @@ const Contracts = () => {
                               : t('contracts.expired')
                             }
                           </div>
+                        )}
+                        {contract.service_type === 'abbonamento' && contract.is_renewable !== false && (
+                          <label
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.375rem',
+                              fontSize: '0.75rem', whiteSpace: 'nowrap',
+                              color: contract.auto_renew ? '#15803d' : '#64748b',
+                              cursor: isPartnerAdmin ? 'pointer' : 'default'
+                            }}
+                            title={t('contracts.autoRenew') || 'Automatic renewal'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!contract.auto_renew}
+                              disabled={!isPartnerAdmin || updatingAutoRenew[contract.id]}
+                              onChange={() => handleToggleAutoRenew(contract)}
+                            />
+                            <RefreshCw size={12} />
+                            {contract.auto_renew
+                              ? (t('contracts.autoRenewOn') || 'Automatic renewal on')
+                              : (t('contracts.autoRenewOff') || 'Automatic renewal off')}
+                          </label>
                         )}
                       </div>
                     </td>

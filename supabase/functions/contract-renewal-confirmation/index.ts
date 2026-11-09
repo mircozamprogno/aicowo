@@ -1,191 +1,185 @@
-// deno-lint-ignore-file no-explicit-any
+// supabase/functions/contract-renewal-confirmation/index.ts
+//
+// Called at 04:00 (Europe/Zurich) right after auto_renew_contracts(), and again
+// at 05:00 as a catch-up. For every successful renewal not yet notified, emails:
+//   - the customer → contract_renewed          (stamps contract_renewal_log.email_sent_at)
+//   - the partner  → contract_renewed_partner  (stamps contract_renewal_log.partner_email_sent_at)
+// A failed email is not stamped and is retried on the next run.
+//
+// POST {"dry_run": true} renders everything without sending or writing.
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import {
+    customerDisplayName,
+    formatDateIt,
+    logEmail,
+    partnerDisplayName,
+    readDryRun,
+    sendTemplateEmail,
+} from "../_shared/contractEmails.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ONESIGNAL_APP_ID = Deno.env.get("ONESIGNAL_APP_ID")!;
-const ONESIGNAL_API_KEY = Deno.env.get("ONESIGNAL_API_KEY")!;
-const ONESIGNAL_UNIQUE_TEMPLATE_ID = Deno.env.get("ONESIGNAL_UNIQUE_TEMPLATE_ID")!;
 
 interface Result {
-  log_id: number;
-  contract_number: string;
-  customer_email: string;
-  success: boolean;
-  error?: string;
+    log_id: number;
+    contract_number: string;
+    recipient: "customer" | "partner";
+    email: string | null;
+    success: boolean;
+    skipped?: string;
+    subject?: string;
+    error?: string;
 }
 
-serve(async (_req) => {
-  try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+serve(async (req) => {
+    try {
+        const dryRun = await readDryRun(req);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: pending, error } = await supabase
-      .from("contract_renewal_log")
-      .select(`
-        id,
-        original_contract_id,
-        original_contract_number,
-        partner_uuid
-      `)
-      .in("renewal_status", ["success", "success_no_booking"])
-      .is("email_sent_at", null)
-      .order("renewal_attempt_date", { ascending: true })
-      .limit(200);
+        const { data: pending, error } = await supabase
+            .from("contract_renewal_log")
+            .select("id, original_contract_id, original_contract_number, partner_uuid, email_sent_at, partner_email_sent_at")
+            .in("renewal_status", ["success", "success_no_booking"])
+            .or("email_sent_at.is.null,partner_email_sent_at.is.null")
+            .order("renewal_attempt_date", { ascending: true })
+            .limit(200);
 
-    if (error) throw error;
+        if (error) throw error;
 
-    const results: Result[] = [];
+        const results: Result[] = [];
 
-    for (const row of pending ?? []) {
-      try {
-        // Fetch contract with customer embed
-        const { data: contract, error: cErr } = await supabase
-          .from("contracts")
-          .select(`
-            id, contract_number, end_date, service_currency, service_cost,
-            customers ( first_name, second_name, email, company_name )
-          `)
-          .eq("id", row.original_contract_id)
-          .single();
-        if (cErr || !contract) throw cErr ?? new Error("contract not found");
+        for (const row of pending ?? []) {
+            try {
+                const { data: contract, error: cErr } = await supabase
+                    .from("contracts")
+                    .select(`
+                        id, contract_number, service_name, end_date, service_currency, service_cost, renewal_count,
+                        customers ( first_name, second_name, email, company_name )
+                    `)
+                    .eq("id", row.original_contract_id)
+                    .single();
+                if (cErr || !contract) throw cErr ?? new Error("contract not found");
 
-        // Fetch partner
-        const { data: partner } = await supabase
-          .from("partners")
-          .select("company_name, structure_name")
-          .eq("partner_uuid", row.partner_uuid)
-          .single();
+                const { data: partner } = await supabase
+                    .from("partners")
+                    .select("email, company_name, structure_name")
+                    .eq("partner_uuid", row.partner_uuid)
+                    .single();
 
-        // Fetch latest payment for amount/currency
-        const { data: latestPayment } = await supabase
-          .from("payments")
-          .select("amount, currency")
-          .eq("contract_id", contract.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+                // Amount of the payment created for this renewal, if any
+                const { data: latestPayment } = await supabase
+                    .from("payments")
+                    .select("amount, currency")
+                    .eq("contract_id", contract.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
 
-        // Fetch the contract_renewed email template
-        const { data: tpl } = await supabase
-          .from("email_templates")
-          .select("subject_line, body_html")
-          .eq("partner_uuid", row.partner_uuid)
-          .eq("template_type", "contract_renewed")
-          .single();
+                // deno-lint-ignore no-explicit-any
+                const customer = (contract as any).customers;
+                const partnerName = partnerDisplayName(partner);
+                const variables: Record<string, string> = {
+                    customer_name: customerDisplayName(customer),
+                    contract_number: contract.contract_number,
+                    service_name: contract.service_name ?? "",
+                    new_end_date: formatDateIt(contract.end_date),
+                    amount: new Intl.NumberFormat("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        .format(Number(latestPayment?.amount ?? contract.service_cost ?? 0)),
+                    currency: String(latestPayment?.currency ?? contract.service_currency ?? "EUR"),
+                    renewal_count: String(contract.renewal_count ?? 1),
+                    partner_name: partnerName,
+                };
 
-        const customer = (contract as any).customers as any;
-        const customerEmail = customer?.email;
-        if (!customerEmail) throw new Error("customer email missing");
+                const notify = async (
+                    recipient: "customer" | "partner",
+                    email: string | null,
+                    templateType: string,
+                    column: "email_sent_at" | "partner_email_sent_at",
+                    fallbackSubject: string,
+                ) => {
+                    if (row[column]) return;
 
-        const customerName =
-          customer?.company_name ||
-          `${customer?.first_name ?? ""} ${customer?.second_name ?? ""}`.trim();
-        const partnerName =
-          partner?.structure_name || partner?.company_name || "PowerCowo";
-        const newEndDate = new Date(contract.end_date).toLocaleDateString("it-IT", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        const rawAmount = latestPayment?.amount ?? contract.service_cost ?? 0;
-        const currency = latestPayment?.currency ?? contract.service_currency ?? "EUR";
-        const amount = new Intl.NumberFormat("it-IT", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(Number(rawAmount));
+                    if (!email) {
+                        // Nothing to send to: mark as handled so it isn't retried forever
+                        if (!dryRun) {
+                            await supabase.from("contract_renewal_log").update({ [column]: new Date().toISOString() }).eq("id", row.id);
+                        }
+                        results.push({ log_id: row.id, contract_number: contract.contract_number, recipient, email, success: true, skipped: "no_email" });
+                        return;
+                    }
 
-        const substitute = (s: string) =>
-          s
-            .replaceAll("{{customer_name}}", customerName)
-            .replaceAll("{{contract_number}}", contract.contract_number)
-            .replaceAll("{{new_end_date}}", newEndDate)
-            .replaceAll("{{amount}}", String(amount))
-            .replaceAll("{{currency}}", String(currency))
-            .replaceAll("{{partner_name}}", partnerName);
+                    const sent = await sendTemplateEmail({
+                        supabase,
+                        partnerUuid: row.partner_uuid,
+                        templateType,
+                        recipientEmail: email,
+                        variables,
+                        partnerFromName: partnerName,
+                        fallbackSubject,
+                        fallbackBody: "<p>{{contract_number}} rinnovato fino al {{new_end_date}}.</p>",
+                        dryRun,
+                    });
 
-        const renderedSubject = substitute(tpl?.subject_line ?? "Contratto rinnovato");
-        const renderedBodyHtml = substitute(tpl?.body_html ?? "<p>Il tuo contratto è stato rinnovato.</p>");
+                    if (!dryRun) {
+                        if (sent.success) {
+                            await supabase.from("contract_renewal_log").update({ [column]: new Date().toISOString() }).eq("id", row.id);
+                        }
+                        await logEmail(supabase, {
+                            partnerUuid: row.partner_uuid,
+                            contractId: contract.id,
+                            kind: templateType,
+                            success: sent.success,
+                            description: sent.success
+                                ? `Renewal confirmation sent to ${recipient} for ${contract.contract_number}`
+                                : `Failed to send renewal confirmation to ${recipient} for ${contract.contract_number}`,
+                            metadata: { contract_number: contract.contract_number, renewal_log_id: row.id, recipient_email: email, error: sent.error ?? null },
+                        });
+                    }
 
-        // Fetch banner URL from storage (same pattern as contract-expiry-reminders)
-        const { data: bannerFiles } = await supabase.storage
-          .from("partners")
-          .list(`${row.partner_uuid}`, { search: "email_banner" });
+                    results.push({
+                        log_id: row.id,
+                        contract_number: contract.contract_number,
+                        recipient,
+                        email,
+                        success: sent.success,
+                        subject: sent.subject,
+                        error: sent.error,
+                    });
+                };
 
-        const bannerFile = bannerFiles?.find((file: any) => file.name.startsWith("email_banner."));
-        let bannerUrl = "";
-
-        if (bannerFile) {
-          const { data: urlData } = supabase.storage
-            .from("partners")
-            .getPublicUrl(`${row.partner_uuid}/${bannerFile.name}`);
-          bannerUrl = urlData.publicUrl;
+                await notify("customer", customer?.email ?? null, "contract_renewed", "email_sent_at", "Contratto rinnovato");
+                await notify("partner", partner?.email ?? null, "contract_renewed_partner", "partner_email_sent_at",
+                    "Contratto rinnovato: {{customer_name}}");
+            } catch (err) {
+                // Nothing stamped — the row is retried on the next run
+                results.push({
+                    log_id: row.id,
+                    contract_number: row.original_contract_number,
+                    recipient: "customer",
+                    email: null,
+                    success: false,
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            }
         }
 
-        // Build OneSignal payload (same shape as contract-expiry-reminders)
-        const emailPayload = {
-          app_id: ONESIGNAL_APP_ID,
-          email_from_name: partnerName,
-          email_subject: renderedSubject,
-          email_from_address: "app@powercowo.com",
-          email_reply_to_address: "app@powercowo.com",
-          template_id: ONESIGNAL_UNIQUE_TEMPLATE_ID,
-          target_channel: "email",
-          include_email_tokens: [customerEmail],
-          include_aliases: {
-            external_id: [row.partner_uuid],
-          },
-          custom_data: {
-            banner_url: bannerUrl,
-            body_html: renderedBodyHtml,
-          },
-        };
-
-        const emailResponse = await fetch("https://onesignal.com/api/v1/notifications", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Basic ${ONESIGNAL_API_KEY}`,
-          },
-          body: JSON.stringify(emailPayload),
-        });
-
-        if (!emailResponse.ok) {
-          throw new Error(`OneSignal ${emailResponse.status}: ${await emailResponse.text()}`);
-        }
-
-        // Stamp email_sent_at only on success
-        await supabase
-          .from("contract_renewal_log")
-          .update({ email_sent_at: new Date().toISOString() })
-          .eq("id", row.id);
-
-        results.push({
-          log_id: row.id,
-          contract_number: contract.contract_number,
-          customer_email: customerEmail,
-          success: true,
-        });
-      } catch (err) {
-        // Do NOT stamp email_sent_at — row will retry next day
-        results.push({
-          log_id: row.id,
-          contract_number: row.original_contract_number,
-          customer_email: "",
-          success: false,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
+        return new Response(
+            JSON.stringify({
+                success: true,
+                dry_run: dryRun,
+                processed: pending?.length ?? 0,
+                sent: results.filter((r) => r.success && !r.skipped).length,
+                failed: results.filter((r) => !r.success).length,
+                results,
+            }),
+            { headers: { "Content-Type": "application/json" } },
+        );
+    } catch (err) {
+        return new Response(
+            JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err) }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+        );
     }
-
-    return new Response(
-      JSON.stringify({ success: true, processed: results.length, results }),
-      { headers: { "Content-Type": "application/json" } },
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
-  }
 });

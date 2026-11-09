@@ -15,6 +15,9 @@ const ONESIGNAL_APP_ID           = Deno.env.get("ONESIGNAL_APP_ID")!;
 const ONESIGNAL_API_KEY          = Deno.env.get("ONESIGNAL_API_KEY")!;
 const ONESIGNAL_UNIQUE_TEMPLATE_ID = Deno.env.get("ONESIGNAL_UNIQUE_TEMPLATE_ID")!;
 
+// auth.users row used for automated activity_logs entries
+const SYSTEM_USER_ID = "11111111-1111-1111-1111-111111111111";
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function generatePassword(length = 16): string {
@@ -295,10 +298,11 @@ async function provision(
   // 10. Activity log
   await supabase.from("activity_logs").insert({
     partner_uuid:     partnerUuid,
+    user_id:          SYSTEM_USER_ID,
     action_category:  "system",
-    action_type:      "vpn_provisioned",
+    action_type:      "activated",
     entity_type:      "contracts",
-    entity_id:        contractId,
+    entity_id:        String(contractId),
     description:      `VPN '${vpnName}' provisioned for customer ${customerId} on contract ${contractNumber}`,
     metadata:         { vpn_name: vpnName, customer_id: customerId, mikrotik_id: mikrotikId },
   });
@@ -373,10 +377,11 @@ async function deprovision(
   // 6. Activity log
   await supabase.from("activity_logs").insert({
     partner_uuid:     partnerUuid,
+    user_id:          SYSTEM_USER_ID,
     action_category:  "system",
-    action_type:      "vpn_deprovisioned",
+    action_type:      "deactivated",
     entity_type:      "contracts",
-    entity_id:        contractId,
+    entity_id:        String(contractId),
     description:      `VPN '${cred.vpn_name}' revoked for customer ${customerId} on contract ${contractNumber}`,
     metadata:         { vpn_name: cred.vpn_name, customer_id: customerId, mikrotik_id: cred.mikrotik_id },
   });

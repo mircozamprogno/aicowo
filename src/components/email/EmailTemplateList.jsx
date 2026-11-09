@@ -74,6 +74,36 @@ const PARTNER_TEMPLATE_CONFIGS = {
     nameKey: 'emailTemplates.doorCodeCustomer',
     descriptionKey: 'emailTemplates.doorCodeCustomerDescription',
     icon: 'KeyRound'
+  },
+  contract_expired: {
+    id: 'contract_expired',
+    nameKey: 'emailTemplates.contractExpired',
+    descriptionKey: 'emailTemplates.contractExpiredDescription',
+    icon: 'XCircle'
+  },
+  contract_expired_partner: {
+    id: 'contract_expired_partner',
+    nameKey: 'emailTemplates.contractExpiredPartner',
+    descriptionKey: 'emailTemplates.contractExpiredPartnerDescription',
+    icon: 'XCircle'
+  },
+  expiry_reminder_partner: {
+    id: 'expiry_reminder_partner',
+    nameKey: 'emailTemplates.expiryReminderPartner',
+    descriptionKey: 'emailTemplates.expiryReminderPartnerDescription',
+    icon: 'Clock'
+  },
+  renewal_reminder: {
+    id: 'renewal_reminder',
+    nameKey: 'emailTemplates.renewalReminder',
+    descriptionKey: 'emailTemplates.renewalReminderDescription',
+    icon: 'Bell'
+  },
+  contract_renewed_partner: {
+    id: 'contract_renewed_partner',
+    nameKey: 'emailTemplates.contractRenewedPartner',
+    descriptionKey: 'emailTemplates.contractRenewedPartnerDescription',
+    icon: 'CheckCircle'
   }
   // partner_admin_invitation and partner_booking_notification temporarily disabled
 };

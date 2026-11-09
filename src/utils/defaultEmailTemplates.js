@@ -274,6 +274,119 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{door_code}}', description: 'Door code (6 digits)' },
         { name: '{{partner_name}}', description: 'Partner / structure name' }
       ]
+    },
+    contract_expired: {
+      subject: "Your contract has expired — {{partner_name}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Hi <strong>{{customer_name}}</strong>,</p>
+  <p>your contract has expired:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contract</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Service</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Expired on</td><td style="padding:10px 14px;">{{end_date}}</td></tr>
+  </table>
+  <p>To keep using our spaces you can buy a new service from your personal area or contact <strong>{{partner_name}}</strong>.</p>
+  <p style="margin-top:24px;">See you soon,<br><strong>{{partner_name}}</strong></p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Customer name" },
+        { name: '{{contract_number}}', description: "Contract number" },
+        { name: '{{service_name}}', description: "Service" },
+        { name: '{{end_date}}', description: "Expiry date" },
+        { name: '{{partner_name}}', description: "Structure name" }
+      ]
+    },
+    contract_expired_partner: {
+      subject: "Contract expired: {{customer_name}} — {{contract_number}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Hi <strong>{{partner_name}}</strong>,</p>
+  <p>the following contract has expired:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Customer</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{customer_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Email</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{customer_email}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contract</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Service</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Expired on</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{end_date}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Auto-renew</td><td style="padding:10px 14px;">{{auto_renew}}</td></tr>
+  </table>
+  <p style="color:#6b7280;font-size:14px;">The customer has been notified by email. You can create a new contract from the <strong>Contracts</strong> section.</p>
+  <p style="margin-top:24px;color:#6b7280;font-size:13px;">PowerCowo</p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Customer name" },
+        { name: '{{customer_email}}', description: "Customer email" },
+        { name: '{{contract_number}}', description: "Contract number" },
+        { name: '{{service_name}}', description: "Service" },
+        { name: '{{end_date}}', description: "Expiry date" },
+        { name: '{{auto_renew}}', description: "Auto-renew (Yes/No)" },
+        { name: '{{partner_name}}', description: "Structure name" }
+      ]
+    },
+    expiry_reminder_partner: {
+      subject: "Contracts expiring in the next {{lead_days}} days ({{contracts_count}})",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Hi <strong>{{partner_name}}</strong>,</p>
+  <p>here are the <strong>{{contracts_count}}</strong> contracts ending in the next <strong>{{lead_days}}</strong> days. Those with auto-renew on will renew on their end date; the others will expire.</p>
+  {{contracts_table}}
+  <p style="margin-top:24px;color:#6b7280;font-size:13px;">PowerCowo</p>
+</div>`,
+      variables: [
+        { name: '{{partner_name}}', description: "Structure name" },
+        { name: '{{lead_days}}', description: "Days ahead" },
+        { name: '{{contracts_count}}', description: "Number of contracts" },
+        { name: '{{contracts_table}}', description: "Table of expiring contracts" }
+      ]
+    },
+    renewal_reminder: {
+      subject: "Your subscription renews on {{end_date}} — {{partner_name}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Hi <strong>{{customer_name}}</strong>,</p>
+  <p>this is a reminder that your subscription will be <strong>renewed automatically</strong> on its end date:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contract</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Service</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Renewal date</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{end_date}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Amount</td><td style="padding:10px 14px;">{{amount}}</td></tr>
+  </table>
+  <p style="color:#6b7280;font-size:14px;">If you don't want to renew, turn off auto-renew from your dashboard before that date or contact <strong>{{partner_name}}</strong>.</p>
+  <p style="margin-top:24px;">See you soon,<br><strong>{{partner_name}}</strong></p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Customer name" },
+        { name: '{{contract_number}}', description: "Contract number" },
+        { name: '{{service_name}}', description: "Service" },
+        { name: '{{end_date}}', description: "Renewal date" },
+        { name: '{{days_until_renewal}}', description: "Days until renewal" },
+        { name: '{{amount}}', description: "Amount" },
+        { name: '{{partner_name}}', description: "Structure name" }
+      ]
+    },
+    contract_renewed_partner: {
+      subject: "Contract renewed: {{customer_name}} — {{contract_number}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Hi <strong>{{partner_name}}</strong>,</p>
+  <p>the following contract has been <strong>renewed automatically</strong>:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Customer</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{customer_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contract</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Service</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">New end date</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{new_end_date}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Amount</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{amount}} {{currency}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Total renewals</td><td style="padding:10px 14px;">{{renewal_count}}</td></tr>
+  </table>
+  <p style="color:#6b7280;font-size:14px;">The customer has received the renewal confirmation. If required, a new pending payment has been created.</p>
+  <p style="margin-top:24px;color:#6b7280;font-size:13px;">PowerCowo</p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Customer name" },
+        { name: '{{contract_number}}', description: "Contract number" },
+        { name: '{{service_name}}', description: "Service" },
+        { name: '{{new_end_date}}', description: "New end date" },
+        { name: '{{amount}}', description: "Amount" },
+        { name: '{{currency}}', description: "Currency" },
+        { name: '{{renewal_count}}', description: "Number of renewals" },
+        { name: '{{partner_name}}', description: "Structure name" }
+      ]
     }
   },
 
@@ -540,6 +653,119 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         { name: '{{customer_name}}', description: 'Nome completo del cliente' },
         { name: '{{door_code}}', description: 'Codice porta (6 cifre)' },
         { name: '{{partner_name}}', description: 'Nome del partner / struttura' }
+      ]
+    },
+    contract_expired: {
+      subject: "Il tuo contratto è scaduto — {{partner_name}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Ciao <strong>{{customer_name}}</strong>,</p>
+  <p>ti informiamo che il tuo contratto è scaduto:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contratto</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Servizio</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Scaduto il</td><td style="padding:10px 14px;">{{end_date}}</td></tr>
+  </table>
+  <p>Per continuare a usare i nostri spazi puoi acquistare un nuovo servizio dalla tua area personale oppure contattare <strong>{{partner_name}}</strong>.</p>
+  <p style="margin-top:24px;">A presto,<br><strong>{{partner_name}}</strong></p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Nome cliente" },
+        { name: '{{contract_number}}', description: "Numero contratto" },
+        { name: '{{service_name}}', description: "Servizio" },
+        { name: '{{end_date}}', description: "Data di scadenza" },
+        { name: '{{partner_name}}', description: "Nome struttura" }
+      ]
+    },
+    contract_expired_partner: {
+      subject: "Contratto scaduto: {{customer_name}} — {{contract_number}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Ciao <strong>{{partner_name}}</strong>,</p>
+  <p>il seguente contratto è scaduto:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Cliente</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{customer_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Email</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{customer_email}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contratto</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Servizio</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Scaduto il</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{end_date}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Rinnovo automatico</td><td style="padding:10px 14px;">{{auto_renew}}</td></tr>
+  </table>
+  <p style="color:#6b7280;font-size:14px;">Il cliente ha ricevuto un'email di avviso. Puoi creare un nuovo contratto dalla sezione <strong>Contratti</strong>.</p>
+  <p style="margin-top:24px;color:#6b7280;font-size:13px;">PowerCowo</p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Nome cliente" },
+        { name: '{{customer_email}}', description: "Email cliente" },
+        { name: '{{contract_number}}', description: "Numero contratto" },
+        { name: '{{service_name}}', description: "Servizio" },
+        { name: '{{end_date}}', description: "Data di scadenza" },
+        { name: '{{auto_renew}}', description: "Rinnovo automatico (Sì/No)" },
+        { name: '{{partner_name}}', description: "Nome struttura" }
+      ]
+    },
+    expiry_reminder_partner: {
+      subject: "Contratti in scadenza nei prossimi {{lead_days}} giorni ({{contracts_count}})",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Ciao <strong>{{partner_name}}</strong>,</p>
+  <p>ecco i <strong>{{contracts_count}}</strong> contratti che scadono nei prossimi <strong>{{lead_days}}</strong> giorni. Quelli con rinnovo automatico attivo verranno rinnovati il giorno della scadenza; gli altri scadranno.</p>
+  {{contracts_table}}
+  <p style="margin-top:24px;color:#6b7280;font-size:13px;">PowerCowo</p>
+</div>`,
+      variables: [
+        { name: '{{partner_name}}', description: "Nome struttura" },
+        { name: '{{lead_days}}', description: "Giorni di preavviso" },
+        { name: '{{contracts_count}}', description: "Numero di contratti" },
+        { name: '{{contracts_table}}', description: "Tabella dei contratti in scadenza" }
+      ]
+    },
+    renewal_reminder: {
+      subject: "Il tuo abbonamento si rinnoverà il {{end_date}} — {{partner_name}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Ciao <strong>{{customer_name}}</strong>,</p>
+  <p>ti ricordiamo che il tuo abbonamento verrà <strong>rinnovato automaticamente</strong> alla scadenza:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contratto</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Servizio</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Data di rinnovo</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{end_date}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Importo</td><td style="padding:10px 14px;">{{amount}}</td></tr>
+  </table>
+  <p style="color:#6b7280;font-size:14px;">Se non desideri rinnovare, puoi disattivare il rinnovo automatico dalla tua dashboard prima di tale data oppure contattare <strong>{{partner_name}}</strong>.</p>
+  <p style="margin-top:24px;">A presto,<br><strong>{{partner_name}}</strong></p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Nome cliente" },
+        { name: '{{contract_number}}', description: "Numero contratto" },
+        { name: '{{service_name}}', description: "Servizio" },
+        { name: '{{end_date}}', description: "Data di rinnovo" },
+        { name: '{{days_until_renewal}}', description: "Giorni al rinnovo" },
+        { name: '{{amount}}', description: "Importo" },
+        { name: '{{partner_name}}', description: "Nome struttura" }
+      ]
+    },
+    contract_renewed_partner: {
+      subject: "Contratto rinnovato: {{customer_name}} — {{contract_number}}",
+      body: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#1f2937;">
+  <p style="font-size:16px;">Ciao <strong>{{partner_name}}</strong>,</p>
+  <p>il seguente contratto è stato <strong>rinnovato automaticamente</strong>:</p>
+  <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Cliente</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{customer_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Contratto</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{contract_number}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Servizio</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{service_name}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Nuova scadenza</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{new_end_date}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;width:40%;">Importo</td><td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;">{{amount}} {{currency}}</td></tr>
+    <tr><td style="padding:10px 14px;font-weight:600;color:#374151;width:40%;">Rinnovi totali</td><td style="padding:10px 14px;">{{renewal_count}}</td></tr>
+  </table>
+  <p style="color:#6b7280;font-size:14px;">Il cliente ha ricevuto la conferma del rinnovo. Se previsto, è stato creato un nuovo pagamento in attesa.</p>
+  <p style="margin-top:24px;color:#6b7280;font-size:13px;">PowerCowo</p>
+</div>`,
+      variables: [
+        { name: '{{customer_name}}', description: "Nome cliente" },
+        { name: '{{contract_number}}', description: "Numero contratto" },
+        { name: '{{service_name}}', description: "Servizio" },
+        { name: '{{new_end_date}}', description: "Nuova data di scadenza" },
+        { name: '{{amount}}', description: "Importo" },
+        { name: '{{currency}}', description: "Valuta" },
+        { name: '{{renewal_count}}', description: "Numero di rinnovi" },
+        { name: '{{partner_name}}', description: "Nome struttura" }
       ]
     }
   }
