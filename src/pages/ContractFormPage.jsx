@@ -75,6 +75,9 @@ const ContractFormPage = () => {
 
   // Price and date override states (for partners only)
   const [overrideEndDate, setOverrideEndDate] = useState(false);
+  // Automatic renewal for subscriptions: the contract's own value when editing,
+  // the service default for a new contract (null = not chosen yet)
+  const [autoRenew, setAutoRenew] = useState(null);
   const [manualEndDate, setManualEndDate] = useState('');
   const [overridePrice, setOverridePrice] = useState(false);
   const [manualPrice, setManualPrice] = useState('');
@@ -461,6 +464,7 @@ const ContractFormPage = () => {
 
       // Set calculated end date from existing contract
       setCalculatedEndDate(contractToEdit.end_date || '');
+      setAutoRenew(!!contractToEdit.auto_renew);
     } catch (error) {
       logger.error('Error loading contract for editing:', error);
       toast.error('Error loading contract data');
@@ -482,6 +486,7 @@ const ContractFormPage = () => {
     setCalculatedEndDate('');
     setShowConfirmation(false);
     setOverrideEndDate(false);
+    setAutoRenew(null);
     setManualEndDate('');
     setOverridePrice(false);
     setManualPrice('');
@@ -915,6 +920,7 @@ const ContractFormPage = () => {
     if (name === 'service_id') {
       const service = availableServices.find(s => s.id.toString() === value);
       setSelectedService(service);
+      setAutoRenew(service ? !!service.auto_renew : null);
 
       // Automatically set location_resource_id from the service
       if (service?.location_resources?.id) {
@@ -1102,7 +1108,7 @@ const ContractFormPage = () => {
         // Contract settings
         contract_status: 'active',
         is_renewable: selectedService.is_renewable || false,
-        auto_renew: selectedService.auto_renew || false,
+        auto_renew: autoRenew ?? (selectedService.auto_renew || false),
 
         updated_at: new Date().toISOString()
       };
@@ -2088,6 +2094,43 @@ const ContractFormPage = () => {
                       </span>
                     </div>
                     <span>{t('contracts.customEndDate')}</span>
+                  </label>
+                )}
+
+                {selectedService?.service_type === 'abbonamento' && selectedService.is_renewable !== false && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginTop: '0.5rem' }}>
+                    <div style={{ position: 'relative', width: '44px', height: '24px' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!(autoRenew ?? selectedService.auto_renew)}
+                        onChange={(e) => setAutoRenew(e.target.checked)}
+                        style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                      />
+                      <span style={{
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: (autoRenew ?? selectedService.auto_renew) ? '#10b981' : '#d1d5db',
+                        transition: '0.3s',
+                        borderRadius: '24px'
+                      }}>
+                        <span style={{
+                          position: 'absolute',
+                          content: '',
+                          height: '18px',
+                          width: '18px',
+                          left: (autoRenew ?? selectedService.auto_renew) ? '23px' : '3px',
+                          bottom: '3px',
+                          backgroundColor: 'white',
+                          transition: '0.3s',
+                          borderRadius: '50%'
+                        }}></span>
+                      </span>
+                    </div>
+                    <span>{t('contracts.autoRenew') || 'Automatic renewal'}</span>
                   </label>
                 )}
 

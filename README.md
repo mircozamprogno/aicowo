@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.005 Automatic renewal switch in contract page
 2026.11.09 V 1.004 Contract renewal: partner + customer emails, calendar-month renewals
 2026.11.09 V 1.003 Unique door code per structure + generate button
 2026.11.09 V 1.002 WiFi assignment, 6-digit door code, door code email
