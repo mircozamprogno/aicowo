@@ -903,12 +903,14 @@ const Bookings = () => {
 
   const formatDisplayDate = (date) => {
     const locale = t('app.locale') === 'it' ? 'it-IT' : 'en-US';
-    return date.toLocaleDateString(locale, {
+    const label = date.toLocaleDateString(locale, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+    // "lunedì 9 novembre 2026" → "Lunedì 9 novembre 2026"
+    return label.charAt(0).toUpperCase() + label.slice(1);
   };
 
   const formatMonthYear = (date) => {

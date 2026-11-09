@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.09 V 1.013 Capitalized day heading in booking calendar week/day views
 2026.11.09 V 1.012 Capitalized month name in booking calendar
 2026.11.09 V 1.011 Fix 5s profile query timeout at startup
 2026.11.09 V 1.010 Fix render loop (Maximum update depth) in searchable selects
