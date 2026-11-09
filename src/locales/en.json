@@ -160,6 +160,7 @@
     "noWifiAssigned": "No WiFi access assigned",
     "assignWifi": "Assign WiFi",
     "changeWifi": "Change WiFi",
+    "removeWifi": "— Remove assignment —",
     "selectWifiUser": "— select WiFi user —",
     "wifiLoadError": "Could not load WiFi users from the router",
     "regenerateCode": "Generate new code",

@@ -162,6 +162,7 @@
     "noWifiAssigned": "Nessun accesso WiFi assegnato",
     "assignWifi": "Assegna WiFi",
     "changeWifi": "Cambia WiFi",
+    "removeWifi": "— Rimuovi assegnazione —",
     "selectWifiUser": "— seleziona utente WiFi —",
     "wifiLoadError": "Impossibile caricare gli utenti WiFi dal router",
     "regenerateCode": "Genera nuovo codice",

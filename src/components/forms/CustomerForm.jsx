@@ -88,6 +88,8 @@ const CustomerForm = ({
   const [wifiSelected, setWifiSelected] = useState('');
   const [wifiError, setWifiError] = useState(null);
 
+  const WIFI_REMOVE = '__remove__';
+
   const openWifiAssign = async () => {
     setWifiAssigning(true);
     setWifiError(null);
@@ -119,7 +121,25 @@ const CustomerForm = ({
     }
   };
 
+  const removeWifi = async () => {
+    setWifiSaving(true);
+    setWifiError(null);
+    const { error } = await supabase
+      .from('customer_vpn_credentials')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('id', vpnCredential.id);
+    setWifiSaving(false);
+    if (error) {
+      logger.error('Failed to remove WiFi assignment:', error);
+      setWifiError(error.message);
+      return;
+    }
+    setVpnCredential(null);
+    setWifiAssigning(false);
+  };
+
   const assignWifi = async () => {
+    if (wifiSelected === WIFI_REMOVE) return removeWifi();
     const routerUser = wifiOptions.find(u => u.name === wifiSelected);
     if (!routerUser) return;
     setWifiSaving(true);
@@ -951,6 +971,11 @@ const CustomerForm = ({
                             ? (t('common.loading') || 'Loading…')
                             : (t('customers.selectWifiUser') || '— select WiFi user —')}
                         </option>
+                        {vpnCredential && !wifiLoading && (
+                          <option value={WIFI_REMOVE}>
+                            {t('customers.removeWifi') || '— Remove assignment —'}
+                          </option>
+                        )}
                         {wifiOptions.map(u => (
                           <option key={u['.id'] || u.name} value={u.name}>{u.name}</option>
                         ))}
