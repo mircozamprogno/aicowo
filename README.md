@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.14 V 1.022 Security: contract_payment_status view respects RLS, no anon access
 2026.11.14 V 1.021 Payment status counts pending renewal payments (renewed contracts no longer shown as paid)
 2026.11.09 V 1.020 Session notes: UI improvements and security hardening (docs)
 2026.11.09 V 1.019 MikroTik proxy accepts the path as a single string
