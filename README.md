@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.14 V 1.024 Session notes: renewal payments status, view security, VAT (docs)
 2026.11.14 V 1.023 Renewal payments include the location VAT (22%), pending ones backfilled
 2026.11.14 V 1.022 Security: contract_payment_status view respects RLS, no anon access
 2026.11.14 V 1.021 Payment status counts pending renewal payments (renewed contracts no longer shown as paid)
