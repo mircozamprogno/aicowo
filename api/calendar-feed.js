@@ -28,16 +28,16 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Authentication token required' });
         }
 
-        // Initialize Supabase client with service role key for server-side access
+        // Initialize Supabase client with secret key for server-side access
         const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
-        if (!supabaseUrl || !supabaseServiceKey) {
+        if (!supabaseUrl || !supabaseSecretKey) {
             console.error('Missing Supabase configuration');
             return res.status(500).json({ error: 'Server configuration error' });
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        const supabase = createClient(supabaseUrl, supabaseSecretKey);
 
         // Validate token and get user_id
         const { data: tokenData, error: tokenError } = await supabase

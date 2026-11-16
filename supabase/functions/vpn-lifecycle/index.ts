@@ -9,11 +9,11 @@
 // retry_revocations — nightly (03:00): retries WiFi deletions that failed
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
-import { forbiddenResponse, isServiceRoleRequest } from "../_shared/serviceRoleOnly.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { forbiddenResponse, isSecretKeyRequest } from "../_shared/secretKeyOnly.ts";
+import { SUPABASE_SECRET_KEY } from "../_shared/supabaseKeys.ts";
 
 const SUPABASE_URL               = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ONESIGNAL_APP_ID           = Deno.env.get("ONESIGNAL_APP_ID")!;
 const ONESIGNAL_API_KEY          = Deno.env.get("ONESIGNAL_API_KEY")!;
 const ONESIGNAL_UNIQUE_TEMPLATE_ID = Deno.env.get("ONESIGNAL_UNIQUE_TEMPLATE_ID")!;
@@ -607,13 +607,13 @@ async function retryRevocations(supabase: Supabase, dryRun: boolean) {
 // ── main ──────────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
-  if (!(await isServiceRoleRequest(req))) return forbiddenResponse();
+  if (!isSecretKeyRequest(req)) return forbiddenResponse();
   try {
     const body = await req.json();
     const { action, contract_id, contract_number, customer_id, partner_uuid } = body;
     // {"dry_run": true} reports what deprovision / retry would do without writing or sending
     const dryRun = body?.dry_run === true;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
 
     if (action === "retry_revocations") {
       const result = await retryRevocations(supabase, dryRun);

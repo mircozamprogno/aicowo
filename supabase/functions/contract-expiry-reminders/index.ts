@@ -23,10 +23,10 @@ import {
     sendTemplateEmail,
     type Supabase,
 } from "../_shared/contractEmails.ts";
-import { forbiddenResponse, isServiceRoleRequest } from "../_shared/serviceRoleOnly.ts";
+import { forbiddenResponse, isSecretKeyRequest } from "../_shared/secretKeyOnly.ts";
+import { SUPABASE_SECRET_KEY } from "../_shared/supabaseKeys.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const DAY_MS = 86400000;
 const MAX_LEAD_DAYS = 14; // safety ceiling above any realistic partner lead time
@@ -78,10 +78,10 @@ async function loadPartner(supabase: Supabase, cache: Map<string, Partner>, part
 }
 
 serve(async (req) => {
-    if (!(await isServiceRoleRequest(req))) return forbiddenResponse();
+    if (!isSecretKeyRequest(req)) return forbiddenResponse();
     try {
         const dryRun = await readDryRun(req);
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const partners = new Map<string, Partner>();

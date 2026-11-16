@@ -1,6 +1,7 @@
 // supabase/functions/send-email/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SUPABASE_SECRET_KEY } from '../_shared/supabaseKeys.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -73,7 +74,7 @@ serve(async (req) => {
     // Create Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      SUPABASE_SECRET_KEY
     )
 
     // 1. Fetch custom template from database

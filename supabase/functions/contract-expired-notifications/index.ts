@@ -20,10 +20,10 @@ import {
     readDryRun,
     sendTemplateEmail,
 } from "../_shared/contractEmails.ts";
-import { forbiddenResponse, isServiceRoleRequest } from "../_shared/serviceRoleOnly.ts";
+import { forbiddenResponse, isSecretKeyRequest } from "../_shared/secretKeyOnly.ts";
+import { SUPABASE_SECRET_KEY } from "../_shared/supabaseKeys.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface Result {
     contract_number: string;
@@ -36,10 +36,10 @@ interface Result {
 }
 
 serve(async (req) => {
-    if (!(await isServiceRoleRequest(req))) return forbiddenResponse();
+    if (!isSecretKeyRequest(req)) return forbiddenResponse();
     try {
         const dryRun = await readDryRun(req);
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
 
         const { data: contracts, error } = await supabase
             .from("contracts")

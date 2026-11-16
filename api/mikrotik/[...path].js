@@ -12,7 +12,7 @@ loadDotenv({ path: '.env.local' });
 loadDotenv();
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Writes are limited to the WiFi users (User Manager): no reboot, reset or config changes
 const WRITE_PATH_PREFIX = '/user-manager/';
@@ -21,9 +21,9 @@ const WRITE_PATH_PREFIX = '/user-manager/';
 // Supabase checks the token and RLS limits the reads to the caller's own profile/partner.
 async function authorize(req) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) return false;
+  if (!token || !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return false;
   const rest = (path) => fetch(`${SUPABASE_URL}${path}`, {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${token}` },
   }).then(r => (r.ok ? r.json() : null));
 
   const user = await rest('/auth/v1/user');

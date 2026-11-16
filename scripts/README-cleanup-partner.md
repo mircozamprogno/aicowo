@@ -21,7 +21,7 @@ You need the **Supabase Service Role Key** to run this script.
 4. Add it to your `.env` file:
 
 ```env
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+SUPABASE_SECRET_KEY=your-service-role-key-here
 ```
 
 ⚠️ **Warning**: The service role key bypasses Row Level Security. Keep it secret!
@@ -151,7 +151,7 @@ Step 3: Dry Run Summary
 ## Troubleshooting
 
 **Error: Missing environment variables**
-- Make sure `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are in your `.env` file
+- Make sure `VITE_SUPABASE_URL` and `SUPABASE_SECRET_KEY` are in your `.env` file
 
 **Error: Partner UUID not found**
 - Double-check the UUID is correct

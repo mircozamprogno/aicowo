@@ -32,7 +32,8 @@ dist/
 docs/
 
 # Local-only DB connection string (contains credentials)
-supabase/connection.sql
+supabase/connection.md
 
 # Local Supabase CLI project link state
 supabase/.temp/
+.onesignal

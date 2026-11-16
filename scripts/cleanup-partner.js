@@ -58,14 +58,14 @@ if (!uuidRegex.test(partnerUuid)) {
 
 // Initialize Supabase client with service role key
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-    log.error('Missing environment variables: VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+if (!supabaseUrl || !supabaseSecretKey) {
+    log.error('Missing environment variables: VITE_SUPABASE_URL or SUPABASE_SECRET_KEY');
     process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = createClient(supabaseUrl, supabaseSecretKey, {
     auth: {
         autoRefreshToken: false,
         persistSession: false

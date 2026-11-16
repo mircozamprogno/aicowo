@@ -11,8 +11,8 @@
 --       - auto_renew_contracts()
 --   * Edge Function `contract-expiry-reminders` deployed
 --   * Edge Function `contract-renewal-confirmation` deployed
---   * Vault secret named `service_role_key` holds the project's
---     service_role JWT (created with vault.create_secret(...))
+--   * Vault secret named `secret_key` holds the project's
+--     secret key (sb_secret_…) (created with vault.create_secret(...))
 --
 -- Timezone strategy:
 --   pg_cron on Supabase (1.6.x) schedules only in UTC. To pin business
@@ -28,13 +28,13 @@ create extension if not exists supabase_vault;
 -- Vault secret bootstrap (idempotent placeholder)
 -- ---------------------------------------------------------------------
 -- The actual value MUST be set out-of-band (dashboard or one-off SQL):
---   select vault.create_secret('<SERVICE_ROLE_JWT>', 'service_role_key',
---                              'Service role JWT for edge function cron calls');
+--   select vault.create_secret('<SB_SECRET_KEY>', 'secret_key',
+--                              'Secret API key for edge function cron calls');
 -- This block only warns if the secret is missing.
 do $$
 begin
-  if not exists (select 1 from vault.decrypted_secrets where name = 'service_role_key') then
-    raise warning 'vault secret "service_role_key" is missing — cron job 5 will fail until it is created';
+  if not exists (select 1 from vault.decrypted_secrets where name = 'secret_key') then
+    raise warning 'vault secret "secret_key" is missing — cron job 5 will fail until it is created';
   end if;
 end $$;
 
@@ -114,7 +114,7 @@ select cron.schedule(
 -- ---------------------------------------------------------------------
 -- Job 5 — contract-expiry-reminders-daily (02:00 Europe/Zurich)
 -- Calls the `contract-expiry-reminders` edge function. Auth token is
--- pulled from Vault at run time so the JWT never lives in cron.job.command.
+-- pulled from Vault at run time so the key never lives in cron.job.command.
 -- Replace the project ref if applying to a different Supabase project.
 -- ---------------------------------------------------------------------
 select pg_temp.drop_cron_if_exists('contract-expiry-reminders-daily');
@@ -131,7 +131,7 @@ select cron.schedule(
       select net.http_post(
         url := 'https://idtwxzccuehxsoipjixf.supabase.co/functions/v1/contract-expiry-reminders',
         headers := jsonb_build_object(
-          'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key'),
+          'apikey', (select decrypted_secret from vault.decrypted_secrets where name = 'secret_key'),
           'Content-Type', 'application/json'
         )
       ) into req;
@@ -161,7 +161,7 @@ select cron.schedule(
       select net.http_post(
         url := 'https://idtwxzccuehxsoipjixf.supabase.co/functions/v1/contract-renewal-confirmation',
         headers := jsonb_build_object(
-          'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key'),
+          'apikey', (select decrypted_secret from vault.decrypted_secrets where name = 'secret_key'),
           'Content-Type', 'application/json'
         )
       ) into req;

@@ -1,0 +1,19 @@
+project_id = "idtwxzccuehxsoipjixf"
+
+# The gateway's verify_jwt only understands the legacy JWT keys.
+# Called by pg_cron / DB triggers with the secret key on the apikey header (checked by _shared/secretKeyOnly.ts)
+[functions.contract-expiry-reminders]
+verify_jwt = false
+
+[functions.contract-expired-notifications]
+verify_jwt = false
+
+[functions.contract-renewal-confirmation]
+verify_jwt = false
+
+[functions.vpn-lifecycle]
+verify_jwt = false
+
+# Called before login (invitation sign-up); validates the invitation token itself
+[functions.register-invited-user]
+verify_jwt = false

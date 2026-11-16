@@ -68,7 +68,7 @@ A comprehensive React-based application for managing locations, resources, and u
    Create a `.env.local` file:
    ```env
    REACT_APP_SUPABASE_URL=your_supabase_url
-   REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
    REACT_APP_GEOCODING_API_KEY=your_geocoding_api_key
    ```
 
@@ -144,7 +144,7 @@ src/
 
 ### Environment Variables
 - `REACT_APP_SUPABASE_URL` - Your Supabase project URL
-- `REACT_APP_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `VITE_SUPABASE_PUBLISHABLE_KEY` - Supabase publishable key
 - `REACT_APP_GEOCODING_API_KEY` - Geocoding service API key
 
 ## 🚨 Known Issues
@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.16 V 1.025 Supabase: move to publishable/secret API keys (frontend, API routes, edge functions, cron)
 2026.11.14 V 1.024 Session notes: renewal payments status, view security, VAT (docs)
 2026.11.14 V 1.023 Renewal payments include the location VAT (22%), pending ones backfilled
 2026.11.14 V 1.022 Security: contract_payment_status view respects RLS, no anon access

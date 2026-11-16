@@ -28,11 +28,15 @@ export class FattureInCloudService {
       const documentData = this.buildDocumentPayload(contract, customerData, partnerSettings, t);
       logger.log('Document payload:', JSON.stringify(documentData, null, 2));
 
+      // Get user session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
       // Prepare the request
       const requestUrl = `${supabase.supabaseUrl}/functions/v1/fattureincloud`;
       const requestHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabase.supabaseKey}`
+        'Authorization': `Bearer ${session.access_token}`
       };
       const requestBody = {
         contract,
@@ -42,7 +46,7 @@ export class FattureInCloudService {
 
       logger.log('=== API Request Debug ===');
       logger.log('Request URL:', requestUrl);
-      logger.log('Request Headers:', requestHeaders);
+      logger.log('Request Headers:', { ...requestHeaders, Authorization: 'Bearer ***' });
       logger.log('Request Body:', JSON.stringify(requestBody, null, 2));
       logger.log('Supabase URL:', supabase.supabaseUrl);
       logger.log('Supabase Key (first 20 chars):', supabase.supabaseKey?.substring(0, 20) + '...');
