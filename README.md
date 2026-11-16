@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.16 V 1.026 Edge functions validate user sessions themselves (ready for asymmetric JWT signing keys)
 2026.11.16 V 1.025 Supabase: move to publishable/secret API keys (frontend, API routes, edge functions, cron)
 2026.11.14 V 1.024 Session notes: renewal payments status, view security, VAT (docs)
 2026.11.14 V 1.023 Renewal payments include the location VAT (22%), pending ones backfilled

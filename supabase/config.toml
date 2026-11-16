@@ -17,3 +17,14 @@ verify_jwt = false
 # Called before login (invitation sign-up); validates the invitation token itself
 [functions.register-invited-user]
 verify_jwt = false
+
+# Called by logged-in users; each function validates the session itself with auth.getUser()
+# (the gateway's verify_jwt does not accept tokens signed with the new asymmetric JWT signing keys)
+[functions.fattureincloud]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.onesignal-send]
+verify_jwt = false
