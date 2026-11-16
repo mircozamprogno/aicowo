@@ -197,6 +197,7 @@ Built with ❤️ using React and Supabase
 
 
 Version:
+2026.11.16 V 1.028 Legacy Supabase keys disabled, HS256 JWT secret revoked, cleanup (docs)
 2026.11.16 V 1.027 Session notes: OneSignal key, Supabase new API keys and JWT signing keys (docs)
 2026.11.16 V 1.026 Edge functions validate user sessions themselves (ready for asymmetric JWT signing keys)
 2026.11.16 V 1.025 Supabase: move to publishable/secret API keys (frontend, API routes, edge functions, cron)

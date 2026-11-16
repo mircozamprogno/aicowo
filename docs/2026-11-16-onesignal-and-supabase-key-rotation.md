@@ -119,20 +119,38 @@ rejects everything. Commit `f6a398d`.
 - 2026-11-16 11:05:58 UTC: ES256 `in_use`, HS256 `previously_used`.
   Cron path re-tested OK.
 
-## Remaining steps (not done yet)
+## Completion (2026-11-16, evening)
 
-1. User: log out/in on my.powercowo.com and test data load, test email,
-   FattureInCloud invoice (session now ES256-signed).
-2. From 12:06 UTC (13:06 Zurich), access tokens expire after 3600 s:
-   - revoke HS256 in JWT Keys → Previously used keys;
-   - disable the legacy anon and service_role API keys.
-3. Cleanup: Vercel `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-   staging `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`; old lines in
-   `.env` / `.env.local`; Vault `service_role_key`; legacy keys in
-   `connection.md`. Re-run all checks, including that the old keys are
-   rejected.
-4. Optional: delete the unused `send-email` function and
-   `api/onesignal-proxy.js`; revoke the old OneSignal key.
+Version V 1.028.
+
+- Legacy JWT-based API keys (anon, service_role) disabled in the dashboard
+  first; Supabase refuses to revoke the JWT secret otherwise (revoking it
+  invalidates those keys).
+- HS256 key revoked: signing keys now `HS256 revoked`, `ES256 in_use`; JWKS
+  serves only the ES256 key.
+- Verification after revoke: old anon / service_role keys → 401; publishable
+  key reads via RLS (200) and is refused on auth admin (401); secret key has
+  admin access; the 4 cron/trigger functions return 403 without a key or with
+  the publishable key and pass with the secret key; `fattureincloud`,
+  `onesignal-send`, `delete-user` reject fake tokens; `register-invited-user`
+  rejects a fake invitation; all 7 pg_cron jobs active, no failing cron HTTP
+  responses; my.powercowo.com 200.
+  Note: `delete-user` validates the body before the token (400 on empty body),
+  but the `getUser()` check still gates every action (401 with a fake token).
+- Cleanup done: Vault `service_role_key` deleted (only `secret_key` left);
+  legacy keys removed from `supabase/connection.md`, `.env`
+  (`SUPABASE_SERVICE_ROLE_KEY`) and `.env.local` (`VITE_SUPABASE_ANON_KEY`).
+  No code reads them.
+
+## Still to do by hand
+
+1. Vercel (CLI not linked here): delete `VITE_SUPABASE_ANON_KEY` and
+   `SUPABASE_SERVICE_ROLE_KEY`, and the staging `VITE_SUPABASE_URL` /
+   `VITE_SUPABASE_ANON_KEY`.
+2. Log in again on my.powercowo.com and test data load, an email and a
+   FattureInCloud invoice (ES256 session end to end).
+3. Optional: delete the unused `send-email` function (it rejects everything
+   now) and `api/onesignal-proxy.js`; revoke the old OneSignal key.
 
 ## Access token permissions (for next time)
 
